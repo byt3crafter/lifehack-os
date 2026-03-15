@@ -1,0 +1,7 @@
+*.db
+*.log
+__pycache__/
+*.bak
+.env
+data/
+config/integrations.json

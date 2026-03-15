@@ -1,0 +1,46 @@
+# Life Hack OS — Scoring Rules
+# Edit this file to customize your scoring system
+
+[scoring]
+base_habit_points = 10
+streak_multiplier_threshold = 7  # Days before multiplier kicks in
+streak_multiplier = 1.5
+weekly_consistency_bonus = 50    # All daily habits hit for 7 days
+sobriety_daily_bonus = 25
+
+[levels]
+xp_per_level = 500
+level_names = [
+    "Initiate",
+    "Apprentice", 
+    "Practitioner",
+    "Adept",
+    "Master",
+    "Grandmaster",
+    "Legend"
+]
+
+[penalties]
+missed_habit = -5
+broken_sobriety = -100
+missed_checkin = -10
+enable_penalties = true
+
+[deep_work]
+points_per_30min = 15
+max_daily_sessions = 4
+minimum_session_minutes = 25
+
+[walks]
+base_points = 20
+km_bonus = 5          # per km
+mood_improvement_bonus = 10
+
+[replacements]
+urge_redirect_base = 30
+high_urge_bonus = 20  # urge level 4-5
+
+[checkin]
+completion_points = 15
+sobriety_bonus = 25
+future_work_bonus = 10

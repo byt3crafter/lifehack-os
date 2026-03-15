@@ -1,0 +1,26 @@
+# Life Hack OS — Habit Categories
+# Add or modify categories here
+
+[categories]
+health = { name = "Health", color = "#10B981", icon = "🏥" }
+fitness = { name = "Fitness", color = "#F59E0B", icon = "💪" }
+work = { name = "Work", color = "#3B82F6", icon = "💼" }
+finance = { name = "Finance", color = "#8B5CF6", icon = "💰" }
+family = { name = "Family", color = "#EC4899", icon = "👨‍👩‍👧" }
+sobriety = { name = "Sobriety", color = "#14B8A6", icon = "🛡️" }
+mindset = { name = "Mindset", color = "#6366F1", icon = "🧠" }
+house = { name = "House", color = "#78716C", icon = "🏠" }
+learning = { name = "Learning", color = "#0EA5E9", icon = "📚" }
+creative = { name = "Creative", color = "#F472B6", icon = "🎨" }
+
+[replacement_categories]
+drive = { name = "Long Drive", points = 35 }
+gym = { name = "Gym Session", points = 40 }
+walk = { name = "Long Walk", points = 30 }
+social = { name = "Sober Social", points = 25 }
+creative = { name = "Creative Work", points = 30 }
+cooking = { name = "Cook at Home", points = 20 }
+documentary = { name = "Documentary Night", points = 15 }
+family = { name = "Family Time", points = 25 }
+project = { name = "Project Work", points = 35 }
+beach = { name = "Beach Trip", points = 30 }
