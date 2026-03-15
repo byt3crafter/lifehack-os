@@ -16,6 +16,7 @@ from .projects import projects_bp
 from .integrations import integrations_bp
 from .misc import misc_bp
 from .openclaw import openclaw_bp
+from .challenges import challenges_bp
 
 __all__ = [
     'auth_bp',
@@ -28,5 +29,6 @@ __all__ = [
     'projects_bp',
     'integrations_bp',
     'misc_bp',
-    'openclaw_bp'
+    'openclaw_bp',
+    'challenges_bp'
 ]
