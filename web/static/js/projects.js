@@ -55,3 +55,8 @@ function addTaskModal() {
         <button onclick="hideModal()" class="w-full mt-4 py-2 rounded border border-gray-600 text-sm">Close</button>
     `);
 }
+
+// Alias for HTML compatibility
+function addProjectModal() {
+    addTaskModal();
+}

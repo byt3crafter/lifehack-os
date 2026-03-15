@@ -67,12 +67,26 @@ async function loadFasting() {
     }
 }
 
-async function startFast() {
-    const target = $('#fast-target')?.value || 16;
+async function startFast(targetHours) {
+    const target = targetHours || $('#fast-target')?.value || 16;
     const result = await api('/fasting/start', 'POST', { target: parseInt(target) });
     if (result && result.success) {
         loadFasting();
     }
+}
+
+// Alias for HTML compatibility
+function endFastModal() {
+    showModal('End Fast', `
+        <div class="mb-3">
+            <label class="text-xs text-gray-400">How do you feel?</label>
+            <input type="range" id="end-fast-mood" min="1" max="5" value="3" class="w-full">
+        </div>
+        <div class="flex gap-2">
+            <button onclick="hideModal()" class="flex-1 py-2 rounded border border-gray-600 text-sm">Cancel</button>
+            <button onclick="endFast()" class="flex-1 py-2 rounded bg-danger text-sm">End Fast</button>
+        </div>
+    `);
 }
 
 async function endFast() {

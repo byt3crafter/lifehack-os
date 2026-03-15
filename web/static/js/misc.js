@@ -18,6 +18,11 @@ async function loadWishlist() {
     }
 }
 
+// Alias for HTML compatibility
+function addWishModal() {
+    addWishlistModal();
+}
+
 function addWishlistModal() {
     showModal('Add to Wishlist', `
         <input id="nw-title" type="text" class="w-full p-2 rounded border text-sm mb-2" placeholder="Title">
@@ -151,6 +156,18 @@ async function loadReplace() {
             </div>
         `).join('') || '<div class="text-gray-500">No redirects logged</div>';
     }
+}
+
+// Alias for HTML compatibility  
+function logReplace() {
+    const urgeLevel = document.querySelector('input[name="urge"]:checked')?.value || 3;
+    const actionBtn = document.querySelector('#rep-actions button.selected');
+    if (!actionBtn) {
+        alert('Select a replacement action first');
+        return;
+    }
+    // This function is called from the main Replace button
+    // Individual action buttons call logReplacement directly
 }
 
 async function logReplacement(actionId) {
