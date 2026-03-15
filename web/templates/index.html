@@ -739,7 +739,7 @@
     }
 
     function addFoodModal() {
-        showModal('Log Meal', \`
+        showModal('Log Meal', `
             <select id="nf-type" class="w-full p-2 rounded border text-sm mb-2">
                 <option value="breakfast">🌅 Breakfast</option>
                 <option value="lunch">☀️ Lunch</option>
@@ -755,7 +755,7 @@
                 <button onclick="hideModal()" class="flex-1 py-2 rounded border border-gray-600 text-sm">Cancel</button>
                 <button onclick="saveFoodLog()" class="flex-1 py-2 rounded bg-accent text-sm">Log</button>
             </div>
-        \`);
+        `);
     }
 
     async function saveFoodLog() {
@@ -956,7 +956,7 @@
                 else if(d.score >= 50) color = 'bg-accent';
                 else if(d.score >= 25) color = 'bg-warning';
                 
-                return \`
+                return `
                     <div class="flex flex-col items-center gap-1 p-2 rounded-lg \${isToday ? 'ring-2 ring-accent' : ''}" 
                          title="\${d.date}: \${d.score}%">
                         <span class="text-xs text-gray-400">\${dayName}</span>
@@ -965,7 +965,7 @@
                         </div>
                         <span class="text-xs \${isToday ? 'text-accent font-bold' : 'text-gray-500'}">\${dayNum}</span>
                     </div>
-                \`;
+                `;
             }).join('');
         }
         
@@ -1064,7 +1064,7 @@
     }
     
     function editHabitModal(id, name, category, difficulty) {
-        showModal('Edit Habit', \`
+        showModal('Edit Habit', `
             <input id="eh-name" class="w-full p-2 rounded border text-sm mb-2" value="\${name}">
             <select id="eh-cat" class="w-full p-2 rounded border text-sm mb-2">
                 <option value="health" \${category==='health'?'selected':''}>🏃 Health</option>
@@ -1080,7 +1080,7 @@
                 <button onclick="hideModal()" class="flex-1 py-2 rounded border border-gray-600 text-sm">Cancel</button>
                 <button onclick="saveHabitEdit(\${id})" class="flex-1 py-2 rounded bg-accent text-sm">Save</button>
             </div>
-        \`);
+        `);
     }
     
     async function saveHabitEdit(id) {
@@ -1089,15 +1089,15 @@
             category: $('#eh-cat').value,
             difficulty: +$('#eh-diff').value
         };
-        await api(\`/habits/\${id}\`, 'PUT', data);
+        await api(`/habits/\${id}`, 'PUT', data);
         hideModal();
         showToast('Habit updated', 'success');
         loadHabits();
     }
     
     async function deleteHabit(id, name) {
-        if(!confirm(\`Delete "\${name}"? This will deactivate the habit.\`)) return;
-        await api(\`/habits/\${id}\`, 'DELETE');
+        if(!confirm(`Delete "\${name}"? This will deactivate the habit.`)) return;
+        await api(`/habits/\${id}`, 'DELETE');
         showToast('Habit removed', 'info');
         loadHabits();
         loadDash();
