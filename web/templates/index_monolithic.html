@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Life Hack OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        bg: { primary: '#0f0f0f', secondary: '#1a1a1a', card: '#242424' },
+                        accent: '#3b82f6', success: '#10b981', warning: '#f59e0b',
+                        danger: '#ef4444', sobriety: '#14b8a6', streak: '#f97316', xp: '#eab308',
+                        ai: '#8b5cf6'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        body { background: #0f0f0f; font-family: system-ui, -apple-system, sans-serif; }
+        .nav-btn.active { background: #3b82f6; }
+        .card { background: #242424; border: 1px solid #333; }
+        input, textarea, select { background: #1a1a1a !important; border-color: #333 !important; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+        .insight-card { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border: 1px solid #8b5cf650; }
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    </style>
+</head>
+<body class="text-white min-h-screen overflow-x-hidden">
+    <!-- Mobile Header -->
+    <header class="md:hidden fixed top-0 left-0 right-0 bg-bg-secondary z-40 px-4 py-3 flex items-center justify-between border-b border-gray-800 safe-area-inset">
+        <button onclick="toggleNav()" class="p-2 -ml-2 hover:bg-white/10 rounded-lg">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <span class="font-bold text-sm">⚡ LIFE HACK</span>
+        <div id="mobile-xp" class="text-xp text-sm font-bold">0</div>
+    </header>
+
+    <!-- Mobile Nav Overlay -->
+    <div id="nav-overlay" class="md:hidden fixed inset-0 bg-black/80 z-40 hidden" onclick="toggleNav()"></div>
+    
+    <!-- Mobile Nav Drawer -->
+    <nav id="mobile-nav" class="md:hidden fixed left-0 top-0 bottom-0 w-64 bg-bg-secondary z-50 transform -translate-x-full transition-transform p-4 flex flex-col">
+        <div class="flex items-center justify-between mb-6">
+            <span class="font-bold">⚡ LIFE HACK OS</span>
+            <button onclick="toggleNav()" class="p-2 hover:bg-white/10 rounded">&times;</button>
+        </div>
+        <div class="space-y-1 flex-1">
+            <button onclick="nav('dashboard')" data-v="dashboard" class="nav-btn w-full text-left px-4 py-3 rounded-lg">📊 Dashboard</button>
+            <button onclick="nav('habits')" data-v="habits" class="nav-btn w-full text-left px-4 py-3 rounded-lg">✓ Habits</button>
+            <button onclick="nav('projects')" data-v="projects" class="nav-btn w-full text-left px-4 py-3 rounded-lg">📁 Projects</button>
+            <button onclick="nav('checkin')" data-v="checkin" class="nav-btn w-full text-left px-4 py-3 rounded-lg">📝 Check-in</button>
+            <button onclick="nav('walks')" data-v="walks" class="nav-btn w-full text-left px-4 py-3 rounded-lg">🚶 Movement</button>
+            <button onclick="nav('replace')" data-v="replace" class="nav-btn w-full text-left px-4 py-3 rounded-lg">🔄 Redirect</button>
+            <button onclick="nav('food')" data-v="food" class="nav-btn w-full text-left px-4 py-3 rounded-lg">🍽️ Food</button>
+            <button onclick="nav('fasting')" data-v="fasting" class="nav-btn w-full text-left px-4 py-3 rounded-lg">⏱️ Fasting</button>
+            <button onclick="nav('wishlist')" data-v="wishlist" class="nav-btn w-full text-left px-4 py-3 rounded-lg">🗺️ Wishlist</button>
+            <button onclick="nav('deepwork')" data-v="deepwork" class="nav-btn w-full text-left px-4 py-3 rounded-lg">🧠 Deep Work</button>
+            <button onclick="nav('settings')" data-v="settings" class="nav-btn w-full text-left px-4 py-3 rounded-lg">⚙️ Settings</button>
+        </div>
+        <div class="card rounded-lg p-3 mt-4">
+            <div id="nav-xp" class="text-xp font-bold">0 XP</div>
+            <div id="nav-level" class="text-xs text-gray-400">Level 1</div>
+        </div>
+        <a href="/logout" class="mt-4 text-center text-gray-500 text-sm py-2">Logout</a>
+    </nav>
+
+    <div class="flex min-h-screen">
+        <!-- Desktop Sidebar -->
+        <aside class="hidden md:flex w-52 bg-bg-secondary flex-col p-4 fixed left-0 top-0 bottom-0">
+            <h1 class="text-base font-bold mb-6">⚡ LIFE HACK OS</h1>
+            <div class="space-y-1 flex-1">
+                <button onclick="nav('dashboard')" data-v="dashboard" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg text-sm">📊 Dashboard</button>
+                <button onclick="nav('habits')" data-v="habits" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg text-sm">✓ Habits</button>
+                <button onclick="nav('projects')" data-v="projects" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg text-sm">📁 Projects</button>
+                <button onclick="nav('checkin')" data-v="checkin" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg text-sm">📝 Check-in</button>
+                <button onclick="nav('walks')" data-v="walks" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg text-sm">🚶 Movement</button>
+                <button onclick="nav('replace')" data-v="replace" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg text-sm">🔄 Redirect</button>
+                <button onclick="nav('food')" data-v="food" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg text-sm">🍽️ Food</button>
+                <button onclick="nav('fasting')" data-v="fasting" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg text-sm">⏱️ Fasting</button>
+                <button onclick="nav('wishlist')" data-v="wishlist" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg text-sm">🗺️ Wishlist</button>
+                <button onclick="nav('deepwork')" data-v="deepwork" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg text-sm">🧠 Deep Work</button>
+                <button onclick="nav('settings')" data-v="settings" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg text-sm">⚙️ Settings</button>
+            </div>
+            <div class="card rounded-lg p-3">
+                <div id="desk-xp" class="text-xp font-bold text-sm">0 XP</div>
+                <div id="desk-level" class="text-xs text-gray-400">Level 1</div>
+            </div>
+            <a href="/logout" class="mt-3 text-center text-gray-500 text-xs py-2 hover:text-white">Logout</a>
+        </aside>
+
+        <!-- Main -->
+        <main class="flex-1 md:ml-52 pt-14 md:pt-0 pb-6 px-4 md:px-6">
+            <!-- DASHBOARD -->
+            <div id="v-dashboard" class="view">
+                <!-- Today's Header -->
+                <div class="mt-4 mb-4">
+                    <div class="text-gray-400 text-sm" id="d-date-label">Today</div>
+                    <h2 class="text-2xl font-bold" id="d-date">Saturday, March 15</h2>
+                </div>
+                
+                <!-- Daily Score Card -->
+                <div class="card rounded-xl p-4 mb-4 bg-gradient-to-br from-bg-card to-bg-secondary border-2 border-accent/30">
+                    <div class="flex items-center gap-4">
+                        <!-- Score Circle -->
+                        <div class="relative w-24 h-24 flex-shrink-0">
+                            <svg class="w-24 h-24 transform -rotate-90">
+                                <circle cx="48" cy="48" r="40" stroke="#333" stroke-width="8" fill="none"/>
+                                <circle id="d-score-ring" cx="48" cy="48" r="40" stroke="url(#scoreGradient)" stroke-width="8" fill="none"
+                                    stroke-linecap="round" stroke-dasharray="251.2" stroke-dashoffset="251.2" class="transition-all duration-1000"/>
+                                <defs>
+                                    <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" style="stop-color:#10b981"/>
+                                        <stop offset="100%" style="stop-color:#3b82f6"/>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <span id="d-score" class="text-2xl font-bold">0%</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Score Breakdown -->
+                        <div class="flex-1 space-y-1">
+                            <div class="text-sm font-bold mb-2">Daily Score</div>
+                            <div class="flex items-center gap-2 text-xs">
+                                <span class="w-16 text-gray-400">Habits</span>
+                                <div class="flex-1 h-1.5 bg-bg-secondary rounded-full overflow-hidden">
+                                    <div id="d-bar-habits" class="h-full bg-success transition-all" style="width:0%"></div>
+                                </div>
+                                <span id="d-habits-pct" class="w-8 text-right">0%</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs">
+                                <span class="w-16 text-gray-400">Check-in</span>
+                                <div class="flex-1 h-1.5 bg-bg-secondary rounded-full overflow-hidden">
+                                    <div id="d-bar-checkin" class="h-full bg-accent transition-all" style="width:0%"></div>
+                                </div>
+                                <span id="d-checkin-status" class="w-8 text-right">—</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs">
+                                <span class="w-16 text-gray-400">Food</span>
+                                <div class="flex-1 h-1.5 bg-bg-secondary rounded-full overflow-hidden">
+                                    <div id="d-bar-food" class="h-full bg-xp transition-all" style="width:0%"></div>
+                                </div>
+                                <span id="d-food-count" class="w-8 text-right">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Yesterday Comparison -->
+                <div class="grid grid-cols-2 gap-2 mb-4">
+                    <div class="card rounded-lg p-3">
+                        <div class="text-xs text-gray-400 mb-1">vs Yesterday</div>
+                        <div class="flex items-center gap-2">
+                            <span id="d-delta-icon" class="text-lg">—</span>
+                            <span id="d-delta-text" class="text-sm font-bold">Loading...</span>
+                        </div>
+                    </div>
+                    <div class="card rounded-lg p-3">
+                        <div class="text-xs text-gray-400 mb-1">Points Today</div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xp text-lg font-bold" id="d-points-today">0</span>
+                            <span id="d-points-delta" class="text-xs text-gray-400"></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tips -->
+                <div id="d-tips" class="card rounded-lg p-3 mb-4 border-l-4 border-ai bg-ai/5 hidden">
+                    <div class="text-xs text-ai font-bold mb-1">💡 Tip</div>
+                    <div id="d-tips-text" class="text-sm"></div>
+                </div>
+                
+                <!-- AI Insights -->
+                <div id="insights-container" class="mb-4 space-y-2"></div>
+                
+                <!-- Quick Stats Row -->
+                <div class="grid grid-cols-4 gap-2 mb-4">
+                    <div class="card rounded-lg p-2 text-center">
+                        <div class="text-lg font-bold text-xp" id="s-xp">0</div>
+                        <div class="text-xs text-gray-400">XP</div>
+                    </div>
+                    <div class="card rounded-lg p-2 text-center">
+                        <div class="text-lg font-bold text-accent" id="s-level">1</div>
+                        <div class="text-xs text-gray-400">Level</div>
+                    </div>
+                    <div class="card rounded-lg p-2 text-center">
+                        <div class="text-lg font-bold text-sobriety" id="s-sober">0d</div>
+                        <div class="text-xs text-gray-400">Sober</div>
+                    </div>
+                    <div class="card rounded-lg p-2 text-center">
+                        <div class="text-lg font-bold text-streak" id="s-streak">0</div>
+                        <div class="text-xs text-gray-400">Streak</div>
+                    </div>
+                </div>
+                
+                <!-- Habits -->
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="font-bold text-sm">Today's Habits</h3>
+                    <span id="h-progress" class="text-xs text-gray-400">0/0</span>
+                </div>
+                <div id="dash-habits" class="space-y-1.5 mb-4"></div>
+                
+                <!-- Projects -->
+                <h3 class="font-bold text-sm mb-2">Projects</h3>
+                <div id="dash-projects" class="space-y-2 mb-4"></div>
+
+                <!-- Calendar -->
+                <div id="d-calendar-section" class="hidden mb-4">
+                    <h3 class="font-bold text-sm mb-2">Today's Schedule</h3>
+                    <div id="dash-calendar" class="space-y-1.5"></div>
+                </div>
+                
+                <!-- Daily History -->
+                <div class="mt-6">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold text-sm">Last 7 Days</h3>
+                        <span class="text-xs text-gray-400" id="d-week-avg">Avg: —%</span>
+                    </div>
+                    <div id="d-history" class="grid grid-cols-7 gap-1"></div>
+                </div>
+            </div>
+
+            <!-- HABITS -->
+            <div id="v-habits" class="view hidden">
+                <div class="flex justify-between items-center mt-4 mb-4">
+                    <h2 class="text-xl font-bold">Habits</h2>
+                    <button onclick="addHabitModal()" class="bg-accent px-3 py-1.5 rounded-lg text-sm">+ Add</button>
+                </div>
+                <div id="habits-list" class="space-y-2"></div>
+            </div>
+
+            <!-- PROJECTS -->
+            <div id="v-projects" class="view hidden">
+                <div class="flex justify-between items-center mt-4 mb-4">
+                    <h2 class="text-xl font-bold">Projects</h2>
+                    <button onclick="addProjectModal()" class="bg-accent px-3 py-1.5 rounded-lg text-sm">+ New</button>
+                </div>
+                <div id="projects-list" class="space-y-3"></div>
+            </div>
+
+            <!-- CHECKIN -->
+            <div id="v-checkin" class="view hidden">
+                <h2 class="text-xl font-bold mt-4 mb-4">Daily Check-in</h2>
+                <div class="space-y-3 max-w-lg">
+                    <div class="card rounded-lg p-3">
+                        <label class="text-xs text-gray-400 block mb-1">What did I complete?</label>
+                        <textarea id="ci-done" class="w-full rounded p-2 text-sm border" rows="2"></textarea>
+                    </div>
+                    <div class="card rounded-lg p-3">
+                        <label class="text-sm text-sobriety block mb-2">🛡️ Avoided alcohol?</label>
+                        <div class="flex gap-4">
+                            <label class="flex items-center gap-2"><input type="radio" name="ci-alc" value="1" checked class="w-5 h-5"> Yes</label>
+                            <label class="flex items-center gap-2"><input type="radio" name="ci-alc" value="0" class="w-5 h-5"> No</label>
+                        </div>
+                    </div>
+                    <div class="card rounded-lg p-3">
+                        <label class="text-sm text-accent block mb-2">🚀 Worked on future?</label>
+                        <div class="flex gap-4">
+                            <label class="flex items-center gap-2"><input type="radio" name="ci-future" value="1" class="w-5 h-5"> Yes</label>
+                            <label class="flex items-center gap-2"><input type="radio" name="ci-future" value="0" checked class="w-5 h-5"> No</label>
+                        </div>
+                    </div>
+                    <div class="card rounded-lg p-3 grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-xs text-gray-400">Mood</label>
+                            <input type="range" id="ci-mood" min="1" max="5" value="3" class="w-full">
+                            <div class="text-center text-accent" id="ci-mood-v">3</div>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-400">Energy</label>
+                            <input type="range" id="ci-energy" min="1" max="5" value="3" class="w-full">
+                            <div class="text-center text-warning" id="ci-energy-v">3</div>
+                        </div>
+                    </div>
+                    <div class="card rounded-lg p-3">
+                        <label class="text-xs text-gray-400 block mb-1">Tomorrow's focus?</label>
+                        <input id="ci-improve" class="w-full rounded p-2 text-sm border">
+                    </div>
+                    <button onclick="saveCheckin()" class="w-full bg-success py-3 rounded-lg font-bold">Complete ✓</button>
+                </div>
+            </div>
+
+            <!-- WALKS -->
+            <div id="v-walks" class="view hidden">
+                <div class="flex justify-between items-center mt-4 mb-4">
+                    <h2 class="text-xl font-bold">Movement</h2>
+                    <button onclick="addWalkModal()" class="bg-success px-3 py-1.5 rounded-lg text-sm">+ Log</button>
+                </div>
+                <div class="grid grid-cols-2 gap-2 mb-4">
+                    <div class="card rounded-lg p-3">
+                        <div class="text-xs text-gray-400">This Week</div>
+                        <div id="w-stats" class="font-bold text-success">0</div>
+                    </div>
+                    <div class="card rounded-lg p-3">
+                        <div class="text-xs text-gray-400">XP</div>
+                        <div id="w-xp" class="font-bold text-xp">0</div>
+                    </div>
+                </div>
+                <div id="walks-list" class="space-y-2"></div>
+            </div>
+
+            <!-- REPLACE -->
+            <div id="v-replace" class="view hidden">
+                <h2 class="text-xl font-bold mt-4 mb-4">🔄 Redirect Urge</h2>
+                <div class="max-w-lg space-y-3">
+                    <div class="card rounded-lg p-3">
+                        <label class="text-xs text-gray-400 block mb-2">Urge Level</label>
+                        <div class="flex gap-3 flex-wrap">
+                            <label class="flex items-center gap-1"><input type="radio" name="urge" value="1" class="w-5 h-5"> 1</label>
+                            <label class="flex items-center gap-1"><input type="radio" name="urge" value="2" class="w-5 h-5"> 2</label>
+                            <label class="flex items-center gap-1"><input type="radio" name="urge" value="3" checked class="w-5 h-5"> 3</label>
+                            <label class="flex items-center gap-1"><input type="radio" name="urge" value="4" class="w-5 h-5"> 4</label>
+                            <label class="flex items-center gap-1"><input type="radio" name="urge" value="5" class="w-5 h-5"> 5</label>
+                        </div>
+                    </div>
+                    <div class="card rounded-lg p-3">
+                        <label class="text-xs text-gray-400 block mb-2">What instead?</label>
+                        <div id="rep-actions" class="space-y-1 max-h-48 overflow-y-auto"></div>
+                    </div>
+                    <button onclick="logReplace()" class="w-full bg-sobriety py-3 rounded-lg font-bold">Redirect ✓</button>
+                    <h3 class="font-bold text-sm pt-2">Recent</h3>
+                    <div id="rep-logs" class="space-y-1"></div>
+                </div>
+            </div>
+
+            <!-- FOOD -->
+            <div id="v-food" class="view hidden">
+                <div class="flex justify-between items-center mt-4 mb-4">
+                    <h2 class="text-xl font-bold">🍽️ Food Log</h2>
+                    <button onclick="addFoodModal()" class="bg-accent px-3 py-1.5 rounded-lg text-sm">+ Log Meal</button>
+                </div>
+                
+                <!-- Today's Summary -->
+                <div class="card rounded-lg p-4 mb-4">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="text-xs text-gray-400">Today's Calories</div>
+                            <div id="food-today-cals" class="text-2xl font-bold text-xp">0</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-gray-400">Goal</div>
+                            <div class="text-lg text-gray-300">2000</div>
+                        </div>
+                    </div>
+                    <div class="h-2 bg-bg-secondary rounded-full mt-2 overflow-hidden">
+                        <div id="food-cal-bar" class="h-full bg-gradient-to-r from-success to-xp" style="width:0%"></div>
+                    </div>
+                </div>
+                
+                <!-- Food Logs -->
+                <h3 class="font-bold text-sm mb-2">Recent Meals</h3>
+                <div id="food-list" class="space-y-2"></div>
+            </div>
+
+            <!-- FASTING -->
+            <div id="v-fasting" class="view hidden">
+                <h2 class="text-xl font-bold mt-4 mb-4">⏱️ Fasting Tracker</h2>
+                
+                <div id="fast-active-card" class="card rounded-xl p-6 mb-4 text-center border-2 border-accent/20 hidden">
+                    <div class="text-xs text-gray-400 uppercase tracking-widest mb-2">Active Fast</div>
+                    <div id="fast-timer" class="text-4xl font-mono font-bold text-accent mb-4">00:00:00</div>
+                    <div class="h-2 bg-bg-secondary rounded-full overflow-hidden max-w-xs mx-auto mb-4">
+                        <div id="fast-progress" class="h-full bg-accent" style="width: 0%"></div>
+                    </div>
+                    <div class="flex justify-center gap-4 text-xs text-gray-400 mb-6">
+                        <div>Started: <span id="fast-start-time" class="text-gray-200">—</span></div>
+                        <div>Target: <span id="fast-target-hours" class="text-gray-200">—</span>h</div>
+                    </div>
+                    <button onclick="endFastModal()" class="bg-danger/20 text-danger border border-danger/50 px-6 py-2 rounded-full font-bold hover:bg-danger hover:text-white transition-all">End Fast</button>
+                </div>
+
+                <div id="fast-start-card" class="card rounded-xl p-6 mb-4 text-center border-2 border-dashed border-gray-700 hidden">
+                    <div class="text-gray-400 mb-4">No active fast. Ready to start?</div>
+                    <div class="flex justify-center gap-2 mb-6">
+                        <button onclick="startFast(16)" class="bg-bg-secondary px-4 py-2 rounded-lg text-sm border border-gray-700 hover:border-accent">16h</button>
+                        <button onclick="startFast(18)" class="bg-bg-secondary px-4 py-2 rounded-lg text-sm border border-gray-700 hover:border-accent">18h</button>
+                        <button onclick="startFast(20)" class="bg-bg-secondary px-4 py-2 rounded-lg text-sm border border-gray-700 hover:border-accent">20h</button>
+                        <button onclick="startFast(24)" class="bg-bg-secondary px-4 py-2 rounded-lg text-sm border border-gray-700 hover:border-accent">24h</button>
+                    </div>
+                    <button onclick="startFast(16)" class="bg-accent px-8 py-3 rounded-xl font-bold shadow-lg shadow-accent/20">Start Fast Now</button>
+                </div>
+
+                <h3 class="font-bold text-sm mb-2">History</h3>
+                <div id="fast-history" class="space-y-2"></div>
+            </div>
+
+            <!-- WISHLIST -->
+            <div id="v-wishlist" class="view hidden">
+                <div class="flex justify-between items-center mt-4 mb-4">
+                    <h2 class="text-xl font-bold">🗺️ Wishlist</h2>
+                    <button onclick="addWishModal()" class="bg-accent px-3 py-1.5 rounded-lg text-sm">+ Add Place</button>
+                </div>
+                <div id="wishlist-list" class="grid grid-cols-1 gap-3"></div>
+            </div>
+
+            <!-- DEEP WORK -->
+            <div id="v-deepwork" class="view hidden">
+                <h2 class="text-xl font-bold mt-4 mb-4">🧠 Deep Work</h2>
+                
+                <div id="dw-active-card" class="card rounded-xl p-6 mb-4 text-center border-2 border-ai/20 hidden">
+                    <div class="text-xs text-ai uppercase tracking-widest mb-2">Focus Mode Active</div>
+                    <div id="dw-timer" class="text-4xl font-mono font-bold text-white mb-4">00:00:00</div>
+                    <div id="dw-project-name" class="text-sm text-gray-400 mb-6 italic">General Focus</div>
+                    <button onclick="endDeepWork()" class="bg-ai/20 text-ai border border-ai/50 px-8 py-2 rounded-full font-bold hover:bg-ai hover:text-white transition-all">End Session</button>
+                </div>
+
+                <div id="dw-start-card" class="card rounded-xl p-6 mb-4 hidden">
+                    <h3 class="text-sm font-bold mb-4">Start New Session</h3>
+                    <select id="dw-project" class="w-full p-2 rounded border text-sm mb-3">
+                        <option value="">General Focus</option>
+                    </select>
+                    <textarea id="dw-notes" class="w-full p-2 rounded border text-sm mb-4" rows="2" placeholder="What are you working on?"></textarea>
+                    <button onclick="startDeepWork()" class="w-full bg-ai py-3 rounded-xl font-bold shadow-lg shadow-ai/20">Enter Deep Work</button>
+                </div>
+
+                <h3 class="font-bold text-sm mb-2">Recent Sessions</h3>
+                <div id="dw-history" class="space-y-2"></div>
+            </div>
+
+            <!-- SETTINGS -->
+            <div id="v-settings" class="view hidden">
+                <h2 class="text-xl font-bold mt-4 mb-4">⚙️ Settings</h2>
+                <div class="max-w-lg space-y-4">
+                    <h3 class="font-bold text-sm text-gray-400">Integrations</h3>
+                    
+                    <!-- Vikunja -->
+                    <div class="card rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xl">📋</span>
+                                <div>
+                                    <div class="font-bold">Vikunja</div>
+                                    <div class="text-xs text-gray-400">Task management</div>
+                                </div>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="int-vikunja" class="sr-only peer" onchange="toggleVikunja(this.checked)">
+                                <div class="w-11 h-6 bg-gray-700 peer-focus:ring-2 peer-focus:ring-accent rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
+                            </label>
+                        </div>
+                        <div id="vikunja-status" class="text-xs"></div>
+                    </div>
+
+                    <!-- Google Calendar -->
+                    <div class="card rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xl">📅</span>
+                                <div>
+                                    <div class="font-bold">Google Calendar</div>
+                                    <div class="text-xs text-gray-400">Events & reminders</div>
+                                </div>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="int-gcal" class="sr-only peer" onchange="toggleGCal(this.checked)">
+                                <div class="w-11 h-6 bg-gray-700 peer-focus:ring-2 peer-focus:ring-accent rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
+                            </label>
+                        </div>
+                        <div id="gcal-status" class="text-xs"></div>
+                    </div>
+
+                    <!-- Firefly III -->
+                    <div class="card rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xl">💰</span>
+                                <div>
+                                    <div class="font-bold">Firefly III</div>
+                                    <div class="text-xs text-gray-400">Personal finance</div>
+                                </div>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="int-firefly" class="sr-only peer" onchange="toggleFirefly(this.checked)">
+                                <div class="w-11 h-6 bg-gray-700 peer-focus:ring-2 peer-focus:ring-accent rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
+                            </label>
+                        </div>
+                        <div id="firefly-status" class="text-xs"></div>
+                    </div>
+
+                    <p class="text-xs text-gray-500 pt-4">More integrations coming soon: Health tracking, Notifications, etc.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="fixed inset-0 bg-black/80 z-50 hidden items-center justify-center p-4">
+        <div class="bg-bg-card rounded-xl p-4 w-full max-w-sm border border-gray-700 max-h-[80vh] overflow-y-auto">
+            <h3 id="modal-title" class="font-bold mb-3"></h3>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script>
+    const $ = s => document.querySelector(s);
+    const $$ = s => document.querySelectorAll(s);
+    let cats = {};
+
+    async function api(e, m='GET', d=null) {
+        const o = {method:m, headers:{'Content-Type':'application/json'}, credentials:'same-origin'};
+        if(d) o.body = JSON.stringify(d);
+        const r = await fetch('/api'+e, o);
+        if(r.status === 401) { location.href = '/login'; return null; }
+        return r.json();
+    }
+
+    function toggleNav() {
+        const nav = $('#mobile-nav'), ov = $('#nav-overlay');
+        nav.classList.toggle('-translate-x-full');
+        ov.classList.toggle('hidden');
+    }
+
+    function nav(v) {
+        toggleNav();
+        $$('.view').forEach(x => x.classList.add('hidden'));
+        $$('.nav-btn').forEach(x => x.classList.remove('active'));
+        $(`#v-${v}`).classList.remove('hidden');
+        $$(`[data-v="${v}"]`).forEach(x => x.classList.add('active'));
+        load(v);
+    }
+
+    async function load(v) {
+        if(v==='dashboard') await loadDash();
+        else if(v==='habits') await loadHabits();
+        else if(v==='projects') await loadProjects();
+        else if(v==='checkin') await loadCheckin();
+        else if(v==='walks') await loadWalks();
+        else if(v==='replace') await loadReplace();
+        else if(v==='food') await loadFood();
+        else if(v==='fasting') await loadFasting();
+        else if(v==='wishlist') await loadWishlist();
+        else if(v==='deepwork') await loadDeepWork();
+        else if(v==='settings') await loadSettings();
+    }
+
+    let dwInterval;
+    async function loadDeepWork() {
+        const dw = await api('/deepwork/status');
+        const projects = await api('/projects');
+        if(!dw) return;
+
+        if(projects) {
+            $('#dw-project').innerHTML = '<option value=\"\">General Focus</option>' + 
+                projects.map(p => `<option value=\"${p.id}\">${p.title || p.name}</option>`).join('');
+        }
+        
+        clearInterval(dwInterval);
+        if(dw.active) {
+            $('#dw-active-card').classList.remove('hidden');
+            $('#dw-start-card').classList.add('hidden');
+            $('#dw-project-name').textContent = dw.active.project_name || 'General Focus';
+            
+            const startStr = dw.active.started_at.replace(' ', 'T');
+            const start = new Date(startStr).getTime();
+            
+            dwInterval = setInterval(() => {
+                const elapsed = new Date().getTime() - start;
+                const h = Math.floor(elapsed / 3600000);
+                const m = Math.floor((elapsed % 3600000) / 60000);
+                const s = Math.floor((elapsed % 60000) / 1000);
+                $('#dw-timer').textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+            }, 1000);
+        } else {
+            $('#dw-active-card').classList.add('hidden');
+            $('#dw-start-card').classList.remove('hidden');
+        }
+
+        $('#dw-history').innerHTML = dw.history.map(h => `
+            <div class=\"card rounded-lg p-3 flex justify-between items-center text-sm\">
+                <div>
+                    <div class=\"font-medium\">${h.project_name || 'General Focus'}</div>
+                    <div class=\"text-xs text-gray-500\">${h.duration_minutes}m session • ${new Date(h.ended_at).toLocaleDateString()}</div>
+                </div>
+                <div class=\"text-xp font-bold\">+${h.points_earned}</div>
+            </div>
+        `).join('') || '<p class=\"text-gray-500 text-sm\">No recent sessions</p>';
+    }
+
+    async function startDeepWork() {
+        await api('/deepwork/start', 'POST', {
+            project_id: $('#dw-project').value || null,
+            notes: $('#dw-notes').value
+        });
+        showToast('Focus Mode engaged', 'info');
+        loadDeepWork();
+    }
+
+    async function endDeepWork() {
+        const r = await api('/deepwork/end', 'POST');
+        if(r) showToast(`Session complete: ${r.duration}m! +${r.points} XP`, 'success');
+        loadDeepWork(); loadStats();
+    }
+
+    let fastInterval;
+    async function loadFasting() {
+        const f = await api('/fasting/status');
+        if(!f) return;
+        
+        clearInterval(fastInterval);
+        if(f.active) {
+            $('#fast-active-card').classList.remove('hidden');
+            $('#fast-start-card').classList.add('hidden');
+            $('#fast-target-hours').textContent = f.active.target_hours;
+            $('#fast-start-time').textContent = new Date(f.active.start_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+            
+            const start = new Date(f.active.start_at).getTime();
+            const target = f.active.target_hours * 3600000;
+            
+            fastInterval = setInterval(() => {
+                const now = new Date().getTime();
+                const elapsed = now - start;
+                const hours = Math.floor(elapsed / 3600000);
+                const mins = Math.floor((elapsed % 3600000) / 60000);
+                const secs = Math.floor((elapsed % 60000) / 1000);
+                $('#fast-timer').textContent = `${String(hours).padStart(2,'0')}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+                
+                const pct = Math.min(100, (elapsed / target) * 100);
+                $('#fast-progress').style.width = pct + '%';
+                if(pct >= 100) $('#fast-timer').classList.replace('text-accent', 'text-success');
+            }, 1000);
+        } else {
+            $('#fast-active-card').classList.add('hidden');
+            $('#fast-start-card').classList.remove('hidden');
+        }
+
+        $('#fast-history').innerHTML = f.history.map(h => `
+            <div class="card rounded-lg p-3 flex justify-between items-center text-sm">
+                <div>
+                    <div class="font-medium">${new Date(h.end_at).toLocaleDateString()} Fast</div>
+                    <div class="text-xs text-gray-500">${Math.round((new Date(h.end_at)-new Date(h.start_at))/3600000*10)/10}h duration (Goal: ${h.target_hours}h)</div>
+                </div>
+                <div class="text-xp font-bold">+${Math.floor((new Date(h.end_at)-new Date(h.start_at))/360000)}</div>
+            </div>
+        `).join('') || '<p class="text-gray-500 text-sm">No history</p>';
+    }
+
+    async function startFast(hours) {
+        await api('/fasting/start', 'POST', {target: hours, mood: 3});
+        showToast('Fast started!', 'success');
+        loadFasting();
+    }
+
+    function endFastModal() {
+        showModal('End Fast', `
+            <p class="text-sm mb-4">Ready to break your fast? How do you feel?</p>
+            <input type="range" id="ef-mood" min="1" max="5" value="3" class="w-full mb-3">
+            <textarea id="ef-notes" class="w-full p-2 rounded border text-sm mb-3" rows="2" placeholder="Notes..."></textarea>
+            <div class="flex gap-2">
+                <button onclick="hideModal()" class="flex-1 py-2 rounded border border-gray-600 text-sm">Cancel</button>
+                <button onclick="saveEndFast()" class="flex-1 py-2 rounded bg-danger text-sm">End Now</button>
+            </div>
+        `);
+    }
+
+    async function saveEndFast() {
+        const r = await api('/fasting/end', 'POST', {mood: +$('#ef-mood').value, notes: $('#ef-notes').value});
+        hideModal();
+        if(r) showToast(`Fast ended: ${r.hours}h! +${r.points} XP`, 'success');
+        loadFasting(); loadStats();
+    }
+
+    async function loadWishlist() {
+        const w = await api('/wishlist');
+        if(!w) return;
+        $('#wishlist-list').innerHTML = w.map(x => `
+            <div class="card rounded-lg p-4 flex gap-4">
+                <div class="w-12 h-12 rounded-lg bg-bg-secondary flex items-center justify-center text-2xl">📍</div>
+                <div class="flex-1 min-w-0">
+                    <div class="font-bold truncate">${x.title}</div>
+                    <div class="text-xs text-accent">${x.location || 'Unknown location'}</div>
+                    <div class="text-sm text-gray-400 mt-1">${x.description || ''}</div>
+                </div>
+            </div>
+        `).join('') || '<p class="text-gray-500 text-sm">Wishlist is empty</p>';
+    }
+
+    function addWishModal() {
+        showModal('Add to Wishlist', `
+            <input id="nw-title" class="w-full p-2 rounded border text-sm mb-2" placeholder="Name of place">
+            <input id="nw-location" class="w-full p-2 rounded border text-sm mb-2" placeholder="Location">
+            <textarea id="nw-desc" class="w-full p-2 rounded border text-sm mb-3" rows="2" placeholder="Description..."></textarea>
+            <div class="flex gap-2">
+                <button onclick="hideModal()" class="flex-1 py-2 rounded border border-gray-600 text-sm">Cancel</button>
+                <button onclick="saveWish()" class="flex-1 py-2 rounded bg-accent text-sm">Add</button>
+            </div>
+        `);
+    }
+
+    async function saveWish() {
+        const title = $('#nw-title').value.trim();
+        if(!title) return;
+        await api('/wishlist', 'POST', {title, location: $('#nw-location').value, description: $('#nw-desc').value});
+        hideModal();
+        showToast('Added to wishlist', 'success');
+        loadWishlist();
+    }
+
+    async function loadFood() {
+        const f = await api('/food');
+        if(!f) return;
+        
+        $('#food-today-cals').textContent = f.today_calories;
+        const pct = Math.min(100, Math.round((f.today_calories / 2000) * 100));
+        $('#food-cal-bar').style.width = pct + '%';
+        
+        if(!f.logs.length) {
+            $('#food-list').innerHTML = '<p class="text-gray-500 text-sm">No meals logged yet. Click + Log Meal to start.</p>';
+            return;
+        }
+        
+        $('#food-list').innerHTML = f.logs.map(m => {
+            const time = new Date(m.logged_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const date = new Date(m.logged_at).toLocaleDateString();
+            return `
+                <div class="card rounded-lg p-3">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <div class="font-medium">${m.description}</div>
+                            <div class="text-xs text-gray-500">${m.meal_type} • ${date} ${time}</div>
+                            ${m.ai_analysis ? `<div class="text-xs text-ai mt-1">🤖 ${m.ai_analysis}</div>` : ''}
+                        </div>
+                        <div class="text-right text-sm">
+                            ${m.calories ? `<div class="text-xp font-bold">${m.calories} cal</div>` : ''}
+                            ${m.protein_g ? `<div class="text-xs text-gray-400">P:${m.protein_g}g C:${m.carbs_g || 0}g F:${m.fat_g || 0}g</div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function addFoodModal() {
+        showModal('Log Meal', `
+            <select id="nf-type" class="w-full p-2 rounded border text-sm mb-2">
+                <option value="breakfast">🌅 Breakfast</option>
+                <option value="lunch">☀️ Lunch</option>
+                <option value="dinner">🌙 Dinner</option>
+                <option value="snack">🍿 Snack</option>
+            </select>
+            <textarea id="nf-desc" class="w-full p-2 rounded border text-sm mb-2" rows="2" placeholder="What did you eat?"></textarea>
+            <div class="grid grid-cols-2 gap-2 mb-3">
+                <input id="nf-cal" type="number" class="p-2 rounded border text-sm" placeholder="Calories (optional)">
+                <input id="nf-protein" type="number" class="p-2 rounded border text-sm" placeholder="Protein g">
+            </div>
+            <div class="flex gap-2">
+                <button onclick="hideModal()" class="flex-1 py-2 rounded border border-gray-600 text-sm">Cancel</button>
+                <button onclick="saveFoodLog()" class="flex-1 py-2 rounded bg-accent text-sm">Log</button>
+            </div>
+        `);
+    }
+
+    async function saveFoodLog() {
+        const desc = $('#nf-desc').value.trim();
+        if(!desc) return alert('Describe what you ate');
+        
+        const data = {
+            meal_type: $('#nf-type').value,
+            description: desc,
+            calories: +$('#nf-cal').value || null,
+            protein_g: +$('#nf-protein').value || null
+        };
+        
+        const r = await api('/food', 'POST', data);
+        hideModal();
+        if(r) showToast('Meal logged!', 'success');
+        loadFood();
+    }
+
+    async function loadSettings() {
+        const int = await api('/integrations');
+        if(!int) return;
+        
+        // Vikunja
+        $('#int-vikunja').checked = int.vikunja?.enabled || false;
+        $('#vikunja-status').innerHTML = int.vikunja?.connected 
+            ? '<span class="text-success">✓ Connected</span>' 
+            : (int.vikunja?.enabled ? '<span class="text-warning">⚠ Not connected</span>' : '<span class="text-gray-500">Disabled</span>');
+        
+        // Google Calendar
+        $('#int-gcal').checked = int.google_calendar?.enabled || false;
+        $('#gcal-status').innerHTML = int.google_calendar?.connected 
+            ? '<span class="text-success">✓ Connected</span>' 
+            : (int.google_calendar?.enabled ? '<span class="text-warning">⚠ Not connected</span>' : '<span class="text-gray-500">Disabled</span>');
+        
+        // Firefly
+        $('#int-firefly').checked = int.firefly?.enabled || false;
+        $('#firefly-status').innerHTML = int.firefly?.connected 
+            ? '<span class="text-success">✓ Connected</span>' 
+            : (int.firefly?.enabled ? '<span class="text-warning">⚠ Not connected</span>' : '<span class="text-gray-500">Disabled</span>');
+    }
+
+    async function toggleVikunja(enabled) {
+        if(enabled) {
+            // For now, use default credentials (could show modal for custom)
+            const r = await api('/integrations/vikunja', 'POST', {
+                enabled: true,
+                api_url: 'https://tasks.micinthe.com/api/v1',
+                username: 'dovik@micinthe.com',
+                password: 'Nx2923ZiN0x@!'
+            });
+            if(r?.error) alert('Failed: ' + r.error);
+        } else {
+            await api('/integrations/vikunja', 'POST', {enabled: false});
+        }
+        loadSettings();
+    }
+
+    async function toggleGCal(enabled) {
+        const r = await api('/integrations/google_calendar', 'POST', {
+            enabled,
+            account: 'dovik@micinthe.com'
+        });
+        if(r?.error) alert('Failed: ' + r.error);
+        loadSettings();
+    }
+
+    async function toggleFirefly(enabled) {
+        const r = await api('/integrations/firefly', 'POST', {enabled});
+        if(r?.error) alert('Failed: ' + r.error);
+        loadSettings();
+    }
+
+    async function loadStats() {
+        const s = await api('/stats');
+        if(!s) return;
+        
+        $('#s-xp').textContent = s.total_xp.toLocaleString();
+        $('#s-level').textContent = s.level;
+        $('#s-sober').textContent = s.sobriety_days + 'd';
+        
+        // Calculate best habit streak for display
+        const habits = await api('/habits');
+        if(habits) {
+            const maxStreak = Math.max(0, ...habits.map(h => h.streak || 0));
+            const streakEl = $('#s-streak');
+            if(streakEl) streakEl.textContent = maxStreak;
+        }
+        
+        // Nav displays
+        $('#mobile-xp').textContent = s.total_xp.toLocaleString();
+        $('#nav-xp').textContent = s.total_xp.toLocaleString() + ' XP';
+        $('#nav-level').textContent = `Level ${s.level} • ${s.level_name}`;
+        $('#desk-xp').textContent = s.total_xp.toLocaleString() + ' XP';
+        $('#desk-level').textContent = `Level ${s.level} • ${s.level_name}`;
+    }
+
+    async function loadInsights() {
+        const ins = await api('/insights');
+        const c = $('#insights-container');
+        if(!ins || !ins.length) { c.innerHTML = ''; return; }
+        c.innerHTML = ins.map(i => `
+            <div class="insight-card rounded-lg p-3 relative">
+                <button onclick="dismissInsight(${i.id})" class="absolute top-2 right-2 text-gray-500 hover:text-white">&times;</button>
+                <div class="flex items-start gap-2">
+                    <span class="text-ai text-lg">🤖</span>
+                    <div>
+                        <div class="font-bold text-sm text-ai">${i.title}</div>
+                        <div class="text-xs text-gray-300 mt-1">${i.content}</div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async function dismissInsight(id) {
+        await api(`/insights/${id}/dismiss`, 'POST');
+        loadInsights();
+    }
+
+    async function loadDash() {
+        // Load daily summary first
+        const daily = await api('/daily');
+        if(daily) {
+            // Set date
+            const today = new Date();
+            const options = { weekday: 'long', month: 'long', day: 'numeric' };
+            $('#d-date').textContent = today.toLocaleDateString('en-US', options);
+            
+            // Daily score
+            const score = daily.today.score || 0;
+            $('#d-score').textContent = score + '%';
+            
+            // Animate score ring (circumference = 2 * PI * 40 = 251.2)
+            const offset = 251.2 - (251.2 * score / 100);
+            $('#d-score-ring').style.strokeDashoffset = offset;
+            
+            // Score breakdown bars
+            $('#d-bar-habits').style.width = daily.today.habits_pct + '%';
+            $('#d-habits-pct').textContent = daily.today.habits_pct + '%';
+            
+            $('#d-bar-checkin').style.width = daily.today.checkin_done ? '100%' : '0%';
+            $('#d-checkin-status').textContent = daily.today.checkin_done ? '✓' : '—';
+            
+            const foodPct = Math.min(100, daily.today.food_logged * 33);
+            $('#d-bar-food').style.width = foodPct + '%';
+            $('#d-food-count').textContent = daily.today.food_logged;
+            
+            // Yesterday comparison
+            const delta = daily.deltas.score;
+            if(delta > 0) {
+                $('#d-delta-icon').textContent = '📈';
+                $('#d-delta-text').textContent = `+${delta}% better`;
+                $('#d-delta-text').className = 'text-sm font-bold text-success';
+            } else if(delta < 0) {
+                $('#d-delta-icon').textContent = '📉';
+                $('#d-delta-text').textContent = `${delta}% behind`;
+                $('#d-delta-text').className = 'text-sm font-bold text-danger';
+            } else {
+                $('#d-delta-icon').textContent = '➡️';
+                $('#d-delta-text').textContent = 'Same as yesterday';
+                $('#d-delta-text').className = 'text-sm font-bold text-gray-400';
+            }
+            
+            // Points
+            $('#d-points-today').textContent = daily.today.points;
+            const pointsDelta = daily.deltas.points;
+            if(pointsDelta !== 0) {
+                $('#d-points-delta').textContent = pointsDelta > 0 ? `(+${pointsDelta})` : `(${pointsDelta})`;
+            }
+            
+            // Tips
+            if(daily.tips && daily.tips.length > 0) {
+                $('#d-tips').classList.remove('hidden');
+                $('#d-tips-text').textContent = daily.tips[0];
+            } else {
+                $('#d-tips').classList.add('hidden');
+            }
+        }
+        
+        // Load daily history
+        const history = await api('/daily/history?days=7');
+        if(history && history.length) {
+            const avg = Math.round(history.reduce((s,d) => s + d.score, 0) / history.length);
+            $('#d-week-avg').textContent = `Avg: ${avg}%`;
+            
+            // Reverse so oldest is first (left to right)
+            const days = history.reverse();
+            $('#d-history').innerHTML = days.map(d => {
+                const date = new Date(d.date);
+                const dayName = date.toLocaleDateString('en-US', {weekday: 'short'}).charAt(0);
+                const dayNum = date.getDate();
+                const isToday = d.date === new Date().toISOString().split('T')[0];
+                
+                // Color based on score
+                let color = 'bg-gray-700'; // 0-25
+                if(d.score >= 75) color = 'bg-success';
+                else if(d.score >= 50) color = 'bg-accent';
+                else if(d.score >= 25) color = 'bg-warning';
+                
+                return `
+                    <div class="flex flex-col items-center gap-1 p-2 rounded-lg \${isToday ? 'ring-2 ring-accent' : ''}" 
+                         title="\${d.date}: \${d.score}%">
+                        <span class="text-xs text-gray-400">\${dayName}</span>
+                        <div class="w-8 h-8 rounded-lg \${color} flex items-center justify-center text-xs font-bold">
+                            \${d.score}
+                        </div>
+                        <span class="text-xs \${isToday ? 'text-accent font-bold' : 'text-gray-500'}">\${dayNum}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        await loadStats();
+        await loadInsights();
+        const h = await api('/habits');
+        const p = await api('/projects');
+        const cal = await api('/calendar/events?days=1');
+        if(!h) return;
+        
+        // Render Calendar
+        if(cal && cal.enabled && cal.events.length > 0) {
+            $('#d-calendar-section').classList.remove('hidden');
+            $('#dash-calendar').innerHTML = cal.events.map(e => {
+                const time = e.all_day ? 'All Day' : new Date(e.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                return `
+                    <div class="card rounded-lg p-2 flex items-center gap-3 border-l-4 border-accent bg-accent/5">
+                        <div class="text-xs font-bold text-accent w-12 flex-shrink-0">${time}</div>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm truncate font-medium">${e.title}</div>
+                            ${e.location ? `<div class="text-[10px] text-gray-500 truncate">📍 ${e.location}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            $('#d-calendar-section').classList.add('hidden');
+        }
+        
+        const done = h.filter(x=>x.completed).length;
+        $('#h-progress').textContent = `${done}/${h.length}`;
+        
+        $('#dash-habits').innerHTML = h.slice(0,6).map(x => `
+            <div class="card rounded-lg p-2.5 flex items-center gap-2 cursor-pointer hover:bg-white/5 transition-colors habit-row" 
+                 onclick="toggleH(${x.id}, ${!x.completed})" data-id="${x.id}">
+                <div class="w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all
+                    ${x.completed ? 'bg-success border-success' : 'border-gray-500 hover:border-success'}">
+                    ${x.completed ? '<svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>' : ''}
+                </div>
+                <span class="flex-1 truncate text-sm ${x.completed ? 'text-gray-500 line-through' : ''}">${x.name}</span>
+                ${x.streak > 0 ? `<span class="text-streak text-xs font-bold">🔥${x.streak}</span>` : ''}
+                <span class="text-xp text-xs font-bold">+${x.points}</span>
+            </div>
+        `).join('');
+        
+        $('#dash-projects').innerHTML = (p||[]).slice(0,3).map(x => `
+            <div class="card rounded-lg p-2.5">
+                <div class="flex justify-between text-sm mb-1">
+                    <span class="truncate">${x.name}</span>
+                    <span class="text-gray-400">${Math.round(x.progress*100)}%</span>
+                </div>
+                <div class="h-1.5 bg-bg-secondary rounded-full overflow-hidden">
+                    <div class="h-full bg-accent" style="width:${x.progress*100}%"></div>
+                </div>
+            </div>
+        `).join('') || '<p class="text-gray-500 text-sm">No projects</p>';
+    }
+
+    async function loadHabits() {
+        const h = await api('/habits');
+        if(!h) return;
+        $('#habits-list').innerHTML = h.map(x => `
+            <div class="card rounded-lg p-3 flex items-center gap-3 ${x.completed ? 'bg-success/10' : ''}" data-id="${x.id}">
+                <div class="w-7 h-7 rounded-lg border-2 flex items-center justify-center flex-shrink-0 cursor-pointer transition-all
+                    ${x.completed ? 'bg-success border-success' : 'border-gray-500 hover:border-success hover:scale-110'}"
+                    onclick="toggleH(${x.id}, ${!x.completed})"
+                    title="${x.completed ? 'Click to undo' : 'Click to complete'}">
+                    ${x.completed ? '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>' : ''}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="truncate font-medium ${x.completed ? 'text-gray-500 line-through' : ''}">${x.name}</div>
+                    <div class="text-xs text-gray-500 flex items-center gap-2">
+                        <span style="color:${x.category_color}">${x.category_name}</span>
+                        <span>•</span>
+                        <span>${'★'.repeat(x.difficulty)}${'☆'.repeat(5-x.difficulty)}</span>
+                        ${x.completed ? '<span class="text-success">✓ Done</span>' : ''}
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    ${!x.completed ? `
+                        <button onclick="event.stopPropagation(); skipH(${x.id})" 
+                            class="text-xs text-gray-500 hover:text-white px-2 py-1 rounded hover:bg-white/10"
+                            title="Skip for today">Skip</button>
+                    ` : ''}
+                    <button onclick="event.stopPropagation(); editHabitModal(${x.id}, '${x.name.replace(/'/g, "\\'")}', '${x.category}', ${x.difficulty})" 
+                        class="text-xs text-gray-500 hover:text-accent px-1" title="Edit">✏️</button>
+                    <button onclick="event.stopPropagation(); deleteHabit(${x.id}, '${x.name.replace(/'/g, "\\'")}')" 
+                        class="text-xs text-gray-500 hover:text-danger px-1" title="Delete">🗑️</button>
+                    <div class="text-right ml-2">
+                        ${x.streak > 0 ? `<div class="text-streak text-sm font-bold">🔥${x.streak}</div>` : ''}
+                        <div class="text-xp text-sm font-bold">+${x.points}</div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    function editHabitModal(id, name, category, difficulty) {
+        showModal('Edit Habit', `
+            <input id="eh-name" class="w-full p-2 rounded border text-sm mb-2" value="\${name}">
+            <select id="eh-cat" class="w-full p-2 rounded border text-sm mb-2">
+                <option value="health" \${category==='health'?'selected':''}>🏃 Health</option>
+                <option value="productivity" \${category==='productivity'?'selected':''}>💼 Productivity</option>
+                <option value="mindset" \${category==='mindset'?'selected':''}>🧠 Mindset</option>
+                <option value="sobriety" \${category==='sobriety'?'selected':''}>🛡️ Sobriety</option>
+            </select>
+            <div class="mb-3">
+                <label class="text-xs text-gray-400">Difficulty: <span id="eh-diff-v">\${difficulty}</span></label>
+                <input type="range" id="eh-diff" min="1" max="5" value="\${difficulty}" class="w-full" oninput="$('#eh-diff-v').textContent=this.value">
+            </div>
+            <div class="flex gap-2">
+                <button onclick="hideModal()" class="flex-1 py-2 rounded border border-gray-600 text-sm">Cancel</button>
+                <button onclick="saveHabitEdit(\${id})" class="flex-1 py-2 rounded bg-accent text-sm">Save</button>
+            </div>
+        `);
+    }
+    
+    async function saveHabitEdit(id) {
+        const data = {
+            name: $('#eh-name').value.trim(),
+            category: $('#eh-cat').value,
+            difficulty: +$('#eh-diff').value
+        };
+        await api(`/habits/\${id}`, 'PUT', data);
+        hideModal();
+        showToast('Habit updated', 'success');
+        loadHabits();
+    }
+    
+    async function deleteHabit(id, name) {
+        if(!confirm(`Delete "\${name}"? This will deactivate the habit.`)) return;
+        await api(`/habits/\${id}`, 'DELETE');
+        showToast('Habit removed', 'info');
+        loadHabits();
+        loadDash();
+    }
+
+    async function toggleH(id, done) {
+        // Find the element and show loading state
+        const row = document.querySelector(`[data-id="${id}"]`);
+        if(row) row.style.opacity = '0.5';
+        
+        try {
+            if(done) {
+                const r = await api(`/habits/${id}/complete`, 'POST');
+                if(r && r.points) showToast(`+${r.points} XP`, 'success');
+            } else {
+                // Undo completion
+                const r = await api(`/habits/${id}/uncomplete`, 'POST');
+                if(r && r.undone) showToast('Undone', 'info');
+            }
+            // Refresh all displays
+            await Promise.all([loadStats(), loadDash(), loadHabits()]);
+        } catch(e) {
+            showToast('Failed to update', 'error');
+        }
+        
+        if(row) row.style.opacity = '1';
+    }
+    
+    async function skipH(id) {
+        try {
+            await api(`/habits/${id}/skip`, 'POST');
+            showToast('Skipped for today', 'info');
+            await Promise.all([loadDash(), loadHabits()]);
+        } catch(e) {
+            showToast('Failed', 'error');
+        }
+    }
+    
+    function showToast(msg, type='info') {
+        const colors = {success: 'bg-success', error: 'bg-danger', info: 'bg-accent'};
+        const toast = document.createElement('div');
+        toast.className = `fixed bottom-20 left-1/2 -translate-x-1/2 ${colors[type]} text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg z-50 animate-bounce`;
+        toast.textContent = msg;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+    }
+
+    async function loadProjects() {
+        const p = await api('/projects');
+        if(!p || !p.length) {
+            $('#projects-list').innerHTML = '<p class="text-gray-500">No projects</p>';
+            return;
+        }
+        
+        // Build project cards - works with both native (milestones) and Vikunja (tasks)
+        let html = '';
+        for(const proj of p) {
+            // Fetch tasks for this project if using Vikunja
+            let tasks = [];
+            if(proj.provider === 'vikunja') {
+                const t = await api(`/tasks?project_id=${proj.id}`);
+                tasks = t || [];
+            }
+            
+            const progress = proj.progress || 0;
+            const hasTasks = tasks.length > 0 || (proj.milestones && proj.milestones.length > 0);
+            
+            html += `
+                <div class="card rounded-lg p-4 cursor-pointer hover:border-accent transition-colors" onclick="toggleProject(this)">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex-1 min-w-0">
+                            <span class="font-bold truncate block">${proj.title || proj.name}</span>
+                            <span class="text-xs text-gray-500">${proj.provider === 'vikunja' ? '📋 Vikunja' : '📁 Local'}</span>
+                        </div>
+                        <span class="text-xs text-accent ml-2">${Math.round(progress * 100)}%</span>
+                    </div>
+                    <div class="h-1.5 bg-bg-secondary rounded-full overflow-hidden">
+                        <div class="h-full bg-accent transition-all" style="width:${progress * 100}%"></div>
+                    </div>
+                    ${hasTasks ? `
+                        <div class="project-tasks mt-3 space-y-1 hidden">
+                            ${proj.provider === 'vikunja' ? tasks.map(t => `
+                                <div class="flex items-center gap-2 p-2 bg-bg-secondary rounded text-sm">
+                                    <div class="w-5 h-5 rounded border-2 flex items-center justify-center cursor-pointer
+                                        ${t.done ? 'bg-success border-success' : 'border-gray-500 hover:border-success'}"
+                                        onclick="event.stopPropagation(); toggleTask('${t.id}', ${!t.done})">
+                                        ${t.done ? '<svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>' : ''}
+                                    </div>
+                                    <span class="flex-1 truncate ${t.done ? 'line-through text-gray-500' : ''}">${t.title}</span>
+                                </div>
+                            `).join('') : (proj.milestones || []).map(m => `
+                                <div class="flex items-center gap-2 p-2 bg-bg-secondary rounded text-sm">
+                                    <input type="checkbox" ${m.completed ? 'checked disabled' : ''} 
+                                        onclick="event.stopPropagation(); doneM(${m.id})" class="w-4 h-4 accent-success">
+                                    <span class="flex-1 truncate ${m.completed ? 'line-through text-gray-500' : ''}">${m.name}</span>
+                                    <span class="text-xp text-xs">+${m.points || 10}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="text-xs text-gray-500 mt-2">${tasks.length || (proj.milestones?.length || 0)} tasks • Click to expand</div>
+                    ` : '<div class="text-xs text-gray-500 mt-2">No tasks</div>'}
+                </div>
+            `;
+        }
+        $('#projects-list').innerHTML = html;
+    }
+
+    function toggleProject(el) {
+        const tasks = el.querySelector('.project-tasks');
+        if(tasks) tasks.classList.toggle('hidden');
+    }
+
+    async function toggleTask(id, done) {
+        try {
+            if(done) {
+                const r = await api(`/tasks/${id}/complete`, 'POST');
+                if(r && r.points) showToast(`+${r.points} XP`, 'success');
+            } else {
+                await api(`/tasks/${id}/uncomplete`, 'POST');
+            }
+            loadStats(); loadProjects(); loadDash();
+        } catch(e) {
+            showToast('Failed', 'error');
+        }
+    }
+
+    async function doneM(id) {
+        await api(`/milestones/${id}/complete`, 'POST');
+        loadStats(); loadProjects();
+    }
+
+    async function loadCheckin() {
+        const c = await api('/checkin');
+        if(c) {
+            $('#ci-done').value = c.completed_today || '';
+            $(`input[name="ci-alc"][value="${c.avoided_alcohol?1:0}"]`).checked = true;
+            $(`input[name="ci-future"][value="${c.worked_on_future?1:0}"]`).checked = true;
+            $('#ci-mood').value = c.mood;
+            $('#ci-energy').value = c.energy;
+            $('#ci-mood-v').textContent = c.mood;
+            $('#ci-energy-v').textContent = c.energy;
+            $('#ci-improve').value = c.improvement_note || '';
+        }
+    }
+
+    async function saveCheckin() {
+        const d = {
+            completed_today: $('#ci-done').value,
+            avoided_alcohol: $('input[name="ci-alc"]:checked').value === '1',
+            worked_on_future: $('input[name="ci-future"]:checked').value === '1',
+            mood: +$('#ci-mood').value,
+            energy: +$('#ci-energy').value,
+            improvement_note: $('#ci-improve').value
+        };
+        const r = await api('/checkin', 'POST', d);
+        if(r) alert(`Saved! +${r.points} XP`);
+        loadStats();
+    }
+
+    async function loadWalks() {
+        const w = await api('/walks');
+        if(!w) return;
+        $('#w-stats').textContent = `${w.stats.count} walks • ${w.stats.total_km.toFixed(1)}km`;
+        $('#w-xp').textContent = w.stats.points;
+        $('#walks-list').innerHTML = w.walks.slice(0,10).map(x => `
+            <div class="card rounded-lg p-2.5 flex justify-between text-sm">
+                <div>
+                    <div>${new Date(x.date).toLocaleDateString()}</div>
+                    <div class="text-xs text-gray-400">${x.distance_km.toFixed(1)}km • ${x.duration_minutes}min</div>
+                </div>
+                <div class="text-xp font-bold">+${x.points}</div>
+            </div>
+        `).join('') || '<p class="text-gray-500 text-sm">No walks</p>';
+    }
+
+    async function loadReplace() {
+        const r = await api('/replacements');
+        if(!r) return;
+        $('#rep-actions').innerHTML = r.actions.map(a => `
+            <label class="flex items-center gap-2 p-2 bg-bg-secondary rounded text-sm cursor-pointer">
+                <input type="radio" name="rep-act" value="${a.id}" class="w-5 h-5 accent-sobriety">
+                <span class="flex-1">${a.name}</span>
+                <span class="text-xp">+${a.points}</span>
+            </label>
+        `).join('');
+        $('#rep-logs').innerHTML = r.logs.slice(0,5).map(l => `
+            <div class="card rounded-lg p-2.5 flex justify-between text-sm">
+                <div>${l.action_name} <span class="text-gray-500">(lv${l.urge_level})</span></div>
+                <div class="text-xp">+${l.points}</div>
+            </div>
+        `).join('') || '';
+    }
+
+    async function logReplace() {
+        const act = $('input[name="rep-act"]:checked')?.value;
+        if(!act) return alert('Pick an action');
+        const urge = +$('input[name="urge"]:checked').value;
+        const r = await api('/replacements', 'POST', {action_id:+act, urge_level:urge});
+        if(r) alert(`Redirected! +${r.points} XP`);
+        loadStats(); loadReplace();
+    }
+
+    function showModal(title, body) {
+        $('#modal-title').textContent = title;
+        $('#modal-body').innerHTML = body;
+        $('#modal').classList.remove('hidden');
+        $('#modal').classList.add('flex');
+    }
+    function hideModal() {
+        $('#modal').classList.add('hidden');
+        $('#modal').classList.remove('flex');
+    }
+
+    async function addHabitModal() {
+        cats = await api('/categories') || {};
+        const opts = Object.entries(cats).map(([k,v]) => `<option value="${k}">${v.icon} ${v.name}</option>`).join('');
+        showModal('New Habit', `
+            <input id="nh-name" class="w-full p-2 rounded border text-sm mb-2" placeholder="Name">
+            <select id="nh-cat" class="w-full p-2 rounded border text-sm mb-2">${opts}</select>
+            <input type="range" id="nh-diff" min="1" max="5" value="1" class="w-full mb-3">
+            <div class="flex gap-2">
+                <button onclick="hideModal()" class="flex-1 py-2 rounded border border-gray-600 text-sm">Cancel</button>
+                <button onclick="createHabit()" class="flex-1 py-2 rounded bg-accent text-sm">Add</button>
+            </div>
+        `);
+    }
+
+    async function createHabit() {
+        const name = $('#nh-name').value.trim();
+        if(!name) return;
+        await api('/habits', 'POST', {name, category:$('#nh-cat').value, difficulty:+$('#nh-diff').value});
+        hideModal(); loadHabits();
+    }
+
+    function addProjectModal() {
+        showModal('New Project', `
+            <input id="np-name" class="w-full p-2 rounded border text-sm mb-2" placeholder="Name">
+            <textarea id="np-desc" class="w-full p-2 rounded border text-sm mb-3" rows="2" placeholder="Description"></textarea>
+            <div class="flex gap-2">
+                <button onclick="hideModal()" class="flex-1 py-2 rounded border border-gray-600 text-sm">Cancel</button>
+                <button onclick="createProject()" class="flex-1 py-2 rounded bg-accent text-sm">Create</button>
+            </div>
+        `);
+    }
+
+    async function createProject() {
+        const name = $('#np-name').value.trim();
+        if(!name) return;
+        await api('/projects', 'POST', {name, description:$('#np-desc').value});
+        hideModal(); loadStats(); loadProjects();
+    }
+
+    function addWalkModal() {
+        showModal('Log Walk', `
+            <div class="grid grid-cols-2 gap-2 mb-2">
+                <input id="nw-dist" type="number" step="0.1" class="p-2 rounded border text-sm" placeholder="km">
+                <input id="nw-dur" type="number" class="p-2 rounded border text-sm" placeholder="min">
+            </div>
+            <div class="grid grid-cols-2 gap-2 mb-3">
+                <div><label class="text-xs text-gray-400">Mood Before</label><input id="nw-mb" type="range" min="1" max="5" value="3" class="w-full"></div>
+                <div><label class="text-xs text-gray-400">Mood After</label><input id="nw-ma" type="range" min="1" max="5" value="4" class="w-full"></div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="hideModal()" class="flex-1 py-2 rounded border border-gray-600 text-sm">Cancel</button>
+                <button onclick="createWalk()" class="flex-1 py-2 rounded bg-success text-sm">Log</button>
+            </div>
+        `);
+    }
+
+    async function createWalk() {
+        const d = {
+            distance_km: +($('#nw-dist').value||0),
+            duration_minutes: +($('#nw-dur').value||0),
+            mood_before: +$('#nw-mb').value,
+            mood_after: +$('#nw-ma').value
+        };
+        const r = await api('/walks', 'POST', d);
+        hideModal();
+        if(r) alert(`Logged! +${r.points} XP`);
+        loadStats(); loadWalks();
+    }
+
+    // Events
+    $('#ci-mood').oninput = e => $('#ci-mood-v').textContent = e.target.value;
+    $('#ci-energy').oninput = e => $('#ci-energy-v').textContent = e.target.value;
+    $('#modal').onclick = e => { if(e.target.id === 'modal') hideModal(); };
+
+    // Init
+    load('dashboard'); loadStats();
+    </script>
+</body>
+</html>
