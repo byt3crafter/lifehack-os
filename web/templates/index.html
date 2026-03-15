@@ -733,6 +733,10 @@
                             ${m.protein_g ? `<div class="text-xs text-gray-400">P:${m.protein_g}g C:${m.carbs_g || 0}g F:${m.fat_g || 0}g</div>` : ''}
                         </div>
                     </div>
+                    <div class="flex gap-2 mt-2 pt-2 border-t border-gray-700">
+                        <button onclick="editFoodModal(${m.id}, '${m.meal_type}', \`${m.description.replace(/`/g, "'")}\`, ${m.calories || 0}, ${m.protein_g || 0}, ${m.carbs_g || 0}, ${m.fat_g || 0})" class="text-xs text-accent hover:underline">✏️ Edit</button>
+                        <button onclick="deleteFood(${m.id})" class="text-xs text-danger hover:underline">🗑️ Delete</button>
+                    </div>
                 </div>
             `;
         }).join('');
@@ -772,6 +776,55 @@
         const r = await api('/food', 'POST', data);
         hideModal();
         if(r) showToast('Meal logged!', 'success');
+        loadFood();
+    }
+
+    function editFoodModal(id, mealType, desc, cal, protein, carbs, fat) {
+        showModal('Edit Meal', `
+            <select id="ef-type" class="w-full p-2 rounded border text-sm mb-2">
+                <option value="breakfast" ${mealType === 'breakfast' ? 'selected' : ''}>🌅 Breakfast</option>
+                <option value="lunch" ${mealType === 'lunch' ? 'selected' : ''}>☀️ Lunch</option>
+                <option value="dinner" ${mealType === 'dinner' ? 'selected' : ''}>🌙 Dinner</option>
+                <option value="snack" ${mealType === 'snack' ? 'selected' : ''}>🍿 Snack</option>
+            </select>
+            <textarea id="ef-desc" class="w-full p-2 rounded border text-sm mb-2" rows="2">${desc}</textarea>
+            <div class="grid grid-cols-2 gap-2 mb-2">
+                <input id="ef-cal" type="number" class="p-2 rounded border text-sm" placeholder="Calories" value="${cal || ''}">
+                <input id="ef-protein" type="number" class="p-2 rounded border text-sm" placeholder="Protein g" value="${protein || ''}">
+            </div>
+            <div class="grid grid-cols-2 gap-2 mb-3">
+                <input id="ef-carbs" type="number" class="p-2 rounded border text-sm" placeholder="Carbs g" value="${carbs || ''}">
+                <input id="ef-fat" type="number" class="p-2 rounded border text-sm" placeholder="Fat g" value="${fat || ''}">
+            </div>
+            <div class="flex gap-2">
+                <button onclick="hideModal()" class="flex-1 py-2 rounded border border-gray-600 text-sm">Cancel</button>
+                <button onclick="updateFood(${id})" class="flex-1 py-2 rounded bg-accent text-sm">Save</button>
+            </div>
+        `);
+    }
+
+    async function updateFood(id) {
+        const desc = $('#ef-desc').value.trim();
+        if(!desc) return alert('Description required');
+        
+        const data = {
+            meal_type: $('#ef-type').value,
+            description: desc,
+            calories: +$('#ef-cal').value || null,
+            protein_g: +$('#ef-protein').value || null,
+            carbs_g: +$('#ef-carbs').value || null,
+            fat_g: +$('#ef-fat').value || null
+        };
+        
+        const r = await api('/food/' + id, 'PUT', data);
+        hideModal();
+        if(r && r.success) showToast('Meal updated!', 'success');
+        loadFood();
+    }
+
+    async function deleteFood(id) {
+        if(!confirm('Delete this meal?')) return;
+        await api('/food/' + id, 'DELETE');
         loadFood();
     }
 

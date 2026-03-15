@@ -72,6 +72,30 @@ def delete_food(food_id):
     return jsonify({'success': True})
 
 
+@food_bp.route('/<int:food_id>', methods=['PUT'])
+@login_required
+def update_food(food_id):
+    """Update a food log entry."""
+    data = request.json
+    conn = get_connection()
+    
+    conn.execute(
+        """UPDATE food_logs 
+           SET meal_type = ?, description = ?, calories = ?, protein_g = ?, carbs_g = ?, fat_g = ?
+           WHERE id = ?""",
+        (data.get('meal_type'),
+         data.get('description'),
+         data.get('calories'),
+         data.get('protein_g'),
+         data.get('carbs_g'),
+         data.get('fat_g'),
+         food_id)
+    )
+    conn.commit()
+    
+    return jsonify({'success': True})
+
+
 @food_bp.route('/analyze', methods=['POST'])
 @api_key_required
 def analyze_food():
