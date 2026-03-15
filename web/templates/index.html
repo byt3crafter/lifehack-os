@@ -506,7 +506,7 @@
     let cats = {};
 
     async function api(e, m='GET', d=null) {
-        const o = {method:m, headers:{'Content-Type':'application/json'}};
+        const o = {method:m, headers:{'Content-Type':'application/json'}, credentials:'same-origin'};
         if(d) o.body = JSON.stringify(d);
         const r = await fetch('/api'+e, o);
         if(r.status === 401) { location.href = '/login'; return null; }
@@ -1386,7 +1386,7 @@
     $('#modal').onclick = e => { if(e.target.id === 'modal') hideModal(); };
 
     // Init
-    nav('dashboard');
+    load('dashboard'); loadStats();
     </script>
 </body>
 </html>
