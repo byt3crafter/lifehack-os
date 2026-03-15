@@ -957,13 +957,13 @@
                 else if(d.score >= 25) color = 'bg-warning';
                 
                 return `
-                    <div class="flex flex-col items-center gap-1 p-2 rounded-lg \${isToday ? 'ring-2 ring-accent' : ''}" 
-                         title="\${d.date}: \${d.score}%">
-                        <span class="text-xs text-gray-400">\${dayName}</span>
-                        <div class="w-8 h-8 rounded-lg \${color} flex items-center justify-center text-xs font-bold">
-                            \${d.score}
+                    <div class="flex flex-col items-center gap-1 p-2 rounded-lg ${isToday ? 'ring-2 ring-accent' : ''}" 
+                         title="${d.date}: ${d.score}%">
+                        <span class="text-xs text-gray-400">${dayName}</span>
+                        <div class="w-8 h-8 rounded-lg ${color} flex items-center justify-center text-xs font-bold">
+                            ${d.score}
                         </div>
-                        <span class="text-xs \${isToday ? 'text-accent font-bold' : 'text-gray-500'}">\${dayNum}</span>
+                        <span class="text-xs ${isToday ? 'text-accent font-bold' : 'text-gray-500'}">${dayNum}</span>
                     </div>
                 `;
             }).join('');
@@ -1065,20 +1065,20 @@
     
     function editHabitModal(id, name, category, difficulty) {
         showModal('Edit Habit', `
-            <input id="eh-name" class="w-full p-2 rounded border text-sm mb-2" value="\${name}">
+            <input id="eh-name" class="w-full p-2 rounded border text-sm mb-2" value="${name}">
             <select id="eh-cat" class="w-full p-2 rounded border text-sm mb-2">
-                <option value="health" \${category==='health'?'selected':''}>🏃 Health</option>
-                <option value="productivity" \${category==='productivity'?'selected':''}>💼 Productivity</option>
-                <option value="mindset" \${category==='mindset'?'selected':''}>🧠 Mindset</option>
-                <option value="sobriety" \${category==='sobriety'?'selected':''}>🛡️ Sobriety</option>
+                <option value="health" ${category==='health'?'selected':''}>🏃 Health</option>
+                <option value="productivity" ${category==='productivity'?'selected':''}>💼 Productivity</option>
+                <option value="mindset" ${category==='mindset'?'selected':''}>🧠 Mindset</option>
+                <option value="sobriety" ${category==='sobriety'?'selected':''}>🛡️ Sobriety</option>
             </select>
             <div class="mb-3">
-                <label class="text-xs text-gray-400">Difficulty: <span id="eh-diff-v">\${difficulty}</span></label>
-                <input type="range" id="eh-diff" min="1" max="5" value="\${difficulty}" class="w-full" oninput="$('#eh-diff-v').textContent=this.value">
+                <label class="text-xs text-gray-400">Difficulty: <span id="eh-diff-v">${difficulty}</span></label>
+                <input type="range" id="eh-diff" min="1" max="5" value="${difficulty}" class="w-full" oninput="$('#eh-diff-v').textContent=this.value">
             </div>
             <div class="flex gap-2">
                 <button onclick="hideModal()" class="flex-1 py-2 rounded border border-gray-600 text-sm">Cancel</button>
-                <button onclick="saveHabitEdit(\${id})" class="flex-1 py-2 rounded bg-accent text-sm">Save</button>
+                <button onclick="saveHabitEdit(${id})" class="flex-1 py-2 rounded bg-accent text-sm">Save</button>
             </div>
         `);
     }
@@ -1089,15 +1089,15 @@
             category: $('#eh-cat').value,
             difficulty: +$('#eh-diff').value
         };
-        await api(`/habits/\${id}`, 'PUT', data);
+        await api(`/habits/${id}`, 'PUT', data);
         hideModal();
         showToast('Habit updated', 'success');
         loadHabits();
     }
     
     async function deleteHabit(id, name) {
-        if(!confirm(`Delete "\${name}"? This will deactivate the habit.`)) return;
-        await api(`/habits/\${id}`, 'DELETE');
+        if(!confirm(`Delete "${name}"? This will deactivate the habit.`)) return;
+        await api(`/habits/${id}`, 'DELETE');
         showToast('Habit removed', 'info');
         loadHabits();
         loadDash();
