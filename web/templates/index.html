@@ -880,7 +880,7 @@
                                 🔥 ${c.name}
                                 ${c.needs_checkin ? '<span class="text-xs bg-warning/20 text-warning px-2 py-0.5 rounded">Check-in needed</span>' : ''}
                             </div>
-                            <div class="text-xs text-gray-400">${c.category} • ${c.target_days ? c.target_days + ' day goal' : 'Ongoing'}</div>
+                            <div class="text-xs text-gray-400">${c.category} • ${c.target_days ? c.target_days + ' day goal' : 'Ongoing'} • Started ${c.start_date}</div>
                         </div>
                         <div class="text-right">
                             <div class="text-2xl font-bold text-accent">${c.streak_days}</div>
@@ -893,9 +893,12 @@
                         </div>
                         <div class="text-xs text-gray-400">${c.remaining_days} days to go</div>
                     ` : ''}
-                    <div class="flex gap-2 mt-3 pt-2 border-t border-gray-700">
-                        <button onclick="checkinChallenge(${c.id})" class="text-xs text-success hover:underline">✓ Check-in</button>
-                        <button onclick="failChallenge(${c.id}, '${c.name}')" class="text-xs text-danger hover:underline">✗ I broke it</button>
+                    <div class="flex flex-wrap gap-2 mt-3 pt-2 border-t border-gray-700">
+                        <button onclick="viewChallengeHistory(${c.id}, '${c.name}', '${c.start_date}')" class="text-xs text-accent hover:underline">📅 History</button>
+                        <button onclick="checkinChallengeModal(${c.id}, '${c.name}')" class="text-xs text-success hover:underline">✓ Check-in</button>
+                        <button onclick="failChallengeModal(${c.id}, '${c.name}')" class="text-xs text-danger hover:underline">✗ I broke it</button>
+                        <button onclick="editChallengeModal(${c.id}, '${c.name.replace(/'/g, "\\'")}', '${c.category}', ${c.target_days || 'null'}, '${c.check_in_frequency}')" class="text-xs text-gray-400 hover:underline">✏️ Edit</button>
+                        <button onclick="deleteChallenge(${c.id}, '${c.name}')" class="text-xs text-gray-500 hover:text-danger hover:underline">🗑️</button>
                         ${c.progress >= 100 ? `<button onclick="completeChallenge(${c.id})" class="text-xs text-accent hover:underline">🎉 Complete!</button>` : ''}
                     </div>
                 </div>
@@ -903,15 +906,17 @@
         }).join('') : '<p class="text-gray-500 text-sm">No active challenges. Start one!</p>';
         
         $('#challenges-history').innerHTML = history.length ? history.map(c => `
-            <div class="card rounded-lg p-3 opacity-60">
+            <div class="card rounded-lg p-3 opacity-70">
                 <div class="flex justify-between items-center">
                     <div>
                         <span class="${c.status === 'completed' ? 'text-success' : 'text-danger'}">${c.status === 'completed' ? '✓' : '✗'}</span>
                         ${c.name}
+                        <span class="text-xs text-gray-500 ml-2">${c.start_date} → ${c.end_date || '?'}</span>
                     </div>
-                    <div class="text-xs text-gray-400">
-                        ${c.streak_days || 0} days
-                        <button onclick="restartChallenge(${c.id})" class="ml-2 text-accent hover:underline">↻ Restart</button>
+                    <div class="flex items-center gap-2 text-xs">
+                        <span class="text-gray-400">${c.streak_days || 0} days</span>
+                        <button onclick="restartChallenge(${c.id})" class="text-accent hover:underline">↻ Restart</button>
+                        <button onclick="deleteChallenge(${c.id}, '${c.name}')" class="text-gray-500 hover:text-danger">🗑️</button>
                     </div>
                 </div>
             </div>
@@ -974,21 +979,180 @@
         }
     }
     
-    async function checkinChallenge(id) {
-        const r = await api('/challenges/' + id + '/checkin', 'POST');
+    // View challenge history with calendar
+    async function viewChallengeHistory(id, name, startDate) {
+        const logs = await api('/challenges/' + id + '/logs');
+        const start = new Date(startDate);
+        const today = new Date();
+        const days = Math.floor((today - start) / (1000 * 60 * 60 * 24)) + 1;
+        
+        // Build calendar grid
+        let calendar = '';
+        const checkinDates = new Set((logs || []).filter(l => l.action === 'checkin').map(l => l.logged_at.split('T')[0]));
+        
+        for(let i = 0; i < Math.min(days, 42); i++) {
+            const d = new Date(start);
+            d.setDate(d.getDate() + i);
+            const dateStr = d.toISOString().split('T')[0];
+            const isChecked = checkinDates.has(dateStr);
+            const isToday = dateStr === today.toISOString().split('T')[0];
+            
+            calendar += `<div class="w-8 h-8 rounded flex items-center justify-center text-xs ${isChecked ? 'bg-success text-white' : 'bg-gray-700'} ${isToday ? 'ring-2 ring-accent' : ''}" title="${dateStr}">${d.getDate()}</div>`;
+        }
+        
+        const logHtml = (logs || []).slice(0, 10).map(l => `
+            <div class="text-xs text-gray-400 py-1 border-b border-gray-700">
+                <span class="${l.action === 'checkin' ? 'text-success' : l.action === 'failed' ? 'text-danger' : 'text-accent'}">${l.action}</span>
+                • ${new Date(l.logged_at).toLocaleDateString()} 
+                ${l.note ? '• ' + l.note : ''}
+            </div>
+        `).join('');
+        
+        showModal(`📅 ${name} History`, `
+            <div class="mb-3">
+                <div class="text-xs text-gray-400 mb-2">Check-in calendar (green = checked in)</div>
+                <div class="grid grid-cols-7 gap-1">${calendar}</div>
+            </div>
+            <div class="mb-3">
+                <div class="text-xs text-gray-400 mb-2">Recent logs</div>
+                <div class="max-h-32 overflow-y-auto">${logHtml || '<div class="text-xs text-gray-500">No logs yet</div>'}</div>
+            </div>
+            <button onclick="hideModal()" class="w-full py-2 rounded border border-gray-600 text-sm">Close</button>
+        `);
+    }
+    
+    // Check-in modal with backfill option
+    function checkinChallengeModal(id, name) {
+        showModal(`✓ Check-in: ${name}`, `
+            <div class="mb-3">
+                <label class="text-xs text-gray-400">Check-in for:</label>
+                <select id="ci-date" class="w-full p-2 rounded border text-sm mt-1">
+                    <option value="today">Today</option>
+                    <option value="yesterday">Yesterday</option>
+                    <option value="custom">Custom date...</option>
+                </select>
+            </div>
+            <div id="ci-custom-date" class="mb-3 hidden">
+                <input type="date" id="ci-custom" class="w-full p-2 rounded border text-sm" value="${new Date().toISOString().split('T')[0]}">
+            </div>
+            <div class="mb-3">
+                <label class="text-xs text-gray-400">Note (optional)</label>
+                <input id="ci-note" type="text" class="w-full p-2 rounded border text-sm mt-1" placeholder="How's it going?">
+            </div>
+            <div class="flex gap-2">
+                <button onclick="hideModal()" class="flex-1 py-2 rounded border border-gray-600 text-sm">Cancel</button>
+                <button onclick="doCheckin(${id})" class="flex-1 py-2 rounded bg-success text-sm">Check-in ✓</button>
+            </div>
+            <script>
+                document.getElementById('ci-date').onchange = function() {
+                    document.getElementById('ci-custom-date').classList.toggle('hidden', this.value !== 'custom');
+                };
+            </script>
+        `);
+    }
+    
+    async function doCheckin(id) {
+        const dateSelect = $('#ci-date').value;
+        const note = $('#ci-note').value || '';
+        
+        const r = await api('/challenges/' + id + '/checkin', 'POST', { note });
+        hideModal();
         if(r && r.success) {
             showToast('Checked in! Keep going! 💪', 'success');
             loadChallenges();
         }
     }
     
-    async function failChallenge(id, name) {
-        if(!confirm(`Did you break the "${name}" challenge?`)) return;
-        const reason = prompt('What happened? (optional)') || '';
+    // Fail modal with date picker
+    function failChallengeModal(id, name) {
+        showModal(`✗ End Challenge: ${name}`, `
+            <div class="text-center mb-4">
+                <div class="text-4xl mb-2">😔</div>
+                <div class="text-sm text-gray-400">It's okay, we all slip. The important thing is starting again.</div>
+            </div>
+            <div class="mb-3">
+                <label class="text-xs text-gray-400">When did you break it?</label>
+                <select id="fail-when" class="w-full p-2 rounded border text-sm mt-1">
+                    <option value="today">Today</option>
+                    <option value="yesterday">Yesterday</option>
+                    <option value="earlier">Earlier this week</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="text-xs text-gray-400">What happened? (optional)</label>
+                <input id="fail-reason" type="text" class="w-full p-2 rounded border text-sm mt-1" placeholder="Helps you learn patterns">
+            </div>
+            <div class="flex gap-2">
+                <button onclick="hideModal()" class="flex-1 py-2 rounded border border-gray-600 text-sm">Cancel</button>
+                <button onclick="doFail(${id})" class="flex-1 py-2 rounded bg-danger text-sm">End & Reset</button>
+            </div>
+        `);
+    }
+    
+    async function doFail(id) {
+        const reason = $('#fail-reason')?.value || '';
+        const when = $('#fail-when')?.value || 'today';
         
-        const r = await api('/challenges/' + id + '/fail', 'POST', { reason });
+        const r = await api('/challenges/' + id + '/fail', 'POST', { reason, when });
+        hideModal();
         if(r && r.success) {
-            showToast(`Ended after ${r.streak_days} days. You can restart anytime.`, 'warning');
+            showToast(`Ended after ${r.streak_days} days. Ready to restart? 💪`, 'warning');
+            loadChallenges();
+            loadDash();
+        }
+    }
+    
+    // Edit challenge modal
+    function editChallengeModal(id, name, category, targetDays, frequency) {
+        showModal(`✏️ Edit: ${name}`, `
+            <input id="ec-name" type="text" class="w-full p-2 rounded border text-sm mb-2" value="${name}">
+            <select id="ec-category" class="w-full p-2 rounded border text-sm mb-2">
+                <option value="health" ${category==='health'?'selected':''}>🏥 Health</option>
+                <option value="diet" ${category==='diet'?'selected':''}>🍎 Diet</option>
+                <option value="fitness" ${category==='fitness'?'selected':''}>💪 Fitness</option>
+                <option value="habit" ${category==='habit'?'selected':''}>🎯 Habit</option>
+                <option value="general" ${category==='general'?'selected':''}>📌 General</option>
+            </select>
+            <div class="mb-2">
+                <label class="text-xs text-gray-400">Target days (empty = ongoing)</label>
+                <input id="ec-days" type="number" class="w-full p-2 rounded border text-sm mt-1" value="${targetDays || ''}" placeholder="Days">
+            </div>
+            <select id="ec-freq" class="w-full p-2 rounded border text-sm mb-3">
+                <option value="daily" ${frequency==='daily'?'selected':''}>Daily check-in</option>
+                <option value="weekly" ${frequency==='weekly'?'selected':''}>Weekly check-in</option>
+            </select>
+            <div class="flex gap-2">
+                <button onclick="hideModal()" class="flex-1 py-2 rounded border border-gray-600 text-sm">Cancel</button>
+                <button onclick="doEditChallenge(${id})" class="flex-1 py-2 rounded bg-accent text-sm">Save</button>
+            </div>
+        `);
+    }
+    
+    async function doEditChallenge(id) {
+        const data = {
+            name: $('#ec-name').value.trim(),
+            category: $('#ec-category').value,
+            target_days: +$('#ec-days').value || null,
+            check_in_frequency: $('#ec-freq').value
+        };
+        
+        if(!data.name) return alert('Name required');
+        
+        const r = await api('/challenges/' + id, 'PUT', data);
+        hideModal();
+        if(r && r.success) {
+            showToast('Challenge updated!', 'success');
+            loadChallenges();
+        }
+    }
+    
+    // Delete challenge
+    async function deleteChallenge(id, name) {
+        if(!confirm(`Delete "${name}"? This removes all history.`)) return;
+        
+        const r = await api('/challenges/' + id, 'DELETE');
+        if(r && r.success) {
+            showToast('Challenge deleted', 'success');
             loadChallenges();
             loadDash();
         }
