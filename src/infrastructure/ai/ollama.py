@@ -12,8 +12,23 @@ class OllamaProvider(AIProvider):
     """Local LLM via Ollama. Free, runs on your machine."""
 
     def __init__(self):
-        self.base_url = os.environ.get('OLLAMA_URL', 'http://localhost:11434')
-        self.model = os.environ.get('OLLAMA_MODEL', 'llama3')
+        self.base_url = self._get_setting('ai_ollama_url') or os.environ.get('OLLAMA_URL', 'http://localhost:11434')
+        self.model = self._get_setting('ai_ollama_model') or os.environ.get('OLLAMA_MODEL', 'llama3')
+
+    @staticmethod
+    def _get_setting(key: str) -> str:
+        """Read a value from app_settings. Returns '' on any error."""
+        try:
+            from src.infrastructure.database import get_connection
+            conn = get_connection()
+            row = conn.execute(
+                "SELECT value FROM app_settings WHERE key = ?", (key,)
+            ).fetchone()
+            if row and row['value']:
+                return row['value']
+        except Exception:
+            pass
+        return ''
 
     def _generate(self, prompt: str) -> str:
         """Send a prompt to Ollama and return the response text."""

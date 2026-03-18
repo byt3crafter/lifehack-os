@@ -12,9 +12,24 @@ class OpenAIProvider(AIProvider):
     """OpenAI-compatible API. Works with any endpoint that speaks the OpenAI format."""
 
     def __init__(self):
-        self.api_key = os.environ.get('OPENAI_API_KEY', '')
-        self.base_url = os.environ.get('OPENAI_BASE_URL', 'https://api.openai.com/v1')
-        self.model = os.environ.get('OPENAI_MODEL', 'gpt-4o-mini')
+        self.api_key = self._get_setting('ai_openai_key') or os.environ.get('OPENAI_API_KEY', '')
+        self.base_url = self._get_setting('ai_openai_url') or os.environ.get('OPENAI_BASE_URL', 'https://api.openai.com/v1')
+        self.model = self._get_setting('ai_openai_model') or os.environ.get('OPENAI_MODEL', 'gpt-4o-mini')
+
+    @staticmethod
+    def _get_setting(key: str) -> str:
+        """Read a value from app_settings. Returns '' on any error."""
+        try:
+            from src.infrastructure.database import get_connection
+            conn = get_connection()
+            row = conn.execute(
+                "SELECT value FROM app_settings WHERE key = ?", (key,)
+            ).fetchone()
+            if row and row['value']:
+                return row['value']
+        except Exception:
+            pass
+        return ''
 
     def _chat(self, system: str, user: str) -> str:
         """Send a chat completion request."""

@@ -1257,39 +1257,47 @@
                                 </div>
                             </div>
 
-                            <!-- Provider options -->
-                            <div class="mb-2" style="font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#5c5c6b;">Available providers</div>
-                            <div class="space-y-2 mb-5">
-                                <div class="card p-3 flex items-center gap-3">
-                                    <div id="ai-opt-none-indicator" style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:#2a2a2e;"></div>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="text-sm font-medium" style="color:#f0f0f2;">None (standalone)</div>
-                                        <div class="text-xs" style="color:#5c5c6b;">Full functionality, no external services required</div>
-                                    </div>
-                                    <code class="text-xs font-mono" style="color:#9898a6;">none</code>
+                            <!-- Provider configuration form -->
+                            <div class="mb-2" style="font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#5c5c6b;">Configure provider</div>
+                            <div class="card p-4 space-y-4">
+                                <div>
+                                    <label class="field-label" for="ai-provider-select">Provider</label>
+                                    <select id="ai-provider-select" class="w-full px-3 py-2.5 rounded-lg border text-sm" onchange="onAiProviderChange(this.value)">
+                                        <option value="none">None (standalone)</option>
+                                        <option value="ollama">Ollama (local LLM)</option>
+                                        <option value="openai">OpenAI-compatible</option>
+                                    </select>
                                 </div>
-                                <div class="card p-3 flex items-center gap-3">
-                                    <div id="ai-opt-ollama-indicator" style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:#2a2a2e;"></div>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="text-sm font-medium" style="color:#f0f0f2;">Ollama</div>
-                                        <div class="text-xs" style="color:#5c5c6b;">Local LLM — private, runs on your machine</div>
-                                    </div>
-                                    <code class="text-xs font-mono" style="color:#9898a6;">ollama</code>
-                                </div>
-                                <div class="card p-3 flex items-center gap-3">
-                                    <div id="ai-opt-openai-indicator" style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:#2a2a2e;"></div>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="text-sm font-medium" style="color:#f0f0f2;">OpenAI-compatible</div>
-                                        <div class="text-xs" style="color:#5c5c6b;">OpenAI, Groq, LM Studio, or any compatible endpoint</div>
-                                    </div>
-                                    <code class="text-xs font-mono" style="color:#9898a6;">openai</code>
-                                </div>
-                            </div>
 
-                            <!-- Config note -->
-                            <div class="p-3 rounded-lg" style="background:#141416;border:1px solid #2a2a2e;">
-                                <div class="text-xs font-semibold mb-1.5" style="color:#9898a6;letter-spacing:0.04em;text-transform:uppercase;">Configuration</div>
-                                <p class="text-sm" style="color:#5c5c6b;">Set <code style="color:#9898a6;font-family:'DM Mono',monospace;">LIFEHACK_AI_PROVIDER</code> in your <code style="color:#9898a6;font-family:'DM Mono',monospace;">.env</code> file and restart the server. Options: <code style="color:#9898a6;font-family:'DM Mono',monospace;">none</code>, <code style="color:#9898a6;font-family:'DM Mono',monospace;">ollama</code>, <code style="color:#9898a6;font-family:'DM Mono',monospace;">openai</code></p>
+                                <!-- Ollama fields -->
+                                <div id="ai-ollama-fields" style="display:none;" class="space-y-3">
+                                    <div>
+                                        <label class="field-label" for="ai-ollama-url">Ollama URL</label>
+                                        <input id="ai-ollama-url" type="text" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="http://localhost:11434" value="http://localhost:11434">
+                                    </div>
+                                    <div>
+                                        <label class="field-label" for="ai-ollama-model">Model</label>
+                                        <input id="ai-ollama-model" type="text" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="llama3" value="llama3">
+                                    </div>
+                                </div>
+
+                                <!-- OpenAI fields -->
+                                <div id="ai-openai-fields" style="display:none;" class="space-y-3">
+                                    <div>
+                                        <label class="field-label" for="ai-openai-key">API Key</label>
+                                        <input id="ai-openai-key" type="password" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="sk-...">
+                                    </div>
+                                    <div>
+                                        <label class="field-label" for="ai-openai-url">Base URL</label>
+                                        <input id="ai-openai-url" type="text" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="https://api.openai.com/v1">
+                                    </div>
+                                    <div>
+                                        <label class="field-label" for="ai-openai-model">Model</label>
+                                        <input id="ai-openai-model" type="text" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="gpt-4o-mini">
+                                    </div>
+                                </div>
+
+                                <button onclick="saveAiProvider()" class="btn-primary w-full py-2.5">Save AI Settings</button>
                             </div>
                         </div>
 
@@ -1300,10 +1308,26 @@
                                 <p class="text-sm" style="color:#5c5c6b;">Expose a read/write API so an external AI agent can monitor and interact with your data.</p>
                             </div>
 
+                            <!-- API Key configuration -->
+                            <div class="mb-2" style="font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#5c5c6b;">API Key</div>
+                            <div class="card p-4 mb-4">
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="field-label" for="openclaw-api-key-input">OpenClaw API Key</label>
+                                        <div class="flex gap-2">
+                                            <input id="openclaw-api-key-input" type="password" class="flex-1 px-3 py-2.5 rounded-lg border text-sm" placeholder="Enter your API key">
+                                            <button onclick="toggleOpenclawKeyVisibility()" class="btn-ghost px-3 py-2.5 flex-shrink-0" aria-label="Show/hide API key" id="openclaw-key-toggle-btn" style="font-size:0.75rem;">Show</button>
+                                        </div>
+                                    </div>
+                                    <button onclick="saveOpenclawKey()" class="btn-primary w-full py-2.5">Save API Key</button>
+                                </div>
+                            </div>
+
                             <!-- Connection details -->
+                            <div class="mb-2" style="font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#5c5c6b;">Connection details</div>
                             <div class="card p-4 mb-4">
                                 <div class="flex items-center justify-between mb-3">
-                                    <span class="text-sm font-semibold" style="color:#f0f0f2;">Connection details</span>
+                                    <span class="text-sm font-semibold" style="color:#f0f0f2;">Endpoints</span>
                                     <span id="openclaw-status-badge" class="text-xs px-2.5 py-1 rounded-full font-medium" style="background:rgba(100,100,120,0.2);color:#9898a6;">Unknown</span>
                                 </div>
                                 <div class="space-y-2.5">
@@ -1313,7 +1337,7 @@
                                     </div>
                                     <div class="flex items-center justify-between">
                                         <span class="text-xs" style="color:#5c5c6b;">Authentication</span>
-                                        <code class="text-xs font-mono px-2 py-0.5 rounded" style="background:#141416;color:#9898a6;border:1px solid #2a2a2e;">X-API-Key: &lt;.env key&gt;</code>
+                                        <code class="text-xs font-mono px-2 py-0.5 rounded" style="background:#141416;color:#9898a6;border:1px solid #2a2a2e;">X-API-Key: &lt;key above&gt;</code>
                                     </div>
                                     <div class="flex items-center justify-between">
                                         <span class="text-xs" style="color:#5c5c6b;">Log endpoint</span>
@@ -1390,6 +1414,26 @@
                                     </div>
                                     <div id="firefly-status" class="text-xs mt-3 pt-3" style="border-top:1px solid #2a2a2e;color:#5c5c6b;"></div>
                                 </div>
+                                <!-- Firefly III config (shown inline when enabled) -->
+                                <div id="firefly-config" class="card p-4" style="display:none;">
+                                    <div class="mb-3">
+                                        <span class="text-xs font-semibold" style="color:#9898a6;letter-spacing:0.04em;text-transform:uppercase;">Firefly III Configuration</span>
+                                    </div>
+                                    <div class="space-y-3">
+                                        <div>
+                                            <label class="field-label" for="firefly-api-url">API URL</label>
+                                            <input id="firefly-api-url" type="text" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="https://firefly.example.com/api/v1">
+                                        </div>
+                                        <div>
+                                            <label class="field-label" for="firefly-api-token">Personal Access Token</label>
+                                            <input id="firefly-api-token" type="password" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="eyJ...">
+                                        </div>
+                                        <div class="flex gap-2">
+                                            <button onclick="connectFirefly()" class="btn-primary flex-1 py-2.5">Connect</button>
+                                            <button onclick="cancelFirefly()" class="btn-ghost flex-shrink-0 py-2.5 px-4">Cancel</button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -1441,7 +1485,7 @@
                             </div>
 
                             <!-- Links -->
-                            <div class="space-y-2">
+                            <div class="space-y-2 mb-5">
                                 <a href="https://github.com" target="_blank" rel="noopener noreferrer"
                                    class="card p-3 flex items-center justify-between hover:border-border-default transition-colors" style="display:flex;border-color:#2a2a2e;text-decoration:none;">
                                     <span class="text-sm" style="color:#f0f0f2;">Documentation</span>
@@ -1452,6 +1496,18 @@
                                     <span class="text-sm" style="color:#f0f0f2;">Source code</span>
                                     <svg width="14" height="14" fill="none" stroke="#5c5c6b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 20 20"><path d="M4 10h12M11 6l5 4-5 4"/></svg>
                                 </a>
+                            </div>
+
+                            <!-- Danger zone -->
+                            <div class="mb-2" style="font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#5c5c6b;">Danger Zone</div>
+                            <div class="card p-4" style="border-color:rgba(239,68,68,0.2);">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-semibold mb-0.5" style="color:#f0f0f2;">Reset All Data</div>
+                                        <div class="text-xs" style="color:#5c5c6b;">Permanently delete all habits, logs, check-ins, and settings. This cannot be undone.</div>
+                                    </div>
+                                    <button id="reset-all-btn" onclick="handleResetAll()" class="flex-shrink-0 px-4 py-2 rounded-lg font-semibold text-sm transition-colors" style="background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.25);">Reset All Data</button>
+                                </div>
                             </div>
                         </div>
 
@@ -2137,6 +2193,7 @@
     }
     
     function addChallengeModal() {
+        const todayStr = new Date().toISOString().split('T')[0];
         showModal('New Challenge', `
             <div class="space-y-3">
                 <div>
@@ -2154,10 +2211,14 @@
                     </select>
                 </div>
                 <div>
+                    <label class="field-label">When did you start? (use a past date to record an existing journey)</label>
+                    <input id="nc-start-date" type="date" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="${todayStr}" max="${todayStr}">
+                </div>
+                <div>
                     <label class="field-label">Target duration (leave empty for ongoing)</label>
                     <div class="flex gap-2">
                         <input id="nc-days" type="number" class="flex-1 px-3 py-2.5 rounded-lg border text-sm" placeholder="Days">
-                        <select id="nc-preset" class="px-3 py-2.5 rounded-lg border text-sm" onchange="$('#nc-days').value=this.value">
+                        <select id="nc-preset" class="px-3 py-2.5 rounded-lg border text-sm" onchange="document.getElementById('nc-days').value=this.value">
                             <option value="">Preset</option>
                             <option value="7">1 Week</option>
                             <option value="14">2 Weeks</option>
@@ -2186,18 +2247,20 @@
     async function saveChallenge() {
         const name = $('#nc-name').value.trim();
         if(!name) return showToast('Enter a challenge name','error');
-        
+
+        const startDateEl = $('#nc-start-date');
         const data = {
             name,
             category: $('#nc-category').value,
             target_days: +$('#nc-days').value || null,
-            check_in_frequency: $('#nc-freq').value
+            check_in_frequency: $('#nc-freq').value,
+            start_date: startDateEl ? startDateEl.value : null
         };
-        
+
         const r = await api('/challenges', 'POST', data);
         hideModal();
         if(r && r.success) {
-            showToast('Challenge started! 🔥', 'success');
+            showToast('Challenge started!', 'success');
             loadChallenges();
             loadDash(); // Update dashboard
         }
@@ -2513,7 +2576,7 @@
             $('#ai-provider-name').textContent = names[ai.provider] || ai.provider;
             $('#ai-provider-desc').textContent = ai.available
                 ? 'Connected and ready'
-                : (ai.provider === 'none' ? 'App works fully without AI' : 'Not connected — check .env config');
+                : (ai.provider === 'none' ? 'App works fully without AI' : 'Not connected — check configuration below');
             const badge = $('#ai-provider-badge');
             if(ai.provider === 'none') {
                 badge.textContent = 'Standalone';
@@ -2525,15 +2588,30 @@
                 badge.textContent = 'Offline';
                 badge.style.cssText = 'background:rgba(239,68,68,0.12);color:#ef4444;font-size:0.75rem;padding:0.25rem 0.625rem;border-radius:100px;font-weight:500;';
             }
-            // Highlight active provider option
-            ['none','ollama','openai'].forEach(p => {
-                const ind = $(`#ai-opt-${p}-indicator`);
-                if(!ind) return;
-                ind.style.background = (ai.provider === p)
-                    ? (ai.available || p === 'none' ? '#22c55e' : '#ef4444')
-                    : '#2a2a2e';
-            });
+            // Populate the provider config form
+            const sel = $('#ai-provider-select');
+            if(sel) sel.value = ai.provider || 'none';
+            onAiProviderChange(ai.provider || 'none');
         }
+
+        // ── App settings (populate AI fields + OpenClaw key) ─────
+        try {
+            const savedSettings = await api('/settings');
+            if(savedSettings) {
+                if(savedSettings.ai_ollama_url)   { const el = $('#ai-ollama-url');   if(el) el.value = savedSettings.ai_ollama_url; }
+                if(savedSettings.ai_ollama_model) { const el = $('#ai-ollama-model'); if(el) el.value = savedSettings.ai_ollama_model; }
+                if(savedSettings.ai_openai_url)   { const el = $('#ai-openai-url');   if(el) el.value = savedSettings.ai_openai_url; }
+                if(savedSettings.ai_openai_model) { const el = $('#ai-openai-model'); if(el) el.value = savedSettings.ai_openai_model; }
+                // Do not pre-fill API key values for security — just show placeholder if set
+                const keyInput = $('#openclaw-api-key-input');
+                if(keyInput && savedSettings.openclaw_api_key_set) {
+                    keyInput.placeholder = 'Key is set — enter a new value to change it';
+                }
+                if(keyInput && savedSettings.openclaw_api_key) {
+                    keyInput.value = savedSettings.openclaw_api_key;
+                }
+            }
+        } catch(_) {}
 
         // ── OpenClaw ─────────────────────────────────────────────
         const logEl = $('#openclaw-log');
@@ -2600,6 +2678,9 @@
         $('#firefly-status').innerHTML = int.firefly?.connected
             ? '<span style="color:#22c55e;">Connected</span>'
             : (ffEnabled ? '<span style="color:#f59e0b;">Enabled — not yet connected</span>' : 'Disabled');
+        // Show inline config if enabled but not connected
+        const ffConfig = $('#firefly-config');
+        if(ffConfig) ffConfig.style.display = (ffEnabled && !int.firefly?.connected) ? '' : 'none';
     }
 
     async function toggleModule(id, enabled) {
@@ -2670,9 +2751,126 @@
     }
 
     async function toggleFirefly(enabled) {
-        const r = await api('/integrations/firefly', 'POST', {enabled});
-        if(r?.error) showToast('Failed: ' + r.error, 'error');
+        if(enabled) {
+            // Show inline config panel instead of immediately saving
+            const ffConfig = $('#firefly-config');
+            if(ffConfig) ffConfig.style.display = '';
+            _setToggleBg('firefly', true);
+        } else {
+            const ffConfig = $('#firefly-config');
+            if(ffConfig) ffConfig.style.display = 'none';
+            const r = await api('/integrations/firefly', 'POST', {enabled: false});
+            if(r && r.error) showToast('Failed: ' + r.error, 'error');
+            else showToast('Firefly III disabled', 'info');
+            loadSettings();
+        }
+    }
+
+    async function connectFirefly() {
+        const apiUrl = $('#firefly-api-url').value.trim();
+        const apiToken = $('#firefly-api-token').value.trim();
+        if(!apiUrl || !apiToken) return showToast('Enter API URL and token', 'error');
+        const r = await api('/integrations/firefly', 'POST', {
+            enabled: true,
+            api_url: apiUrl,
+            api_token: apiToken
+        });
+        if(r && r.error) showToast('Failed: ' + r.error, 'error');
+        else showToast('Firefly III connected!', 'success');
         loadSettings();
+    }
+
+    function cancelFirefly() {
+        const ffConfig = $('#firefly-config');
+        if(ffConfig) ffConfig.style.display = 'none';
+        const cb = $('#int-firefly');
+        if(cb) cb.checked = false;
+        _setToggleBg('firefly', false);
+    }
+
+    // ── AI Provider helpers ──────────────────────────────────────
+    function onAiProviderChange(provider) {
+        const ollamaFields = $('#ai-ollama-fields');
+        const openaiFields = $('#ai-openai-fields');
+        if(ollamaFields) ollamaFields.style.display = (provider === 'ollama') ? '' : 'none';
+        if(openaiFields) openaiFields.style.display = (provider === 'openai') ? '' : 'none';
+    }
+
+    async function saveAiProvider() {
+        const provider = $('#ai-provider-select').value;
+        const payload = {ai_provider: provider};
+        if(provider === 'ollama') {
+            payload.ai_ollama_url   = $('#ai-ollama-url').value.trim() || 'http://localhost:11434';
+            payload.ai_ollama_model = $('#ai-ollama-model').value.trim() || 'llama3';
+        } else if(provider === 'openai') {
+            payload.ai_openai_key   = $('#ai-openai-key').value.trim();
+            payload.ai_openai_url   = $('#ai-openai-url').value.trim();
+            payload.ai_openai_model = $('#ai-openai-model').value.trim();
+        }
+        const r = await api('/settings', 'POST', payload);
+        if(r && r.error) showToast('Failed: ' + r.error, 'error');
+        else showToast('AI settings saved', 'success');
+        loadSettings();
+    }
+
+    // ── OpenClaw helpers ─────────────────────────────────────────
+    function toggleOpenclawKeyVisibility() {
+        const input = $('#openclaw-api-key-input');
+        const btn   = $('#openclaw-key-toggle-btn');
+        if(!input) return;
+        if(input.type === 'password') {
+            input.type = 'text';
+            if(btn) btn.textContent = 'Hide';
+        } else {
+            input.type = 'password';
+            if(btn) btn.textContent = 'Show';
+        }
+    }
+
+    async function saveOpenclawKey() {
+        const key = $('#openclaw-api-key-input').value.trim();
+        if(!key) return showToast('Enter an API key', 'error');
+        const r = await api('/settings', 'POST', {openclaw_api_key: key});
+        if(r && r.error) showToast('Failed: ' + r.error, 'error');
+        else showToast('OpenClaw API key saved', 'success');
+        loadSettings();
+    }
+
+    // ── Reset All Data ────────────────────────────────────────────
+    let _resetConfirmTimer = null;
+    function handleResetAll() {
+        const btn = $('#reset-all-btn');
+        if(_resetConfirmTimer) {
+            // Second click within 3s — do the reset
+            clearTimeout(_resetConfirmTimer);
+            _resetConfirmTimer = null;
+            if(btn) { btn.textContent = 'Resetting...'; btn.disabled = true; }
+            api('/settings/reset', 'POST').then(r => {
+                if(r && r.error) {
+                    showToast('Reset failed: ' + r.error, 'error');
+                    if(btn) { btn.textContent = 'Reset All Data'; btn.disabled = false; }
+                } else {
+                    showToast('All data reset — reloading', 'warning');
+                    setTimeout(() => location.reload(), 1500);
+                }
+            });
+        } else {
+            // First click — show warning toast, wait for confirmation
+            showToast('Click again within 3s to confirm reset', 'warning');
+            if(btn) {
+                btn.textContent = 'Confirm Reset';
+                btn.style.background = 'rgba(239,68,68,0.3)';
+                btn.style.borderColor = 'rgba(239,68,68,0.6)';
+            }
+            _resetConfirmTimer = setTimeout(() => {
+                _resetConfirmTimer = null;
+                if(btn) {
+                    btn.textContent = 'Reset All Data';
+                    btn.style.background = 'rgba(239,68,68,0.12)';
+                    btn.style.borderColor = 'rgba(239,68,68,0.25)';
+                }
+            }, 3000);
+        }
     }
 
     async function loadStats() {

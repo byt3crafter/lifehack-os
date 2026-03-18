@@ -27,7 +27,7 @@ from routes import (
     auth_bp, habits_bp, food_bp, checkins_bp, walks_bp,
     patterns_bp, reports_bp, projects_bp, integrations_bp,
     misc_bp, openclaw_bp, challenges_bp, modules_bp, ai_bp,
-    api_docs_bp, plugins_bp,
+    api_docs_bp, plugins_bp, settings_bp,
 )
 
 
@@ -77,6 +77,7 @@ def create_app():
     app.register_blueprint(ai_bp)
     app.register_blueprint(api_docs_bp)
     app.register_blueprint(plugins_bp)
+    app.register_blueprint(settings_bp)
 
     # Health check endpoint (used by Docker HEALTHCHECK)
     @app.route('/health')

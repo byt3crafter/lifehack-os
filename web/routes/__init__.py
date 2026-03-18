@@ -21,6 +21,7 @@ from .modules import modules_bp
 from .ai import ai_bp
 from .api_docs import api_docs_bp
 from .plugins import plugins_bp
+from .settings import settings_bp
 
 __all__ = [
     'auth_bp',
@@ -39,4 +40,5 @@ __all__ = [
     'ai_bp',
     'api_docs_bp',
     'plugins_bp',
+    'settings_bp',
 ]

@@ -1,5 +1,7 @@
-"""Firefly III plugin — wraps the existing FireflyProvider."""
+"""Firefly III plugin — connects directly to the Firefly III REST API."""
 import logging
+
+import requests
 
 from .base import Plugin
 
@@ -7,25 +9,32 @@ logger = logging.getLogger(__name__)
 
 
 class FireflyPlugin(Plugin):
-    """Personal finance data via a Firefly III helper script."""
+    """Personal finance data via the Firefly III REST API."""
 
     id          = "firefly"
     name        = "Firefly III"
-    description = "Access accounts, transactions, and budgets via a Firefly III helper script."
+    description = "Access accounts, transactions, and budgets via the Firefly III REST API."
     category    = "finance"
     icon        = "F"
 
     def get_config_fields(self) -> list[dict]:
         return [
             {
-                "id":          "helper_path",
-                "label":       "Firefly Helper Script Path",
-                "type":        "text",
+                "id":          "api_url",
+                "label":       "Firefly III API URL",
+                "type":        "url",
                 "required":    True,
-                "placeholder": "/usr/local/bin/firefly.sh",
+                "placeholder": "https://firefly.example.com",
             },
             {
-                "id":          "account_id",
+                "id":          "api_token",
+                "label":       "Personal Access Token",
+                "type":        "password",
+                "required":    True,
+                "placeholder": "eyJ0eXAiOiJKV1QiLC...",
+            },
+            {
+                "id":          "default_account_id",
                 "label":       "Default Account ID",
                 "type":        "text",
                 "required":    False,
@@ -34,18 +43,18 @@ class FireflyPlugin(Plugin):
         ]
 
     def test_connection(self, config: dict) -> bool:
-        """Verify the helper script can be executed and returns account data."""
-        from src.infrastructure.providers.firefly import FireflyProvider, FireflyConfig
-
+        """Verify the API URL and token are valid by calling /api/v1/about."""
+        api_url = config.get("api_url", "").rstrip("/")
+        api_token = config.get("api_token", "")
+        if not api_url or not api_token:
+            return False
         try:
-            provider = FireflyProvider(
-                FireflyConfig(
-                    enabled=True,
-                    helper_path=config.get("helper_path", ""),
-                    default_account_id=config.get("account_id", ""),
-                )
+            resp = requests.get(
+                f"{api_url}/api/v1/about",
+                headers={"Authorization": f"Bearer {api_token}", "Accept": "application/json"},
+                timeout=10,
             )
-            return provider.test_connection()
+            return resp.status_code == 200
         except Exception:
             logger.debug("Firefly connection test failed", exc_info=True)
             return False
@@ -57,18 +66,22 @@ class FireflyPlugin(Plugin):
             "connected": connected,
             "detail": (
                 "Connected to Firefly III" if connected
-                else "Helper script not found or returned an error"
+                else "Could not reach Firefly III — check the API URL and token"
             ),
         }
 
     def get_provider(self, config: dict):
-        """Return a ready-to-use FireflyProvider."""
+        """Return a ready-to-use FireflyProvider (legacy helper-script wrapper).
+
+        Falls back to the existing helper-based provider so that existing
+        integrations continue to work while the REST-native provider is built.
+        """
         from src.infrastructure.providers.firefly import FireflyProvider, FireflyConfig
 
         return FireflyProvider(
             FireflyConfig(
                 enabled=True,
                 helper_path=config.get("helper_path", ""),
-                default_account_id=config.get("account_id", ""),
+                default_account_id=config.get("default_account_id", ""),
             )
         )
