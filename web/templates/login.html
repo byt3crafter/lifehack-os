@@ -3,63 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login — Life Hack OS</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        bg: { primary: '#0f0f0f', secondary: '#1a1a1a', card: '#242424' },
-                        accent: '#3b82f6'
-                    }
-                }
-            }
-        }
-    </script>
+    <title>Sign in — Life Hack OS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { background: #0f0f0f; font-family: 'Inter', system-ui, sans-serif; }
-        input { background: #1a1a1a !important; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #0c0c0e;
+            font-family: 'DM Sans', system-ui, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            color: #f0f0f2;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        /* Subtle background grid */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(79,128,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(79,128,255,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+        }
+
+        .container { width: 100%; max-width: 360px; position: relative; }
+
+        .brand {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .brand-mark {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #4f80ff, #22c55e);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            box-shadow: 0 0 32px rgba(79,128,255,0.25);
+        }
+        .brand h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #f0f0f2;
+            letter-spacing: -0.02em;
+        }
+        .brand p {
+            font-size: 0.8125rem;
+            color: #5c5c6b;
+            margin-top: 0.25rem;
+        }
+
+        .card {
+            background: #141416;
+            border: 1px solid #2a2a2e;
+            border-radius: 16px;
+            padding: 1.75rem;
+        }
+
+        .error-banner {
+            background: rgba(239,68,68,0.08);
+            border: 1px solid rgba(239,68,68,0.2);
+            color: #fca5a5;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            font-size: 0.8125rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .field { margin-bottom: 1rem; }
+        .field label {
+            display: block;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: #9898a6;
+            margin-bottom: 0.5rem;
+        }
+        .field input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: #0c0c0e;
+            border: 1px solid #2a2a2e;
+            border-radius: 10px;
+            color: #f0f0f2;
+            font-family: 'DM Sans', system-ui, sans-serif;
+            font-size: 0.9375rem;
+            transition: border-color 0.15s, box-shadow 0.15s;
+            outline: none;
+        }
+        .field input:focus {
+            border-color: #4f80ff;
+            box-shadow: 0 0 0 3px rgba(79,128,255,0.15);
+        }
+        .field input::placeholder { color: #3a3a48; }
+
+        .submit-btn {
+            width: 100%;
+            padding: 0.8125rem;
+            background: #4f80ff;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-family: 'DM Sans', system-ui, sans-serif;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s;
+            margin-top: 0.5rem;
+        }
+        .submit-btn:hover { background: #6b96ff; }
+        .submit-btn:active { transform: scale(0.98); }
+
+        .footer {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #3a3a48;
+            margin-top: 1.5rem;
+            letter-spacing: 0.04em;
+        }
     </style>
 </head>
-<body class="text-white min-h-screen flex items-center justify-center p-4">
-    <div class="w-full max-w-sm">
-        <div class="text-center mb-8">
-            <div class="text-4xl mb-2">⚡</div>
-            <h1 class="text-2xl font-bold">Life Hack OS</h1>
-            <p class="text-gray-400 text-sm mt-1">Personal Operating System</p>
+<body>
+    <div class="container">
+        <div class="brand">
+            <div class="brand-mark">
+                <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2.2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+            </div>
+            <h1>Life Hack OS</h1>
+            <p>Personal Operating System</p>
         </div>
-        
-        <form method="POST" class="bg-bg-card rounded-xl p-6 border border-gray-800">
+
+        <div class="card">
             {% if error %}
-            <div class="bg-red-500/20 border border-red-500/50 text-red-300 px-4 py-3 rounded-lg mb-4 text-sm">
-                {{ error }}
-            </div>
+            <div class="error-banner">{{ error }}</div>
             {% endif %}
-            
-            <div class="mb-4">
-                <label class="block text-sm text-gray-400 mb-2">Username</label>
-                <input type="text" name="username" required autofocus
-                    class="w-full px-4 py-3 rounded-lg border border-gray-700 text-white focus:border-accent focus:outline-none transition"
-                    placeholder="Enter username">
-            </div>
-            
-            <div class="mb-6">
-                <label class="block text-sm text-gray-400 mb-2">Password</label>
-                <input type="password" name="password" required
-                    class="w-full px-4 py-3 rounded-lg border border-gray-700 text-white focus:border-accent focus:outline-none transition"
-                    placeholder="Enter password">
-            </div>
-            
-            <button type="submit" 
-                class="w-full bg-accent hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition">
-                Sign In
-            </button>
-        </form>
-        
-        <p class="text-center text-gray-600 text-xs mt-6">
-            Discipline. Clarity. Progress.
-        </p>
+
+            <form method="POST">
+                <div class="field">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required autofocus
+                           autocomplete="username" placeholder="your username">
+                </div>
+                <div class="field" style="margin-bottom:1.5rem;">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required
+                           autocomplete="current-password" placeholder="••••••••">
+                </div>
+                <button type="submit" class="submit-btn">Sign in</button>
+            </form>
+        </div>
+
+        <p class="footer">Discipline · Clarity · Progress</p>
     </div>
 </body>
 </html>

@@ -4,16 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Life Hack OS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
+                    fontFamily: {
+                        sans: ['DM Sans', 'system-ui', 'sans-serif'],
+                        mono: ['DM Mono', 'monospace'],
+                    },
                     colors: {
-                        bg: { primary: '#0f0f0f', secondary: '#1a1a1a', card: '#242424' },
-                        accent: '#3b82f6', success: '#10b981', warning: '#f59e0b',
-                        danger: '#ef4444', sobriety: '#14b8a6', streak: '#f97316', xp: '#eab308',
-                        ai: '#8b5cf6'
+                        bg: { primary: '#0c0c0e', secondary: '#141416', card: '#1c1c20', elevated: '#242428' },
+                        border: { subtle: '#2a2a2e', default: '#333338', strong: '#444449' },
+                        text: { primary: '#f0f0f2', secondary: '#9898a6', tertiary: '#5c5c6b', inverse: '#0c0c0e' },
+                        accent: { DEFAULT: '#4f80ff', hover: '#6b96ff', muted: 'rgba(79,128,255,0.12)', strong: '#3366ee' },
+                        success: { DEFAULT: '#22c55e', muted: 'rgba(34,197,94,0.12)' },
+                        warning: { DEFAULT: '#f59e0b', muted: 'rgba(245,158,11,0.12)' },
+                        danger:  { DEFAULT: '#ef4444', muted: 'rgba(239,68,68,0.12)'  },
+                        purple:  { DEFAULT: '#8b5cf6', muted: 'rgba(139,92,246,0.12)' },
+                        /* legacy aliases kept for JS references */
+                        sobriety: '#14b8a6', streak: '#f97316', xp: '#eab308', ai: '#8b5cf6'
                     }
                 }
             }
@@ -21,246 +34,508 @@
     </script>
     <style>
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-        body { background: #0f0f0f; font-family: system-ui, -apple-system, sans-serif; }
-        .nav-btn.active { background: #3b82f6; }
-        .card { background: #242424; border: 1px solid #333; }
-        input, textarea, select { background: #1a1a1a !important; border-color: #333 !important; }
+
+        body {
+            background: #0c0c0e;
+            font-family: 'DM Sans', system-ui, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            color: #f0f0f2;
+        }
+
+        /* ── Navigation ─────────────────────────────── */
+        .nav-btn {
+            color: #9898a6;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            letter-spacing: 0.01em;
+            transition: color 0.15s, background 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+        }
+        .nav-btn:hover { color: #f0f0f2; background: rgba(255,255,255,0.05); }
+        .nav-btn.active { color: #f0f0f2; background: rgba(79,128,255,0.15); }
+        .nav-btn.active .nav-icon { color: #4f80ff; }
+
+        /* ── Cards ───────────────────────────────────── */
+        .card {
+            background: #1c1c20;
+            border: 1px solid #2a2a2e;
+            border-radius: 12px;
+        }
+        .card-elevated {
+            background: #242428;
+            border: 1px solid #333338;
+            border-radius: 12px;
+        }
+
+        /* ── Inputs ──────────────────────────────────── */
+        input, textarea, select {
+            background: #141416 !important;
+            border-color: #2a2a2e !important;
+            color: #f0f0f2 !important;
+            border-radius: 8px;
+            font-family: 'DM Sans', system-ui, sans-serif;
+            font-size: 0.875rem;
+            transition: border-color 0.15s;
+        }
+        input:focus, textarea:focus, select:focus {
+            outline: none !important;
+            border-color: #4f80ff !important;
+            box-shadow: 0 0 0 3px rgba(79,128,255,0.15) !important;
+        }
+        input::placeholder, textarea::placeholder { color: #5c5c6b !important; }
+
+        /* ── Buttons ─────────────────────────────────── */
+        .btn-primary {
+            background: #4f80ff;
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.875rem;
+            padding: 0.5rem 0.875rem;
+            border-radius: 8px;
+            transition: background 0.15s, transform 0.1s;
+            cursor: pointer;
+        }
+        .btn-primary:hover { background: #6b96ff; }
+        .btn-primary:active { transform: scale(0.97); }
+        .btn-ghost {
+            color: #9898a6;
+            font-size: 0.875rem;
+            padding: 0.5rem 0.875rem;
+            border-radius: 8px;
+            border: 1px solid #2a2a2e;
+            transition: border-color 0.15s, color 0.15s;
+        }
+        .btn-ghost:hover { border-color: #444449; color: #f0f0f2; }
+
+        /* ── Scrollbar ───────────────────────────────── */
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
-        .insight-card { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border: 1px solid #8b5cf650; }
+        ::-webkit-scrollbar-thumb { background: #2a2a2e; border-radius: 2px; }
+
+        /* ── Section labels ──────────────────────────── */
+        .section-label {
+            font-size: 0.6875rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #5c5c6b;
+        }
+
+        /* ── Insight card ────────────────────────────── */
+        .insight-card {
+            background: linear-gradient(135deg, #141424 0%, #141e38 100%);
+            border: 1px solid rgba(139,92,246,0.2);
+            border-radius: 12px;
+        }
+
+        /* ── Skeleton loader ─────────────────────────── */
+        .skeleton {
+            background: linear-gradient(90deg, #1c1c20 25%, #242428 50%, #1c1c20 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 6px;
+        }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        /* ── Animations ──────────────────────────────── */
         .pulse { animation: pulse 2s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        .habit-check-pop {
+            animation: checkpop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes checkpop { 0% { transform: scale(0.7); } 100% { transform: scale(1); } }
+
+        /* ── Toast ───────────────────────────────────── */
+        .toast {
+            position: fixed;
+            bottom: 5rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(0);
+            padding: 0.5rem 1rem;
+            border-radius: 100px;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            white-space: nowrap;
+            z-index: 100;
+            pointer-events: none;
+            animation: toast-in 0.2s ease, toast-out 0.2s ease 1.8s forwards;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        @keyframes toast-in  { from { opacity:0; transform: translateX(-50%) translateY(8px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
+        @keyframes toast-out { from { opacity:1; } to { opacity:0; } }
+        .toast-success { background: #1a3d2a; color: #4ade80; border: 1px solid rgba(74,222,128,0.2); }
+        .toast-error   { background: #3d1a1a; color: #f87171; border: 1px solid rgba(248,113,113,0.2); }
+        .toast-info    { background: #1a2540; color: #7ea8ff; border: 1px solid rgba(126,168,255,0.2); }
+        .toast-warning { background: #3d2f0f; color: #fbbf24; border: 1px solid rgba(251,191,36,0.2); }
+
+        /* ── Score ring ──────────────────────────────── */
+        #d-score-ring { transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* ── Progress bars ───────────────────────────── */
+        .progress-bar { transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* ── View transitions ────────────────────────── */
+        .view { animation: fadeIn 0.15s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ── Habit row ───────────────────────────────── */
+        .habit-row { transition: opacity 0.2s; }
+        .habit-row:active { transform: scale(0.99); }
     </style>
 </head>
-<body class="text-white min-h-screen overflow-x-hidden">
+<body class="min-h-screen overflow-x-hidden" style="color:#f0f0f2;">
+    <!-- SVG icon definitions (hidden, referenced by use) -->
+    <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+        <symbol id="icon-dashboard" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="2" width="7" height="7" rx="1.5"/><rect x="11" y="2" width="7" height="7" rx="1.5"/><rect x="2" y="11" width="7" height="7" rx="1.5"/><rect x="11" y="11" width="7" height="7" rx="1.5"/>
+        </symbol>
+        <symbol id="icon-habits" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 10l4 4 8-8"/>
+        </symbol>
+        <symbol id="icon-projects" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 7h14M3 10h10M3 13h7"/><rect x="2" y="4" width="16" height="13" rx="2"/>
+        </symbol>
+        <symbol id="icon-checkin" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 3H6a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2z"/><path d="M8 9h4M8 12h2"/>
+        </symbol>
+        <symbol id="icon-walks" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="10" cy="4" r="1.5"/><path d="M10 6.5L8 10l2 1 1.5 4M8 10l-2 4M12 10l2 3"/>
+        </symbol>
+        <symbol id="icon-redirect" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 10h12M11 6l5 4-5 4"/>
+        </symbol>
+        <symbol id="icon-food" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 3v6a3 3 0 006 0V3M10 12v5M4 6h2M14 6h2"/>
+        </symbol>
+        <symbol id="icon-fasting" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="10" cy="10" r="7"/><path d="M10 6v4l2.5 2.5"/>
+        </symbol>
+        <symbol id="icon-wishlist" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 3C7 3 4.5 5.5 4.5 8.5c0 4.5 5.5 8.5 5.5 8.5s5.5-4 5.5-8.5C15.5 5.5 13 3 10 3z"/><circle cx="10" cy="8.5" r="1.5"/>
+        </symbol>
+        <symbol id="icon-deepwork" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 10c0-3.9 3.1-7 7-7s7 3.1 7 7"/><path d="M10 3v3M6 5l1.5 2.5M14 5l-1.5 2.5"/><path d="M3 10h14M10 10v7"/>
+        </symbol>
+        <symbol id="icon-challenges" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="10" cy="10" r="7"/><path d="M10 6v4l3 2"/>
+        </symbol>
+        <symbol id="icon-settings" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="10" cy="10" r="2.5"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.2 4.2l1.4 1.4M14.4 14.4l1.4 1.4M4.2 15.8l1.4-1.4M14.4 5.6l1.4-1.4"/>
+        </symbol>
+    </svg>
+
     <!-- Mobile Header -->
-    <header class="md:hidden fixed top-0 left-0 right-0 bg-bg-secondary z-40 px-4 py-3 flex items-center justify-between border-b border-gray-800 safe-area-inset">
-        <button onclick="toggleNav()" class="p-2 -ml-2 hover:bg-white/10 rounded-lg">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+    <header class="md:hidden fixed top-0 left-0 right-0 z-40 px-4 py-3 flex items-center justify-between border-b"
+            style="background:#141416; border-color:#2a2a2e;">
+        <button onclick="toggleNav()" aria-label="Open navigation"
+                class="p-2 -ml-2 rounded-lg hover:bg-white/5 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
         </button>
-        <span class="font-bold text-sm">⚡ LIFE HACK</span>
-        <div id="mobile-xp" class="text-xp text-sm font-bold">0</div>
+        <span class="font-semibold text-sm tracking-tight" style="color:#f0f0f2;">Life Hack OS</span>
+        <div id="mobile-xp" class="text-xs font-mono font-medium" style="color:#eab308;">0 XP</div>
     </header>
 
     <!-- Mobile Nav Overlay -->
-    <div id="nav-overlay" class="md:hidden fixed inset-0 bg-black/80 z-40 hidden" onclick="toggleNav()"></div>
-    
+    <div id="nav-overlay" class="md:hidden fixed inset-0 z-40 hidden" style="background:rgba(0,0,0,0.7); backdrop-filter:blur(2px);" onclick="toggleNav()"></div>
+
     <!-- Mobile Nav Drawer -->
-    <nav id="mobile-nav" class="md:hidden fixed left-0 top-0 bottom-0 w-64 bg-bg-secondary z-50 transform -translate-x-full transition-transform p-4 flex flex-col">
-        <div class="flex items-center justify-between mb-6">
-            <span class="font-bold">⚡ LIFE HACK OS</span>
-            <button onclick="toggleNav()" class="p-2 hover:bg-white/10 rounded">&times;</button>
+    <nav id="mobile-nav" aria-label="Main navigation"
+         class="md:hidden fixed left-0 top-0 bottom-0 w-64 z-50 flex flex-col transform -translate-x-full transition-transform duration-200"
+         style="background:#141416; border-right:1px solid #2a2a2e; padding:1rem;">
+        <div class="flex items-center justify-between mb-5">
+            <span class="font-semibold text-sm" style="color:#f0f0f2;">Life Hack OS</span>
+            <button onclick="toggleNav()" aria-label="Close navigation"
+                    class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 transition-colors"
+                    style="color:#9898a6; font-size:1.2rem; line-height:1;">&times;</button>
         </div>
-        <div class="space-y-1 flex-1">
-            <button onclick="nav('dashboard')" data-v="dashboard" class="nav-btn w-full text-left px-4 py-3 rounded-lg">📊 Dashboard</button>
-            <button onclick="nav('habits')" data-v="habits" class="nav-btn w-full text-left px-4 py-3 rounded-lg">✓ Habits</button>
-            <button onclick="nav('projects')" data-v="projects" class="nav-btn w-full text-left px-4 py-3 rounded-lg">📁 Projects</button>
-            <button onclick="nav('checkin')" data-v="checkin" class="nav-btn w-full text-left px-4 py-3 rounded-lg">📝 Check-in</button>
-            <button onclick="nav('walks')" data-v="walks" class="nav-btn w-full text-left px-4 py-3 rounded-lg">🚶 Movement</button>
-            <button onclick="nav('replace')" data-v="replace" class="nav-btn w-full text-left px-4 py-3 rounded-lg">🔄 Redirect</button>
-            <button onclick="nav('food')" data-v="food" class="nav-btn w-full text-left px-4 py-3 rounded-lg">🍽️ Food</button>
-            <button onclick="nav('fasting')" data-v="fasting" class="nav-btn w-full text-left px-4 py-3 rounded-lg">⏱️ Fasting</button>
-            <button onclick="nav('wishlist')" data-v="wishlist" class="nav-btn w-full text-left px-4 py-3 rounded-lg">🗺️ Wishlist</button>
-            <button onclick="nav('deepwork')" data-v="deepwork" class="nav-btn w-full text-left px-4 py-3 rounded-lg">🧠 Deep Work</button>
-            <button onclick="nav('challenges')" data-v="challenges" class="nav-btn w-full text-left px-4 py-3 rounded-lg">🎯 Challenges</button>
-            <button onclick="nav('settings')" data-v="settings" class="nav-btn w-full text-left px-4 py-3 rounded-lg">⚙️ Settings</button>
+        <!-- XP card at top of mobile nav -->
+        <div class="mb-4 p-3 rounded-xl" style="background:#1c1c20; border:1px solid #2a2a2e;">
+            <div id="nav-xp" class="font-mono font-medium text-sm" style="color:#eab308;">0 XP</div>
+            <div id="nav-level" class="text-xs mt-0.5" style="color:#5c5c6b;">Level 1</div>
         </div>
-        <div class="card rounded-lg p-3 mt-4">
-            <div id="nav-xp" class="text-xp font-bold">0 XP</div>
-            <div id="nav-level" class="text-xs text-gray-400">Level 1</div>
+        <div class="space-y-0.5 flex-1 overflow-y-auto">
+            <button onclick="nav('dashboard')" data-v="dashboard" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Dashboard">
+                <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-dashboard"/></svg>Dashboard
+            </button>
+            <button onclick="nav('habits')" data-v="habits" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Habits">
+                <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-habits"/></svg>Habits
+            </button>
+            <button onclick="nav('projects')" data-v="projects" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Projects">
+                <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-projects"/></svg>Projects
+            </button>
+            <button onclick="nav('checkin')" data-v="checkin" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Check-in">
+                <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-checkin"/></svg>Check-in
+            </button>
+            <button onclick="nav('walks')" data-v="walks" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Movement">
+                <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-walks"/></svg>Movement
+            </button>
+            <button onclick="nav('replace')" data-v="replace" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Redirect">
+                <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-redirect"/></svg>Redirect
+            </button>
+            <button onclick="nav('food')" data-v="food" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Food">
+                <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-food"/></svg>Food
+            </button>
+            <button onclick="nav('fasting')" data-v="fasting" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Fasting">
+                <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-fasting"/></svg>Fasting
+            </button>
+            <button onclick="nav('wishlist')" data-v="wishlist" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Wishlist">
+                <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-wishlist"/></svg>Wishlist
+            </button>
+            <button onclick="nav('deepwork')" data-v="deepwork" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Deep Work">
+                <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-deepwork"/></svg>Deep Work
+            </button>
+            <button onclick="nav('challenges')" data-v="challenges" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Challenges">
+                <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-challenges"/></svg>Challenges
+            </button>
+            <button onclick="nav('settings')" data-v="settings" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Settings">
+                <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-settings"/></svg>Settings
+            </button>
         </div>
-        <a href="/logout" class="mt-4 text-center text-gray-500 text-sm py-2">Logout</a>
+        <a href="/logout" class="mt-4 text-center py-2 text-xs rounded-lg hover:bg-white/5 transition-colors" style="color:#5c5c6b;">Sign out</a>
     </nav>
 
     <div class="flex min-h-screen">
         <!-- Desktop Sidebar -->
-        <aside class="hidden md:flex w-52 bg-bg-secondary flex-col p-4 fixed left-0 top-0 bottom-0">
-            <h1 class="text-base font-bold mb-6">⚡ LIFE HACK OS</h1>
-            <div class="space-y-1 flex-1">
-                <button onclick="nav('dashboard')" data-v="dashboard" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg text-sm">📊 Dashboard</button>
-                <button onclick="nav('habits')" data-v="habits" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg text-sm">✓ Habits</button>
-                <button onclick="nav('projects')" data-v="projects" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg text-sm">📁 Projects</button>
-                <button onclick="nav('checkin')" data-v="checkin" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg text-sm">📝 Check-in</button>
-                <button onclick="nav('walks')" data-v="walks" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg text-sm">🚶 Movement</button>
-                <button onclick="nav('replace')" data-v="replace" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg text-sm">🔄 Redirect</button>
-                <button onclick="nav('food')" data-v="food" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg text-sm">🍽️ Food</button>
-                <button onclick="nav('fasting')" data-v="fasting" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg text-sm">⏱️ Fasting</button>
-                <button onclick="nav('wishlist')" data-v="wishlist" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg text-sm">🗺️ Wishlist</button>
-                <button onclick="nav('deepwork')" data-v="deepwork" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg text-sm">🧠 Deep Work</button>
-                <button onclick="nav('challenges')" data-v="challenges" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg text-sm">🎯 Challenges</button>
-                <button onclick="nav('settings')" data-v="settings" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg text-sm">⚙️ Settings</button>
+        <aside class="hidden md:flex flex-col fixed left-0 top-0 bottom-0 w-56"
+               style="background:#141416; border-right:1px solid #2a2a2e; padding:1.25rem 0.875rem;">
+            <!-- Brand -->
+            <div class="mb-6 px-2">
+                <div class="font-semibold text-sm tracking-tight" style="color:#f0f0f2;">Life Hack OS</div>
+                <div class="text-xs mt-0.5" style="color:#5c5c6b;">Personal Operating System</div>
             </div>
-            <div class="card rounded-lg p-3">
-                <div id="desk-xp" class="text-xp font-bold text-sm">0 XP</div>
-                <div id="desk-level" class="text-xs text-gray-400">Level 1</div>
+            <!-- XP display -->
+            <div class="mb-4 px-2 py-2.5 rounded-xl" style="background:#1c1c20; border:1px solid #2a2a2e;">
+                <div id="desk-xp" class="font-mono font-medium text-sm" style="color:#eab308;">0 XP</div>
+                <div id="desk-level" class="text-xs mt-0.5" style="color:#5c5c6b;">Level 1</div>
             </div>
-            <a href="/logout" class="mt-3 text-center text-gray-500 text-xs py-2 hover:text-white">Logout</a>
+            <!-- Nav items -->
+            <nav aria-label="Main navigation" class="space-y-0.5 flex-1 overflow-y-auto">
+                <button onclick="desktopNav('dashboard')" data-v="dashboard" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Dashboard">
+                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-dashboard"/></svg>Dashboard
+                </button>
+                <button onclick="desktopNav('habits')" data-v="habits" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Habits">
+                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-habits"/></svg>Habits
+                </button>
+                <button onclick="desktopNav('projects')" data-v="projects" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Projects">
+                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-projects"/></svg>Projects
+                </button>
+                <button onclick="desktopNav('checkin')" data-v="checkin" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Check-in">
+                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-checkin"/></svg>Check-in
+                </button>
+                <button onclick="desktopNav('walks')" data-v="walks" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Movement">
+                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-walks"/></svg>Movement
+                </button>
+                <button onclick="desktopNav('replace')" data-v="replace" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Redirect">
+                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-redirect"/></svg>Redirect
+                </button>
+                <button onclick="desktopNav('food')" data-v="food" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Food">
+                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-food"/></svg>Food
+                </button>
+                <button onclick="desktopNav('fasting')" data-v="fasting" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Fasting">
+                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-fasting"/></svg>Fasting
+                </button>
+                <button onclick="desktopNav('wishlist')" data-v="wishlist" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Wishlist">
+                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-wishlist"/></svg>Wishlist
+                </button>
+                <button onclick="desktopNav('deepwork')" data-v="deepwork" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Deep Work">
+                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-deepwork"/></svg>Deep Work
+                </button>
+                <button onclick="desktopNav('challenges')" data-v="challenges" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Challenges">
+                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-challenges"/></svg>Challenges
+                </button>
+                <button onclick="desktopNav('settings')" data-v="settings" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Settings">
+                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-settings"/></svg>Settings
+                </button>
+            </nav>
+            <a href="/logout" class="mt-4 text-center py-2 text-xs rounded-lg hover:bg-white/5 transition-colors" style="color:#5c5c6b;">Sign out</a>
         </aside>
 
         <!-- Main -->
-        <main class="flex-1 md:ml-52 pt-14 md:pt-0 pb-6 px-4 md:px-6">
+        <main class="flex-1 md:ml-56 pt-14 md:pt-0 pb-8 px-4 md:px-8">
             <!-- DASHBOARD -->
             <div id="v-dashboard" class="view">
                 <!-- Today's Header -->
-                <div class="mt-4 mb-4">
-                    <div class="text-gray-400 text-sm" id="d-date-label">Today</div>
-                    <h2 class="text-2xl font-bold" id="d-date">Saturday, March 15</h2>
+                <div class="mt-6 mb-5 flex items-end justify-between">
+                    <div>
+                        <div class="section-label mb-1" id="d-date-label">Today</div>
+                        <h2 class="text-2xl font-semibold tracking-tight" style="color:#f0f0f2;" id="d-date">Wednesday, March 18</h2>
+                    </div>
+                    <!-- Inline stat pills -->
+                    <div class="flex items-center gap-2 pb-0.5">
+                        <span class="text-xs font-mono font-medium px-2 py-1 rounded-lg" style="background:#1c1c20;border:1px solid #2a2a2e;color:#eab308;" id="s-xp">0 XP</span>
+                        <span class="text-xs font-medium px-2 py-1 rounded-lg" style="background:#1c1c20;border:1px solid #2a2a2e;color:#9898a6;">Lv <span id="s-level">1</span></span>
+                    </div>
                 </div>
-                
-                <!-- Daily Score Card -->
-                <div class="card rounded-xl p-4 mb-4 bg-gradient-to-br from-bg-card to-bg-secondary border-2 border-accent/30">
-                    <div class="flex items-center gap-4">
+
+                <!-- Daily Score Card — hero element -->
+                <div class="mb-5 p-4 rounded-2xl" style="background:linear-gradient(135deg,#171728 0%,#141e30 100%);border:1px solid #2a3560;">
+                    <div class="flex items-center gap-5">
                         <!-- Score Circle -->
-                        <div class="relative w-24 h-24 flex-shrink-0">
-                            <svg class="w-24 h-24 transform -rotate-90">
-                                <circle cx="48" cy="48" r="40" stroke="#333" stroke-width="8" fill="none"/>
-                                <circle id="d-score-ring" cx="48" cy="48" r="40" stroke="url(#scoreGradient)" stroke-width="8" fill="none"
-                                    stroke-linecap="round" stroke-dasharray="251.2" stroke-dashoffset="251.2" class="transition-all duration-1000"/>
+                        <div class="relative flex-shrink-0" style="width:88px;height:88px;">
+                            <svg width="88" height="88" style="transform:rotate(-90deg);" role="img" aria-label="Daily score ring">
+                                <circle cx="44" cy="44" r="36" stroke="#1e2440" stroke-width="7" fill="none"/>
+                                <circle id="d-score-ring" cx="44" cy="44" r="36"
+                                    stroke="url(#scoreGrad)" stroke-width="7" fill="none"
+                                    stroke-linecap="round"
+                                    stroke-dasharray="226.2" stroke-dashoffset="226.2"/>
                                 <defs>
-                                    <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                        <stop offset="0%" style="stop-color:#10b981"/>
-                                        <stop offset="100%" style="stop-color:#3b82f6"/>
+                                    <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stop-color="#22c55e"/>
+                                        <stop offset="100%" stop-color="#4f80ff"/>
                                     </linearGradient>
                                 </defs>
                             </svg>
                             <div class="absolute inset-0 flex items-center justify-center">
-                                <span id="d-score" class="text-2xl font-bold">0%</span>
+                                <span id="d-score" class="text-xl font-bold font-mono" style="color:#f0f0f2;">0%</span>
                             </div>
                         </div>
-                        
-                        <!-- Score Breakdown -->
-                        <div class="flex-1 space-y-1">
-                            <div class="text-sm font-bold mb-2">Daily Score</div>
-                            <div class="flex items-center gap-2 text-xs">
-                                <span class="w-16 text-gray-400">Habits</span>
-                                <div class="flex-1 h-1.5 bg-bg-secondary rounded-full overflow-hidden">
-                                    <div id="d-bar-habits" class="h-full bg-success transition-all" style="width:0%"></div>
+
+                        <!-- Breakdown -->
+                        <div class="flex-1 min-w-0">
+                            <div class="text-xs font-semibold mb-3" style="color:#9898a6; letter-spacing:0.06em; text-transform:uppercase;">Daily Score</div>
+                            <div class="space-y-2">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="text-xs w-14 flex-shrink-0" style="color:#5c5c6b;">Habits</span>
+                                    <div class="flex-1 h-1.5 rounded-full overflow-hidden" style="background:#1e2440;">
+                                        <div id="d-bar-habits" class="h-full progress-bar rounded-full" style="width:0%;background:#22c55e;"></div>
+                                    </div>
+                                    <span id="d-habits-pct" class="text-xs w-8 text-right font-mono" style="color:#9898a6;">0%</span>
                                 </div>
-                                <span id="d-habits-pct" class="w-8 text-right">0%</span>
-                            </div>
-                            <div class="flex items-center gap-2 text-xs">
-                                <span class="w-16 text-gray-400">Check-in</span>
-                                <div class="flex-1 h-1.5 bg-bg-secondary rounded-full overflow-hidden">
-                                    <div id="d-bar-checkin" class="h-full bg-accent transition-all" style="width:0%"></div>
+                                <div class="flex items-center gap-2.5">
+                                    <span class="text-xs w-14 flex-shrink-0" style="color:#5c5c6b;">Check-in</span>
+                                    <div class="flex-1 h-1.5 rounded-full overflow-hidden" style="background:#1e2440;">
+                                        <div id="d-bar-checkin" class="h-full progress-bar rounded-full" style="width:0%;background:#4f80ff;"></div>
+                                    </div>
+                                    <span id="d-checkin-status" class="text-xs w-8 text-right font-mono" style="color:#9898a6;">—</span>
                                 </div>
-                                <span id="d-checkin-status" class="w-8 text-right">—</span>
-                            </div>
-                            <div class="flex items-center gap-2 text-xs">
-                                <span class="w-16 text-gray-400">Food</span>
-                                <div class="flex-1 h-1.5 bg-bg-secondary rounded-full overflow-hidden">
-                                    <div id="d-bar-food" class="h-full bg-xp transition-all" style="width:0%"></div>
+                                <div class="flex items-center gap-2.5">
+                                    <span class="text-xs w-14 flex-shrink-0" style="color:#5c5c6b;">Food</span>
+                                    <div class="flex-1 h-1.5 rounded-full overflow-hidden" style="background:#1e2440;">
+                                        <div id="d-bar-food" class="h-full progress-bar rounded-full" style="width:0%;background:#eab308;"></div>
+                                    </div>
+                                    <span id="d-food-count" class="text-xs w-8 text-right font-mono" style="color:#9898a6;">0</span>
                                 </div>
-                                <span id="d-food-count" class="w-8 text-right">0</span>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Delta row inside hero card -->
+                    <div class="flex items-center gap-3 mt-4 pt-3" style="border-top:1px solid #2a3560;">
+                        <div class="flex items-center gap-1.5 flex-1">
+                            <span id="d-delta-icon" class="text-sm">—</span>
+                            <span id="d-delta-text" class="text-sm font-medium" style="color:#9898a6;">Loading...</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-xs" style="color:#5c5c6b;">Today</span>
+                            <span class="font-mono font-medium text-sm" style="color:#eab308;" id="d-points-today">0</span>
+                            <span id="d-points-delta" class="text-xs" style="color:#5c5c6b;"></span>
+                            <span class="text-xs" style="color:#5c5c6b;">pts</span>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Yesterday Comparison -->
-                <div class="grid grid-cols-2 gap-2 mb-4">
-                    <div class="card rounded-lg p-3">
-                        <div class="text-xs text-gray-400 mb-1">vs Yesterday</div>
-                        <div class="flex items-center gap-2">
-                            <span id="d-delta-icon" class="text-lg">—</span>
-                            <span id="d-delta-text" class="text-sm font-bold">Loading...</span>
-                        </div>
-                    </div>
-                    <div class="card rounded-lg p-3">
-                        <div class="text-xs text-gray-400 mb-1">Points Today</div>
-                        <div class="flex items-center gap-2">
-                            <span class="text-xp text-lg font-bold" id="d-points-today">0</span>
-                            <span id="d-points-delta" class="text-xs text-gray-400"></span>
-                        </div>
-                    </div>
-                </div>
-                
+
                 <!-- Tips -->
-                <div id="d-tips" class="card rounded-lg p-3 mb-4 border-l-4 border-ai bg-ai/5 hidden">
-                    <div class="text-xs text-ai font-bold mb-1">💡 Tip</div>
-                    <div id="d-tips-text" class="text-sm"></div>
+                <div id="d-tips" class="mb-4 px-4 py-3 rounded-xl hidden" style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.2);">
+                    <div class="flex items-start gap-2.5">
+                        <svg class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="#8b5cf6" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M10 2a6 6 0 00-3 11.2V15a1 1 0 001 1h4a1 1 0 001-1v-1.8A6 6 0 0010 2z"/><path stroke-linecap="round" stroke-linejoin="round" d="M8 17h4"/></svg>
+                        <div id="d-tips-text" class="text-sm" style="color:#c4b5fd;"></div>
+                    </div>
                 </div>
-                
+
                 <!-- AI Insights -->
-                <div id="insights-container" class="mb-4 space-y-2"></div>
-                
-                <!-- Quick Stats Row -->
-                <div class="grid grid-cols-4 gap-2 mb-4">
-                    <div class="card rounded-lg p-2 text-center">
-                        <div class="text-lg font-bold text-xp" id="s-xp">0</div>
-                        <div class="text-xs text-gray-400">XP</div>
+                <div id="insights-container" class="mb-5 space-y-2"></div>
+
+                <!-- Quick stats — passive, compact -->
+                <div class="grid grid-cols-2 gap-2 mb-5">
+                    <div class="rounded-xl p-3 flex items-center gap-3" style="background:#1c1c20;border:1px solid #2a2a2e;">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(20,184,166,0.12);">
+                            <svg class="w-4 h-4" fill="none" stroke="#14b8a6" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+                        </div>
+                        <div>
+                            <div class="font-mono font-semibold text-base" style="color:#f0f0f2;" id="s-sober">0d</div>
+                            <div class="text-xs" style="color:#5c5c6b;">Sober streak</div>
+                        </div>
                     </div>
-                    <div class="card rounded-lg p-2 text-center">
-                        <div class="text-lg font-bold text-accent" id="s-level">1</div>
-                        <div class="text-xs text-gray-400">Level</div>
-                    </div>
-                    <div class="card rounded-lg p-2 text-center">
-                        <div class="text-lg font-bold text-sobriety" id="s-sober">0d</div>
-                        <div class="text-xs text-gray-400">Sober</div>
-                    </div>
-                    <div class="card rounded-lg p-2 text-center">
-                        <div class="text-lg font-bold text-streak" id="s-streak">0</div>
-                        <div class="text-xs text-gray-400">Streak</div>
+                    <div class="rounded-xl p-3 flex items-center gap-3" style="background:#1c1c20;border:1px solid #2a2a2e;">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(249,115,22,0.12);">
+                            <svg class="w-4 h-4" fill="none" stroke="#f97316" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 15.929 8 16.929 10c.5-1.5.657-3.171 1-4.657a8 8 0 01-1.272 13.314z"/></svg>
+                        </div>
+                        <div>
+                            <div class="font-mono font-semibold text-base" style="color:#f0f0f2;" id="s-streak">0</div>
+                            <div class="text-xs" style="color:#5c5c6b;">Best habit streak</div>
+                        </div>
                     </div>
                 </div>
                 
-                <!-- Habits -->
                 <!-- Active Challenges Widget -->
-                <div id="dash-challenges-section" class="mb-4 hidden">
-                    <div class="flex justify-between items-center mb-2">
-                        <h3 class="font-bold text-sm">🎯 Active Challenges</h3>
-                        <button onclick="nav('challenges')" class="text-xs text-accent">View All →</button>
+                <div id="dash-challenges-section" class="mb-5 hidden">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="section-label">Active Challenges</span>
+                        <button onclick="desktopNav('challenges')" class="text-xs font-medium" style="color:#4f80ff;">View all</button>
                     </div>
                     <div id="dash-challenges" class="space-y-2"></div>
                 </div>
-                
-                <div class="flex justify-between items-center mb-2">
-                    <h3 class="font-bold text-sm">Today's Habits</h3>
-                    <span id="h-progress" class="text-xs text-gray-400">0/0</span>
+
+                <!-- Today's Habits -->
+                <div class="flex justify-between items-center mb-3">
+                    <span class="section-label">Today's Habits</span>
+                    <span id="h-progress" class="text-xs font-mono" style="color:#5c5c6b;">0/0</span>
                 </div>
-                <div id="dash-habits" class="space-y-1.5 mb-4"></div>
-                
+                <div id="dash-habits" class="space-y-1.5 mb-5">
+                    <!-- skeleton -->
+                    <div class="skeleton h-10 rounded-xl"></div>
+                    <div class="skeleton h-10 rounded-xl" style="opacity:0.7;"></div>
+                    <div class="skeleton h-10 rounded-xl" style="opacity:0.4;"></div>
+                </div>
+
                 <!-- Projects -->
-                <h3 class="font-bold text-sm mb-2">Projects</h3>
-                <div id="dash-projects" class="space-y-2 mb-4"></div>
+                <div class="flex justify-between items-center mb-3">
+                    <span class="section-label">Projects</span>
+                </div>
+                <div id="dash-projects" class="space-y-2 mb-5"></div>
 
                 <!-- Calendar -->
-                <div id="d-calendar-section" class="hidden mb-4">
-                    <h3 class="font-bold text-sm mb-2">Today's Schedule</h3>
+                <div id="d-calendar-section" class="hidden mb-5">
+                    <div class="section-label mb-3">Today's Schedule</div>
                     <div id="dash-calendar" class="space-y-1.5"></div>
                 </div>
-                
-                <!-- Daily History -->
-                <div class="mt-6">
+
+                <!-- 7-day History -->
+                <div class="mt-2 mb-4">
                     <div class="flex justify-between items-center mb-3">
-                        <h3 class="font-bold text-sm">Last 7 Days</h3>
-                        <span class="text-xs text-gray-400" id="d-week-avg">Avg: —%</span>
+                        <span class="section-label">Last 7 Days</span>
+                        <span class="text-xs font-mono" style="color:#5c5c6b;" id="d-week-avg">avg —%</span>
                     </div>
-                    <div id="d-history" class="grid grid-cols-7 gap-1"></div>
+                    <div id="d-history" class="grid grid-cols-7 gap-1.5"></div>
                 </div>
             </div>
 
             <!-- HABITS -->
             <div id="v-habits" class="view hidden">
-                <div class="flex justify-between items-center mt-4 mb-4">
-                    <h2 class="text-xl font-bold">Habits</h2>
-                    <button onclick="addHabitModal()" class="bg-accent px-3 py-1.5 rounded-lg text-sm">+ Add</button>
+                <div class="flex justify-between items-center mt-6 mb-5">
+                    <h2 class="text-xl font-semibold tracking-tight" style="color:#f0f0f2;">Habits</h2>
+                    <button onclick="addHabitModal()" class="btn-primary">+ Add habit</button>
                 </div>
                 <div id="habits-list" class="space-y-2"></div>
             </div>
 
             <!-- PROJECTS -->
             <div id="v-projects" class="view hidden">
-                <div class="flex justify-between items-center mt-4 mb-4">
-                    <h2 class="text-xl font-bold">Projects</h2>
-                    <button onclick="addProjectModal()" class="bg-accent px-3 py-1.5 rounded-lg text-sm">+ New</button>
+                <div class="flex justify-between items-center mt-6 mb-5">
+                    <h2 class="text-xl font-semibold tracking-tight" style="color:#f0f0f2;">Projects</h2>
+                    <button onclick="addProjectModal()" class="btn-primary">+ New project</button>
                 </div>
                 <div id="projects-list" class="space-y-3"></div>
             </div>
 
             <!-- CHECKIN -->
             <div id="v-checkin" class="view hidden">
-                <h2 class="text-xl font-bold mt-4 mb-4">Daily Check-in</h2>
+                <h2 class="text-xl font-semibold tracking-tight mt-6 mb-5" style="color:#f0f0f2;">Daily Check-in</h2>
                 <div class="space-y-3 max-w-lg">
                     <div class="card rounded-lg p-3">
                         <label class="text-xs text-gray-400 block mb-1">What did I complete?</label>
@@ -296,15 +571,15 @@
                         <label class="text-xs text-gray-400 block mb-1">Tomorrow's focus?</label>
                         <input id="ci-improve" class="w-full rounded p-2 text-sm border">
                     </div>
-                    <button onclick="saveCheckin()" class="w-full bg-success py-3 rounded-lg font-bold">Complete ✓</button>
+                    <button onclick="saveCheckin()" class="w-full py-3 rounded-xl font-semibold text-sm" style="background:#22c55e;color:#fff;">Complete check-in</button>
                 </div>
             </div>
 
             <!-- WALKS -->
             <div id="v-walks" class="view hidden">
-                <div class="flex justify-between items-center mt-4 mb-4">
-                    <h2 class="text-xl font-bold">Movement</h2>
-                    <button onclick="addWalkModal()" class="bg-success px-3 py-1.5 rounded-lg text-sm">+ Log</button>
+                <div class="flex justify-between items-center mt-6 mb-5">
+                    <h2 class="text-xl font-semibold tracking-tight" style="color:#f0f0f2;">Movement</h2>
+                    <button onclick="addWalkModal()" class="btn-primary" style="background:#22c55e;">+ Log</button>
                 </div>
                 <div class="grid grid-cols-2 gap-2 mb-4">
                     <div class="card rounded-lg p-3">
@@ -321,7 +596,7 @@
 
             <!-- REPLACE -->
             <div id="v-replace" class="view hidden">
-                <h2 class="text-xl font-bold mt-4 mb-4">🔄 Redirect Urge</h2>
+                <h2 class="text-xl font-semibold tracking-tight mt-6 mb-5" style="color:#f0f0f2;">Redirect Urge</h2>
                 <div class="max-w-lg space-y-3">
                     <div class="card rounded-lg p-3">
                         <label class="text-xs text-gray-400 block mb-2">Urge Level</label>
@@ -337,7 +612,7 @@
                         <label class="text-xs text-gray-400 block mb-2">What instead?</label>
                         <div id="rep-actions" class="space-y-1 max-h-48 overflow-y-auto"></div>
                     </div>
-                    <button onclick="logReplace()" class="w-full bg-sobriety py-3 rounded-lg font-bold">Redirect ✓</button>
+                    <button onclick="logReplace()" class="w-full py-3 rounded-xl font-semibold text-sm" style="background:#14b8a6;color:#fff;">Redirect</button>
                     <h3 class="font-bold text-sm pt-2">Recent</h3>
                     <div id="rep-logs" class="space-y-1"></div>
                 </div>
@@ -345,9 +620,9 @@
 
             <!-- FOOD -->
             <div id="v-food" class="view hidden">
-                <div class="flex justify-between items-center mt-4 mb-4">
-                    <h2 class="text-xl font-bold">🍽️ Food Log</h2>
-                    <button onclick="addFoodModal()" class="bg-accent px-3 py-1.5 rounded-lg text-sm">+ Log Meal</button>
+                <div class="flex justify-between items-center mt-6 mb-5">
+                    <h2 class="text-xl font-semibold tracking-tight" style="color:#f0f0f2;">Food Log</h2>
+                    <button onclick="addFoodModal()" class="btn-primary">+ Log meal</button>
                 </div>
                 
                 <!-- Today's Summary -->
@@ -374,7 +649,7 @@
 
             <!-- FASTING -->
             <div id="v-fasting" class="view hidden">
-                <h2 class="text-xl font-bold mt-4 mb-4">⏱️ Fasting Tracker</h2>
+                <h2 class="text-xl font-semibold tracking-tight mt-6 mb-5" style="color:#f0f0f2;">Fasting Tracker</h2>
                 
                 <div id="fast-active-card" class="card rounded-xl p-6 mb-4 text-center border-2 border-accent/20 hidden">
                     <div class="text-xs text-gray-400 uppercase tracking-widest mb-2">Active Fast</div>
@@ -397,7 +672,7 @@
                         <button onclick="startFast(20)" class="bg-bg-secondary px-4 py-2 rounded-lg text-sm border border-gray-700 hover:border-accent">20h</button>
                         <button onclick="startFast(24)" class="bg-bg-secondary px-4 py-2 rounded-lg text-sm border border-gray-700 hover:border-accent">24h</button>
                     </div>
-                    <button onclick="startFast(16)" class="bg-accent px-8 py-3 rounded-xl font-bold shadow-lg shadow-accent/20">Start Fast Now</button>
+                    <button onclick="startFast(16)" class="px-8 py-3 rounded-xl font-semibold text-sm" style="background:#4f80ff;color:#fff;box-shadow:0 4px 20px rgba(79,128,255,0.25);">Start Fast Now</button>
                 </div>
 
                 <h3 class="font-bold text-sm mb-2">History</h3>
@@ -406,16 +681,16 @@
 
             <!-- WISHLIST -->
             <div id="v-wishlist" class="view hidden">
-                <div class="flex justify-between items-center mt-4 mb-4">
-                    <h2 class="text-xl font-bold">🗺️ Wishlist</h2>
-                    <button onclick="addWishModal()" class="bg-accent px-3 py-1.5 rounded-lg text-sm">+ Add Place</button>
+                <div class="flex justify-between items-center mt-6 mb-5">
+                    <h2 class="text-xl font-semibold tracking-tight" style="color:#f0f0f2;">Wishlist</h2>
+                    <button onclick="addWishModal()" class="btn-primary">+ Add place</button>
                 </div>
                 <div id="wishlist-list" class="grid grid-cols-1 gap-3"></div>
             </div>
 
             <!-- DEEP WORK -->
             <div id="v-deepwork" class="view hidden">
-                <h2 class="text-xl font-bold mt-4 mb-4">🧠 Deep Work</h2>
+                <h2 class="text-xl font-semibold tracking-tight mt-6 mb-5" style="color:#f0f0f2;">Deep Work</h2>
                 
                 <div id="dw-active-card" class="card rounded-xl p-6 mb-4 text-center border-2 border-ai/20 hidden">
                     <div class="text-xs text-ai uppercase tracking-widest mb-2">Focus Mode Active</div>
@@ -439,25 +714,25 @@
 
             <!-- CHALLENGES -->
             <div id="v-challenges" class="view hidden">
-                <div class="flex justify-between items-center mt-4 mb-4">
-                    <h2 class="text-xl font-bold">🎯 Challenges</h2>
-                    <button onclick="addChallengeModal()" class="bg-accent px-3 py-1.5 rounded-lg text-sm">+ New Challenge</button>
+                <div class="flex justify-between items-center mt-6 mb-5">
+                    <h2 class="text-xl font-semibold tracking-tight" style="color:#f0f0f2;">Challenges</h2>
+                    <button onclick="addChallengeModal()" class="btn-primary">+ New challenge</button>
                 </div>
                 
                 <div class="mb-6">
-                    <h3 class="font-bold text-sm text-gray-400 mb-2">Active Challenges</h3>
+                    <div class="section-label mb-3">Active Challenges</div>
                     <div id="challenges-active" class="space-y-3"></div>
                 </div>
-                
+
                 <div>
-                    <h3 class="font-bold text-sm text-gray-400 mb-2">Completed / Failed</h3>
+                    <div class="section-label mb-3">Completed / Failed</div>
                     <div id="challenges-history" class="space-y-2"></div>
                 </div>
             </div>
 
             <!-- SETTINGS -->
             <div id="v-settings" class="view hidden">
-                <h2 class="text-xl font-bold mt-4 mb-4">⚙️ Settings</h2>
+                <h2 class="text-xl font-semibold tracking-tight mt-6 mb-5" style="color:#f0f0f2;">Settings</h2>
                 <div class="max-w-lg space-y-4">
                     <h3 class="font-bold text-sm text-gray-400">Integrations</h3>
                     
@@ -522,9 +797,12 @@
     </div>
 
     <!-- Modal -->
-    <div id="modal" class="fixed inset-0 bg-black/80 z-50 hidden items-center justify-center p-4">
-        <div class="bg-bg-card rounded-xl p-4 w-full max-w-sm border border-gray-700 max-h-[80vh] overflow-y-auto">
-            <h3 id="modal-title" class="font-bold mb-3"></h3>
+    <div id="modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.75);backdrop-filter:blur(3px);" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="w-full max-w-sm max-h-[85vh] overflow-y-auto rounded-2xl" style="background:#1c1c20;border:1px solid #333338;padding:1.25rem;">
+            <div class="flex items-center justify-between mb-4">
+                <h3 id="modal-title" class="font-semibold text-base" style="color:#f0f0f2;"></h3>
+                <button onclick="hideModal()" aria-label="Close" class="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/5 transition-colors text-lg leading-none" style="color:#5c5c6b;">&times;</button>
+            </div>
             <div id="modal-body"></div>
         </div>
     </div>
@@ -544,15 +822,27 @@
 
     function toggleNav() {
         const nav = $('#mobile-nav'), ov = $('#nav-overlay');
-        nav.classList.toggle('-translate-x-full');
-        ov.classList.toggle('hidden');
+        if(nav) nav.classList.toggle('-translate-x-full');
+        if(ov) ov.classList.toggle('hidden');
     }
 
+    // Mobile nav — closes drawer then loads view
     function nav(v) {
-        toggleNav();
+        const nav = $('#mobile-nav'), ov = $('#nav-overlay');
+        if(nav && !nav.classList.contains('-translate-x-full')) toggleNav();
+        _switchView(v);
+    }
+
+    // Desktop nav — no drawer to close
+    function desktopNav(v) {
+        _switchView(v);
+    }
+
+    function _switchView(v) {
         $$('.view').forEach(x => x.classList.add('hidden'));
         $$('.nav-btn').forEach(x => x.classList.remove('active'));
-        $(`#v-${v}`).classList.remove('hidden');
+        const el = $(`#v-${v}`);
+        if(el) el.classList.remove('hidden');
         $$(`[data-v="${v}"]`).forEach(x => x.classList.add('active'));
         load(v);
     }
@@ -571,6 +861,30 @@
         else if(v==='settings') await loadSettings();
         else if(v==='challenges') await loadChallenges();
     }
+
+    // ── Modal ────────────────────────────────────────────────────
+    function showModal(title, content) {
+        const modal = $('#modal');
+        $('#modal-title').textContent = title;
+        $('#modal-body').innerHTML = content;
+        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
+        // Focus first input
+        setTimeout(() => {
+            const first = modal.querySelector('input,textarea,select,button');
+            if(first) first.focus();
+        }, 50);
+    }
+
+    function hideModal() {
+        const modal = $('#modal');
+        modal.style.display = '';
+        modal.classList.add('hidden');
+    }
+
+    // Close modal on backdrop click or Escape
+    document.addEventListener('keydown', e => { if(e.key === 'Escape') hideModal(); });
+    document.addEventListener('click', e => { if(e.target.id === 'modal') hideModal(); });
 
     let dwInterval;
     async function loadDeepWork() {
@@ -794,7 +1108,7 @@
 
     async function saveFoodLog() {
         const desc = $('#nf-desc').value.trim();
-        if(!desc) return alert('Describe what you ate');
+        if(!desc) return showToast('Describe what you ate','error');
         
         const data = {
             meal_type: $('#nf-type').value,
@@ -835,7 +1149,7 @@
 
     async function updateFood(id) {
         const desc = $('#ef-desc').value.trim();
-        if(!desc) return alert('Description required');
+        if(!desc) return showToast('Description required','error');
         
         const data = {
             meal_type: $('#ef-type').value,
@@ -853,7 +1167,7 @@
     }
 
     async function deleteFood(id) {
-        if(!confirm('Delete this meal?')) return;
+        if(!window._confirm) { showToast('Click delete again to confirm','warning'); window._confirm=setTimeout(()=>window._confirm=null,3000); return; } clearTimeout(window._confirm); window._confirm=null;
         await api('/food/' + id, 'DELETE');
         loadFood();
     }
@@ -961,7 +1275,7 @@
     
     async function saveChallenge() {
         const name = $('#nc-name').value.trim();
-        if(!name) return alert('Enter a challenge name');
+        if(!name) return showToast('Enter a challenge name','error');
         
         const data = {
             name,
@@ -1136,7 +1450,7 @@
             check_in_frequency: $('#ec-freq').value
         };
         
-        if(!data.name) return alert('Name required');
+        if(!data.name) return showToast('Name required','error');
         
         const r = await api('/challenges/' + id, 'PUT', data);
         hideModal();
@@ -1148,7 +1462,7 @@
     
     // Delete challenge
     async function deleteChallenge(id, name) {
-        if(!confirm(`Delete "${name}"? This removes all history.`)) return;
+        if(!window._cconfirm) { showToast('Click delete again to confirm','warning'); window._cconfirm=setTimeout(()=>window._cconfirm=null,3000); return; } clearTimeout(window._cconfirm); window._cconfirm=null;
         
         const r = await api('/challenges/' + id, 'DELETE');
         if(r && r.success) {
@@ -1168,7 +1482,7 @@
     }
     
     async function restartChallenge(id) {
-        if(!confirm('Restart this challenge from day 1?')) return;
+        if(!window._rconfirm) { showToast('Click again to confirm restart','warning'); window._rconfirm=setTimeout(()=>window._rconfirm=null,3000); return; } clearTimeout(window._rconfirm); window._rconfirm=null;
         const r = await api('/challenges/' + id + '/restart', 'POST');
         if(r && r.success) {
             showToast('Challenge restarted! Let\'s go! 🔥', 'success');
@@ -1209,7 +1523,7 @@
                 username: 'dovik@micinthe.com',
                 password: 'Nx2923ZiN0x@!'
             });
-            if(r?.error) alert('Failed: ' + r.error);
+            if(r?.error) showToast('Failed: ' + r.error,'error');
         } else {
             await api('/integrations/vikunja', 'POST', {enabled: false});
         }
@@ -1221,13 +1535,13 @@
             enabled,
             account: 'dovik@micinthe.com'
         });
-        if(r?.error) alert('Failed: ' + r.error);
+        if(r?.error) showToast('Failed: ' + r.error,'error');
         loadSettings();
     }
 
     async function toggleFirefly(enabled) {
         const r = await api('/integrations/firefly', 'POST', {enabled});
-        if(r?.error) alert('Failed: ' + r.error);
+        if(r?.error) showToast('Failed: ' + r.error,'error');
         loadSettings();
     }
 
@@ -1314,8 +1628,8 @@
             const score = daily.today.score || 0;
             $('#d-score').textContent = score + '%';
             
-            // Animate score ring (circumference = 2 * PI * 40 = 251.2)
-            const offset = 251.2 - (251.2 * score / 100);
+            // Animate score ring (circumference = 2 * PI * 36 = 226.2)
+            const offset = 226.2 - (226.2 * score / 100);
             $('#d-score-ring').style.strokeDashoffset = offset;
             
             // Score breakdown bars
@@ -1381,14 +1695,20 @@
                 else if(d.score >= 50) color = 'bg-accent';
                 else if(d.score >= 25) color = 'bg-warning';
                 
+                // Color mapping with new palette
+                let cellBg = '#1c1c20', cellColor = '#5c5c6b';
+                if(d.score >= 75)      { cellBg = 'rgba(34,197,94,0.18)';  cellColor = '#4ade80'; }
+                else if(d.score >= 50) { cellBg = 'rgba(79,128,255,0.18)'; cellColor = '#7ea8ff'; }
+                else if(d.score >= 25) { cellBg = 'rgba(245,158,11,0.18)'; cellColor = '#fbbf24'; }
+
                 return `
-                    <div class="flex flex-col items-center gap-1 p-2 rounded-lg ${isToday ? 'ring-2 ring-accent' : ''}" 
+                    <div class="flex flex-col items-center gap-1.5 p-2 rounded-xl"
+                         style="${isToday ? 'outline:2px solid #4f80ff;outline-offset:1px;' : ''}"
                          title="${d.date}: ${d.score}%">
-                        <span class="text-xs text-gray-400">${dayName}</span>
-                        <div class="w-8 h-8 rounded-lg ${color} flex items-center justify-center text-xs font-bold">
-                            ${d.score}
-                        </div>
-                        <span class="text-xs ${isToday ? 'text-accent font-bold' : 'text-gray-500'}">${dayNum}</span>
+                        <span class="text-xs" style="color:#5c5c6b;">${dayName}</span>
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-mono font-semibold"
+                             style="background:${cellBg};color:${cellColor};">${d.score}</div>
+                        <span class="text-xs" style="color:${isToday ? '#4f80ff' : '#5c5c6b'};">${dayNum}</span>
                     </div>
                 `;
             }).join('');
@@ -1423,30 +1743,33 @@
         const done = h.filter(x=>x.completed).length;
         $('#h-progress').textContent = `${done}/${h.length}`;
         
-        $('#dash-habits').innerHTML = h.slice(0,6).map(x => `
-            <div class="card rounded-lg p-2.5 flex items-center gap-2 cursor-pointer hover:bg-white/5 transition-colors habit-row" 
-                 onclick="toggleH(${x.id}, ${!x.completed})" data-id="${x.id}">
-                <div class="w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all
-                    ${x.completed ? 'bg-success border-success' : 'border-gray-500 hover:border-success'}">
-                    ${x.completed ? '<svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>' : ''}
+        $('#dash-habits').innerHTML = h.length ? h.slice(0,6).map(x => `
+            <div class="rounded-xl p-2.5 flex items-center gap-3 cursor-pointer habit-row transition-colors"
+                 style="background:${x.completed ? 'rgba(34,197,94,0.06)' : '#1c1c20'};border:1px solid ${x.completed ? 'rgba(34,197,94,0.2)' : '#2a2a2e'};"
+                 onclick="toggleH(${x.id}, ${!x.completed})" data-id="${x.id}"
+                 role="button" tabindex="0" aria-pressed="${x.completed}"
+                 onkeydown="if(event.key==='Enter'||event.key===' ')toggleH(${x.id},${!x.completed})">
+                <div class="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 transition-all"
+                     style="border:2px solid ${x.completed ? '#22c55e' : '#444449'};background:${x.completed ? '#22c55e' : 'transparent'};">
+                    ${x.completed ? '<svg class="w-3 h-3" fill="none" stroke="white" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' : ''}
                 </div>
-                <span class="flex-1 truncate text-sm ${x.completed ? 'text-gray-500 line-through' : ''}">${x.name}</span>
-                ${x.streak > 0 ? `<span class="text-streak text-xs font-bold">🔥${x.streak}</span>` : ''}
-                <span class="text-xp text-xs font-bold">+${x.points}</span>
+                <span class="flex-1 truncate text-sm" style="color:${x.completed ? '#5c5c6b' : '#f0f0f2'};text-decoration:${x.completed ? 'line-through' : 'none'};">${x.name}</span>
+                ${x.streak > 0 ? `<span class="text-xs font-mono" style="color:#f97316;">${x.streak}d</span>` : ''}
+                <span class="text-xs font-mono" style="color:#eab308;">+${x.points}</span>
             </div>
-        `).join('');
+        `).join('') : '<div class="rounded-xl p-5 text-center" style="background:#1c1c20;border:1px dashed #2a2a2e;"><p class="text-sm" style="color:#5c5c6b;">No habits yet — <button onclick="desktopNav(\'habits\')" class="underline" style="color:#4f80ff;">add your first habit</button></p></div>';
         
-        $('#dash-projects').innerHTML = (p||[]).slice(0,3).map(x => `
-            <div class="card rounded-lg p-2.5">
-                <div class="flex justify-between text-sm mb-1">
-                    <span class="truncate">${x.name}</span>
-                    <span class="text-gray-400">${Math.round(x.progress*100)}%</span>
+        $('#dash-projects').innerHTML = (p||[]).length ? (p||[]).slice(0,3).map(x => `
+            <div class="rounded-xl p-3" style="background:#1c1c20;border:1px solid #2a2a2e;">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-medium truncate" style="color:#f0f0f2;">${x.title||x.name}</span>
+                    <span class="text-xs font-mono flex-shrink-0 ml-2" style="color:#5c5c6b;">${Math.round((x.progress||0)*100)}%</span>
                 </div>
-                <div class="h-1.5 bg-bg-secondary rounded-full overflow-hidden">
-                    <div class="h-full bg-accent" style="width:${x.progress*100}%"></div>
+                <div class="h-1 rounded-full overflow-hidden" style="background:#242428;">
+                    <div class="h-full rounded-full progress-bar" style="width:${(x.progress||0)*100}%;background:#4f80ff;"></div>
                 </div>
             </div>
-        `).join('') || '<p class="text-gray-500 text-sm">No projects</p>';
+        `).join('') : '<div class="rounded-xl p-4 text-center" style="background:#1c1c20;border:1px dashed #2a2a2e;"><p class="text-sm" style="color:#5c5c6b;">No projects yet</p></div>';
     }
 
     async function loadHabits() {
@@ -1521,7 +1844,7 @@
     }
     
     async function deleteHabit(id, name) {
-        if(!confirm(`Delete "${name}"? This will deactivate the habit.`)) return;
+        if(!window._hconfirm) { showToast('Click again to confirm delete','warning'); window._hconfirm=setTimeout(()=>window._hconfirm=null,3000); return; } clearTimeout(window._hconfirm); window._hconfirm=null;
         await api(`/habits/${id}`, 'DELETE');
         showToast('Habit removed', 'info');
         loadHabits();
@@ -1562,12 +1885,13 @@
     }
     
     function showToast(msg, type='info') {
-        const colors = {success: 'bg-success', error: 'bg-danger', info: 'bg-accent'};
+        // Remove any existing toast
+        document.querySelectorAll('.toast').forEach(t => t.remove());
         const toast = document.createElement('div');
-        toast.className = `fixed bottom-20 left-1/2 -translate-x-1/2 ${colors[type]} text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg z-50 animate-bounce`;
+        toast.className = `toast toast-${type}`;
         toast.textContent = msg;
         document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 2000);
+        setTimeout(() => toast.remove(), 2100);
     }
 
     async function loadProjects() {
@@ -1678,7 +2002,7 @@
             improvement_note: $('#ci-improve').value
         };
         const r = await api('/checkin', 'POST', d);
-        if(r) alert(`Saved! +${r.points} XP`);
+        if(r) showToast(`Saved! +${r.points} XP`,'success');
         loadStats();
     }
 
@@ -1718,10 +2042,10 @@
 
     async function logReplace() {
         const act = $('input[name="rep-act"]:checked')?.value;
-        if(!act) return alert('Pick an action');
+        if(!act) return showToast('Pick an action first','warning');
         const urge = +$('input[name="urge"]:checked').value;
         const r = await api('/replacements', 'POST', {action_id:+act, urge_level:urge});
-        if(r) alert(`Redirected! +${r.points} XP`);
+        if(r) showToast(`Redirected! +${r.points} XP`,'success');
         loadStats(); loadReplace();
     }
 
@@ -1801,17 +2125,18 @@
         };
         const r = await api('/walks', 'POST', d);
         hideModal();
-        if(r) alert(`Logged! +${r.points} XP`);
+        if(r) showToast(`Logged! +${r.points} XP`,'success');
         loadStats(); loadWalks();
     }
 
     // Events
     $('#ci-mood').oninput = e => $('#ci-mood-v').textContent = e.target.value;
     $('#ci-energy').oninput = e => $('#ci-energy-v').textContent = e.target.value;
-    $('#modal').onclick = e => { if(e.target.id === 'modal') hideModal(); };
 
-    // Init
-    load('dashboard'); loadStats();
+    // Init — mark dashboard active in both nav bars
+    $$('[data-v="dashboard"]').forEach(b => b.classList.add('active'));
+    load('dashboard');
+    loadStats();
     </script>
 </body>
 </html>

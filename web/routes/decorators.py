@@ -1,8 +1,9 @@
 """Route decorators for authentication."""
+import os
 from functools import wraps
 from flask import session, request, redirect, url_for, jsonify
 
-API_KEY = 'lifehack_openclaw_2026'
+API_KEY = os.environ.get('LIFEHACK_API_KEY', '')
 
 
 def login_required(f):

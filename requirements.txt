@@ -1,3 +1,14 @@
+# LifeHack OS - Python Dependencies
+
+# Web application
+flask>=3.0.0
+flask-cors>=4.0.0
+requests>=2.31.0
+python-dotenv>=1.0.0
+
+# Configuration
+toml>=0.10.2
+
+# Desktop GUI (optional - only needed for main.py)
 customtkinter>=5.2.0
 pillow>=10.0.0
-toml>=0.10.2

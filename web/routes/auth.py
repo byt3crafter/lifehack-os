@@ -1,11 +1,14 @@
 """Authentication routes."""
 from flask import Blueprint, render_template, request, redirect, url_for, session
 import hashlib
+import os
 
 auth_bp = Blueprint('auth', __name__)
 
-# User credentials
-USERS = {'dovik': hashlib.sha256('LifeHack2026!'.encode()).hexdigest()}
+# User credentials from environment variables
+_username = os.environ.get('LIFEHACK_USERNAME', 'admin')
+_password = os.environ.get('LIFEHACK_PASSWORD', 'changeme')
+USERS = {_username: hashlib.sha256(_password.encode()).hexdigest()}
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])

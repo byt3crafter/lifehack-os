@@ -168,11 +168,86 @@ def init_database() -> None:
         -- Initialize user stats if not exists
         INSERT OR IGNORE INTO user_stats (id, total_xp, level) VALUES (1, 0, 1);
         
+        -- Food Logs
+        CREATE TABLE IF NOT EXISTS food_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            logged_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            meal_type TEXT NOT NULL DEFAULT 'meal',
+            description TEXT DEFAULT '',
+            calories REAL,
+            protein_g REAL,
+            carbs_g REAL,
+            fat_g REAL,
+            image_path TEXT,
+            ai_analysis TEXT,
+            notes TEXT DEFAULT ''
+        );
+
+        -- Fasting Logs
+        CREATE TABLE IF NOT EXISTS fasting_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            start_at TEXT NOT NULL,
+            end_at TEXT,
+            target_hours INTEGER DEFAULT 16,
+            status TEXT DEFAULT 'active',
+            mood_start INTEGER DEFAULT 3,
+            mood_end INTEGER,
+            notes TEXT DEFAULT ''
+        );
+
+        -- Wishlist
+        CREATE TABLE IF NOT EXISTS wishlist (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            location TEXT DEFAULT '',
+            description TEXT DEFAULT '',
+            category TEXT DEFAULT 'place',
+            completed INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
+        -- Challenges
+        CREATE TABLE IF NOT EXISTS challenges (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            category TEXT DEFAULT 'general',
+            target_days INTEGER,
+            start_date TEXT NOT NULL,
+            end_date TEXT,
+            status TEXT DEFAULT 'active',
+            check_in_frequency TEXT DEFAULT 'daily',
+            last_check_in TEXT,
+            notes TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS challenge_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            challenge_id INTEGER NOT NULL,
+            action TEXT NOT NULL,
+            note TEXT,
+            logged_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (challenge_id) REFERENCES challenges(id)
+        );
+
+        -- AI Insights
+        CREATE TABLE IF NOT EXISTS ai_insights (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            insight_type TEXT NOT NULL,
+            title TEXT NOT NULL,
+            content TEXT NOT NULL,
+            priority INTEGER DEFAULT 0,
+            dismissed INTEGER DEFAULT 0
+        );
+
         -- Indexes
         CREATE INDEX IF NOT EXISTS idx_habit_completions_date ON habit_completions(completed_at);
         CREATE INDEX IF NOT EXISTS idx_checkins_date ON daily_checkins(date);
         CREATE INDEX IF NOT EXISTS idx_walks_date ON walk_logs(logged_at);
         CREATE INDEX IF NOT EXISTS idx_ledger_timestamp ON point_ledger(timestamp);
+        CREATE INDEX IF NOT EXISTS idx_food_date ON food_logs(logged_at);
+        CREATE INDEX IF NOT EXISTS idx_challenges_status ON challenges(status);
     """)
     
     conn.commit()

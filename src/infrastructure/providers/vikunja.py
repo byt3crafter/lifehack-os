@@ -10,7 +10,7 @@ from .base import TaskProvider, TaskItem, ProjectItem
 @dataclass
 class VikunjaConfig:
     """Vikunja API configuration."""
-    api_url: str = "https://tasks.micinthe.com/api/v1"
+    api_url: str = ""
     username: str = ""
     password: str = ""
     token: str = ""

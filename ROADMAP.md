@@ -260,10 +260,9 @@ LifeHack OS is a **daily-focused personal operating system** that tracks everyth
 
 ## 📝 Notes
 
-- All changes deploy to PRODUCTION (77.237.233.253)
-- Database: SQLite at /opt/lifehack-os/data/lifehack.db
-- Web: Flask on port 8420
-- URL: lifehack.micinthe.com
+- Database: SQLite at `data/lifehack.db` (auto-created)
+- Web: Flask on port 8420 (configurable via `.env`)
+- Configure via `.env` file (see `.env.example`)
 
 ---
 

@@ -33,8 +33,8 @@ class FireflyTransaction:
 class FireflyConfig:
     """Firefly III configuration."""
     enabled: bool = False
-    helper_path: str = "/home/d0v1k/clawd/skills/firefly/firefly.sh"
-    default_account_id: str = "381"  # Savings Regular Account
+    helper_path: str = ""
+    default_account_id: str = ""
 
 
 class FireflyProvider:

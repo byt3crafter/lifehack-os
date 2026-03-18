@@ -21,11 +21,11 @@ class CalendarEvent:
     all_day: bool = False
 
 
-@dataclass  
+@dataclass
 class GoogleCalendarConfig:
     """Google Calendar configuration."""
     enabled: bool = False
-    account: str = "dovik@micinthe.com"
+    account: str = ""
     calendars: List[str] = None  # None = all calendars
     
     def __post_init__(self):

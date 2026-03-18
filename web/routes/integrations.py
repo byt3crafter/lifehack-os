@@ -27,7 +27,7 @@ def configure_vikunja():
         disable_vikunja()
         return jsonify({'success': True, 'enabled': False})
     
-    api_url = data.get('api_url', 'https://tasks.micinthe.com/api/v1')
+    api_url = data.get('api_url', '')
     username = data.get('username', '')
     password = data.get('password', '')
     
@@ -47,7 +47,7 @@ def test_vikunja():
     from src.infrastructure.providers.vikunja import VikunjaTaskProvider, VikunjaConfig
     
     config = VikunjaConfig(
-        api_url=data.get('api_url', 'https://tasks.micinthe.com/api/v1'),
+        api_url=data.get('api_url', ''),
         username=data.get('username', ''),
         password=data.get('password', '')
     )
@@ -66,7 +66,7 @@ def configure_google_calendar():
         disable_google_calendar()
         return jsonify({'success': True, 'enabled': False})
     
-    account = data.get('account', 'dovik@micinthe.com')
+    account = data.get('account', '')
     if enable_google_calendar(account):
         return jsonify({'success': True, 'enabled': True, 'connected': True})
     else:

@@ -43,7 +43,7 @@ def get_vikunja_config() -> Optional[VikunjaConfig]:
         return None
     
     return VikunjaConfig(
-        api_url=vikunja.get("api_url", "https://tasks.micinthe.com/api/v1"),
+        api_url=vikunja.get("api_url", ""),
         username=vikunja.get("username", ""),
         password=vikunja.get("password", ""),
         token=vikunja.get("token", "")
@@ -141,7 +141,7 @@ def get_integration_status() -> dict:
     gcal_status = {
         "enabled": gcal.get("enabled", False),
         "connected": False,
-        "account": gcal.get("account", "dovik@micinthe.com"),
+        "account": gcal.get("account", ""),
         "description": "Events from Google Calendar"
     }
     
@@ -149,7 +149,7 @@ def get_integration_status() -> dict:
         try:
             config = GoogleCalendarConfig(
                 enabled=True,
-                account=gcal.get("account", "dovik@micinthe.com")
+                account=gcal.get("account", "")
             )
             provider = GoogleCalendarProvider(config)
             gcal_status["connected"] = provider.test_connection()
@@ -180,7 +180,7 @@ def get_integration_status() -> dict:
 
 # ============== Google Calendar ==============
 
-def enable_google_calendar(account: str = "dovik@micinthe.com") -> bool:
+def enable_google_calendar(account: str = "") -> bool:
     """Enable Google Calendar integration."""
     config = GoogleCalendarConfig(enabled=True, account=account)
     provider = GoogleCalendarProvider(config)
@@ -215,7 +215,7 @@ def get_calendar_provider() -> Optional[GoogleCalendarProvider]:
     
     config = GoogleCalendarConfig(
         enabled=True,
-        account=gcal.get("account", "dovik@micinthe.com")
+        account=gcal.get("account", "")
     )
     return GoogleCalendarProvider(config)
 

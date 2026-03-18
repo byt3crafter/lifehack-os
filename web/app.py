@@ -1,9 +1,19 @@
 #!/usr/bin/env python3
-"""Life Hack OS - AI-Native Personal Operating System (Modular)."""
+"""Life Hack OS - AI-Native Personal Operating System (Modular).
+
+Created by Ludovic Micinthe (dovik@micinthe.com) | Vibe Coder
+"""
 from flask import Flask
 from flask_cors import CORS
+import os
+import secrets
 import sys
 from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Load .env file from project root
+load_dotenv(Path(__file__).parent.parent / '.env')
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -22,28 +32,15 @@ from routes import (
 def create_app():
     """Application factory."""
     app = Flask(__name__, static_folder='static', template_folder='templates')
-    app.secret_key = 'lifehack-persistent-secret-2026'
+    app.secret_key = os.environ.get('LIFEHACK_SECRET_KEY') or secrets.token_hex(32)
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
     app.config['PERMANENT_SESSION_LIFETIME'] = 86400 * 30  # 30 days
     CORS(app)
     
-    # Initialize database
+    # Initialize database (all tables created in connection.py)
     init_database()
     config = load_config()
-    
-    # Create insights table
-    conn = get_connection()
-    conn.execute('''CREATE TABLE IF NOT EXISTS ai_insights (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        insight_type TEXT NOT NULL,
-        title TEXT NOT NULL,
-        content TEXT NOT NULL,
-        priority INTEGER DEFAULT 0,
-        dismissed INTEGER DEFAULT 0
-    )''')
-    conn.commit()
     
     # Seed defaults
     replacement_repo = ReplacementRepository()
@@ -74,4 +71,6 @@ def create_app():
 app = create_app()
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8420, debug=False)
+    host = os.environ.get('LIFEHACK_HOST', '0.0.0.0')
+    port = int(os.environ.get('LIFEHACK_PORT', 8420))
+    app.run(host=host, port=port, debug=False)
