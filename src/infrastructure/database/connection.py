@@ -230,6 +230,22 @@ def init_database() -> None:
             FOREIGN KEY (challenge_id) REFERENCES challenges(id)
         );
 
+        -- App Settings (modules, preferences)
+        CREATE TABLE IF NOT EXISTS app_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
+        -- OpenClaw Connection Log
+        CREATE TABLE IF NOT EXISTS openclaw_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            action TEXT NOT NULL,
+            detail TEXT DEFAULT '',
+            ip_address TEXT DEFAULT '',
+            logged_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
         -- AI Insights
         CREATE TABLE IF NOT EXISTS ai_insights (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

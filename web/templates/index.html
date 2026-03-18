@@ -733,64 +733,106 @@
             <!-- SETTINGS -->
             <div id="v-settings" class="view hidden">
                 <h2 class="text-xl font-semibold tracking-tight mt-6 mb-5" style="color:#f0f0f2;">Settings</h2>
-                <div class="max-w-lg space-y-4">
-                    <h3 class="font-bold text-sm text-gray-400">Integrations</h3>
-                    
-                    <!-- Vikunja -->
-                    <div class="card rounded-lg p-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center gap-2">
-                                <span class="text-xl">📋</span>
-                                <div>
-                                    <div class="font-bold">Vikunja</div>
-                                    <div class="text-xs text-gray-400">Task management</div>
-                                </div>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="int-vikunja" class="sr-only peer" onchange="toggleVikunja(this.checked)">
-                                <div class="w-11 h-6 bg-gray-700 peer-focus:ring-2 peer-focus:ring-accent rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
-                            </label>
-                        </div>
-                        <div id="vikunja-status" class="text-xs"></div>
+                <div class="max-w-lg space-y-6">
+
+                    <!-- MODULES -->
+                    <div>
+                        <h3 class="font-bold text-sm text-gray-400 mb-3">Modules</h3>
+                        <p class="text-xs text-gray-500 mb-3">Enable only the features you need. Disabled modules are hidden from navigation.</p>
+                        <div id="module-toggles" class="space-y-2"></div>
                     </div>
 
-                    <!-- Google Calendar -->
-                    <div class="card rounded-lg p-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center gap-2">
-                                <span class="text-xl">📅</span>
+                    <!-- AI PROVIDER -->
+                    <div>
+                        <h3 class="font-bold text-sm text-gray-400 mb-3">AI Provider</h3>
+                        <div class="card rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-2">
                                 <div>
-                                    <div class="font-bold">Google Calendar</div>
-                                    <div class="text-xs text-gray-400">Events & reminders</div>
+                                    <div class="font-bold" id="ai-provider-name">Checking...</div>
+                                    <div class="text-xs text-gray-400" id="ai-provider-desc">Loading AI status</div>
                                 </div>
+                                <div id="ai-provider-badge" class="text-xs px-2 py-0.5 rounded-full"></div>
                             </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="int-gcal" class="sr-only peer" onchange="toggleGCal(this.checked)">
-                                <div class="w-11 h-6 bg-gray-700 peer-focus:ring-2 peer-focus:ring-accent rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
-                            </label>
+                            <p class="text-xs text-gray-500 mt-2">Set <code class="text-gray-400">LIFEHACK_AI_PROVIDER</code> in your <code class="text-gray-400">.env</code> file. Options: none, ollama, openai</p>
                         </div>
-                        <div id="gcal-status" class="text-xs"></div>
                     </div>
 
-                    <!-- Firefly III -->
-                    <div class="card rounded-lg p-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center gap-2">
-                                <span class="text-xl">💰</span>
+                    <!-- OPENCLAW -->
+                    <div>
+                        <h3 class="font-bold text-sm text-gray-400 mb-3">AI Agent (OpenClaw)</h3>
+                        <div class="card rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-2">
                                 <div>
-                                    <div class="font-bold">Firefly III</div>
-                                    <div class="text-xs text-gray-400">Personal finance</div>
+                                    <div class="font-bold">External AI Agent API</div>
+                                    <div class="text-xs text-gray-400">Let an AI agent monitor and interact with your data</div>
                                 </div>
                             </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="int-firefly" class="sr-only peer" onchange="toggleFirefly(this.checked)">
-                                <div class="w-11 h-6 bg-gray-700 peer-focus:ring-2 peer-focus:ring-accent rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
-                            </label>
+                            <div class="text-xs mt-2 space-y-1">
+                                <div>Schema: <code class="text-gray-400">/api/openclaw/schema</code></div>
+                                <div>Auth: <code class="text-gray-400">X-API-Key</code> header (set in .env)</div>
+                            </div>
+                            <div id="openclaw-log" class="mt-3 text-xs text-gray-500"></div>
                         </div>
-                        <div id="firefly-status" class="text-xs"></div>
                     </div>
 
-                    <p class="text-xs text-gray-500 pt-4">More integrations coming soon: Health tracking, Notifications, etc.</p>
+                    <!-- INTEGRATIONS -->
+                    <div>
+                        <h3 class="font-bold text-sm text-gray-400 mb-3">Integrations</h3>
+
+                        <!-- Vikunja -->
+                        <div class="card rounded-lg p-4 mb-2">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xl">📋</span>
+                                    <div>
+                                        <div class="font-bold">Vikunja</div>
+                                        <div class="text-xs text-gray-400">Task management</div>
+                                    </div>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="int-vikunja" class="sr-only peer" onchange="toggleVikunja(this.checked)">
+                                    <div class="w-11 h-6 bg-gray-700 peer-focus:ring-2 peer-focus:ring-accent rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
+                                </label>
+                            </div>
+                            <div id="vikunja-status" class="text-xs"></div>
+                        </div>
+
+                        <!-- Google Calendar -->
+                        <div class="card rounded-lg p-4 mb-2">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xl">📅</span>
+                                    <div>
+                                        <div class="font-bold">Google Calendar</div>
+                                        <div class="text-xs text-gray-400">Events & reminders</div>
+                                    </div>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="int-gcal" class="sr-only peer" onchange="toggleGCal(this.checked)">
+                                    <div class="w-11 h-6 bg-gray-700 peer-focus:ring-2 peer-focus:ring-accent rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
+                                </label>
+                            </div>
+                            <div id="gcal-status" class="text-xs"></div>
+                        </div>
+
+                        <!-- Firefly III -->
+                        <div class="card rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xl">💰</span>
+                                    <div>
+                                        <div class="font-bold">Firefly III</div>
+                                        <div class="text-xs text-gray-400">Personal finance</div>
+                                    </div>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="int-firefly" class="sr-only peer" onchange="toggleFirefly(this.checked)">
+                                    <div class="w-11 h-6 bg-gray-700 peer-focus:ring-2 peer-focus:ring-accent rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
+                                </label>
+                            </div>
+                            <div id="firefly-status" class="text-xs"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -811,6 +853,7 @@
     const $ = s => document.querySelector(s);
     const $$ = s => document.querySelectorAll(s);
     let cats = {};
+    let enabledModules = {};
 
     async function api(e, m='GET', d=null) {
         const o = {method:m, headers:{'Content-Type':'application/json'}, credentials:'same-origin'};
@@ -818,6 +861,29 @@
         const r = await fetch('/api'+e, o);
         if(r.status === 401) { location.href = '/login'; return null; }
         return r.json();
+    }
+
+    // ── Modules ────────────────────────────────────────────────
+    async function loadModules() {
+        const mods = await api('/modules');
+        if(!mods) return;
+        enabledModules = {};
+        mods.forEach(m => { enabledModules[m.id] = m.enabled; });
+        applyModuleVisibility();
+    }
+
+    function applyModuleVisibility() {
+        // Always-visible views (never hidden by module toggle)
+        const alwaysOn = ['dashboard', 'settings'];
+        $$('.nav-btn[data-v]').forEach(btn => {
+            const v = btn.getAttribute('data-v');
+            if(alwaysOn.includes(v)) return;
+            if(enabledModules[v] === false) {
+                btn.style.display = 'none';
+            } else {
+                btn.style.display = '';
+            }
+        });
     }
 
     function toggleNav() {
@@ -1492,56 +1558,142 @@
     }
 
     async function loadSettings() {
+        // Load modules
+        const mods = await api('/modules');
+        if(mods) {
+            const container = $('#module-toggles');
+            container.innerHTML = mods.map(m => `
+                <div class="card rounded-lg p-3 flex items-center justify-between">
+                    <div class="flex-1">
+                        <div class="font-medium text-sm">${m.name}</div>
+                        <div class="text-xs text-gray-500">${m.description}</div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer ml-3">
+                        <input type="checkbox" class="sr-only peer" ${m.enabled ? 'checked' : ''} onchange="toggleModule('${m.id}', this.checked)">
+                        <div class="w-11 h-6 bg-gray-700 peer-focus:ring-2 peer-focus:ring-accent rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
+                    </label>
+                </div>
+            `).join('');
+        }
+
+        // Load AI provider status
+        const ai = await api('/ai/status');
+        if(ai) {
+            const names = {none:'Standalone (No AI)', ollama:'Ollama (Local LLM)', openai:'OpenAI-Compatible'};
+            $('#ai-provider-name').textContent = names[ai.provider] || ai.provider;
+            $('#ai-provider-desc').textContent = ai.available ? 'Connected and ready' : (ai.provider === 'none' ? 'App works fully without AI' : 'Not connected — check .env config');
+            const badge = $('#ai-provider-badge');
+            if(ai.provider === 'none') {
+                badge.textContent = 'Standalone';
+                badge.style.cssText = 'background:rgba(100,100,120,0.2);color:#9898a6;';
+            } else if(ai.available) {
+                badge.textContent = 'Active';
+                badge.style.cssText = 'background:rgba(16,185,129,0.15);color:#10b981;';
+            } else {
+                badge.textContent = 'Offline';
+                badge.style.cssText = 'background:rgba(239,68,68,0.15);color:#ef4444;';
+            }
+        }
+
+        // Load OpenClaw recent activity
+        try {
+            const logResp = await fetch('/api/openclaw/log', {headers:{'X-API-Key':'check'}, credentials:'same-origin'});
+            // Only show if openclaw module is enabled — don't worry about auth failures
+        } catch(e) {}
+
+        // Load integrations
         const int = await api('/integrations');
         if(!int) return;
-        
+
         // Vikunja
         $('#int-vikunja').checked = int.vikunja?.enabled || false;
-        $('#vikunja-status').innerHTML = int.vikunja?.connected 
-            ? '<span class="text-success">✓ Connected</span>' 
+        $('#vikunja-status').innerHTML = int.vikunja?.connected
+            ? '<span class="text-success">✓ Connected</span>'
             : (int.vikunja?.enabled ? '<span class="text-warning">⚠ Not connected</span>' : '<span class="text-gray-500">Disabled</span>');
-        
+
         // Google Calendar
         $('#int-gcal').checked = int.google_calendar?.enabled || false;
-        $('#gcal-status').innerHTML = int.google_calendar?.connected 
-            ? '<span class="text-success">✓ Connected</span>' 
+        $('#gcal-status').innerHTML = int.google_calendar?.connected
+            ? '<span class="text-success">✓ Connected</span>'
             : (int.google_calendar?.enabled ? '<span class="text-warning">⚠ Not connected</span>' : '<span class="text-gray-500">Disabled</span>');
-        
+
         // Firefly
         $('#int-firefly').checked = int.firefly?.enabled || false;
-        $('#firefly-status').innerHTML = int.firefly?.connected 
-            ? '<span class="text-success">✓ Connected</span>' 
+        $('#firefly-status').innerHTML = int.firefly?.connected
+            ? '<span class="text-success">✓ Connected</span>'
             : (int.firefly?.enabled ? '<span class="text-warning">⚠ Not connected</span>' : '<span class="text-gray-500">Disabled</span>');
+    }
+
+    async function toggleModule(id, enabled) {
+        const update = {};
+        update[id] = enabled;
+        await api('/modules', 'POST', update);
+        await loadModules();
+        showToast(enabled ? 'Module enabled' : 'Module disabled', 'success');
     }
 
     async function toggleVikunja(enabled) {
         if(enabled) {
-            // For now, use default credentials (could show modal for custom)
-            const r = await api('/integrations/vikunja', 'POST', {
-                enabled: true,
-                api_url: 'https://tasks.micinthe.com/api/v1',
-                username: 'dovik@micinthe.com',
-                password: 'Nx2923ZiN0x@!'
-            });
-            if(r?.error) showToast('Failed: ' + r.error,'error');
+            showModal('Connect Vikunja', `
+                <div class="space-y-3">
+                    <div><label class="text-xs text-gray-400">API URL</label>
+                    <input id="vik-url" class="w-full rounded-lg px-3 py-2 text-sm mt-1" style="background:#141416;border:1px solid #2a2a2e;color:#f0f0f2;" placeholder="https://tasks.example.com/api/v1"></div>
+                    <div><label class="text-xs text-gray-400">Username</label>
+                    <input id="vik-user" class="w-full rounded-lg px-3 py-2 text-sm mt-1" style="background:#141416;border:1px solid #2a2a2e;color:#f0f0f2;" placeholder="your-email@example.com"></div>
+                    <div><label class="text-xs text-gray-400">Password</label>
+                    <input id="vik-pass" type="password" class="w-full rounded-lg px-3 py-2 text-sm mt-1" style="background:#141416;border:1px solid #2a2a2e;color:#f0f0f2;"></div>
+                    <button onclick="connectVikunja()" class="w-full py-2.5 rounded-lg font-medium text-sm" style="background:#4f80ff;color:#fff;">Connect</button>
+                </div>
+            `);
         } else {
             await api('/integrations/vikunja', 'POST', {enabled: false});
+            loadSettings();
         }
+    }
+
+    async function connectVikunja() {
+        const r = await api('/integrations/vikunja', 'POST', {
+            enabled: true,
+            api_url: $('#vik-url').value,
+            username: $('#vik-user').value,
+            password: $('#vik-pass').value
+        });
+        hideModal();
+        if(r?.error) showToast('Failed: ' + r.error, 'error');
+        else showToast('Vikunja connected!', 'success');
         loadSettings();
     }
 
     async function toggleGCal(enabled) {
+        if(enabled) {
+            showModal('Connect Google Calendar', `
+                <div class="space-y-3">
+                    <div><label class="text-xs text-gray-400">Google Account</label>
+                    <input id="gcal-account" class="w-full rounded-lg px-3 py-2 text-sm mt-1" style="background:#141416;border:1px solid #2a2a2e;color:#f0f0f2;" placeholder="your-email@gmail.com"></div>
+                    <p class="text-xs text-gray-500">Requires 'gog' CLI tool to be installed and authenticated.</p>
+                    <button onclick="connectGCal()" class="w-full py-2.5 rounded-lg font-medium text-sm" style="background:#4f80ff;color:#fff;">Connect</button>
+                </div>
+            `);
+        } else {
+            await api('/integrations/google_calendar', 'POST', {enabled: false});
+            loadSettings();
+        }
+    }
+
+    async function connectGCal() {
         const r = await api('/integrations/google_calendar', 'POST', {
-            enabled,
-            account: 'dovik@micinthe.com'
+            enabled: true,
+            account: $('#gcal-account').value
         });
-        if(r?.error) showToast('Failed: ' + r.error,'error');
+        hideModal();
+        if(r?.error) showToast('Failed: ' + r.error, 'error');
+        else showToast('Google Calendar connected!', 'success');
         loadSettings();
     }
 
     async function toggleFirefly(enabled) {
         const r = await api('/integrations/firefly', 'POST', {enabled});
-        if(r?.error) showToast('Failed: ' + r.error,'error');
+        if(r?.error) showToast('Failed: ' + r.error, 'error');
         loadSettings();
     }
 
@@ -2133,10 +2285,12 @@
     $('#ci-mood').oninput = e => $('#ci-mood-v').textContent = e.target.value;
     $('#ci-energy').oninput = e => $('#ci-energy-v').textContent = e.target.value;
 
-    // Init — mark dashboard active in both nav bars
-    $$('[data-v="dashboard"]').forEach(b => b.classList.add('active'));
-    load('dashboard');
-    loadStats();
+    // Init — load modules first, then dashboard
+    loadModules().then(() => {
+        $$('[data-v="dashboard"]').forEach(b => b.classList.add('active'));
+        load('dashboard');
+        loadStats();
+    });
     </script>
 </body>
 </html>

@@ -25,7 +25,7 @@ from src.infrastructure.database.repositories import ReplacementRepository
 from routes import (
     auth_bp, habits_bp, food_bp, checkins_bp, walks_bp,
     patterns_bp, reports_bp, projects_bp, integrations_bp,
-    misc_bp, openclaw_bp, challenges_bp
+    misc_bp, openclaw_bp, challenges_bp, modules_bp, ai_bp
 )
 
 
@@ -64,6 +64,8 @@ def create_app():
     app.register_blueprint(misc_bp)
     app.register_blueprint(openclaw_bp)
     app.register_blueprint(challenges_bp)
+    app.register_blueprint(modules_bp)
+    app.register_blueprint(ai_bp)
     
     return app
 

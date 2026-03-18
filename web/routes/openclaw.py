@@ -1,4 +1,9 @@
-"""OpenClaw API routes (AI integration endpoints)."""
+"""OpenClaw API routes (AI agent integration endpoints).
+
+OpenClaw is an external AI agent that connects to LifeHack OS via these endpoints.
+Any OpenClaw-compatible AI agent can use these to monitor, report, and push data.
+Authenticate with X-API-Key header.
+"""
 from flask import Blueprint, jsonify, request
 from datetime import date, datetime
 
@@ -16,6 +21,20 @@ habit_repo = HabitRepository()
 checkin_repo = CheckinRepository()
 stats_repo = StatsRepository()
 config = load_config()
+
+
+def _log_openclaw_action(action: str, detail: str = ''):
+    """Log an OpenClaw action for the connection log."""
+    try:
+        conn = get_connection()
+        ip = request.remote_addr or ''
+        conn.execute(
+            "INSERT INTO openclaw_log (action, detail, ip_address) VALUES (?, ?, ?)",
+            (action, detail, ip)
+        )
+        conn.commit()
+    except Exception:
+        pass
 
 
 @openclaw_bp.route('/status', methods=['GET'])
@@ -62,6 +81,7 @@ def openclaw_status():
         },
         'pending_actions': [h.name for h in habits if h.id not in completed_ids]
     })
+    _log_openclaw_action('status_check')
 
 
 @openclaw_bp.route('/insight', methods=['POST'])
@@ -75,6 +95,7 @@ def openclaw_push_insight():
         (data.get('type', 'advice'), data['title'], data['content'], data.get('priority', 0))
     )
     conn.commit()
+    _log_openclaw_action('push_insight', data.get('title', ''))
     return jsonify({'success': True})
 
 
@@ -106,6 +127,7 @@ def openclaw_do_checkin():
     if is_new:
         stats_repo.add_points('checkin', points, "Check-in via OpenClaw", checkin.id)
     
+    _log_openclaw_action('checkin', f"{points} pts")
     return jsonify({'success': True, 'points': points})
 
 
@@ -132,6 +154,7 @@ def openclaw_complete_habit():
             )
             habit_repo.log_completion(completion)
             stats_repo.add_points('habit', points, f"Completed via OpenClaw: {h.name}", h.id)
+            _log_openclaw_action('habit_complete', h.name)
             return jsonify({'success': True, 'habit': h.name, 'points': points})
     
     return jsonify({'error': 'Habit not found'}), 404
@@ -150,6 +173,7 @@ def openclaw_create_habit():
         points=config.scoring.base_habit_points
     )
     habit = habit_repo.create(habit)
+    _log_openclaw_action('habit_create', habit.name)
     return jsonify({'success': True, 'id': habit.id, 'name': habit.name})
 
 
@@ -193,4 +217,98 @@ def openclaw_log_food():
     )
     conn.commit()
     
+    _log_openclaw_action('food_log', data.get('description', ''))
     return jsonify({'success': True, 'id': cursor.lastrowid})
+
+
+@openclaw_bp.route('/schema', methods=['GET'])
+def openclaw_schema():
+    """Self-documenting API schema. No auth required — lets OpenClaw discover endpoints."""
+    return jsonify({
+        'name': 'LifeHack OS OpenClaw API',
+        'version': '1.0',
+        'auth': {
+            'type': 'api_key',
+            'header': 'X-API-Key',
+            'description': 'Set your API key in .env as LIFEHACK_API_KEY'
+        },
+        'endpoints': [
+            {
+                'path': '/api/openclaw/status',
+                'method': 'GET',
+                'description': 'Full status dump — XP, habits, check-in, patterns, pending actions',
+                'auth': True
+            },
+            {
+                'path': '/api/openclaw/habits',
+                'method': 'GET',
+                'description': 'List all habits with streaks and today completion status',
+                'auth': True
+            },
+            {
+                'path': '/api/openclaw/habit/complete',
+                'method': 'POST',
+                'description': 'Mark a habit complete by name',
+                'body': {'habit_name': 'string (partial match)'},
+                'auth': True
+            },
+            {
+                'path': '/api/openclaw/habit/create',
+                'method': 'POST',
+                'description': 'Create a new habit',
+                'body': {'name': 'string', 'category': 'string (optional)', 'frequency': 'daily|weekly', 'difficulty': '1-5'},
+                'auth': True
+            },
+            {
+                'path': '/api/openclaw/checkin',
+                'method': 'POST',
+                'description': 'Submit a daily check-in',
+                'body': {'completed_today': 'string', 'avoided_alcohol': 'bool', 'mood': '1-5', 'energy': '1-5', 'improvement_note': 'string'},
+                'auth': True
+            },
+            {
+                'path': '/api/openclaw/insight',
+                'method': 'POST',
+                'description': 'Push an insight to the dashboard',
+                'body': {'title': 'string', 'content': 'string', 'type': 'advice|warning|celebration|tip', 'priority': '0-10'},
+                'auth': True
+            },
+            {
+                'path': '/api/openclaw/food/log',
+                'method': 'POST',
+                'description': 'Log food with nutrition data',
+                'body': {'meal_type': 'string', 'description': 'string', 'calories': 'number', 'protein_g': 'number', 'carbs_g': 'number', 'fat_g': 'number'},
+                'auth': True
+            },
+            {
+                'path': '/api/openclaw/log',
+                'method': 'GET',
+                'description': 'View recent connection activity log',
+                'auth': True
+            },
+            {
+                'path': '/api/openclaw/schema',
+                'method': 'GET',
+                'description': 'This endpoint — API documentation',
+                'auth': False
+            }
+        ]
+    })
+
+
+@openclaw_bp.route('/log', methods=['GET'])
+@api_key_required
+def openclaw_connection_log():
+    """View recent OpenClaw activity."""
+    _log_openclaw_action('view_log')
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT * FROM openclaw_log ORDER BY logged_at DESC LIMIT 50"
+    ).fetchall()
+    return jsonify([{
+        'id': r['id'],
+        'action': r['action'],
+        'detail': r['detail'],
+        'ip': r['ip_address'],
+        'timestamp': r['logged_at']
+    } for r in rows])

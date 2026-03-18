@@ -17,10 +17,12 @@ from .integrations import integrations_bp
 from .misc import misc_bp
 from .openclaw import openclaw_bp
 from .challenges import challenges_bp
+from .modules import modules_bp
+from .ai import ai_bp
 
 __all__ = [
     'auth_bp',
-    'habits_bp', 
+    'habits_bp',
     'food_bp',
     'checkins_bp',
     'walks_bp',
@@ -30,5 +32,7 @@ __all__ = [
     'integrations_bp',
     'misc_bp',
     'openclaw_bp',
-    'challenges_bp'
+    'challenges_bp',
+    'modules_bp',
+    'ai_bp',
 ]
