@@ -19,6 +19,7 @@ from .openclaw import openclaw_bp
 from .challenges import challenges_bp
 from .modules import modules_bp
 from .ai import ai_bp
+from .api_docs import api_docs_bp
 
 __all__ = [
     'auth_bp',
@@ -35,4 +36,5 @@ __all__ = [
     'challenges_bp',
     'modules_bp',
     'ai_bp',
+    'api_docs_bp',
 ]

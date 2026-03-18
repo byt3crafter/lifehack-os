@@ -3,6 +3,7 @@ from flask import Blueprint, jsonify, request
 
 from .decorators import login_required
 from src.domain.entities import Project
+from src.infrastructure.database import get_connection
 from src.infrastructure.database.repositories import ProjectRepository, StatsRepository
 from src.infrastructure.providers import get_task_provider
 
@@ -32,7 +33,37 @@ def create_project():
     project = Project(name=data['name'], description=data.get('description', ''))
     project = project_repo.create(project)
     stats_repo.add_points('project', project.points_start, f"Started: {project.name}", project.id)
-    return jsonify({'id': project.id, 'success': True})
+    return jsonify({'id': project.id, 'success': True}), 201
+
+
+@projects_bp.route('/projects/<int:project_id>', methods=['PUT'])
+@login_required
+def update_project(project_id):
+    """Update a project's name or description."""
+    data = request.json
+    conn = get_connection()
+    row = conn.execute("SELECT id FROM projects WHERE id = ?", (project_id,)).fetchone()
+    if not row:
+        return jsonify({'error': 'Not found'}), 404
+
+    conn.execute(
+        "UPDATE projects SET name = ?, description = ? WHERE id = ?",
+        (data.get('name'), data.get('description', ''), project_id)
+    )
+    conn.commit()
+    return jsonify({'success': True})
+
+
+@projects_bp.route('/projects/<int:project_id>', methods=['DELETE'])
+@login_required
+def delete_project(project_id):
+    """Delete a project and all its milestones/tasks."""
+    conn = get_connection()
+    result = conn.execute("DELETE FROM projects WHERE id = ?", (project_id,))
+    conn.commit()
+    if result.rowcount == 0:
+        return jsonify({'error': 'Not found'}), 404
+    return jsonify({'success': True})
 
 
 @projects_bp.route('/tasks')
@@ -61,6 +92,38 @@ def create_task():
         priority=data.get('priority', 0)
     )
     return jsonify({'success': True, 'id': task.id, 'provider': task.provider})
+
+
+@projects_bp.route('/tasks/<task_id>', methods=['PUT'])
+@login_required
+def update_task(task_id):
+    """Edit a task's title, priority, or due date."""
+    data = request.json
+    provider = get_task_provider()
+    # Native (local) tasks can be edited directly; external providers may not support this
+    conn = get_connection()
+    row = conn.execute("SELECT id FROM tasks WHERE id = ?", (task_id,)).fetchone()
+    if not row:
+        return jsonify({'error': 'Not found'}), 404
+
+    conn.execute(
+        "UPDATE tasks SET name = ? WHERE id = ?",
+        (data.get('title', data.get('name')), task_id)
+    )
+    conn.commit()
+    return jsonify({'success': True})
+
+
+@projects_bp.route('/tasks/<task_id>', methods=['DELETE'])
+@login_required
+def delete_task(task_id):
+    """Delete a task."""
+    conn = get_connection()
+    result = conn.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+    conn.commit()
+    if result.rowcount == 0:
+        return jsonify({'error': 'Not found'}), 404
+    return jsonify({'success': True})
 
 
 @projects_bp.route('/tasks/<task_id>/complete', methods=['POST'])

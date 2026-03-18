@@ -266,6 +266,21 @@ def end_fast():
     return jsonify({'success': True, 'points': points, 'hours': round(duration, 1)})
 
 
+@misc_bp.route('/fasting/cancel', methods=['POST'])
+@login_required
+def cancel_fast():
+    """Cancel the active fast without awarding points."""
+    conn = get_connection()
+    result = conn.execute(
+        "UPDATE fasting_logs SET status = 'cancelled', end_at = ? WHERE status = 'active'",
+        (datetime.now().isoformat(),)
+    )
+    conn.commit()
+    if result.rowcount == 0:
+        return jsonify({'error': 'No active fast'}), 400
+    return jsonify({'success': True})
+
+
 # ============== WISHLIST ==============
 @misc_bp.route('/wishlist')
 @login_required
@@ -286,6 +301,51 @@ def add_to_wishlist():
     )
     conn.commit()
     return jsonify({'success': True, 'id': cursor.lastrowid})
+
+
+@misc_bp.route('/wishlist/<int:item_id>', methods=['PUT'])
+@login_required
+def update_wishlist_item(item_id):
+    """Edit a wishlist item."""
+    data = request.json
+    conn = get_connection()
+    row = conn.execute("SELECT id FROM wishlist WHERE id = ?", (item_id,)).fetchone()
+    if not row:
+        return jsonify({'error': 'Not found'}), 404
+
+    conn.execute(
+        """UPDATE wishlist SET title = ?, location = ?, description = ?, category = ?
+           WHERE id = ?""",
+        (data.get('title'), data.get('location', ''), data.get('description', ''),
+         data.get('category', 'place'), item_id)
+    )
+    conn.commit()
+    return jsonify({'success': True})
+
+
+@misc_bp.route('/wishlist/<int:item_id>', methods=['DELETE'])
+@login_required
+def delete_wishlist_item(item_id):
+    """Delete a wishlist item."""
+    conn = get_connection()
+    result = conn.execute("DELETE FROM wishlist WHERE id = ?", (item_id,))
+    conn.commit()
+    if result.rowcount == 0:
+        return jsonify({'error': 'Not found'}), 404
+    return jsonify({'success': True})
+
+
+@misc_bp.route('/wishlist/<int:item_id>/complete', methods=['POST'])
+@login_required
+def complete_wishlist_item(item_id):
+    """Mark a wishlist item as visited/completed."""
+    conn = get_connection()
+    row = conn.execute("SELECT id FROM wishlist WHERE id = ?", (item_id,)).fetchone()
+    if not row:
+        return jsonify({'error': 'Not found'}), 404
+    conn.execute("UPDATE wishlist SET completed = 1 WHERE id = ?", (item_id,))
+    conn.commit()
+    return jsonify({'success': True})
 
 
 # ============== DEEP WORK ==============

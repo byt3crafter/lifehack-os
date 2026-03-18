@@ -2,8 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Life Hack OS</title>
+    <!-- PWA -->
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#0c0c0e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="LifeHack">
+    <script>
+    if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('/static/sw.js',{scope:'/'}).catch(()=>{})});}
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -182,8 +191,220 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
         /* ── Habit row ───────────────────────────────── */
-        .habit-row { transition: opacity 0.2s; }
+        .habit-row { transition: opacity 0.2s, background 0.15s, border-color 0.15s; }
         .habit-row:active { transform: scale(0.99); }
+
+        /* ── Stat card hover ─────────────────────────── */
+        .stat-card { transition: border-color 0.15s, box-shadow 0.15s; }
+        .stat-card:hover { border-color: #333338 !important; box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+
+        /* ── Premium range slider ────────────────────── */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            background: #2a2a2e !important;
+            border: none !important;
+            outline: none !important;
+            cursor: pointer;
+            padding: 0 !important;
+            box-shadow: none !important;
+        }
+        input[type="range"]:focus { box-shadow: none !important; }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #4f80ff;
+            cursor: pointer;
+            border: 2px solid #1c1c20;
+            box-shadow: 0 0 0 3px rgba(79,128,255,0.25);
+            transition: box-shadow 0.15s, transform 0.1s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            box-shadow: 0 0 0 5px rgba(79,128,255,0.2);
+            transform: scale(1.1);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #4f80ff;
+            cursor: pointer;
+            border: 2px solid #1c1c20;
+        }
+
+        /* ── Radio option card ───────────────────────── */
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            padding: 0.625rem 0.875rem;
+            border-radius: 8px;
+            border: 1px solid #2a2a2e;
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s;
+            font-size: 0.875rem;
+            color: #9898a6;
+            flex: 1;
+        }
+        .radio-option:has(input:checked) {
+            border-color: #4f80ff;
+            background: rgba(79,128,255,0.08);
+            color: #f0f0f2;
+        }
+        .radio-option input[type="radio"] {
+            width: 14px !important;
+            height: 14px !important;
+            accent-color: #4f80ff;
+            background: transparent !important;
+            border: none !important;
+            flex-shrink: 0;
+            padding: 0 !important;
+        }
+
+        /* ── Urge level buttons ──────────────────────── */
+        .urge-btn {
+            flex: 1;
+            padding: 0.5rem 0.25rem;
+            border-radius: 8px;
+            border: 1px solid #2a2a2e;
+            background: #141416;
+            color: #9898a6;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s, color 0.15s;
+            font-family: 'DM Mono', monospace;
+            text-align: center;
+        }
+        .urge-btn:has(input:checked) {
+            border-color: rgba(239,68,68,0.6);
+            background: rgba(239,68,68,0.1);
+            color: #ef4444;
+        }
+
+        /* ── Fast duration button ────────────────────── */
+        .fast-btn {
+            flex: 1;
+            padding: 0.625rem 0.5rem;
+            border-radius: 10px;
+            border: 1px solid #2a2a2e;
+            background: #141416;
+            color: #9898a6;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s, color 0.15s;
+            font-family: 'DM Mono', monospace;
+            text-align: center;
+        }
+        .fast-btn:hover {
+            border-color: #4f80ff;
+            color: #f0f0f2;
+            background: rgba(79,128,255,0.08);
+        }
+        .fast-btn.active {
+            border-color: #4f80ff;
+            background: rgba(79,128,255,0.15);
+            color: #4f80ff;
+        }
+
+        /* ── Nutrition bar ───────────────────────────── */
+        .nutrition-bar { transition: width 0.6s cubic-bezier(0.4,0,0.2,1); }
+
+        /* ── Challenge card ──────────────────────────── */
+        .challenge-card { transition: border-color 0.15s, box-shadow 0.15s; }
+        .challenge-card:hover { box-shadow: 0 4px 24px rgba(0,0,0,0.3); }
+
+        /* ── Session bar ─────────────────────────────── */
+        .session-bar { transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
+
+        /* ── Wishlist card ───────────────────────────── */
+        .wish-card { transition: border-color 0.15s, transform 0.15s; }
+        .wish-card:hover { border-color: #333338 !important; transform: translateY(-1px); }
+
+        /* ── Inline action buttons ───────────────────── */
+        .action-link {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #4f80ff;
+            transition: opacity 0.15s;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-family: inherit;
+        }
+        .action-link:hover { background: rgba(79,128,255,0.12); }
+        .action-link-success {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #22c55e;
+            transition: background 0.15s;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-family: inherit;
+        }
+        .action-link-success:hover { background: rgba(34,197,94,0.1); }
+        .action-link-danger {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #9898a6;
+            transition: color 0.15s, background 0.15s;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-family: inherit;
+        }
+        .action-link-danger:hover { color: #ef4444; background: rgba(239,68,68,0.08); }
+
+        /* ── Empty state ─────────────────────────────── */
+        .empty-state {
+            padding: 2rem 1.5rem;
+            text-align: center;
+            border-radius: 12px;
+            border: 1px dashed #2a2a2e;
+        }
+
+        /* ── Fasting ring ────────────────────────────── */
+        #fast-ring-fill { transition: stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1); }
+
+        /* ── Timer display ───────────────────────────── */
+        .timer-display {
+            font-family: 'DM Mono', monospace;
+            font-size: clamp(2.5rem, 8vw, 3.75rem);
+            font-weight: 500;
+            letter-spacing: -0.03em;
+            line-height: 1;
+        }
+
+        /* ── Category dot ────────────────────────────── */
+        .cat-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* ── Subtle input label ──────────────────────── */
+        .field-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #9898a6;
+            margin-bottom: 0.375rem;
+            display: block;
+        }
     </style>
 </head>
 <body class="min-h-screen overflow-x-hidden" style="color:#f0f0f2;">
@@ -517,210 +738,429 @@
 
             <!-- HABITS -->
             <div id="v-habits" class="view hidden">
-                <div class="flex justify-between items-center mt-6 mb-5">
-                    <h2 class="text-xl font-semibold tracking-tight" style="color:#f0f0f2;">Habits</h2>
-                    <button onclick="addHabitModal()" class="btn-primary">+ Add habit</button>
+                <div class="view-header">
+                    <div>
+                        <h2 class="view-title">Habits</h2>
+                        <p class="text-xs mt-0.5" style="color:#5c5c6b;" id="habits-subtitle">Track your daily practices</p>
+                    </div>
+                    <button onclick="addHabitModal()" class="btn-primary flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 4v12M4 10h12"/></svg>
+                        Add habit
+                    </button>
                 </div>
                 <div id="habits-list" class="space-y-2"></div>
             </div>
 
             <!-- PROJECTS -->
             <div id="v-projects" class="view hidden">
-                <div class="flex justify-between items-center mt-6 mb-5">
-                    <h2 class="text-xl font-semibold tracking-tight" style="color:#f0f0f2;">Projects</h2>
-                    <button onclick="addProjectModal()" class="btn-primary">+ New project</button>
+                <div class="view-header">
+                    <div>
+                        <h2 class="view-title">Projects</h2>
+                        <p class="text-xs mt-0.5" style="color:#5c5c6b;">Goals broken into milestones</p>
+                    </div>
+                    <button onclick="addProjectModal()" class="btn-primary flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 4v12M4 10h12"/></svg>
+                        New project
+                    </button>
                 </div>
                 <div id="projects-list" class="space-y-3"></div>
             </div>
 
             <!-- CHECKIN -->
             <div id="v-checkin" class="view hidden">
-                <h2 class="text-xl font-semibold tracking-tight mt-6 mb-5" style="color:#f0f0f2;">Daily Check-in</h2>
-                <div class="space-y-3 max-w-lg">
-                    <div class="card rounded-lg p-3">
-                        <label class="text-xs text-gray-400 block mb-1">What did I complete?</label>
-                        <textarea id="ci-done" class="w-full rounded p-2 text-sm border" rows="2"></textarea>
+                <div class="view-header" style="max-width:520px;">
+                    <div>
+                        <h2 class="view-title">Daily Check-in</h2>
+                        <p class="text-xs mt-0.5" style="color:#5c5c6b;">Reflect on your day</p>
                     </div>
-                    <div class="card rounded-lg p-3">
-                        <label class="text-sm text-sobriety block mb-2">🛡️ Avoided alcohol?</label>
-                        <div class="flex gap-4">
-                            <label class="flex items-center gap-2"><input type="radio" name="ci-alc" value="1" checked class="w-5 h-5"> Yes</label>
-                            <label class="flex items-center gap-2"><input type="radio" name="ci-alc" value="0" class="w-5 h-5"> No</label>
+                    <div id="ci-done-badge" class="hidden text-xs font-medium px-2.5 py-1 rounded-full" style="background:rgba(34,197,94,0.12);color:#22c55e;border:1px solid rgba(34,197,94,0.2);">Saved today</div>
+                </div>
+                <div class="space-y-3" style="max-width:520px;">
+                    <!-- Completions -->
+                    <div class="card p-4">
+                        <label class="field-label">What did I complete today?</label>
+                        <textarea id="ci-done" class="w-full rounded-lg p-3 text-sm border" rows="3" placeholder="List your wins for today..."></textarea>
+                    </div>
+
+                    <!-- Binary toggles -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="card p-4">
+                            <label class="field-label" style="color:#14b8a6;">Avoided alcohol?</label>
+                            <div class="flex gap-2 mt-2">
+                                <label class="radio-option">
+                                    <input type="radio" name="ci-alc" value="1" checked> Yes
+                                </label>
+                                <label class="radio-option">
+                                    <input type="radio" name="ci-alc" value="0"> No
+                                </label>
+                            </div>
+                        </div>
+                        <div class="card p-4">
+                            <label class="field-label" style="color:#4f80ff;">Worked on future?</label>
+                            <div class="flex gap-2 mt-2">
+                                <label class="radio-option">
+                                    <input type="radio" name="ci-future" value="1"> Yes
+                                </label>
+                                <label class="radio-option">
+                                    <input type="radio" name="ci-future" value="0" checked> No
+                                </label>
+                            </div>
                         </div>
                     </div>
-                    <div class="card rounded-lg p-3">
-                        <label class="text-sm text-accent block mb-2">🚀 Worked on future?</label>
-                        <div class="flex gap-4">
-                            <label class="flex items-center gap-2"><input type="radio" name="ci-future" value="1" class="w-5 h-5"> Yes</label>
-                            <label class="flex items-center gap-2"><input type="radio" name="ci-future" value="0" checked class="w-5 h-5"> No</label>
+
+                    <!-- Sliders -->
+                    <div class="card p-4">
+                        <div class="grid grid-cols-2 gap-5">
+                            <div>
+                                <div class="flex items-center justify-between mb-3">
+                                    <label class="field-label" style="margin-bottom:0;">Mood</label>
+                                    <span id="ci-mood-v" class="font-mono font-semibold text-sm" style="color:#4f80ff;">3</span>
+                                </div>
+                                <input type="range" id="ci-mood" min="1" max="5" value="3">
+                                <div class="flex justify-between mt-2">
+                                    <span class="text-xs" style="color:#5c5c6b;">Low</span>
+                                    <span class="text-xs" style="color:#5c5c6b;">High</span>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex items-center justify-between mb-3">
+                                    <label class="field-label" style="margin-bottom:0;">Energy</label>
+                                    <span id="ci-energy-v" class="font-mono font-semibold text-sm" style="color:#f59e0b;">3</span>
+                                </div>
+                                <input type="range" id="ci-energy" min="1" max="5" value="3">
+                                <div class="flex justify-between mt-2">
+                                    <span class="text-xs" style="color:#5c5c6b;">Drained</span>
+                                    <span class="text-xs" style="color:#5c5c6b;">Energized</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="card rounded-lg p-3 grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="text-xs text-gray-400">Mood</label>
-                            <input type="range" id="ci-mood" min="1" max="5" value="3" class="w-full">
-                            <div class="text-center text-accent" id="ci-mood-v">3</div>
-                        </div>
-                        <div>
-                            <label class="text-xs text-gray-400">Energy</label>
-                            <input type="range" id="ci-energy" min="1" max="5" value="3" class="w-full">
-                            <div class="text-center text-warning" id="ci-energy-v">3</div>
-                        </div>
+
+                    <!-- Tomorrow's focus -->
+                    <div class="card p-4">
+                        <label class="field-label">Tomorrow's priority</label>
+                        <input id="ci-improve" class="w-full rounded-lg p-3 text-sm border" placeholder="One thing to focus on tomorrow...">
                     </div>
-                    <div class="card rounded-lg p-3">
-                        <label class="text-xs text-gray-400 block mb-1">Tomorrow's focus?</label>
-                        <input id="ci-improve" class="w-full rounded p-2 text-sm border">
-                    </div>
-                    <button onclick="saveCheckin()" class="w-full py-3 rounded-xl font-semibold text-sm" style="background:#22c55e;color:#fff;">Complete check-in</button>
+
+                    <button onclick="saveCheckin()" class="w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2"
+                            style="background:#22c55e;color:#fff;box-shadow:0 4px 16px rgba(34,197,94,0.2);">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 10l4 4 8-8"/></svg>
+                        Complete check-in
+                    </button>
                 </div>
             </div>
 
             <!-- WALKS -->
             <div id="v-walks" class="view hidden">
-                <div class="flex justify-between items-center mt-6 mb-5">
-                    <h2 class="text-xl font-semibold tracking-tight" style="color:#f0f0f2;">Movement</h2>
-                    <button onclick="addWalkModal()" class="btn-primary" style="background:#22c55e;">+ Log</button>
-                </div>
-                <div class="grid grid-cols-2 gap-2 mb-4">
-                    <div class="card rounded-lg p-3">
-                        <div class="text-xs text-gray-400">This Week</div>
-                        <div id="w-stats" class="font-bold text-success">0</div>
+                <div class="view-header">
+                    <div>
+                        <h2 class="view-title">Movement</h2>
+                        <p class="text-xs mt-0.5" style="color:#5c5c6b;">Walks, runs, and outdoor activity</p>
                     </div>
-                    <div class="card rounded-lg p-3">
-                        <div class="text-xs text-gray-400">XP</div>
-                        <div id="w-xp" class="font-bold text-xp">0</div>
+                    <button onclick="addWalkModal()" class="btn-primary flex items-center gap-1.5" style="background:#22c55e;">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 4v12M4 10h12"/></svg>
+                        Log activity
+                    </button>
+                </div>
+                <div class="grid grid-cols-2 gap-3 mb-5">
+                    <div class="card stat-card p-4" style="border:1px solid #2a2a2e;">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center mb-3" style="background:rgba(34,197,94,0.12);">
+                            <svg class="w-4 h-4" fill="none" stroke="#22c55e" viewBox="0 0 20 20" stroke-width="1.8"><circle cx="10" cy="4" r="1.5"/><path stroke-linecap="round" stroke-linejoin="round" d="M10 6.5L8 10l2 1 1.5 4M8 10l-2 4M12 10l2 3"/></svg>
+                        </div>
+                        <div id="w-stats" class="font-mono font-semibold text-base" style="color:#f0f0f2;">0</div>
+                        <div class="text-xs mt-0.5" style="color:#5c5c6b;">This week</div>
+                    </div>
+                    <div class="card stat-card p-4" style="border:1px solid #2a2a2e;">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center mb-3" style="background:rgba(234,179,8,0.12);">
+                            <svg class="w-4 h-4" fill="none" stroke="#eab308" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M10 3l2.5 5 5.5.8-4 3.9.9 5.5L10 15.5l-4.9 2.7.9-5.5L2 8.8l5.5-.8L10 3z"/></svg>
+                        </div>
+                        <div id="w-xp" class="font-mono font-semibold text-base" style="color:#f0f0f2;">0</div>
+                        <div class="text-xs mt-0.5" style="color:#5c5c6b;">XP earned</div>
                     </div>
                 </div>
+                <div class="section-label mb-3">Recent activity</div>
                 <div id="walks-list" class="space-y-2"></div>
             </div>
 
             <!-- REPLACE -->
             <div id="v-replace" class="view hidden">
-                <h2 class="text-xl font-semibold tracking-tight mt-6 mb-5" style="color:#f0f0f2;">Redirect Urge</h2>
-                <div class="max-w-lg space-y-3">
-                    <div class="card rounded-lg p-3">
-                        <label class="text-xs text-gray-400 block mb-2">Urge Level</label>
-                        <div class="flex gap-3 flex-wrap">
-                            <label class="flex items-center gap-1"><input type="radio" name="urge" value="1" class="w-5 h-5"> 1</label>
-                            <label class="flex items-center gap-1"><input type="radio" name="urge" value="2" class="w-5 h-5"> 2</label>
-                            <label class="flex items-center gap-1"><input type="radio" name="urge" value="3" checked class="w-5 h-5"> 3</label>
-                            <label class="flex items-center gap-1"><input type="radio" name="urge" value="4" class="w-5 h-5"> 4</label>
-                            <label class="flex items-center gap-1"><input type="radio" name="urge" value="5" class="w-5 h-5"> 5</label>
+                <div class="view-header" style="max-width:520px;">
+                    <div>
+                        <h2 class="view-title">Redirect Urge</h2>
+                        <p class="text-xs mt-0.5" style="color:#5c5c6b;">Replace the urge with a healthy action</p>
+                    </div>
+                </div>
+                <div style="max-width:520px;" class="space-y-3">
+                    <!-- Urge level -->
+                    <div class="card p-4">
+                        <label class="field-label">Urge intensity</label>
+                        <div class="flex gap-2 mt-2">
+                            <label class="urge-btn"><input type="radio" name="urge" value="1" style="display:none;"> 1</label>
+                            <label class="urge-btn"><input type="radio" name="urge" value="2" style="display:none;"> 2</label>
+                            <label class="urge-btn"><input type="radio" name="urge" value="3" checked style="display:none;"> 3</label>
+                            <label class="urge-btn"><input type="radio" name="urge" value="4" style="display:none;"> 4</label>
+                            <label class="urge-btn"><input type="radio" name="urge" value="5" style="display:none;"> 5</label>
+                        </div>
+                        <div class="flex justify-between mt-2">
+                            <span class="text-xs" style="color:#5c5c6b;">Mild craving</span>
+                            <span class="text-xs" style="color:#5c5c6b;">Intense urge</span>
                         </div>
                     </div>
-                    <div class="card rounded-lg p-3">
-                        <label class="text-xs text-gray-400 block mb-2">What instead?</label>
-                        <div id="rep-actions" class="space-y-1 max-h-48 overflow-y-auto"></div>
+
+                    <!-- Actions -->
+                    <div class="card p-4">
+                        <label class="field-label">Choose a redirect action</label>
+                        <div id="rep-actions" class="space-y-2 mt-2 max-h-56 overflow-y-auto"></div>
                     </div>
-                    <button onclick="logReplace()" class="w-full py-3 rounded-xl font-semibold text-sm" style="background:#14b8a6;color:#fff;">Redirect</button>
-                    <h3 class="font-bold text-sm pt-2">Recent</h3>
-                    <div id="rep-logs" class="space-y-1"></div>
+
+                    <button onclick="logReplace()" class="w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2"
+                            style="background:#14b8a6;color:#fff;box-shadow:0 4px 16px rgba(20,184,166,0.2);">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 10h12M11 6l5 4-5 4"/></svg>
+                        Redirect now
+                    </button>
+
+                    <div>
+                        <div class="section-label mb-3 mt-2">Recent redirects</div>
+                        <div id="rep-logs" class="space-y-2"></div>
+                    </div>
                 </div>
             </div>
 
             <!-- FOOD -->
             <div id="v-food" class="view hidden">
-                <div class="flex justify-between items-center mt-6 mb-5">
-                    <h2 class="text-xl font-semibold tracking-tight" style="color:#f0f0f2;">Food Log</h2>
-                    <button onclick="addFoodModal()" class="btn-primary">+ Log meal</button>
+                <div class="view-header">
+                    <div>
+                        <h2 class="view-title">Food Log</h2>
+                        <p class="text-xs mt-0.5" style="color:#5c5c6b;">Track meals and nutrition</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="analyzeFood()" id="ai-food-btn" class="btn-ghost flex items-center gap-1.5 text-xs" style="color:#8b5cf6;border-color:rgba(139,92,246,0.25);">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><circle cx="10" cy="10" r="7"/><path stroke-linecap="round" stroke-linejoin="round" d="M10 7v3l2 2"/></svg>
+                            AI Estimate
+                        </button>
+                        <button onclick="addFoodModal()" class="btn-primary flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 4v12M4 10h12"/></svg>
+                            Log meal
+                        </button>
+                    </div>
                 </div>
-                
-                <!-- Today's Summary -->
-                <div class="card rounded-lg p-4 mb-4">
-                    <div class="flex justify-between items-center">
+
+                <!-- Today's calorie hero card -->
+                <div class="mb-5 p-4 rounded-2xl" style="background:linear-gradient(135deg,#171a1c 0%,#141e1a 100%);border:1px solid rgba(234,179,8,0.2);">
+                    <div class="flex items-end justify-between mb-3">
                         <div>
-                            <div class="text-xs text-gray-400">Today's Calories</div>
-                            <div id="food-today-cals" class="text-2xl font-bold text-xp">0</div>
+                            <div class="text-xs font-semibold mb-1" style="color:#9898a6;letter-spacing:0.06em;text-transform:uppercase;">Today's Calories</div>
+                            <div class="flex items-baseline gap-2">
+                                <span id="food-today-cals" class="font-mono font-bold" style="color:#eab308;font-size:2rem;line-height:1;">0</span>
+                                <span class="text-sm" style="color:#5c5c6b;">/ 2000 kcal</span>
+                            </div>
                         </div>
-                        <div class="text-right">
-                            <div class="text-xs text-gray-400">Goal</div>
-                            <div class="text-lg text-gray-300">2000</div>
-                        </div>
+                        <div id="food-cal-pct" class="font-mono font-semibold text-lg" style="color:#5c5c6b;">0%</div>
                     </div>
-                    <div class="h-2 bg-bg-secondary rounded-full mt-2 overflow-hidden">
-                        <div id="food-cal-bar" class="h-full bg-gradient-to-r from-success to-xp" style="width:0%"></div>
+                    <div class="h-2 rounded-full overflow-hidden" style="background:rgba(255,255,255,0.06);">
+                        <div id="food-cal-bar" class="h-full rounded-full progress-bar" style="width:0%;background:linear-gradient(90deg,#22c55e,#eab308);"></div>
+                    </div>
+                    <!-- Macro summary -->
+                    <div id="food-macro-row" class="flex gap-4 mt-3 pt-3" style="border-top:1px solid rgba(255,255,255,0.05);">
+                        <div class="flex items-center gap-1.5">
+                            <div class="w-2 h-2 rounded-full" style="background:#4f80ff;"></div>
+                            <span class="text-xs" style="color:#5c5c6b;">Protein: <span id="food-total-protein" class="font-mono" style="color:#9898a6;">0g</span></span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <div class="w-2 h-2 rounded-full" style="background:#f59e0b;"></div>
+                            <span class="text-xs" style="color:#5c5c6b;">Carbs: <span id="food-total-carbs" class="font-mono" style="color:#9898a6;">0g</span></span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <div class="w-2 h-2 rounded-full" style="background:#ef4444;"></div>
+                            <span class="text-xs" style="color:#5c5c6b;">Fat: <span id="food-total-fat" class="font-mono" style="color:#9898a6;">0g</span></span>
+                        </div>
                     </div>
                 </div>
-                
-                <!-- Food Logs -->
-                <h3 class="font-bold text-sm mb-2">Recent Meals</h3>
+
+                <!-- AI result card (hidden by default) -->
+                <div id="ai-food-result" class="hidden mb-4 p-4 rounded-xl" style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.2);">
+                    <div class="flex items-start gap-2.5">
+                        <svg class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="#8b5cf6" viewBox="0 0 20 20" stroke-width="1.8"><circle cx="10" cy="10" r="7"/><path stroke-linecap="round" stroke-linejoin="round" d="M10 7v3l2 2"/></svg>
+                        <div id="ai-food-result-text" class="text-sm" style="color:#c4b5fd;"></div>
+                    </div>
+                </div>
+
+                <div class="section-label mb-3">Recent meals</div>
                 <div id="food-list" class="space-y-2"></div>
             </div>
 
             <!-- FASTING -->
             <div id="v-fasting" class="view hidden">
-                <h2 class="text-xl font-semibold tracking-tight mt-6 mb-5" style="color:#f0f0f2;">Fasting Tracker</h2>
-                
-                <div id="fast-active-card" class="card rounded-xl p-6 mb-4 text-center border-2 border-accent/20 hidden">
-                    <div class="text-xs text-gray-400 uppercase tracking-widest mb-2">Active Fast</div>
-                    <div id="fast-timer" class="text-4xl font-mono font-bold text-accent mb-4">00:00:00</div>
-                    <div class="h-2 bg-bg-secondary rounded-full overflow-hidden max-w-xs mx-auto mb-4">
-                        <div id="fast-progress" class="h-full bg-accent" style="width: 0%"></div>
+                <div class="view-header">
+                    <div>
+                        <h2 class="view-title">Fasting Tracker</h2>
+                        <p class="text-xs mt-0.5" style="color:#5c5c6b;">Intermittent fasting timer</p>
                     </div>
-                    <div class="flex justify-center gap-4 text-xs text-gray-400 mb-6">
-                        <div>Started: <span id="fast-start-time" class="text-gray-200">—</span></div>
-                        <div>Target: <span id="fast-target-hours" class="text-gray-200">—</span>h</div>
-                    </div>
-                    <button onclick="endFastModal()" class="bg-danger/20 text-danger border border-danger/50 px-6 py-2 rounded-full font-bold hover:bg-danger hover:text-white transition-all">End Fast</button>
                 </div>
 
-                <div id="fast-start-card" class="card rounded-xl p-6 mb-4 text-center border-2 border-dashed border-gray-700 hidden">
-                    <div class="text-gray-400 mb-4">No active fast. Ready to start?</div>
-                    <div class="flex justify-center gap-2 mb-6">
-                        <button onclick="startFast(16)" class="bg-bg-secondary px-4 py-2 rounded-lg text-sm border border-gray-700 hover:border-accent">16h</button>
-                        <button onclick="startFast(18)" class="bg-bg-secondary px-4 py-2 rounded-lg text-sm border border-gray-700 hover:border-accent">18h</button>
-                        <button onclick="startFast(20)" class="bg-bg-secondary px-4 py-2 rounded-lg text-sm border border-gray-700 hover:border-accent">20h</button>
-                        <button onclick="startFast(24)" class="bg-bg-secondary px-4 py-2 rounded-lg text-sm border border-gray-700 hover:border-accent">24h</button>
+                <!-- Active fast card -->
+                <div id="fast-active-card" class="hidden mb-5">
+                    <div class="p-6 rounded-2xl text-center" style="background:linear-gradient(135deg,#171728 0%,#141e30 100%);border:1px solid rgba(79,128,255,0.25);">
+                        <div class="text-xs font-semibold mb-4" style="color:#9898a6;letter-spacing:0.08em;text-transform:uppercase;">Active Fast</div>
+
+                        <!-- SVG progress ring -->
+                        <div class="relative inline-flex items-center justify-center mb-4" style="width:160px;height:160px;">
+                            <svg width="160" height="160" style="transform:rotate(-90deg);">
+                                <circle cx="80" cy="80" r="68" stroke="#1e2440" stroke-width="8" fill="none"/>
+                                <circle id="fast-ring-fill" cx="80" cy="80" r="68"
+                                    stroke="url(#fastGrad)" stroke-width="8" fill="none"
+                                    stroke-linecap="round"
+                                    stroke-dasharray="427.3" stroke-dashoffset="427.3"/>
+                                <defs>
+                                    <linearGradient id="fastGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stop-color="#4f80ff"/>
+                                        <stop offset="100%" stop-color="#22c55e"/>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                <div id="fast-timer" class="timer-display" style="color:#f0f0f2;">00:00:00</div>
+                                <div id="fast-pct-label" class="text-xs mt-1 font-mono" style="color:#5c5c6b;">0%</div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-center gap-6 text-sm mb-5">
+                            <div>
+                                <div class="text-xs" style="color:#5c5c6b;">Started</div>
+                                <div id="fast-start-time" class="font-medium mt-0.5" style="color:#f0f0f2;">—</div>
+                            </div>
+                            <div style="width:1px;background:#2a2a2e;"></div>
+                            <div>
+                                <div class="text-xs" style="color:#5c5c6b;">Target</div>
+                                <div class="font-mono font-semibold mt-0.5" style="color:#4f80ff;"><span id="fast-target-hours">—</span>h</div>
+                            </div>
+                        </div>
+
+                        <button onclick="endFastModal()"
+                                class="px-6 py-2.5 rounded-xl font-semibold text-sm transition-all"
+                                style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);">
+                            End Fast
+                        </button>
                     </div>
-                    <button onclick="startFast(16)" class="px-8 py-3 rounded-xl font-semibold text-sm" style="background:#4f80ff;color:#fff;box-shadow:0 4px 20px rgba(79,128,255,0.25);">Start Fast Now</button>
                 </div>
 
-                <h3 class="font-bold text-sm mb-2">History</h3>
+                <!-- Start fast card -->
+                <div id="fast-start-card" class="hidden mb-5">
+                    <div class="p-6 rounded-2xl text-center" style="border:1px dashed #2a2a2e;">
+                        <div class="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style="background:rgba(79,128,255,0.08);border:1px solid rgba(79,128,255,0.15);">
+                            <svg class="w-6 h-6" fill="none" stroke="#4f80ff" viewBox="0 0 20 20" stroke-width="1.6"><circle cx="10" cy="10" r="7"/><path stroke-linecap="round" stroke-linejoin="round" d="M10 6v4l2.5 2.5"/></svg>
+                        </div>
+                        <div class="text-sm font-medium mb-1" style="color:#f0f0f2;">Ready to start a fast?</div>
+                        <div class="text-xs mb-5" style="color:#5c5c6b;">Choose your target duration</div>
+
+                        <div id="fast-duration-buttons" class="flex gap-2 mb-5">
+                            <button onclick="selectFastDuration(16)" data-h="16" class="fast-btn">16h</button>
+                            <button onclick="selectFastDuration(18)" data-h="18" class="fast-btn">18h</button>
+                            <button onclick="selectFastDuration(20)" data-h="20" class="fast-btn">20h</button>
+                            <button onclick="selectFastDuration(24)" data-h="24" class="fast-btn">24h</button>
+                        </div>
+
+                        <button id="fast-start-btn" onclick="startFast(window._fastHours||16)"
+                                class="px-8 py-3 rounded-xl font-semibold text-sm w-full"
+                                style="background:#4f80ff;color:#fff;box-shadow:0 4px 20px rgba(79,128,255,0.25);">
+                            Start 16h Fast
+                        </button>
+                    </div>
+                </div>
+
+                <div class="section-label mb-3">History</div>
                 <div id="fast-history" class="space-y-2"></div>
             </div>
 
             <!-- WISHLIST -->
             <div id="v-wishlist" class="view hidden">
-                <div class="flex justify-between items-center mt-6 mb-5">
-                    <h2 class="text-xl font-semibold tracking-tight" style="color:#f0f0f2;">Wishlist</h2>
-                    <button onclick="addWishModal()" class="btn-primary">+ Add place</button>
+                <div class="view-header">
+                    <div>
+                        <h2 class="view-title">Wishlist</h2>
+                        <p class="text-xs mt-0.5" style="color:#5c5c6b;">Places and experiences to explore</p>
+                    </div>
+                    <button onclick="addWishModal()" class="btn-primary flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 4v12M4 10h12"/></svg>
+                        Add place
+                    </button>
                 </div>
-                <div id="wishlist-list" class="grid grid-cols-1 gap-3"></div>
+                <div id="wishlist-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
             </div>
 
             <!-- DEEP WORK -->
             <div id="v-deepwork" class="view hidden">
-                <h2 class="text-xl font-semibold tracking-tight mt-6 mb-5" style="color:#f0f0f2;">Deep Work</h2>
-                
-                <div id="dw-active-card" class="card rounded-xl p-6 mb-4 text-center border-2 border-ai/20 hidden">
-                    <div class="text-xs text-ai uppercase tracking-widest mb-2">Focus Mode Active</div>
-                    <div id="dw-timer" class="text-4xl font-mono font-bold text-white mb-4">00:00:00</div>
-                    <div id="dw-project-name" class="text-sm text-gray-400 mb-6 italic">General Focus</div>
-                    <button onclick="endDeepWork()" class="bg-ai/20 text-ai border border-ai/50 px-8 py-2 rounded-full font-bold hover:bg-ai hover:text-white transition-all">End Session</button>
+                <div class="view-header">
+                    <div>
+                        <h2 class="view-title">Deep Work</h2>
+                        <p class="text-xs mt-0.5" style="color:#5c5c6b;">Focused work sessions</p>
+                    </div>
                 </div>
 
-                <div id="dw-start-card" class="card rounded-xl p-6 mb-4 hidden">
-                    <h3 class="text-sm font-bold mb-4">Start New Session</h3>
-                    <select id="dw-project" class="w-full p-2 rounded border text-sm mb-3">
-                        <option value="">General Focus</option>
-                    </select>
-                    <textarea id="dw-notes" class="w-full p-2 rounded border text-sm mb-4" rows="2" placeholder="What are you working on?"></textarea>
-                    <button onclick="startDeepWork()" class="w-full bg-ai py-3 rounded-xl font-bold shadow-lg shadow-ai/20">Enter Deep Work</button>
+                <!-- Active session card -->
+                <div id="dw-active-card" class="hidden mb-5">
+                    <div class="p-6 rounded-2xl text-center" style="background:linear-gradient(135deg,#17141e 0%,#1a1428 100%);border:1px solid rgba(139,92,246,0.25);">
+                        <div class="text-xs font-semibold mb-4" style="color:#8b5cf6;letter-spacing:0.08em;text-transform:uppercase;">Focus Mode Active</div>
+
+                        <div id="dw-timer" class="timer-display mb-2" style="color:#f0f0f2;">00:00:00</div>
+                        <div id="dw-project-name" class="text-sm mb-5" style="color:#9898a6;">General Focus</div>
+
+                        <!-- Progress bar -->
+                        <div class="h-1 rounded-full overflow-hidden max-w-xs mx-auto mb-5" style="background:rgba(139,92,246,0.15);">
+                            <div id="dw-session-bar" class="h-full session-bar rounded-full" style="width:0%;background:linear-gradient(90deg,#8b5cf6,#4f80ff);"></div>
+                        </div>
+
+                        <button onclick="endDeepWork()"
+                                class="px-8 py-2.5 rounded-xl font-semibold text-sm transition-all"
+                                style="background:rgba(139,92,246,0.1);color:#8b5cf6;border:1px solid rgba(139,92,246,0.3);">
+                            End Session
+                        </button>
+                    </div>
                 </div>
 
-                <h3 class="font-bold text-sm mb-2">Recent Sessions</h3>
+                <!-- Start session card -->
+                <div id="dw-start-card" class="hidden mb-5">
+                    <div class="card p-5">
+                        <div class="text-sm font-semibold mb-4" style="color:#f0f0f2;">Start New Session</div>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="field-label">Project (optional)</label>
+                                <select id="dw-project" class="w-full p-3 rounded-lg border text-sm">
+                                    <option value="">General Focus</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="field-label">What are you working on?</label>
+                                <textarea id="dw-notes" class="w-full p-3 rounded-lg border text-sm" rows="2" placeholder="Describe your focus goal..."></textarea>
+                            </div>
+                            <button onclick="startDeepWork()"
+                                    class="w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2"
+                                    style="background:#8b5cf6;color:#fff;box-shadow:0 4px 20px rgba(139,92,246,0.25);">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><circle cx="10" cy="10" r="7"/><path stroke-linecap="round" stroke-linejoin="round" d="M10 6v4l2.5 2.5"/></svg>
+                                Enter Deep Work
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-label mb-3">Recent sessions</div>
                 <div id="dw-history" class="space-y-2"></div>
             </div>
 
             <!-- CHALLENGES -->
             <div id="v-challenges" class="view hidden">
-                <div class="flex justify-between items-center mt-6 mb-5">
-                    <h2 class="text-xl font-semibold tracking-tight" style="color:#f0f0f2;">Challenges</h2>
-                    <button onclick="addChallengeModal()" class="btn-primary">+ New challenge</button>
+                <div class="view-header">
+                    <div>
+                        <h2 class="view-title">Challenges</h2>
+                        <p class="text-xs mt-0.5" style="color:#5c5c6b;">Streak-based personal challenges</p>
+                    </div>
+                    <button onclick="addChallengeModal()" class="btn-primary flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 4v12M4 10h12"/></svg>
+                        New challenge
+                    </button>
                 </div>
-                
+
                 <div class="mb-6">
-                    <div class="section-label mb-3">Active Challenges</div>
+                    <div class="section-label mb-3">Active</div>
                     <div id="challenges-active" class="space-y-3"></div>
                 </div>
 
@@ -1142,40 +1582,59 @@
         if(!dw) return;
 
         if(projects) {
-            $('#dw-project').innerHTML = '<option value=\"\">General Focus</option>' + 
-                projects.map(p => `<option value=\"${p.id}\">${p.title || p.name}</option>`).join('');
+            $('#dw-project').innerHTML = '<option value="">General Focus</option>' +
+                projects.map(p => `<option value="${p.id}">${p.title || p.name}</option>`).join('');
         }
-        
+
         clearInterval(dwInterval);
         if(dw.active) {
             $('#dw-active-card').classList.remove('hidden');
             $('#dw-start-card').classList.add('hidden');
             $('#dw-project-name').textContent = dw.active.project_name || 'General Focus';
-            
+
             const startStr = dw.active.started_at.replace(' ', 'T');
             const start = new Date(startStr).getTime();
-            
+            // Target: default 90 min session for progress bar
+            const targetMs = 90 * 60 * 1000;
+
             dwInterval = setInterval(() => {
-                const elapsed = new Date().getTime() - start;
+                const elapsed = Date.now() - start;
                 const h = Math.floor(elapsed / 3600000);
                 const m = Math.floor((elapsed % 3600000) / 60000);
                 const s = Math.floor((elapsed % 60000) / 1000);
                 $('#dw-timer').textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+                const bar = $('#dw-session-bar');
+                if(bar) bar.style.width = Math.min(100, Math.round(elapsed/targetMs*100)) + '%';
             }, 1000);
         } else {
             $('#dw-active-card').classList.add('hidden');
             $('#dw-start-card').classList.remove('hidden');
         }
 
-        $('#dw-history').innerHTML = dw.history.map(h => `
-            <div class=\"card rounded-lg p-3 flex justify-between items-center text-sm\">
-                <div>
-                    <div class=\"font-medium\">${h.project_name || 'General Focus'}</div>
-                    <div class=\"text-xs text-gray-500\">${h.duration_minutes}m session • ${new Date(h.ended_at).toLocaleDateString()}</div>
+        if(!dw.history.length) {
+            $('#dw-history').innerHTML = '<div class="empty-state"><p>No deep work sessions yet. Start your first session!</p></div>';
+            return;
+        }
+
+        // Max duration for bar scaling
+        const maxMin = Math.max(...dw.history.map(h=>h.duration_minutes), 1);
+        $('#dw-history').innerHTML = dw.history.map(h => {
+            const barPct = Math.round((h.duration_minutes / maxMin) * 100);
+            const dateStr = new Date(h.ended_at).toLocaleDateString('en-US', {month:'short',day:'numeric'});
+            return `
+            <div class="card rounded-xl p-3" style="border:1px solid #2a2a2e;">
+                <div class="flex items-start justify-between mb-2">
+                    <div class="flex-1 min-w-0 pr-3">
+                        <div class="text-sm font-medium truncate" style="color:#f0f0f2;">${h.project_name || 'General Focus'}</div>
+                        <div class="text-xs mt-0.5" style="color:#5c5c6b;">${dateStr} · ${h.duration_minutes}m session</div>
+                    </div>
+                    <span class="font-mono text-xs font-semibold flex-shrink-0" style="color:#eab308;">+${h.points_earned}</span>
                 </div>
-                <div class=\"text-xp font-bold\">+${h.points_earned}</div>
-            </div>
-        `).join('') || '<p class=\"text-gray-500 text-sm\">No recent sessions</p>';
+                <div class="h-1 rounded-full overflow-hidden" style="background:#242428;">
+                    <div class="h-full rounded-full session-bar" style="width:${barPct}%;background:linear-gradient(90deg,#8b5cf6,#4f80ff);"></div>
+                </div>
+            </div>`;
+        }).join('');
     }
 
     async function startDeepWork() {
@@ -1194,46 +1653,80 @@
     }
 
     let fastInterval;
+    window._fastHours = 16;
+    function selectFastDuration(hours) {
+        window._fastHours = hours;
+        document.querySelectorAll('.fast-btn').forEach(b => {
+            b.classList.toggle('active', +b.dataset.h === hours);
+        });
+        const btn = $('#fast-start-btn');
+        if(btn) btn.textContent = `Start ${hours}h Fast`;
+    }
+
     async function loadFasting() {
         const f = await api('/fasting/status');
         if(!f) return;
-        
+
         clearInterval(fastInterval);
         if(f.active) {
             $('#fast-active-card').classList.remove('hidden');
             $('#fast-start-card').classList.add('hidden');
             $('#fast-target-hours').textContent = f.active.target_hours;
             $('#fast-start-time').textContent = new Date(f.active.start_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-            
+
             const start = new Date(f.active.start_at).getTime();
             const target = f.active.target_hours * 3600000;
-            
+            // Ring circumference for r=68: 2*PI*68 ≈ 427.3
+            const CIRC = 427.3;
+
             fastInterval = setInterval(() => {
-                const now = new Date().getTime();
+                const now = Date.now();
                 const elapsed = now - start;
                 const hours = Math.floor(elapsed / 3600000);
-                const mins = Math.floor((elapsed % 3600000) / 60000);
-                const secs = Math.floor((elapsed % 60000) / 1000);
+                const mins  = Math.floor((elapsed % 3600000) / 60000);
+                const secs  = Math.floor((elapsed % 60000) / 1000);
                 $('#fast-timer').textContent = `${String(hours).padStart(2,'0')}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
-                
+
                 const pct = Math.min(100, (elapsed / target) * 100);
-                $('#fast-progress').style.width = pct + '%';
-                if(pct >= 100) $('#fast-timer').classList.replace('text-accent', 'text-success');
+                const ring = $('#fast-ring-fill');
+                if(ring) ring.style.strokeDashoffset = CIRC - (CIRC * pct / 100);
+                const pctLbl = $('#fast-pct-label');
+                if(pctLbl) pctLbl.textContent = Math.round(pct) + '%';
+                if(pct >= 100 && $('#fast-timer')) {
+                    $('#fast-timer').style.color = '#22c55e';
+                }
             }, 1000);
         } else {
             $('#fast-active-card').classList.add('hidden');
             $('#fast-start-card').classList.remove('hidden');
+            selectFastDuration(16);
         }
 
-        $('#fast-history').innerHTML = f.history.map(h => `
-            <div class="card rounded-lg p-3 flex justify-between items-center text-sm">
-                <div>
-                    <div class="font-medium">${new Date(h.end_at).toLocaleDateString()} Fast</div>
-                    <div class="text-xs text-gray-500">${Math.round((new Date(h.end_at)-new Date(h.start_at))/3600000*10)/10}h duration (Goal: ${h.target_hours}h)</div>
+        if(!f.history.length) {
+            $('#fast-history').innerHTML = '<div class="empty-state"><p>No fasting history yet.</p></div>';
+            return;
+        }
+
+        $('#fast-history').innerHTML = f.history.map(h => {
+            const dur = Math.round((new Date(h.end_at) - new Date(h.start_at)) / 3600000 * 10) / 10;
+            const completed = dur >= (h.target_hours * 0.9);
+            const pts = Math.floor((new Date(h.end_at)-new Date(h.start_at))/360000);
+            const dateStr = new Date(h.end_at).toLocaleDateString('en-US', {month:'short', day:'numeric'});
+            return `
+            <div class="card rounded-xl p-3 flex items-center gap-3" style="border:1px solid #2a2a2e;">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                     style="background:${completed ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.08)'};">
+                    <svg class="w-4 h-4" fill="none" stroke="${completed ? '#22c55e' : '#ef4444'}" viewBox="0 0 20 20" stroke-width="1.8">
+                        ${completed ? '<path stroke-linecap="round" stroke-linejoin="round" d="M4 10l4 4 8-8"/>' : '<circle cx="10" cy="10" r="7"/><path stroke-linecap="round" stroke-linejoin="round" d="M10 6v4l2.5 2.5"/>'}
+                    </svg>
                 </div>
-                <div class="text-xp font-bold">+${Math.floor((new Date(h.end_at)-new Date(h.start_at))/360000)}</div>
-            </div>
-        `).join('') || '<p class="text-gray-500 text-sm">No history</p>';
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm font-medium" style="color:#f0f0f2;">${dateStr} · ${dur}h fast</div>
+                    <div class="text-xs" style="color:#5c5c6b;">Goal: ${h.target_hours}h · ${completed ? 'Completed' : 'Ended early'}</div>
+                </div>
+                <span class="font-mono text-xs font-semibold flex-shrink-0" style="color:#eab308;">+${pts}</span>
+            </div>`;
+        }).join('');
     }
 
     async function startFast(hours) {
@@ -1244,12 +1737,27 @@
 
     function endFastModal() {
         showModal('End Fast', `
-            <p class="text-sm mb-4">Ready to break your fast? How do you feel?</p>
-            <input type="range" id="ef-mood" min="1" max="5" value="3" class="w-full mb-3">
-            <textarea id="ef-notes" class="w-full p-2 rounded border text-sm mb-3" rows="2" placeholder="Notes..."></textarea>
-            <div class="flex gap-2">
-                <button onclick="hideModal()" class="flex-1 py-2 rounded border border-gray-600 text-sm">Cancel</button>
-                <button onclick="saveEndFast()" class="flex-1 py-2 rounded bg-danger text-sm">End Now</button>
+            <div class="space-y-3">
+                <p class="text-sm" style="color:#9898a6;">Ready to break your fast? How do you feel?</p>
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="field-label" style="margin:0;">How do you feel?</label>
+                        <span id="ef-mood-v" class="font-mono text-sm" style="color:#4f80ff;">3</span>
+                    </div>
+                    <input type="range" id="ef-mood" min="1" max="5" value="3" oninput="$('#ef-mood-v').textContent=this.value">
+                    <div class="flex justify-between mt-1.5">
+                        <span class="text-xs" style="color:#5c5c6b;">Rough</span>
+                        <span class="text-xs" style="color:#5c5c6b;">Great</span>
+                    </div>
+                </div>
+                <div>
+                    <label class="field-label">Notes (optional)</label>
+                    <textarea id="ef-notes" class="w-full px-3 py-2.5 rounded-lg border text-sm" rows="2" placeholder="How was this fast?"></textarea>
+                </div>
+                <div class="flex gap-2 pt-1">
+                    <button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>
+                    <button onclick="saveEndFast()" class="flex-1 py-2.5 rounded-xl font-semibold text-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);">End Fast</button>
+                </div>
             </div>
         `);
     }
@@ -1264,26 +1772,53 @@
     async function loadWishlist() {
         const w = await api('/wishlist');
         if(!w) return;
-        $('#wishlist-list').innerHTML = w.map(x => `
-            <div class="card rounded-lg p-4 flex gap-4">
-                <div class="w-12 h-12 rounded-lg bg-bg-secondary flex items-center justify-center text-2xl">📍</div>
-                <div class="flex-1 min-w-0">
-                    <div class="font-bold truncate">${x.title}</div>
-                    <div class="text-xs text-accent">${x.location || 'Unknown location'}</div>
-                    <div class="text-sm text-gray-400 mt-1">${x.description || ''}</div>
+        if(!w.length) {
+            $('#wishlist-list').innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><p>Your wishlist is empty. Add the first place you want to visit!</p></div>';
+            return;
+        }
+        // Deterministic color from title
+        const colors = ['#4f80ff','#22c55e','#f59e0b','#8b5cf6','#14b8a6','#ef4444'];
+        $('#wishlist-list').innerHTML = w.map((x, i) => {
+            const c = colors[i % colors.length];
+            const initial = x.title.charAt(0).toUpperCase();
+            return `
+            <div class="card wish-card rounded-xl p-4" style="border:1px solid #2a2a2e;">
+                <div class="flex items-start gap-3 mb-3">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 font-semibold text-sm"
+                         style="background:${c}1a;color:${c};border:1px solid ${c}33;">${initial}</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="font-semibold text-sm truncate" style="color:#f0f0f2;">${x.title}</div>
+                        ${x.location ? `
+                            <div class="flex items-center gap-1 mt-0.5">
+                                <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="${c}" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M10 3C7 3 4.5 5.5 4.5 8.5c0 4.5 5.5 8.5 5.5 8.5s5.5-4 5.5-8.5C15.5 5.5 13 3 10 3z"/></svg>
+                                <span class="text-xs truncate" style="color:${c};">${x.location}</span>
+                            </div>` : ''}
+                    </div>
                 </div>
-            </div>
-        `).join('') || '<p class="text-gray-500 text-sm">Wishlist is empty</p>';
+                ${x.description ? `<p class="text-xs leading-relaxed" style="color:#9898a6;">${x.description}</p>` : ''}
+            </div>`;
+        }).join('');
     }
 
     function addWishModal() {
-        showModal('Add to Wishlist', `
-            <input id="nw-title" class="w-full p-2 rounded border text-sm mb-2" placeholder="Name of place">
-            <input id="nw-location" class="w-full p-2 rounded border text-sm mb-2" placeholder="Location">
-            <textarea id="nw-desc" class="w-full p-2 rounded border text-sm mb-3" rows="2" placeholder="Description..."></textarea>
-            <div class="flex gap-2">
-                <button onclick="hideModal()" class="flex-1 py-2 rounded border border-gray-600 text-sm">Cancel</button>
-                <button onclick="saveWish()" class="flex-1 py-2 rounded bg-accent text-sm">Add</button>
+        showModal('Add Place', `
+            <div class="space-y-3">
+                <div>
+                    <label class="field-label">Place name</label>
+                    <input id="nw-title" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="e.g. Kyoto, Japan">
+                </div>
+                <div>
+                    <label class="field-label">Location</label>
+                    <input id="nw-location" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="City, Country">
+                </div>
+                <div>
+                    <label class="field-label">Notes (optional)</label>
+                    <textarea id="nw-desc" class="w-full px-3 py-2.5 rounded-lg border text-sm" rows="2" placeholder="Why do you want to visit?"></textarea>
+                </div>
+                <div class="flex gap-2 pt-1">
+                    <button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>
+                    <button onclick="saveWish()" class="btn-primary flex-1 py-2.5">Add to wishlist</button>
+                </div>
             </div>
         `);
     }
@@ -1300,57 +1835,116 @@
     async function loadFood() {
         const f = await api('/food');
         if(!f) return;
-        
-        $('#food-today-cals').textContent = f.today_calories;
-        const pct = Math.min(100, Math.round((f.today_calories / 2000) * 100));
+
+        const cals = f.today_calories || 0;
+        const goal = 2000;
+        const pct = Math.min(100, Math.round((cals / goal) * 100));
+        $('#food-today-cals').textContent = cals.toLocaleString();
         $('#food-cal-bar').style.width = pct + '%';
-        
+        const pctEl = $('#food-cal-pct');
+        if(pctEl) pctEl.textContent = pct + '%';
+
+        // Aggregate macros for today
+        const todayStr = new Date().toISOString().split('T')[0];
+        const todayLogs = f.logs.filter(m => m.logged_at && m.logged_at.startsWith(todayStr));
+        const totalP = todayLogs.reduce((s,m) => s + (m.protein_g||0), 0);
+        const totalC = todayLogs.reduce((s,m) => s + (m.carbs_g||0), 0);
+        const totalFat = todayLogs.reduce((s,m) => s + (m.fat_g||0), 0);
+        const pEl = $('#food-total-protein'); if(pEl) pEl.textContent = Math.round(totalP) + 'g';
+        const cEl = $('#food-total-carbs');   if(cEl) cEl.textContent = Math.round(totalC) + 'g';
+        const fEl = $('#food-total-fat');     if(fEl) fEl.textContent = Math.round(totalFat) + 'g';
+
         if(!f.logs.length) {
-            $('#food-list').innerHTML = '<p class="text-gray-500 text-sm">No meals logged yet. Click + Log Meal to start.</p>';
+            $('#food-list').innerHTML = '<div class="empty-state"><p>No meals logged yet. Tap "+ Log meal" to start tracking.</p></div>';
             return;
         }
-        
+
+        const mealMeta = {
+            breakfast: {label:'Breakfast', color:'#f59e0b', bg:'rgba(245,158,11,0.12)'},
+            lunch:     {label:'Lunch',     color:'#22c55e', bg:'rgba(34,197,94,0.12)'},
+            dinner:    {label:'Dinner',    color:'#4f80ff', bg:'rgba(79,128,255,0.12)'},
+            snack:     {label:'Snack',     color:'#8b5cf6', bg:'rgba(139,92,246,0.12)'},
+        };
+
         $('#food-list').innerHTML = f.logs.map(m => {
             const time = new Date(m.logged_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            const date = new Date(m.logged_at).toLocaleDateString();
+            const isToday = m.logged_at && m.logged_at.startsWith(todayStr);
+            const dateStr = isToday ? time : new Date(m.logged_at).toLocaleDateString('en-US', {month:'short',day:'numeric'}) + ' ' + time;
+            const meta = mealMeta[m.meal_type] || mealMeta.snack;
+            const hasNutrition = m.protein_g || m.carbs_g || m.fat_g;
+            const maxMacro = Math.max(m.protein_g||0, m.carbs_g||0, m.fat_g||0, 1);
             return `
-                <div class="card rounded-lg p-3">
-                    <div class="flex justify-between items-start">
-                        <div class="flex-1">
-                            <div class="font-medium">${m.description}</div>
-                            <div class="text-xs text-gray-500">${m.meal_type} • ${date} ${time}</div>
-                            ${m.ai_analysis ? `<div class="text-xs text-ai mt-1">🤖 ${m.ai_analysis}</div>` : ''}
-                        </div>
-                        <div class="text-right text-sm">
-                            ${m.calories ? `<div class="text-xp font-bold">${m.calories} cal</div>` : ''}
-                            ${m.protein_g ? `<div class="text-xs text-gray-400">P:${m.protein_g}g C:${m.carbs_g || 0}g F:${m.fat_g || 0}g</div>` : ''}
-                        </div>
+            <div class="card rounded-xl p-3" style="border:1px solid #2a2a2e;">
+                <div class="flex items-start gap-3">
+                    <!-- Meal type indicator -->
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-semibold"
+                         style="background:${meta.bg};color:${meta.color};">
+                        ${meta.label.charAt(0)}
                     </div>
-                    <div class="flex gap-2 mt-2 pt-2 border-t border-gray-700">
-                        <button onclick="editFoodModal(${m.id}, '${m.meal_type}', \`${m.description.replace(/`/g, "'")}\`, ${m.calories || 0}, ${m.protein_g || 0}, ${m.carbs_g || 0}, ${m.fat_g || 0})" class="text-xs text-accent hover:underline">✏️ Edit</button>
-                        <button onclick="deleteFood(${m.id})" class="text-xs text-danger hover:underline">🗑️ Delete</button>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-medium truncate" style="color:#f0f0f2;">${m.description}</div>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    <span class="text-xs" style="color:${meta.color};">${meta.label}</span>
+                                    <span class="text-xs" style="color:#5c5c6b;">${dateStr}</span>
+                                </div>
+                            </div>
+                            <div class="text-right flex-shrink-0">
+                                ${m.calories ? `<div class="font-mono font-semibold text-sm" style="color:#eab308;">${m.calories}</div><div class="text-xs" style="color:#5c5c6b;">kcal</div>` : ''}
+                            </div>
+                        </div>
+                        ${m.ai_analysis ? `
+                            <div class="mt-2 text-xs flex items-start gap-1.5" style="color:#c4b5fd;">
+                                <svg class="w-3 h-3 flex-shrink-0 mt-0.5" fill="none" stroke="#8b5cf6" viewBox="0 0 20 20" stroke-width="1.8"><circle cx="10" cy="10" r="7"/><path stroke-linecap="round" stroke-linejoin="round" d="M10 7v3l2 2"/></svg>
+                                ${m.ai_analysis}
+                            </div>` : ''}
+                        ${hasNutrition ? `
+                            <div class="mt-2 space-y-1">
+                                ${m.protein_g ? `<div class="flex items-center gap-2"><span class="text-xs w-10" style="color:#5c5c6b;">P</span><div class="flex-1 h-1 rounded-full overflow-hidden" style="background:#242428;"><div class="h-full rounded-full nutrition-bar" style="width:${Math.round((m.protein_g/maxMacro)*100)}%;background:#4f80ff;"></div></div><span class="text-xs font-mono w-8 text-right" style="color:#9898a6;">${m.protein_g}g</span></div>` : ''}
+                                ${m.carbs_g   ? `<div class="flex items-center gap-2"><span class="text-xs w-10" style="color:#5c5c6b;">C</span><div class="flex-1 h-1 rounded-full overflow-hidden" style="background:#242428;"><div class="h-full rounded-full nutrition-bar" style="width:${Math.round((m.carbs_g/maxMacro)*100)}%;background:#f59e0b;"></div></div><span class="text-xs font-mono w-8 text-right" style="color:#9898a6;">${m.carbs_g}g</span></div>` : ''}
+                                ${m.fat_g     ? `<div class="flex items-center gap-2"><span class="text-xs w-10" style="color:#5c5c6b;">F</span><div class="flex-1 h-1 rounded-full overflow-hidden" style="background:#242428;"><div class="h-full rounded-full nutrition-bar" style="width:${Math.round((m.fat_g/maxMacro)*100)}%;background:#ef4444;"></div></div><span class="text-xs font-mono w-8 text-right" style="color:#9898a6;">${m.fat_g}g</span></div>` : ''}
+                            </div>` : ''}
                     </div>
                 </div>
-            `;
+                <div class="flex items-center gap-1 mt-2.5 pt-2.5" style="border-top:1px solid #242428;">
+                    <button onclick="editFoodModal(${m.id}, '${m.meal_type}', \`${m.description.replace(/`/g, "'")}\`, ${m.calories || 0}, ${m.protein_g || 0}, ${m.carbs_g || 0}, ${m.fat_g || 0})" class="action-link">Edit</button>
+                    <button onclick="deleteFood(${m.id})" class="action-link-danger">Delete</button>
+                </div>
+            </div>`;
         }).join('');
     }
 
     function addFoodModal() {
         showModal('Log Meal', `
-            <select id="nf-type" class="w-full p-2 rounded border text-sm mb-2">
-                <option value="breakfast">🌅 Breakfast</option>
-                <option value="lunch">☀️ Lunch</option>
-                <option value="dinner">🌙 Dinner</option>
-                <option value="snack">🍿 Snack</option>
-            </select>
-            <textarea id="nf-desc" class="w-full p-2 rounded border text-sm mb-2" rows="2" placeholder="What did you eat?"></textarea>
-            <div class="grid grid-cols-2 gap-2 mb-3">
-                <input id="nf-cal" type="number" class="p-2 rounded border text-sm" placeholder="Calories (optional)">
-                <input id="nf-protein" type="number" class="p-2 rounded border text-sm" placeholder="Protein g">
-            </div>
-            <div class="flex gap-2">
-                <button onclick="hideModal()" class="flex-1 py-2 rounded border border-gray-600 text-sm">Cancel</button>
-                <button onclick="saveFoodLog()" class="flex-1 py-2 rounded bg-accent text-sm">Log</button>
+            <div class="space-y-3">
+                <div>
+                    <label class="field-label">Meal type</label>
+                    <select id="nf-type" class="w-full px-3 py-2.5 rounded-lg border text-sm">
+                        <option value="breakfast">Breakfast</option>
+                        <option value="lunch">Lunch</option>
+                        <option value="dinner">Dinner</option>
+                        <option value="snack">Snack</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="field-label">What did you eat?</label>
+                    <textarea id="nf-desc" class="w-full px-3 py-2.5 rounded-lg border text-sm" rows="2" placeholder="e.g. Chicken salad with avocado"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="field-label">Calories</label>
+                        <input id="nf-cal" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="optional">
+                    </div>
+                    <div>
+                        <label class="field-label">Protein (g)</label>
+                        <input id="nf-protein" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="optional">
+                    </div>
+                </div>
+                <div class="flex gap-2 pt-1">
+                    <button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>
+                    <button onclick="saveFoodLog()" class="btn-primary flex-1 py-2.5">Log meal</button>
+                </div>
             </div>
         `);
     }
@@ -1374,24 +1968,44 @@
 
     function editFoodModal(id, mealType, desc, cal, protein, carbs, fat) {
         showModal('Edit Meal', `
-            <select id="ef-type" class="w-full p-2 rounded border text-sm mb-2">
-                <option value="breakfast" ${mealType === 'breakfast' ? 'selected' : ''}>🌅 Breakfast</option>
-                <option value="lunch" ${mealType === 'lunch' ? 'selected' : ''}>☀️ Lunch</option>
-                <option value="dinner" ${mealType === 'dinner' ? 'selected' : ''}>🌙 Dinner</option>
-                <option value="snack" ${mealType === 'snack' ? 'selected' : ''}>🍿 Snack</option>
-            </select>
-            <textarea id="ef-desc" class="w-full p-2 rounded border text-sm mb-2" rows="2">${desc}</textarea>
-            <div class="grid grid-cols-2 gap-2 mb-2">
-                <input id="ef-cal" type="number" class="p-2 rounded border text-sm" placeholder="Calories" value="${cal || ''}">
-                <input id="ef-protein" type="number" class="p-2 rounded border text-sm" placeholder="Protein g" value="${protein || ''}">
-            </div>
-            <div class="grid grid-cols-2 gap-2 mb-3">
-                <input id="ef-carbs" type="number" class="p-2 rounded border text-sm" placeholder="Carbs g" value="${carbs || ''}">
-                <input id="ef-fat" type="number" class="p-2 rounded border text-sm" placeholder="Fat g" value="${fat || ''}">
-            </div>
-            <div class="flex gap-2">
-                <button onclick="hideModal()" class="flex-1 py-2 rounded border border-gray-600 text-sm">Cancel</button>
-                <button onclick="updateFood(${id})" class="flex-1 py-2 rounded bg-accent text-sm">Save</button>
+            <div class="space-y-3">
+                <div>
+                    <label class="field-label">Meal type</label>
+                    <select id="ef-type" class="w-full px-3 py-2.5 rounded-lg border text-sm">
+                        <option value="breakfast" ${mealType==='breakfast'?'selected':''}>Breakfast</option>
+                        <option value="lunch"     ${mealType==='lunch'    ?'selected':''}>Lunch</option>
+                        <option value="dinner"    ${mealType==='dinner'   ?'selected':''}>Dinner</option>
+                        <option value="snack"     ${mealType==='snack'    ?'selected':''}>Snack</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="field-label">Description</label>
+                    <textarea id="ef-desc" class="w-full px-3 py-2.5 rounded-lg border text-sm" rows="2">${desc}</textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="field-label">Calories</label>
+                        <input id="ef-cal" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="${cal||''}">
+                    </div>
+                    <div>
+                        <label class="field-label">Protein (g)</label>
+                        <input id="ef-protein" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="${protein||''}">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="field-label">Carbs (g)</label>
+                        <input id="ef-carbs" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="${carbs||''}">
+                    </div>
+                    <div>
+                        <label class="field-label">Fat (g)</label>
+                        <input id="ef-fat" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="${fat||''}">
+                    </div>
+                </div>
+                <div class="flex gap-2 pt-1">
+                    <button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>
+                    <button onclick="updateFood(${id})" class="btn-primary flex-1 py-2.5">Save changes</button>
+                </div>
             </div>
         `);
     }
@@ -1422,102 +2036,149 @@
     }
 
     // ============== CHALLENGES ==============
+    const CAT_COLORS = {
+        health: '#22c55e', diet: '#f59e0b', fitness: '#4f80ff',
+        habit: '#f97316', general: '#8b5cf6'
+    };
+
     async function loadChallenges() {
         const challenges = await api('/challenges');
         if(!challenges) return;
-        
+
         const active = challenges.filter(c => c.status === 'active');
         const history = challenges.filter(c => c.status !== 'active');
-        
-        $('#challenges-active').innerHTML = active.length ? active.map(c => {
-            const progressPct = c.progress || 0;
-            let color = 'bg-accent';
-            if(progressPct >= 75) color = 'bg-success';
-            else if(progressPct >= 50) color = 'bg-warning';
-            
-            return `
-                <div class="card rounded-xl p-4 border-l-4 border-accent">
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <div class="font-bold flex items-center gap-2">
-                                🔥 ${c.name}
-                                ${c.needs_checkin ? '<span class="text-xs bg-warning/20 text-warning px-2 py-0.5 rounded">Check-in needed</span>' : ''}
+
+        if(!active.length) {
+            $('#challenges-active').innerHTML = '<div class="empty-state"><p>No active challenges. Start one to build streaks!</p></div>';
+        } else {
+            $('#challenges-active').innerHTML = active.map(c => {
+                const pct = c.progress || 0;
+                let barColor = '#4f80ff';
+                if(pct >= 75) barColor = '#22c55e';
+                else if(pct >= 50) barColor = '#f59e0b';
+                const catColor = CAT_COLORS[c.category] || '#9898a6';
+
+                // Milestone markers: 25%, 50%, 75%, 100%
+                const milestones = c.target_days ? [25,50,75,100].map(m => `
+                    <div class="absolute top-0 h-full w-px" style="left:${m}%;background:${pct >= m ? 'transparent' : 'rgba(255,255,255,0.08)'}"></div>
+                `).join('') : '';
+
+                return `
+                <div class="challenge-card card rounded-xl p-4" style="border:1px solid #2a2a2e;border-left:3px solid ${catColor};">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex-1 min-w-0 pr-3">
+                            <div class="flex items-center gap-2 mb-0.5">
+                                <span class="text-sm font-semibold" style="color:#f0f0f2;">${c.name}</span>
+                                ${c.needs_checkin ? '<span class="text-xs font-medium px-2 py-0.5 rounded-full" style="background:rgba(245,158,11,0.12);color:#f59e0b;border:1px solid rgba(245,158,11,0.2);">Check-in needed</span>' : ''}
                             </div>
-                            <div class="text-xs text-gray-400">${c.category} • ${c.target_days ? c.target_days + ' day goal' : 'Ongoing'} • Started ${c.start_date}</div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-medium" style="color:${catColor};">${c.category}</span>
+                                <span class="text-xs" style="color:#5c5c6b;">·</span>
+                                <span class="text-xs" style="color:#5c5c6b;">${c.target_days ? c.target_days + ' day goal' : 'Ongoing'}</span>
+                                <span class="text-xs" style="color:#5c5c6b;">· Started ${c.start_date}</span>
+                            </div>
                         </div>
-                        <div class="text-right">
-                            <div class="text-2xl font-bold text-accent">${c.streak_days}</div>
-                            <div class="text-xs text-gray-400">days</div>
+                        <!-- Streak counter -->
+                        <div class="text-center flex-shrink-0">
+                            <div class="font-mono font-bold text-2xl leading-none" style="color:${catColor};">${c.streak_days}</div>
+                            <div class="text-xs mt-0.5" style="color:#5c5c6b;">day${c.streak_days !== 1 ? 's' : ''}</div>
                         </div>
                     </div>
+
                     ${c.target_days ? `
-                        <div class="h-2 bg-bg-secondary rounded-full overflow-hidden mb-2">
-                            <div class="h-full ${color}" style="width: ${progressPct}%"></div>
-                        </div>
-                        <div class="text-xs text-gray-400">${c.remaining_days} days to go</div>
-                    ` : ''}
-                    <div class="flex flex-wrap gap-2 mt-3 pt-2 border-t border-gray-700">
-                        <button onclick="viewChallengeHistory(${c.id}, '${c.name}', '${c.start_date}')" class="text-xs text-accent hover:underline">📅 History</button>
-                        <button onclick="checkinChallengeModal(${c.id}, '${c.name}')" class="text-xs text-success hover:underline">✓ Check-in</button>
-                        <button onclick="failChallengeModal(${c.id}, '${c.name}')" class="text-xs text-danger hover:underline">✗ I broke it</button>
-                        <button onclick="editChallengeModal(${c.id}, '${c.name.replace(/'/g, "\\'")}', '${c.category}', ${c.target_days || 'null'}, '${c.check_in_frequency}')" class="text-xs text-gray-400 hover:underline">✏️ Edit</button>
-                        <button onclick="deleteChallenge(${c.id}, '${c.name}')" class="text-xs text-gray-500 hover:text-danger hover:underline">🗑️</button>
-                        ${c.progress >= 100 ? `<button onclick="completeChallenge(${c.id})" class="text-xs text-accent hover:underline">🎉 Complete!</button>` : ''}
+                        <div class="mb-1">
+                            <div class="relative h-2 rounded-full overflow-hidden" style="background:#242428;">
+                                ${milestones}
+                                <div class="h-full rounded-full progress-bar" style="width:${pct}%;background:${barColor};"></div>
+                            </div>
+                            <div class="flex justify-between mt-1.5">
+                                <span class="text-xs font-mono" style="color:#5c5c6b;">${Math.round(pct)}%</span>
+                                <span class="text-xs" style="color:#5c5c6b;">${c.remaining_days} days left</span>
+                            </div>
+                        </div>` : ''}
+
+                    <div class="flex flex-wrap items-center gap-1 mt-3 pt-2.5" style="border-top:1px solid #242428;">
+                        <button onclick="viewChallengeHistory(${c.id}, '${c.name}', '${c.start_date}')" class="action-link">History</button>
+                        <button onclick="checkinChallengeModal(${c.id}, '${c.name}')" class="action-link-success">Check-in</button>
+                        <button onclick="failChallengeModal(${c.id}, '${c.name}')" class="action-link-danger">I broke it</button>
+                        <button onclick="editChallengeModal(${c.id}, '${c.name.replace(/'/g, "\\'")}', '${c.category}', ${c.target_days || 'null'}, '${c.check_in_frequency}')" class="action-link">Edit</button>
+                        <button onclick="deleteChallenge(${c.id}, '${c.name}')" class="action-link-danger">Delete</button>
+                        ${pct >= 100 ? `<button onclick="completeChallenge(${c.id})" class="action-link" style="color:#22c55e;">Complete!</button>` : ''}
                     </div>
+                </div>`;
+            }).join('');
+        }
+
+        if(!history.length) {
+            $('#challenges-history').innerHTML = '<div class="empty-state"><p>No history yet.</p></div>';
+            return;
+        }
+
+        $('#challenges-history').innerHTML = history.map(c => {
+            const completed = c.status === 'completed';
+            return `
+            <div class="card rounded-xl p-3 flex items-center gap-3" style="border:1px solid #2a2a2e;opacity:0.75;">
+                <div class="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
+                     style="background:${completed ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.08)'};">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="${completed ? '#22c55e' : '#ef4444'}" viewBox="0 0 20 20" stroke-width="2.5">
+                        ${completed ? '<path stroke-linecap="round" stroke-linejoin="round" d="M4 10l4 4 8-8"/>' : '<path stroke-linecap="round" stroke-linejoin="round" d="M5 5l10 10M15 5L5 15"/>'}
+                    </svg>
                 </div>
-            `;
-        }).join('') : '<p class="text-gray-500 text-sm">No active challenges. Start one!</p>';
-        
-        $('#challenges-history').innerHTML = history.length ? history.map(c => `
-            <div class="card rounded-lg p-3 opacity-70">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <span class="${c.status === 'completed' ? 'text-success' : 'text-danger'}">${c.status === 'completed' ? '✓' : '✗'}</span>
-                        ${c.name}
-                        <span class="text-xs text-gray-500 ml-2">${c.start_date} → ${c.end_date || '?'}</span>
-                    </div>
-                    <div class="flex items-center gap-2 text-xs">
-                        <span class="text-gray-400">${c.streak_days || 0} days</span>
-                        <button onclick="restartChallenge(${c.id})" class="text-accent hover:underline">↻ Restart</button>
-                        <button onclick="deleteChallenge(${c.id}, '${c.name}')" class="text-gray-500 hover:text-danger">🗑️</button>
-                    </div>
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm font-medium truncate" style="color:#f0f0f2;">${c.name}</div>
+                    <div class="text-xs" style="color:#5c5c6b;">${c.start_date} → ${c.end_date || '?'} · ${c.streak_days || 0} days</div>
                 </div>
-            </div>
-        `).join('') : '<p class="text-gray-500 text-sm">No history yet.</p>';
+                <div class="flex items-center gap-1 flex-shrink-0">
+                    <button onclick="restartChallenge(${c.id})" class="action-link">Restart</button>
+                    <button onclick="deleteChallenge(${c.id}, '${c.name}')" class="action-link-danger">Delete</button>
+                </div>
+            </div>`;
+        }).join('');
     }
     
     function addChallengeModal() {
         showModal('New Challenge', `
-            <input id="nc-name" type="text" class="w-full p-2 rounded border text-sm mb-2" placeholder="Challenge name (e.g., No Alcohol)">
-            <select id="nc-category" class="w-full p-2 rounded border text-sm mb-2">
-                <option value="health">🏥 Health</option>
-                <option value="diet">🍎 Diet</option>
-                <option value="fitness">💪 Fitness</option>
-                <option value="habit">🎯 Habit</option>
-                <option value="general">📌 General</option>
-            </select>
-            <div class="mb-2">
-                <label class="text-xs text-gray-400">Target duration (leave empty for ongoing)</label>
-                <div class="flex gap-2 mt-1">
-                    <input id="nc-days" type="number" class="flex-1 p-2 rounded border text-sm" placeholder="Days">
-                    <select id="nc-preset" class="p-2 rounded border text-sm" onchange="$('#nc-days').value = this.value">
-                        <option value="">Custom</option>
-                        <option value="7">1 Week</option>
-                        <option value="14">2 Weeks</option>
-                        <option value="30">1 Month</option>
-                        <option value="90">3 Months</option>
-                        <option value="180">6 Months</option>
-                        <option value="365">1 Year</option>
+            <div class="space-y-3">
+                <div>
+                    <label class="field-label">Challenge name</label>
+                    <input id="nc-name" type="text" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="e.g. No Alcohol for 30 days">
+                </div>
+                <div>
+                    <label class="field-label">Category</label>
+                    <select id="nc-category" class="w-full px-3 py-2.5 rounded-lg border text-sm">
+                        <option value="health">Health</option>
+                        <option value="diet">Diet</option>
+                        <option value="fitness">Fitness</option>
+                        <option value="habit">Habit</option>
+                        <option value="general">General</option>
                     </select>
                 </div>
-            </div>
-            <select id="nc-freq" class="w-full p-2 rounded border text-sm mb-3">
-                <option value="daily">Daily check-in</option>
-                <option value="weekly">Weekly check-in</option>
-            </select>
-            <div class="flex gap-2">
-                <button onclick="hideModal()" class="flex-1 py-2 rounded border border-gray-600 text-sm">Cancel</button>
-                <button onclick="saveChallenge()" class="flex-1 py-2 rounded bg-accent text-sm">Start Challenge</button>
+                <div>
+                    <label class="field-label">Target duration (leave empty for ongoing)</label>
+                    <div class="flex gap-2">
+                        <input id="nc-days" type="number" class="flex-1 px-3 py-2.5 rounded-lg border text-sm" placeholder="Days">
+                        <select id="nc-preset" class="px-3 py-2.5 rounded-lg border text-sm" onchange="$('#nc-days').value=this.value">
+                            <option value="">Preset</option>
+                            <option value="7">1 Week</option>
+                            <option value="14">2 Weeks</option>
+                            <option value="30">1 Month</option>
+                            <option value="90">3 Months</option>
+                            <option value="180">6 Months</option>
+                            <option value="365">1 Year</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="field-label">Check-in frequency</label>
+                    <select id="nc-freq" class="w-full px-3 py-2.5 rounded-lg border text-sm">
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                    </select>
+                </div>
+                <div class="flex gap-2 pt-1">
+                    <button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>
+                    <button onclick="saveChallenge()" class="btn-primary flex-1 py-2.5">Start challenge</button>
+                </div>
             </div>
         `);
     }
@@ -1559,52 +2220,69 @@
             const dateStr = d.toISOString().split('T')[0];
             const isChecked = checkinDates.has(dateStr);
             const isToday = dateStr === today.toISOString().split('T')[0];
-            
-            calendar += `<div class="w-8 h-8 rounded flex items-center justify-center text-xs ${isChecked ? 'bg-success text-white' : 'bg-gray-700'} ${isToday ? 'ring-2 ring-accent' : ''}" title="${dateStr}">${d.getDate()}</div>`;
+            const isFuture = d > today;
+
+            let bg = '#242428', color = '#5c5c6b';
+            if(isChecked) { bg = 'rgba(34,197,94,0.2)'; color = '#22c55e'; }
+            else if(isFuture) { bg = 'transparent'; color = '#2a2a2e'; }
+
+            calendar += `<div class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-mono font-medium"
+                style="background:${bg};color:${color};${isToday ? 'outline:2px solid #4f80ff;outline-offset:1px;' : ''}"
+                title="${dateStr}">${d.getDate()}</div>`;
         }
-        
-        const logHtml = (logs || []).slice(0, 10).map(l => `
-            <div class="text-xs text-gray-400 py-1 border-b border-gray-700">
-                <span class="${l.action === 'checkin' ? 'text-success' : l.action === 'failed' ? 'text-danger' : 'text-accent'}">${l.action}</span>
-                • ${new Date(l.logged_at).toLocaleDateString()} 
-                ${l.note ? '• ' + l.note : ''}
-            </div>
-        `).join('');
-        
-        showModal(`📅 ${name} History`, `
-            <div class="mb-3">
-                <div class="text-xs text-gray-400 mb-2">Check-in calendar (green = checked in)</div>
+
+        const logColors = {checkin:'#22c55e', failed:'#ef4444', started:'#4f80ff', completed:'#eab308'};
+        const logHtml = (logs || []).slice(0, 10).map(l => {
+            const c = logColors[l.action] || '#9898a6';
+            return `
+            <div class="flex items-center gap-2 py-1.5" style="border-bottom:1px solid #242428;">
+                <span class="text-xs font-medium px-2 py-0.5 rounded-full" style="background:${c}1a;color:${c};">${l.action}</span>
+                <span class="text-xs" style="color:#5c5c6b;">${new Date(l.logged_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>
+                ${l.note ? `<span class="text-xs truncate" style="color:#9898a6;">${l.note}</span>` : ''}
+            </div>`;
+        }).join('');
+
+        showModal(`${name} — History`, `
+            <div class="mb-4">
+                <div class="section-label mb-2">Check-in heatmap</div>
                 <div class="grid grid-cols-7 gap-1">${calendar}</div>
+                <div class="flex items-center gap-3 mt-2">
+                    <div class="flex items-center gap-1.5"><div style="width:10px;height:10px;border-radius:3px;background:rgba(34,197,94,0.2);"></div><span class="text-xs" style="color:#5c5c6b;">Checked in</span></div>
+                    <div class="flex items-center gap-1.5"><div style="width:10px;height:10px;border-radius:3px;background:#242428;"></div><span class="text-xs" style="color:#5c5c6b;">Missed</span></div>
+                </div>
             </div>
-            <div class="mb-3">
-                <div class="text-xs text-gray-400 mb-2">Recent logs</div>
-                <div class="max-h-32 overflow-y-auto">${logHtml || '<div class="text-xs text-gray-500">No logs yet</div>'}</div>
+            <div class="mb-4">
+                <div class="section-label mb-2">Recent logs</div>
+                <div class="max-h-32 overflow-y-auto">${logHtml || '<div class="text-xs" style="color:#5c5c6b;">No logs yet</div>'}</div>
             </div>
-            <button onclick="hideModal()" class="w-full py-2 rounded border border-gray-600 text-sm">Close</button>
+            <button onclick="hideModal()" class="btn-ghost w-full py-2.5">Close</button>
         `);
     }
     
     // Check-in modal with backfill option
     function checkinChallengeModal(id, name) {
-        showModal(`✓ Check-in: ${name}`, `
-            <div class="mb-3">
-                <label class="text-xs text-gray-400">Check-in for:</label>
-                <select id="ci-date" class="w-full p-2 rounded border text-sm mt-1">
+        showModal(`Check-in: ${name}`, `
+            <div class="space-y-3">
+            <div>
+                <label class="field-label">Check-in for</label>
+                <select id="ci-date" class="w-full px-3 py-2.5 rounded-lg border text-sm">
                     <option value="today">Today</option>
                     <option value="yesterday">Yesterday</option>
                     <option value="custom">Custom date...</option>
                 </select>
             </div>
-            <div id="ci-custom-date" class="mb-3 hidden">
-                <input type="date" id="ci-custom" class="w-full p-2 rounded border text-sm" value="${new Date().toISOString().split('T')[0]}">
+            <div id="ci-custom-date" class="hidden">
+                <label class="field-label">Date</label>
+                <input type="date" id="ci-custom" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="${new Date().toISOString().split('T')[0]}">
             </div>
-            <div class="mb-3">
-                <label class="text-xs text-gray-400">Note (optional)</label>
-                <input id="ci-note" type="text" class="w-full p-2 rounded border text-sm mt-1" placeholder="How's it going?">
+            <div>
+                <label class="field-label">Note (optional)</label>
+                <input id="ci-note" type="text" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="How's it going?">
             </div>
-            <div class="flex gap-2">
-                <button onclick="hideModal()" class="flex-1 py-2 rounded border border-gray-600 text-sm">Cancel</button>
-                <button onclick="doCheckin(${id})" class="flex-1 py-2 rounded bg-success text-sm">Check-in ✓</button>
+            <div class="flex gap-2 pt-1">
+                <button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>
+                <button onclick="doCheckin(${id})" class="flex-1 py-2.5 rounded-xl font-semibold text-sm" style="background:#22c55e;color:#fff;">Check-in</button>
+            </div>
             </div>
             <script>
                 document.getElementById('ci-date').onchange = function() {
@@ -1628,26 +2306,27 @@
     
     // Fail modal with date picker
     function failChallengeModal(id, name) {
-        showModal(`✗ End Challenge: ${name}`, `
-            <div class="text-center mb-4">
-                <div class="text-4xl mb-2">😔</div>
-                <div class="text-sm text-gray-400">It's okay, we all slip. The important thing is starting again.</div>
-            </div>
-            <div class="mb-3">
-                <label class="text-xs text-gray-400">When did you break it?</label>
-                <select id="fail-when" class="w-full p-2 rounded border text-sm mt-1">
-                    <option value="today">Today</option>
-                    <option value="yesterday">Yesterday</option>
-                    <option value="earlier">Earlier this week</option>
-                </select>
-            </div>
-            <div class="mb-3">
-                <label class="text-xs text-gray-400">What happened? (optional)</label>
-                <input id="fail-reason" type="text" class="w-full p-2 rounded border text-sm mt-1" placeholder="Helps you learn patterns">
-            </div>
-            <div class="flex gap-2">
-                <button onclick="hideModal()" class="flex-1 py-2 rounded border border-gray-600 text-sm">Cancel</button>
-                <button onclick="doFail(${id})" class="flex-1 py-2 rounded bg-danger text-sm">End & Reset</button>
+        showModal(`End Challenge`, `
+            <div class="space-y-3">
+                <div class="text-center py-2">
+                    <div class="text-sm" style="color:#9898a6;">It's okay, we all slip. The important thing is starting again.</div>
+                </div>
+                <div>
+                    <label class="field-label">When did you break it?</label>
+                    <select id="fail-when" class="w-full px-3 py-2.5 rounded-lg border text-sm">
+                        <option value="today">Today</option>
+                        <option value="yesterday">Yesterday</option>
+                        <option value="earlier">Earlier this week</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="field-label">What happened? (optional)</label>
+                    <input id="fail-reason" type="text" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="Helps you learn patterns">
+                </div>
+                <div class="flex gap-2 pt-1">
+                    <button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>
+                    <button onclick="doFail(${id})" class="flex-1 py-2.5 rounded-xl font-semibold text-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);">End &amp; Reset</button>
+                </div>
             </div>
         `);
     }
@@ -1667,26 +2346,37 @@
     
     // Edit challenge modal
     function editChallengeModal(id, name, category, targetDays, frequency) {
-        showModal(`✏️ Edit: ${name}`, `
-            <input id="ec-name" type="text" class="w-full p-2 rounded border text-sm mb-2" value="${name}">
-            <select id="ec-category" class="w-full p-2 rounded border text-sm mb-2">
-                <option value="health" ${category==='health'?'selected':''}>🏥 Health</option>
-                <option value="diet" ${category==='diet'?'selected':''}>🍎 Diet</option>
-                <option value="fitness" ${category==='fitness'?'selected':''}>💪 Fitness</option>
-                <option value="habit" ${category==='habit'?'selected':''}>🎯 Habit</option>
-                <option value="general" ${category==='general'?'selected':''}>📌 General</option>
-            </select>
-            <div class="mb-2">
-                <label class="text-xs text-gray-400">Target days (empty = ongoing)</label>
-                <input id="ec-days" type="number" class="w-full p-2 rounded border text-sm mt-1" value="${targetDays || ''}" placeholder="Days">
-            </div>
-            <select id="ec-freq" class="w-full p-2 rounded border text-sm mb-3">
-                <option value="daily" ${frequency==='daily'?'selected':''}>Daily check-in</option>
-                <option value="weekly" ${frequency==='weekly'?'selected':''}>Weekly check-in</option>
-            </select>
-            <div class="flex gap-2">
-                <button onclick="hideModal()" class="flex-1 py-2 rounded border border-gray-600 text-sm">Cancel</button>
-                <button onclick="doEditChallenge(${id})" class="flex-1 py-2 rounded bg-accent text-sm">Save</button>
+        showModal(`Edit Challenge`, `
+            <div class="space-y-3">
+                <div>
+                    <label class="field-label">Challenge name</label>
+                    <input id="ec-name" type="text" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="${name}">
+                </div>
+                <div>
+                    <label class="field-label">Category</label>
+                    <select id="ec-category" class="w-full px-3 py-2.5 rounded-lg border text-sm">
+                        <option value="health"   ${category==='health'  ?'selected':''}>Health</option>
+                        <option value="diet"     ${category==='diet'    ?'selected':''}>Diet</option>
+                        <option value="fitness"  ${category==='fitness' ?'selected':''}>Fitness</option>
+                        <option value="habit"    ${category==='habit'   ?'selected':''}>Habit</option>
+                        <option value="general"  ${category==='general' ?'selected':''}>General</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="field-label">Target days (empty = ongoing)</label>
+                    <input id="ec-days" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="${targetDays||''}" placeholder="Days">
+                </div>
+                <div>
+                    <label class="field-label">Check-in frequency</label>
+                    <select id="ec-freq" class="w-full px-3 py-2.5 rounded-lg border text-sm">
+                        <option value="daily"  ${frequency==='daily' ?'selected':''}>Daily</option>
+                        <option value="weekly" ${frequency==='weekly'?'selected':''}>Weekly</option>
+                    </select>
+                </div>
+                <div class="flex gap-2 pt-1">
+                    <button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>
+                    <button onclick="doEditChallenge(${id})" class="btn-primary flex-1 py-2.5">Save changes</button>
+                </div>
             </div>
         `);
     }
@@ -2003,19 +2693,23 @@
             // Show best challenge streak in the sober slot
             const topChallenge = challenges.reduce((a, b) => a.streak_days > b.streak_days ? a : b);
             $('#s-sober').textContent = topChallenge.streak_days + 'd';
-            
+
             // Show challenges widget on dashboard
             $('#dash-challenges-section').classList.remove('hidden');
-            $('#dash-challenges').innerHTML = challenges.slice(0, 3).map(c => `
-                <div class="card rounded-lg p-2 flex items-center gap-3">
-                    <div class="text-2xl font-bold text-accent">${c.streak_days}</div>
-                    <div class="flex-1">
-                        <div class="text-sm font-medium truncate">${c.name}</div>
-                        <div class="text-xs text-gray-500">${c.target_days ? Math.round(c.progress) + '% to goal' : 'Ongoing'}</div>
+            $('#dash-challenges').innerHTML = challenges.slice(0, 3).map(c => {
+                const catColor = (typeof CAT_COLORS !== 'undefined' ? CAT_COLORS[c.category] : null) || '#4f80ff';
+                return `
+                <div class="rounded-xl p-3 flex items-center gap-3" style="background:#1c1c20;border:1px solid #2a2a2e;">
+                    <div class="font-mono font-bold text-lg flex-shrink-0" style="color:${catColor};min-width:2rem;text-align:center;">${c.streak_days}</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm font-medium truncate" style="color:#f0f0f2;">${c.name}</div>
+                        <div class="text-xs" style="color:#5c5c6b;">${c.target_days ? Math.round(c.progress) + '% to goal' : 'Ongoing'}</div>
                     </div>
-                    ${c.needs_checkin ? '<span class="text-xs bg-warning/20 text-warning px-2 py-0.5 rounded">Check-in</span>' : '<span class="text-success text-lg">🔥</span>'}
-                </div>
-            `).join('');
+                    ${c.needs_checkin
+                        ? '<span class="text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0" style="background:rgba(245,158,11,0.12);color:#f59e0b;">Check-in</span>'
+                        : '<span class="text-base flex-shrink-0">🔥</span>'}
+                </div>`;
+            }).join('');
         } else {
             $('#s-sober').textContent = s.sobriety_days + 'd';
             $('#dash-challenges-section').classList.add('hidden');
@@ -2042,13 +2736,17 @@
         const c = $('#insights-container');
         if(!ins || !ins.length) { c.innerHTML = ''; return; }
         c.innerHTML = ins.map(i => `
-            <div class="insight-card rounded-lg p-3 relative">
-                <button onclick="dismissInsight(${i.id})" class="absolute top-2 right-2 text-gray-500 hover:text-white">&times;</button>
-                <div class="flex items-start gap-2">
-                    <span class="text-ai text-lg">🤖</span>
+            <div class="insight-card rounded-xl p-3.5 relative" style="padding:0.875rem;">
+                <button onclick="dismissInsight(${i.id})"
+                        class="absolute top-2.5 right-2.5 w-6 h-6 flex items-center justify-center rounded-lg transition-colors hover:bg-white/10"
+                        style="color:#5c5c6b;font-size:1rem;line-height:1;">×</button>
+                <div class="flex items-start gap-3 pr-6">
+                    <div class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style="background:rgba(139,92,246,0.15);">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="#8b5cf6" viewBox="0 0 20 20" stroke-width="1.8"><circle cx="10" cy="10" r="7"/><path stroke-linecap="round" stroke-linejoin="round" d="M10 7v3l2 2"/></svg>
+                    </div>
                     <div>
-                        <div class="font-bold text-sm text-ai">${i.title}</div>
-                        <div class="text-xs text-gray-300 mt-1">${i.content}</div>
+                        <div class="text-sm font-semibold" style="color:#c4b5fd;">${i.title}</div>
+                        <div class="text-xs mt-1 leading-relaxed" style="color:#a8a3c1;">${i.content}</div>
                     </div>
                 </div>
             </div>
@@ -2220,58 +2918,90 @@
     async function loadHabits() {
         const h = await api('/habits');
         if(!h) return;
-        $('#habits-list').innerHTML = h.map(x => `
-            <div class="card rounded-lg p-3 flex items-center gap-3 ${x.completed ? 'bg-success/10' : ''}" data-id="${x.id}">
-                <div class="w-7 h-7 rounded-lg border-2 flex items-center justify-center flex-shrink-0 cursor-pointer transition-all
-                    ${x.completed ? 'bg-success border-success' : 'border-gray-500 hover:border-success hover:scale-110'}"
-                    onclick="toggleH(${x.id}, ${!x.completed})"
-                    title="${x.completed ? 'Click to undo' : 'Click to complete'}">
-                    ${x.completed ? '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>' : ''}
+        // Update subtitle
+        const done = h.filter(x=>x.completed).length;
+        const sub = $('#habits-subtitle');
+        if(sub) sub.textContent = h.length ? `${done} of ${h.length} completed today` : 'No habits yet';
+
+        if(!h.length) {
+            $('#habits-list').innerHTML = '<div class="empty-state"><p>No habits yet. Add your first habit to get started.</p></div>';
+            return;
+        }
+
+        $('#habits-list').innerHTML = h.map(x => {
+            const catColor = x.category_color || '#9898a6';
+            const diffDots = Array.from({length:5}, (_,i) =>
+                `<span style="width:5px;height:5px;border-radius:50%;background:${i < x.difficulty ? catColor : '#2a2a2e'};display:inline-block;"></span>`
+            ).join('');
+            return `
+            <div class="rounded-xl p-3 flex items-center gap-3 habit-row cursor-pointer"
+                 style="background:${x.completed ? 'rgba(34,197,94,0.05)' : '#1c1c20'};border:1px solid ${x.completed ? 'rgba(34,197,94,0.18)' : '#2a2a2e'};"
+                 data-id="${x.id}">
+                <!-- Category color indicator -->
+                <div class="w-1 self-stretch rounded-full flex-shrink-0" style="background:${catColor};"></div>
+                <!-- Check circle -->
+                <div class="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 cursor-pointer transition-all"
+                     style="border:2px solid ${x.completed ? '#22c55e' : '#444449'};background:${x.completed ? '#22c55e' : 'transparent'};"
+                     onclick="toggleH(${x.id}, ${!x.completed})"
+                     title="${x.completed ? 'Click to undo' : 'Click to complete'}">
+                    ${x.completed ? '<svg class="w-3 h-3" fill="none" stroke="white" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' : ''}
                 </div>
-                <div class="flex-1 min-w-0">
-                    <div class="truncate font-medium ${x.completed ? 'text-gray-500 line-through' : ''}">${x.name}</div>
-                    <div class="text-xs text-gray-500 flex items-center gap-2">
-                        <span style="color:${x.category_color}">${x.category_name}</span>
-                        <span>•</span>
-                        <span>${'★'.repeat(x.difficulty)}${'☆'.repeat(5-x.difficulty)}</span>
-                        ${x.completed ? '<span class="text-success">✓ Done</span>' : ''}
+                <!-- Info -->
+                <div class="flex-1 min-w-0" onclick="toggleH(${x.id}, ${!x.completed})" style="cursor:pointer;">
+                    <div class="text-sm font-medium truncate" style="color:${x.completed ? '#5c5c6b' : '#f0f0f2'};text-decoration:${x.completed ? 'line-through' : 'none'};">${x.name}</div>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <span class="text-xs" style="color:${catColor};">${x.category_name}</span>
+                        <span class="text-xs" style="color:#2a2a2e;">•</span>
+                        <span class="flex items-center gap-0.5">${diffDots}</span>
                     </div>
                 </div>
-                <div class="flex items-center gap-2 flex-shrink-0">
-                    ${!x.completed ? `
-                        <button onclick="event.stopPropagation(); skipH(${x.id})" 
-                            class="text-xs text-gray-500 hover:text-white px-2 py-1 rounded hover:bg-white/10"
-                            title="Skip for today">Skip</button>
-                    ` : ''}
-                    <button onclick="event.stopPropagation(); editHabitModal(${x.id}, '${x.name.replace(/'/g, "\\'")}', '${x.category}', ${x.difficulty})" 
-                        class="text-xs text-gray-500 hover:text-accent px-1" title="Edit">✏️</button>
-                    <button onclick="event.stopPropagation(); deleteHabit(${x.id}, '${x.name.replace(/'/g, "\\'")}')" 
-                        class="text-xs text-gray-500 hover:text-danger px-1" title="Delete">🗑️</button>
-                    <div class="text-right ml-2">
-                        ${x.streak > 0 ? `<div class="text-streak text-sm font-bold">🔥${x.streak}</div>` : ''}
-                        <div class="text-xp text-sm font-bold">+${x.points}</div>
+                <!-- Right side: streak + XP + actions -->
+                <div class="flex items-center gap-1 flex-shrink-0">
+                    ${x.streak > 0 ? `<span class="font-mono text-xs font-semibold" style="color:#f97316;">${x.streak}🔥</span>` : ''}
+                    <span class="font-mono text-xs font-semibold ml-1" style="color:#eab308;">+${x.points}</span>
+                    <div class="flex items-center ml-2 gap-0.5">
+                        ${!x.completed ? `<button onclick="event.stopPropagation(); skipH(${x.id})" class="action-link-danger text-xs" title="Skip for today">Skip</button>` : ''}
+                        <button onclick="event.stopPropagation(); editHabitModal(${x.id}, '${x.name.replace(/'/g, "\\'")}', '${x.category}', ${x.difficulty})"
+                            class="action-link" title="Edit">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M14.5 3.5l2 2L7 15H5v-2L14.5 3.5z"/></svg>
+                        </button>
+                        <button onclick="event.stopPropagation(); deleteHabit(${x.id}, '${x.name.replace(/'/g, "\\'")}')"
+                            class="action-link-danger" title="Delete">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5l10 10M15 5L5 15"/></svg>
+                        </button>
                     </div>
                 </div>
-            </div>
-        `).join('');
+            </div>`;
+        }).join('');
     }
     
     function editHabitModal(id, name, category, difficulty) {
         showModal('Edit Habit', `
-            <input id="eh-name" class="w-full p-2 rounded border text-sm mb-2" value="${name}">
-            <select id="eh-cat" class="w-full p-2 rounded border text-sm mb-2">
-                <option value="health" ${category==='health'?'selected':''}>🏃 Health</option>
-                <option value="productivity" ${category==='productivity'?'selected':''}>💼 Productivity</option>
-                <option value="mindset" ${category==='mindset'?'selected':''}>🧠 Mindset</option>
-                <option value="sobriety" ${category==='sobriety'?'selected':''}>🛡️ Sobriety</option>
-            </select>
-            <div class="mb-3">
-                <label class="text-xs text-gray-400">Difficulty: <span id="eh-diff-v">${difficulty}</span></label>
-                <input type="range" id="eh-diff" min="1" max="5" value="${difficulty}" class="w-full" oninput="$('#eh-diff-v').textContent=this.value">
-            </div>
-            <div class="flex gap-2">
-                <button onclick="hideModal()" class="flex-1 py-2 rounded border border-gray-600 text-sm">Cancel</button>
-                <button onclick="saveHabitEdit(${id})" class="flex-1 py-2 rounded bg-accent text-sm">Save</button>
+            <div class="space-y-3">
+                <div>
+                    <label class="field-label">Habit name</label>
+                    <input id="eh-name" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="${name}">
+                </div>
+                <div>
+                    <label class="field-label">Category</label>
+                    <select id="eh-cat" class="w-full px-3 py-2.5 rounded-lg border text-sm">
+                        <option value="health" ${category==='health'?'selected':''}>Health</option>
+                        <option value="productivity" ${category==='productivity'?'selected':''}>Productivity</option>
+                        <option value="mindset" ${category==='mindset'?'selected':''}>Mindset</option>
+                        <option value="sobriety" ${category==='sobriety'?'selected':''}>Sobriety</option>
+                    </select>
+                </div>
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="field-label" style="margin:0;">Difficulty</label>
+                        <span id="eh-diff-v" class="font-mono text-sm font-semibold" style="color:#4f80ff;">${difficulty}</span>
+                    </div>
+                    <input type="range" id="eh-diff" min="1" max="5" value="${difficulty}" oninput="$('#eh-diff-v').textContent=this.value">
+                </div>
+                <div class="flex gap-2 pt-1">
+                    <button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>
+                    <button onclick="saveHabitEdit(${id})" class="btn-primary flex-1 py-2.5">Save changes</button>
+                </div>
             </div>
         `);
     }
@@ -2342,10 +3072,10 @@
     async function loadProjects() {
         const p = await api('/projects');
         if(!p || !p.length) {
-            $('#projects-list').innerHTML = '<p class="text-gray-500">No projects</p>';
+            $('#projects-list').innerHTML = '<div class="empty-state"><p>No projects yet. Create your first project to track progress.</p></div>';
             return;
         }
-        
+
         // Build project cards - works with both native (milestones) and Vikunja (tasks)
         let html = '';
         for(const proj of p) {
@@ -2355,44 +3085,65 @@
                 const t = await api(`/tasks?project_id=${proj.id}`);
                 tasks = t || [];
             }
-            
+
             const progress = proj.progress || 0;
+            const pct = Math.round(progress * 100);
             const hasTasks = tasks.length > 0 || (proj.milestones && proj.milestones.length > 0);
-            
+            const taskCount = tasks.length || (proj.milestones?.length || 0);
+            const doneCount = proj.provider === 'vikunja'
+                ? tasks.filter(t=>t.done).length
+                : (proj.milestones || []).filter(m=>m.completed).length;
+
+            // Progress color
+            let barColor = '#4f80ff';
+            if(pct >= 75) barColor = '#22c55e';
+            else if(pct >= 50) barColor = '#f59e0b';
+
             html += `
-                <div class="card rounded-lg p-4 cursor-pointer hover:border-accent transition-colors" onclick="toggleProject(this)">
-                    <div class="flex justify-between items-start mb-2">
-                        <div class="flex-1 min-w-0">
-                            <span class="font-bold truncate block">${proj.title || proj.name}</span>
-                            <span class="text-xs text-gray-500">${proj.provider === 'vikunja' ? '📋 Vikunja' : '📁 Local'}</span>
+                <div class="card rounded-xl p-4 cursor-pointer transition-colors"
+                     style="border:1px solid #2a2a2e;transition:border-color 0.15s;"
+                     onmouseenter="this.style.borderColor='#333338'"
+                     onmouseleave="this.style.borderColor='#2a2a2e'"
+                     onclick="toggleProject(this)">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex-1 min-w-0 pr-3">
+                            <div class="font-semibold truncate" style="color:#f0f0f2;">${proj.title || proj.name}</div>
+                            <div class="flex items-center gap-2 mt-0.5">
+                                <span class="text-xs" style="color:#5c5c6b;">${proj.provider === 'vikunja' ? 'Vikunja' : 'Local'}</span>
+                                ${hasTasks ? `<span class="text-xs" style="color:#5c5c6b;">${doneCount}/${taskCount} tasks</span>` : ''}
+                            </div>
                         </div>
-                        <span class="text-xs text-accent ml-2">${Math.round(progress * 100)}%</span>
+                        <span class="font-mono text-sm font-semibold flex-shrink-0" style="color:${barColor};">${pct}%</span>
                     </div>
-                    <div class="h-1.5 bg-bg-secondary rounded-full overflow-hidden">
-                        <div class="h-full bg-accent transition-all" style="width:${progress * 100}%"></div>
+                    <!-- Progress bar -->
+                    <div class="h-1.5 rounded-full overflow-hidden mb-3" style="background:#242428;">
+                        <div class="h-full rounded-full progress-bar" style="width:${pct}%;background:${barColor};"></div>
                     </div>
                     ${hasTasks ? `
-                        <div class="project-tasks mt-3 space-y-1 hidden">
+                        <div class="project-tasks space-y-1.5 hidden">
                             ${proj.provider === 'vikunja' ? tasks.map(t => `
-                                <div class="flex items-center gap-2 p-2 bg-bg-secondary rounded text-sm">
-                                    <div class="w-5 h-5 rounded border-2 flex items-center justify-center cursor-pointer
-                                        ${t.done ? 'bg-success border-success' : 'border-gray-500 hover:border-success'}"
-                                        onclick="event.stopPropagation(); toggleTask('${t.id}', ${!t.done})">
-                                        ${t.done ? '<svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>' : ''}
+                                <div class="flex items-center gap-2.5 px-2 py-1.5 rounded-lg" style="background:#141416;">
+                                    <div class="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 cursor-pointer transition-all"
+                                         style="border:1.5px solid ${t.done ? '#22c55e' : '#444449'};background:${t.done ? '#22c55e' : 'transparent'};"
+                                         onclick="event.stopPropagation(); toggleTask('${t.id}', ${!t.done})">
+                                        ${t.done ? '<svg class="w-3 h-3" fill="none" stroke="white" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' : ''}
                                     </div>
-                                    <span class="flex-1 truncate ${t.done ? 'line-through text-gray-500' : ''}">${t.title}</span>
+                                    <span class="flex-1 text-sm truncate" style="color:${t.done ? '#5c5c6b' : '#f0f0f2'};text-decoration:${t.done ? 'line-through' : 'none'};">${t.title}</span>
                                 </div>
                             `).join('') : (proj.milestones || []).map(m => `
-                                <div class="flex items-center gap-2 p-2 bg-bg-secondary rounded text-sm">
-                                    <input type="checkbox" ${m.completed ? 'checked disabled' : ''} 
-                                        onclick="event.stopPropagation(); doneM(${m.id})" class="w-4 h-4 accent-success">
-                                    <span class="flex-1 truncate ${m.completed ? 'line-through text-gray-500' : ''}">${m.name}</span>
-                                    <span class="text-xp text-xs">+${m.points || 10}</span>
+                                <div class="flex items-center gap-2.5 px-2 py-1.5 rounded-lg" style="background:#141416;">
+                                    <div class="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 cursor-pointer transition-all"
+                                         style="border:1.5px solid ${m.completed ? '#22c55e' : '#444449'};background:${m.completed ? '#22c55e' : 'transparent'};"
+                                         onclick="event.stopPropagation(); doneM(${m.id})">
+                                        ${m.completed ? '<svg class="w-3 h-3" fill="none" stroke="white" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' : ''}
+                                    </div>
+                                    <span class="flex-1 text-sm truncate" style="color:${m.completed ? '#5c5c6b' : '#f0f0f2'};text-decoration:${m.completed ? 'line-through' : 'none'};">${m.name}</span>
+                                    <span class="font-mono text-xs flex-shrink-0" style="color:#eab308;">+${m.points || 10}</span>
                                 </div>
                             `).join('')}
                         </div>
-                        <div class="text-xs text-gray-500 mt-2">${tasks.length || (proj.milestones?.length || 0)} tasks • Click to expand</div>
-                    ` : '<div class="text-xs text-gray-500 mt-2">No tasks</div>'}
+                        <div class="text-xs mt-2" style="color:#5c5c6b;">${taskCount} tasks — click to expand</div>
+                    ` : '<div class="text-xs" style="color:#5c5c6b;">No tasks yet</div>'}
                 </div>
             `;
         }
@@ -2427,13 +3178,18 @@
         const c = await api('/checkin');
         if(c) {
             $('#ci-done').value = c.completed_today || '';
-            $(`input[name="ci-alc"][value="${c.avoided_alcohol?1:0}"]`).checked = true;
-            $(`input[name="ci-future"][value="${c.worked_on_future?1:0}"]`).checked = true;
-            $('#ci-mood').value = c.mood;
-            $('#ci-energy').value = c.energy;
-            $('#ci-mood-v').textContent = c.mood;
-            $('#ci-energy-v').textContent = c.energy;
+            const alcEl = $(`input[name="ci-alc"][value="${c.avoided_alcohol?1:0}"]`);
+            if(alcEl) alcEl.checked = true;
+            const futEl = $(`input[name="ci-future"][value="${c.worked_on_future?1:0}"]`);
+            if(futEl) futEl.checked = true;
+            $('#ci-mood').value = c.mood || 3;
+            $('#ci-energy').value = c.energy || 3;
+            $('#ci-mood-v').textContent = c.mood || 3;
+            $('#ci-energy-v').textContent = c.energy || 3;
             $('#ci-improve').value = c.improvement_note || '';
+            // Show "saved today" badge if check-in was done today
+            const badge = $('#ci-done-badge');
+            if(badge && c.completed_today) badge.classList.remove('hidden');
         }
     }
 
@@ -2447,42 +3203,89 @@
             improvement_note: $('#ci-improve').value
         };
         const r = await api('/checkin', 'POST', d);
-        if(r) showToast(`Saved! +${r.points} XP`,'success');
+        if(r) {
+            showToast(`Saved! +${r.points} XP`, 'success');
+            const badge = $('#ci-done-badge');
+            if(badge) badge.classList.remove('hidden');
+        }
         loadStats();
     }
 
     async function loadWalks() {
         const w = await api('/walks');
         if(!w) return;
-        $('#w-stats').textContent = `${w.stats.count} walks • ${w.stats.total_km.toFixed(1)}km`;
-        $('#w-xp').textContent = w.stats.points;
-        $('#walks-list').innerHTML = w.walks.slice(0,10).map(x => `
-            <div class="card rounded-lg p-2.5 flex justify-between text-sm">
-                <div>
-                    <div>${new Date(x.date).toLocaleDateString()}</div>
-                    <div class="text-xs text-gray-400">${x.distance_km.toFixed(1)}km • ${x.duration_minutes}min</div>
+        $('#w-stats').textContent = `${w.stats.count} walks · ${w.stats.total_km.toFixed(1)} km`;
+        $('#w-xp').textContent = w.stats.points.toLocaleString();
+
+        if(!w.walks.length) {
+            $('#walks-list').innerHTML = '<div class="empty-state"><p>No activity logged yet. Log your first walk or run!</p></div>';
+            return;
+        }
+
+        // Max distance for bar scaling
+        const maxKm = Math.max(...w.walks.map(x=>x.distance_km), 1);
+
+        $('#walks-list').innerHTML = w.walks.slice(0,10).map(x => {
+            const barPct = Math.round((x.distance_km / maxKm) * 100);
+            const dateStr = new Date(x.date).toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
+            const moodDelta = x.mood_after && x.mood_before ? x.mood_after - x.mood_before : null;
+            return `
+            <div class="card rounded-xl p-3" style="border:1px solid #2a2a2e;">
+                <div class="flex items-start justify-between mb-2">
+                    <div>
+                        <div class="text-sm font-medium" style="color:#f0f0f2;">${dateStr}</div>
+                        <div class="flex items-center gap-3 mt-0.5">
+                            <span class="text-xs font-mono" style="color:#9898a6;">${x.distance_km.toFixed(1)} km</span>
+                            <span class="text-xs" style="color:#5c5c6b;">·</span>
+                            <span class="text-xs font-mono" style="color:#9898a6;">${x.duration_minutes} min</span>
+                            ${moodDelta !== null ? `<span class="text-xs" style="color:${moodDelta >= 0 ? '#22c55e' : '#ef4444'};">${moodDelta >= 0 ? '+' : ''}${moodDelta} mood</span>` : ''}
+                        </div>
+                    </div>
+                    <span class="font-mono font-semibold text-sm flex-shrink-0" style="color:#eab308;">+${x.points}</span>
                 </div>
-                <div class="text-xp font-bold">+${x.points}</div>
-            </div>
-        `).join('') || '<p class="text-gray-500 text-sm">No walks</p>';
+                <div class="h-1 rounded-full overflow-hidden" style="background:#242428;">
+                    <div class="h-full rounded-full" style="width:${barPct}%;background:rgba(34,197,94,0.5);transition:width 0.6s;"></div>
+                </div>
+            </div>`;
+        }).join('');
     }
 
     async function loadReplace() {
         const r = await api('/replacements');
         if(!r) return;
-        $('#rep-actions').innerHTML = r.actions.map(a => `
-            <label class="flex items-center gap-2 p-2 bg-bg-secondary rounded text-sm cursor-pointer">
-                <input type="radio" name="rep-act" value="${a.id}" class="w-5 h-5 accent-sobriety">
-                <span class="flex-1">${a.name}</span>
-                <span class="text-xp">+${a.points}</span>
+
+        $('#rep-actions').innerHTML = r.actions.length ? r.actions.map(a => `
+            <label class="flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-all"
+                   style="border:1px solid #2a2a2e;background:#141416;"
+                   onmouseenter="if(!this.querySelector('input').checked)this.style.borderColor='#333338'"
+                   onmouseleave="if(!this.querySelector('input').checked)this.style.borderColor='#2a2a2e'">
+                <input type="radio" name="rep-act" value="${a.id}" style="accent-color:#14b8a6;width:14px;height:14px;flex-shrink:0;">
+                <span class="flex-1 text-sm" style="color:#f0f0f2;">${a.name}</span>
+                <span class="font-mono text-xs font-semibold" style="color:#eab308;">+${a.points}</span>
             </label>
-        `).join('');
+        `).join('') : '<p class="text-sm" style="color:#5c5c6b;">No redirect actions configured.</p>';
+
+        if(!r.logs.length) {
+            $('#rep-logs').innerHTML = '<div class="empty-state"><p>No redirects logged yet.</p></div>';
+            return;
+        }
+
+        const urgeColors = ['','#22c55e','#eab308','#f97316','#ef4444','#8b5cf6'];
         $('#rep-logs').innerHTML = r.logs.slice(0,5).map(l => `
-            <div class="card rounded-lg p-2.5 flex justify-between text-sm">
-                <div>${l.action_name} <span class="text-gray-500">(lv${l.urge_level})</span></div>
-                <div class="text-xp">+${l.points}</div>
+            <div class="card rounded-xl p-3 flex items-center justify-between" style="border:1px solid #2a2a2e;">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 font-mono text-xs font-semibold"
+                         style="background:rgba(20,184,166,0.1);color:#14b8a6;">
+                        ${l.urge_level}
+                    </div>
+                    <div>
+                        <div class="text-sm font-medium" style="color:#f0f0f2;">${l.action_name}</div>
+                        <div class="text-xs" style="color:#5c5c6b;">Urge level ${l.urge_level}</div>
+                    </div>
+                </div>
+                <span class="font-mono text-xs font-semibold" style="color:#eab308;">+${l.points}</span>
             </div>
-        `).join('') || '';
+        `).join('');
     }
 
     async function logReplace() {
@@ -2494,27 +3297,34 @@
         loadStats(); loadReplace();
     }
 
-    function showModal(title, body) {
-        $('#modal-title').textContent = title;
-        $('#modal-body').innerHTML = body;
-        $('#modal').classList.remove('hidden');
-        $('#modal').classList.add('flex');
-    }
-    function hideModal() {
-        $('#modal').classList.add('hidden');
-        $('#modal').classList.remove('flex');
-    }
-
     async function addHabitModal() {
         cats = await api('/categories') || {};
         const opts = Object.entries(cats).map(([k,v]) => `<option value="${k}">${v.icon} ${v.name}</option>`).join('');
         showModal('New Habit', `
-            <input id="nh-name" class="w-full p-2 rounded border text-sm mb-2" placeholder="Name">
-            <select id="nh-cat" class="w-full p-2 rounded border text-sm mb-2">${opts}</select>
-            <input type="range" id="nh-diff" min="1" max="5" value="1" class="w-full mb-3">
-            <div class="flex gap-2">
-                <button onclick="hideModal()" class="flex-1 py-2 rounded border border-gray-600 text-sm">Cancel</button>
-                <button onclick="createHabit()" class="flex-1 py-2 rounded bg-accent text-sm">Add</button>
+            <div class="space-y-3">
+                <div>
+                    <label class="field-label">Habit name</label>
+                    <input id="nh-name" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="e.g. Morning meditation">
+                </div>
+                <div>
+                    <label class="field-label">Category</label>
+                    <select id="nh-cat" class="w-full px-3 py-2.5 rounded-lg border text-sm">${opts}</select>
+                </div>
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="field-label" style="margin:0;">Difficulty</label>
+                        <span id="nh-diff-v" class="font-mono text-sm font-semibold" style="color:#4f80ff;">1</span>
+                    </div>
+                    <input type="range" id="nh-diff" min="1" max="5" value="1" oninput="$('#nh-diff-v').textContent=this.value">
+                    <div class="flex justify-between mt-1.5">
+                        <span class="text-xs" style="color:#5c5c6b;">Easy</span>
+                        <span class="text-xs" style="color:#5c5c6b;">Hard</span>
+                    </div>
+                </div>
+                <div class="flex gap-2 pt-1">
+                    <button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>
+                    <button onclick="createHabit()" class="btn-primary flex-1 py-2.5">Add habit</button>
+                </div>
             </div>
         `);
     }
@@ -2528,11 +3338,19 @@
 
     function addProjectModal() {
         showModal('New Project', `
-            <input id="np-name" class="w-full p-2 rounded border text-sm mb-2" placeholder="Name">
-            <textarea id="np-desc" class="w-full p-2 rounded border text-sm mb-3" rows="2" placeholder="Description"></textarea>
-            <div class="flex gap-2">
-                <button onclick="hideModal()" class="flex-1 py-2 rounded border border-gray-600 text-sm">Cancel</button>
-                <button onclick="createProject()" class="flex-1 py-2 rounded bg-accent text-sm">Create</button>
+            <div class="space-y-3">
+                <div>
+                    <label class="field-label">Project name</label>
+                    <input id="np-name" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="e.g. Launch side project">
+                </div>
+                <div>
+                    <label class="field-label">Description (optional)</label>
+                    <textarea id="np-desc" class="w-full px-3 py-2.5 rounded-lg border text-sm" rows="2" placeholder="What are you building?"></textarea>
+                </div>
+                <div class="flex gap-2 pt-1">
+                    <button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>
+                    <button onclick="createProject()" class="btn-primary flex-1 py-2.5">Create project</button>
+                </div>
             </div>
         `);
     }
@@ -2545,18 +3363,38 @@
     }
 
     function addWalkModal() {
-        showModal('Log Walk', `
-            <div class="grid grid-cols-2 gap-2 mb-2">
-                <input id="nw-dist" type="number" step="0.1" class="p-2 rounded border text-sm" placeholder="km">
-                <input id="nw-dur" type="number" class="p-2 rounded border text-sm" placeholder="min">
-            </div>
-            <div class="grid grid-cols-2 gap-2 mb-3">
-                <div><label class="text-xs text-gray-400">Mood Before</label><input id="nw-mb" type="range" min="1" max="5" value="3" class="w-full"></div>
-                <div><label class="text-xs text-gray-400">Mood After</label><input id="nw-ma" type="range" min="1" max="5" value="4" class="w-full"></div>
-            </div>
-            <div class="flex gap-2">
-                <button onclick="hideModal()" class="flex-1 py-2 rounded border border-gray-600 text-sm">Cancel</button>
-                <button onclick="createWalk()" class="flex-1 py-2 rounded bg-success text-sm">Log</button>
+        showModal('Log Activity', `
+            <div class="space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="field-label">Distance (km)</label>
+                        <input id="nw-dist" type="number" step="0.1" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="5.0">
+                    </div>
+                    <div>
+                        <label class="field-label">Duration (min)</label>
+                        <input id="nw-dur" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="45">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 pt-1">
+                    <div>
+                        <div class="flex justify-between mb-2">
+                            <label class="field-label" style="margin:0;">Mood before</label>
+                            <span id="nw-mb-v" class="font-mono text-sm" style="color:#9898a6;">3</span>
+                        </div>
+                        <input id="nw-mb" type="range" min="1" max="5" value="3" oninput="$('#nw-mb-v').textContent=this.value">
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-2">
+                            <label class="field-label" style="margin:0;">Mood after</label>
+                            <span id="nw-ma-v" class="font-mono text-sm" style="color:#9898a6;">4</span>
+                        </div>
+                        <input id="nw-ma" type="range" min="1" max="5" value="4" oninput="$('#nw-ma-v').textContent=this.value">
+                    </div>
+                </div>
+                <div class="flex gap-2 pt-1">
+                    <button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>
+                    <button onclick="createWalk()" class="flex-1 py-2.5 rounded-xl font-semibold text-sm" style="background:#22c55e;color:#fff;">Log activity</button>
+                </div>
             </div>
         `);
     }
@@ -2574,9 +3412,38 @@
         loadStats(); loadWalks();
     }
 
+    // ── AI Food Analysis ────────────────────────────────────────
+    async function analyzeFood() {
+        const btn = $('#ai-food-btn');
+        const resultEl = $('#ai-food-result');
+        const resultText = $('#ai-food-result-text');
+        if(!btn || !resultEl || !resultText) return;
+
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        if(resultEl) resultEl.classList.remove('hidden');
+        if(resultText) resultText.textContent = 'Analyzing your meals...';
+
+        try {
+            const r = await api('/ai/analyze-food', 'POST', {});
+            if(r && (r.analysis || r.message || r.result)) {
+                resultText.textContent = r.analysis || r.message || r.result;
+            } else if(r && r.error) {
+                resultText.textContent = 'AI is not available: ' + r.error;
+            } else {
+                resultEl.classList.add('hidden');
+            }
+        } catch(e) {
+            resultText.textContent = 'Could not reach AI endpoint.';
+        }
+
+        btn.disabled = false;
+        btn.style.opacity = '1';
+    }
+
     // Events
-    $('#ci-mood').oninput = e => $('#ci-mood-v').textContent = e.target.value;
-    $('#ci-energy').oninput = e => $('#ci-energy-v').textContent = e.target.value;
+    $('#ci-mood').oninput = e => { $('#ci-mood-v').textContent = e.target.value; };
+    $('#ci-energy').oninput = e => { $('#ci-energy-v').textContent = e.target.value; };
 
     // Init — load modules first, then dashboard
     loadModules().then(() => {

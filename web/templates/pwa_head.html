@@ -1,0 +1,33 @@
+<!--
+  PWA HEAD TAGS — merge these into the <head> section of index.html
+  (between the existing <meta charset> tag and the closing </head> tag)
+-->
+
+<!-- PWA Manifest -->
+<link rel="manifest" href="/static/manifest.json">
+
+<!-- Theme colour (browser chrome / Android status bar) -->
+<meta name="theme-color" content="#0c0c0e">
+
+<!-- iOS PWA support -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LifeHack">
+
+<!-- Viewport (ensure it is present; add if missing) -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+<!-- Service Worker registration (place just before </head> or at end of <body>) -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/static/sw.js', { scope: '/' })
+        .then(function (reg) {
+          console.log('[SW] Registered, scope:', reg.scope);
+        })
+        .catch(function (err) {
+          console.warn('[SW] Registration failed:', err);
+        });
+    });
+  }
+</script>

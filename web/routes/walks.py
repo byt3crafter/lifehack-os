@@ -73,4 +73,47 @@ def log_walk():
     conn.commit()
     
     stats_repo.add_points('walk', points, f"Movement: {data.get('location', 'Walk')}", cursor.lastrowid)
-    return jsonify({'success': True, 'points': points})
+    return jsonify({'success': True, 'points': points, 'id': cursor.lastrowid})
+
+
+@walks_bp.route('/<int:walk_id>', methods=['PUT'])
+@login_required
+def update_walk(walk_id):
+    """Edit an existing walk log entry."""
+    data = request.json
+    conn = get_connection()
+
+    row = conn.execute("SELECT id FROM walk_logs WHERE id = ?", (walk_id,)).fetchone()
+    if not row:
+        return jsonify({'error': 'Not found'}), 404
+
+    conn.execute(
+        """UPDATE walk_logs
+           SET distance_km = ?, duration_minutes = ?, mood_before = ?, mood_after = ?,
+               notes = ?, location = ?, movement_type = ?
+           WHERE id = ?""",
+        (
+            data.get('distance_km'),
+            data.get('duration_minutes'),
+            data.get('mood_before'),
+            data.get('mood_after'),
+            data.get('notes', ''),
+            data.get('location', ''),
+            data.get('movement_type', 'exercise'),
+            walk_id,
+        )
+    )
+    conn.commit()
+    return jsonify({'success': True})
+
+
+@walks_bp.route('/<int:walk_id>', methods=['DELETE'])
+@login_required
+def delete_walk(walk_id):
+    """Delete a walk log entry."""
+    conn = get_connection()
+    result = conn.execute("DELETE FROM walk_logs WHERE id = ?", (walk_id,))
+    conn.commit()
+    if result.rowcount == 0:
+        return jsonify({'error': 'Not found'}), 404
+    return jsonify({'success': True})
