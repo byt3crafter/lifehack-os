@@ -1908,7 +1908,7 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-1 mt-2.5 pt-2.5" style="border-top:1px solid #242428;">
-                    <button onclick="editFoodModal(${m.id}, '${m.meal_type}', \`${m.description.replace(/`/g, "'")}\`, ${m.calories || 0}, ${m.protein_g || 0}, ${m.carbs_g || 0}, ${m.fat_g || 0})" class="action-link">Edit</button>
+                    <button onclick="editFoodModal(${m.id}, '${m.meal_type}', '${(m.description||'').replace(/'/g, "&#39;")}', ${m.calories || 0}, ${m.protein_g || 0}, ${m.carbs_g || 0}, ${m.fat_g || 0})" class="action-link">Edit</button>
                     <button onclick="deleteFood(${m.id})" class="action-link-danger">Delete</button>
                 </div>
             </div>`;
