@@ -20,6 +20,7 @@ from .challenges import challenges_bp
 from .modules import modules_bp
 from .ai import ai_bp
 from .api_docs import api_docs_bp
+from .plugins import plugins_bp
 
 __all__ = [
     'auth_bp',
@@ -37,4 +38,5 @@ __all__ = [
     'modules_bp',
     'ai_bp',
     'api_docs_bp',
+    'plugins_bp',
 ]

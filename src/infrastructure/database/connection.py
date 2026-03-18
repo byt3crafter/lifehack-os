@@ -25,7 +25,7 @@ def get_connection() -> sqlite3.Connection:
 def init_database() -> None:
     """Initialize the database schema."""
     conn = get_connection()
-    
+
     conn.executescript("""
         -- Habits
         CREATE TABLE IF NOT EXISTS habits (
@@ -38,7 +38,7 @@ def init_database() -> None:
             active INTEGER NOT NULL DEFAULT 1,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
-        
+
         CREATE TABLE IF NOT EXISTS habit_completions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             habit_id INTEGER NOT NULL,
@@ -48,7 +48,7 @@ def init_database() -> None:
             notes TEXT DEFAULT '',
             FOREIGN KEY (habit_id) REFERENCES habits(id) ON DELETE CASCADE
         );
-        
+
         -- Projects
         CREATE TABLE IF NOT EXISTS projects (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -60,7 +60,7 @@ def init_database() -> None:
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             completed_at TEXT
         );
-        
+
         CREATE TABLE IF NOT EXISTS milestones (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             project_id INTEGER NOT NULL,
@@ -70,7 +70,7 @@ def init_database() -> None:
             completed_at TEXT,
             FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
         );
-        
+
         CREATE TABLE IF NOT EXISTS tasks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             milestone_id INTEGER NOT NULL,
@@ -80,7 +80,7 @@ def init_database() -> None:
             completed_at TEXT,
             FOREIGN KEY (milestone_id) REFERENCES milestones(id) ON DELETE CASCADE
         );
-        
+
         -- Deep Work
         CREATE TABLE IF NOT EXISTS deep_work_sessions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -92,7 +92,7 @@ def init_database() -> None:
             notes TEXT DEFAULT '',
             FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL
         );
-        
+
         -- Check-ins
         CREATE TABLE IF NOT EXISTS daily_checkins (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -106,7 +106,7 @@ def init_database() -> None:
             points_earned INTEGER NOT NULL DEFAULT 0,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
-        
+
         -- Walks
         CREATE TABLE IF NOT EXISTS walk_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -116,9 +116,11 @@ def init_database() -> None:
             mood_before INTEGER NOT NULL DEFAULT 3,
             mood_after INTEGER NOT NULL DEFAULT 3,
             points_earned INTEGER NOT NULL DEFAULT 0,
-            notes TEXT DEFAULT ''
+            notes TEXT DEFAULT '',
+            location TEXT DEFAULT '',
+            movement_type TEXT DEFAULT 'exercise'
         );
-        
+
         -- Replacement Actions
         CREATE TABLE IF NOT EXISTS replacement_actions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -127,7 +129,7 @@ def init_database() -> None:
             points INTEGER NOT NULL DEFAULT 30,
             active INTEGER NOT NULL DEFAULT 1
         );
-        
+
         CREATE TABLE IF NOT EXISTS replacement_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             action_id INTEGER NOT NULL,
@@ -137,7 +139,7 @@ def init_database() -> None:
             notes TEXT DEFAULT '',
             FOREIGN KEY (action_id) REFERENCES replacement_actions(id) ON DELETE CASCADE
         );
-        
+
         -- Stats & Streaks
         CREATE TABLE IF NOT EXISTS user_stats (
             id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -146,7 +148,7 @@ def init_database() -> None:
             sobriety_start_date TEXT,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
-        
+
         CREATE TABLE IF NOT EXISTS streaks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             type TEXT NOT NULL,
@@ -155,7 +157,7 @@ def init_database() -> None:
             best_count INTEGER NOT NULL DEFAULT 0,
             last_date TEXT
         );
-        
+
         CREATE TABLE IF NOT EXISTS point_ledger (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -164,10 +166,10 @@ def init_database() -> None:
             points INTEGER NOT NULL,
             reason TEXT DEFAULT ''
         );
-        
+
         -- Initialize user stats if not exists
         INSERT OR IGNORE INTO user_stats (id, total_xp, level) VALUES (1, 0, 1);
-        
+
         -- Food Logs
         CREATE TABLE IF NOT EXISTS food_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -265,5 +267,9 @@ def init_database() -> None:
         CREATE INDEX IF NOT EXISTS idx_food_date ON food_logs(logged_at);
         CREATE INDEX IF NOT EXISTS idx_challenges_status ON challenges(status);
     """)
-    
+
     conn.commit()
+
+    # Run pending migrations (adds users table, schema_version table, etc.)
+    from .migrations import run_migrations
+    run_migrations(conn)

@@ -20,13 +20,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.infrastructure.database import init_database, get_connection
 from src.infrastructure.config import load_config
 from src.infrastructure.database.repositories import ReplacementRepository
+from src.infrastructure.plugins import register_builtin_plugins
 
 # Import all blueprints
 from routes import (
     auth_bp, habits_bp, food_bp, checkins_bp, walks_bp,
     patterns_bp, reports_bp, projects_bp, integrations_bp,
     misc_bp, openclaw_bp, challenges_bp, modules_bp, ai_bp,
-    api_docs_bp,
+    api_docs_bp, plugins_bp,
 )
 
 
@@ -38,11 +39,18 @@ def create_app():
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
     app.config['PERMANENT_SESSION_LIFETIME'] = 86400 * 30  # 30 days
     CORS(app)
-    
-    # Initialize database (all tables created in connection.py)
+
+    # Initialize database (all tables created in connection.py) and run migrations
     init_database()
     config = load_config()
-    
+
+    # Register built-in plugins into the singleton registry
+    register_builtin_plugins()
+
+    # Bootstrap admin user from env vars if no users exist yet
+    from routes.auth import ensure_admin_user
+    ensure_admin_user()
+
     # Seed defaults
     replacement_repo = ReplacementRepository()
     actions = replacement_repo.get_all_actions()
@@ -51,7 +59,7 @@ def create_app():
         for cat_id, cat_info in config.replacement_categories.items():
             action = ReplacementAction(name=cat_info['name'], category=cat_id, points=cat_info['points'])
             replacement_repo.create_action(action)
-    
+
     # Register blueprints
     app.register_blueprint(auth_bp)
     app.register_blueprint(habits_bp)
@@ -68,6 +76,7 @@ def create_app():
     app.register_blueprint(modules_bp)
     app.register_blueprint(ai_bp)
     app.register_blueprint(api_docs_bp)
+    app.register_blueprint(plugins_bp)
 
     # Health check endpoint (used by Docker HEALTHCHECK)
     @app.route('/health')

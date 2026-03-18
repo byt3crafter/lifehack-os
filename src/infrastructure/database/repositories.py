@@ -17,8 +17,9 @@ from ...domain.entities import (
 class HabitRepository:
     """Repository for habit operations."""
     
-    def __init__(self):
-        self.conn = get_connection()
+    @property
+    def conn(self):
+        return get_connection()
     
     def get_all(self, active_only: bool = True) -> List[Habit]:
         query = "SELECT * FROM habits"
@@ -130,8 +131,9 @@ class HabitRepository:
 class ProjectRepository:
     """Repository for project operations."""
     
-    def __init__(self):
-        self.conn = get_connection()
+    @property
+    def conn(self):
+        return get_connection()
     
     def get_all(self, include_completed: bool = False) -> List[Project]:
         query = "SELECT * FROM projects"
@@ -247,8 +249,9 @@ class ProjectRepository:
 class CheckinRepository:
     """Repository for daily check-in operations."""
     
-    def __init__(self):
-        self.conn = get_connection()
+    @property
+    def conn(self):
+        return get_connection()
     
     def get_for_date(self, target_date: date) -> Optional[DailyCheckin]:
         row = self.conn.execute(
@@ -323,8 +326,9 @@ class CheckinRepository:
 class WalkRepository:
     """Repository for walk log operations."""
     
-    def __init__(self):
-        self.conn = get_connection()
+    @property
+    def conn(self):
+        return get_connection()
     
     def get_recent(self, limit: int = 10) -> List[WalkLog]:
         rows = self.conn.execute(
@@ -374,8 +378,9 @@ class WalkRepository:
 class ReplacementRepository:
     """Repository for replacement action operations."""
     
-    def __init__(self):
-        self.conn = get_connection()
+    @property
+    def conn(self):
+        return get_connection()
     
     def get_all_actions(self, active_only: bool = True) -> List[ReplacementAction]:
         query = "SELECT * FROM replacement_actions"
@@ -436,8 +441,9 @@ class ReplacementRepository:
 class StatsRepository:
     """Repository for user stats and point ledger."""
     
-    def __init__(self):
-        self.conn = get_connection()
+    @property
+    def conn(self):
+        return get_connection()
     
     def get_stats(self) -> UserStats:
         row = self.conn.execute("SELECT * FROM user_stats WHERE id = 1").fetchone()
@@ -511,8 +517,9 @@ class StatsRepository:
 class DeepWorkRepository:
     """Repository for deep work session operations."""
     
-    def __init__(self):
-        self.conn = get_connection()
+    @property
+    def conn(self):
+        return get_connection()
     
     def get_active(self) -> Optional[DeepWorkSession]:
         row = self.conn.execute(

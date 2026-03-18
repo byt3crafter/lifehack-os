@@ -1,7 +1,14 @@
-"""Provider factory - returns appropriate provider based on settings."""
-import json
+"""Provider factory — returns the appropriate provider based on plugin registry settings.
+
+All state is now stored in the app_settings table via the plugin registry.
+The legacy JSON config file (config/integrations.json) is no longer used; it is
+kept for reference only.
+
+Legacy public API is preserved so that callers outside web/routes/ keep working
+without modification.
+"""
+import logging
 from typing import Optional
-from pathlib import Path
 
 from .base import TaskProvider
 from .native import NativeTaskProvider
@@ -9,246 +16,216 @@ from .vikunja import VikunjaTaskProvider, VikunjaConfig
 from .google_calendar import GoogleCalendarProvider, GoogleCalendarConfig
 from .firefly import FireflyProvider, FireflyConfig
 
-
-# Default config path
-CONFIG_DIR = Path(__file__).parent.parent.parent.parent / "config"
-INTEGRATIONS_FILE = CONFIG_DIR / "integrations.json"
+logger = logging.getLogger(__name__)
 
 
-def load_integrations() -> dict:
-    """Load integration settings from config file."""
-    if not INTEGRATIONS_FILE.exists():
-        return {"vikunja": {"enabled": False}}
-    
+# ---------------------------------------------------------------------------
+# Internal helpers — thin wrappers around the plugin registry
+# ---------------------------------------------------------------------------
+
+def _registry():
+    """Lazy import to avoid circular dependencies at module load time."""
+    from src.infrastructure.plugins import plugin_registry
+    return plugin_registry
+
+
+def _get_plugin_config(plugin_id: str) -> dict:
     try:
-        with open(INTEGRATIONS_FILE) as f:
-            return json.load(f)
+        stored = _registry().get_config(plugin_id)
+        return stored.get("config", {}) if stored.get("enabled") else {}
     except Exception:
-        return {"vikunja": {"enabled": False}}
+        return {}
 
 
-def save_integrations(config: dict) -> None:
-    """Save integration settings to config file."""
-    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-    with open(INTEGRATIONS_FILE, "w") as f:
-        json.dump(config, f, indent=2)
+def _is_enabled(plugin_id: str) -> bool:
+    try:
+        return _registry().is_enabled(plugin_id)
+    except Exception:
+        return False
 
 
-def get_vikunja_config() -> Optional[VikunjaConfig]:
-    """Get Vikunja config from integrations file."""
-    integrations = load_integrations()
-    vikunja = integrations.get("vikunja", {})
-    
-    if not vikunja.get("enabled"):
-        return None
-    
-    return VikunjaConfig(
-        api_url=vikunja.get("api_url", ""),
-        username=vikunja.get("username", ""),
-        password=vikunja.get("password", ""),
-        token=vikunja.get("token", "")
-    )
-
+# ---------------------------------------------------------------------------
+# Task provider
+# ---------------------------------------------------------------------------
 
 def get_task_provider(prefer_native: bool = False) -> TaskProvider:
-    """
-    Get the appropriate task provider based on settings.
-    
-    Args:
-        prefer_native: If True, always return native provider (for fallback scenarios)
-    
-    Returns:
-        TaskProvider instance (Vikunja if enabled and connected, else Native)
+    """Return the best available task provider.
+
+    Falls back to NativeTaskProvider if Vikunja is not enabled or the
+    connection test fails.
     """
     if prefer_native:
         return NativeTaskProvider()
-    
-    vikunja_config = get_vikunja_config()
-    
-    if vikunja_config:
-        try:
-            provider = VikunjaTaskProvider(vikunja_config)
-            if provider.test_connection():
-                return provider
-        except Exception:
-            pass  # Fall through to native
-    
+
+    if _is_enabled("vikunja"):
+        cfg = _get_plugin_config("vikunja")
+        if cfg:
+            try:
+                provider = VikunjaTaskProvider(
+                    VikunjaConfig(
+                        api_url=cfg.get("api_url", ""),
+                        username=cfg.get("username", ""),
+                        password=cfg.get("password", ""),
+                    )
+                )
+                if provider.test_connection():
+                    return provider
+            except Exception:
+                logger.debug("Vikunja provider unavailable, falling back to native", exc_info=True)
+
     return NativeTaskProvider()
 
 
-def enable_vikunja(api_url: str, username: str, password: str) -> bool:
-    """
-    Enable Vikunja integration.
-    
-    Returns True if connection test passes.
-    """
-    config = VikunjaConfig(
-        api_url=api_url,
-        username=username,
-        password=password
-    )
-    
-    provider = VikunjaTaskProvider(config)
-    if not provider.test_connection():
-        return False
-    
-    integrations = load_integrations()
-    integrations["vikunja"] = {
-        "enabled": True,
-        "api_url": api_url,
-        "username": username,
-        "password": password
+# ---------------------------------------------------------------------------
+# Integration status (legacy shape)
+# ---------------------------------------------------------------------------
+
+def get_integration_status() -> dict:
+    """Return status dict for all integrations in the legacy response shape."""
+    # Vikunja
+    vikunja_enabled = _is_enabled("vikunja")
+    vikunja_cfg     = _get_plugin_config("vikunja")
+    vikunja_connected = False
+    if vikunja_enabled and vikunja_cfg:
+        try:
+            provider = VikunjaTaskProvider(
+                VikunjaConfig(
+                    api_url=vikunja_cfg.get("api_url", ""),
+                    username=vikunja_cfg.get("username", ""),
+                    password=vikunja_cfg.get("password", ""),
+                )
+            )
+            vikunja_connected = provider.test_connection()
+        except Exception:
+            pass
+
+    # Google Calendar
+    gcal_enabled = _is_enabled("google_calendar")
+    gcal_cfg     = _get_plugin_config("google_calendar")
+    gcal_connected = False
+    if gcal_enabled and gcal_cfg:
+        try:
+            provider = GoogleCalendarProvider(
+                GoogleCalendarConfig(enabled=True, account=gcal_cfg.get("account", ""))
+            )
+            gcal_connected = provider.test_connection()
+        except Exception:
+            pass
+
+    # Firefly
+    firefly_enabled = _is_enabled("firefly")
+    firefly_cfg     = _get_plugin_config("firefly")
+    firefly_connected = False
+    if firefly_enabled and firefly_cfg:
+        try:
+            provider = FireflyProvider(
+                FireflyConfig(
+                    enabled=True,
+                    helper_path=firefly_cfg.get("helper_path", ""),
+                    default_account_id=firefly_cfg.get("account_id", ""),
+                )
+            )
+            firefly_connected = provider.test_connection()
+        except Exception:
+            pass
+
+    return {
+        "vikunja": {
+            "enabled":     vikunja_enabled,
+            "connected":   vikunja_connected,
+            "api_url":     vikunja_cfg.get("api_url", ""),
+            "description": "Task management via Vikunja",
+        },
+        "google_calendar": {
+            "enabled":     gcal_enabled,
+            "connected":   gcal_connected,
+            "account":     gcal_cfg.get("account", ""),
+            "description": "Events from Google Calendar",
+        },
+        "firefly": {
+            "enabled":     firefly_enabled,
+            "connected":   firefly_connected,
+            "description": "Personal finance via Firefly III",
+        },
     }
-    save_integrations(integrations)
-    return True
+
+
+# ---------------------------------------------------------------------------
+# Vikunja — legacy helpers
+# ---------------------------------------------------------------------------
+
+def enable_vikunja(api_url: str, username: str, password: str) -> bool:
+    """Enable Vikunja via the plugin registry. Returns True on success."""
+    config = {"api_url": api_url, "username": username, "password": password}
+    return _registry().enable("vikunja", config)
 
 
 def disable_vikunja() -> None:
-    """Disable Vikunja integration."""
-    integrations = load_integrations()
-    if "vikunja" in integrations:
-        integrations["vikunja"]["enabled"] = False
-    save_integrations(integrations)
+    """Disable the Vikunja plugin."""
+    _registry().disable("vikunja")
 
 
-def get_integration_status() -> dict:
-    """Get status of all integrations."""
-    integrations = load_integrations()
-    status = {}
-    
-    # Vikunja
-    vikunja = integrations.get("vikunja", {})
-    vikunja_status = {
-        "enabled": vikunja.get("enabled", False),
-        "connected": False,
-        "api_url": vikunja.get("api_url", ""),
-        "description": "Task management via Vikunja"
-    }
-    
-    if vikunja_status["enabled"]:
-        config = get_vikunja_config()
-        if config:
-            try:
-                provider = VikunjaTaskProvider(config)
-                vikunja_status["connected"] = provider.test_connection()
-            except Exception:
-                pass
-    
-    status["vikunja"] = vikunja_status
-    
-    # Google Calendar
-    gcal = integrations.get("google_calendar", {})
-    gcal_status = {
-        "enabled": gcal.get("enabled", False),
-        "connected": False,
-        "account": gcal.get("account", ""),
-        "description": "Events from Google Calendar"
-    }
-    
-    if gcal_status["enabled"]:
-        try:
-            config = GoogleCalendarConfig(
-                enabled=True,
-                account=gcal.get("account", "")
-            )
-            provider = GoogleCalendarProvider(config)
-            gcal_status["connected"] = provider.test_connection()
-        except Exception:
-            pass
-    
-    status["google_calendar"] = gcal_status
-    
-    # Firefly III
-    firefly = integrations.get("firefly", {})
-    firefly_status = {
-        "enabled": firefly.get("enabled", False),
-        "connected": False,
-        "description": "Personal finance via Firefly III"
-    }
-    
-    if firefly_status["enabled"]:
-        try:
-            provider = FireflyProvider(FireflyConfig(enabled=True))
-            firefly_status["connected"] = provider.test_connection()
-        except Exception:
-            pass
-    
-    status["firefly"] = firefly_status
-    
-    return status
+def get_vikunja_config() -> Optional[VikunjaConfig]:
+    """Return VikunjaConfig if the plugin is enabled, else None."""
+    if not _is_enabled("vikunja"):
+        return None
+    cfg = _get_plugin_config("vikunja")
+    if not cfg:
+        return None
+    return VikunjaConfig(
+        api_url=cfg.get("api_url", ""),
+        username=cfg.get("username", ""),
+        password=cfg.get("password", ""),
+    )
 
 
-# ============== Google Calendar ==============
+# ---------------------------------------------------------------------------
+# Google Calendar — legacy helpers
+# ---------------------------------------------------------------------------
 
 def enable_google_calendar(account: str = "") -> bool:
-    """Enable Google Calendar integration."""
-    config = GoogleCalendarConfig(enabled=True, account=account)
-    provider = GoogleCalendarProvider(config)
-    
-    if not provider.test_connection():
-        return False
-    
-    integrations = load_integrations()
-    integrations["google_calendar"] = {
-        "enabled": True,
-        "account": account
-    }
-    save_integrations(integrations)
-    return True
+    """Enable Google Calendar via the plugin registry."""
+    return _registry().enable("google_calendar", {"account": account})
 
 
 def disable_google_calendar() -> None:
-    """Disable Google Calendar integration."""
-    integrations = load_integrations()
-    if "google_calendar" in integrations:
-        integrations["google_calendar"]["enabled"] = False
-    save_integrations(integrations)
+    """Disable the Google Calendar plugin."""
+    _registry().disable("google_calendar")
 
 
 def get_calendar_provider() -> Optional[GoogleCalendarProvider]:
-    """Get Google Calendar provider if enabled."""
-    integrations = load_integrations()
-    gcal = integrations.get("google_calendar", {})
-    
-    if not gcal.get("enabled"):
+    """Return GoogleCalendarProvider if the plugin is enabled, else None."""
+    if not _is_enabled("google_calendar"):
         return None
-    
-    config = GoogleCalendarConfig(
-        enabled=True,
-        account=gcal.get("account", "")
+    cfg = _get_plugin_config("google_calendar")
+    return GoogleCalendarProvider(
+        GoogleCalendarConfig(enabled=True, account=cfg.get("account", ""))
     )
-    return GoogleCalendarProvider(config)
 
 
-# ============== Firefly III ==============
+# ---------------------------------------------------------------------------
+# Firefly — legacy helpers
+# ---------------------------------------------------------------------------
 
-def enable_firefly() -> bool:
-    """Enable Firefly III integration."""
-    provider = FireflyProvider(FireflyConfig(enabled=True))
-    
-    if not provider.test_connection():
-        return False
-    
-    integrations = load_integrations()
-    integrations["firefly"] = {"enabled": True}
-    save_integrations(integrations)
-    return True
+def enable_firefly(helper_path: str = "", account_id: str = "") -> bool:
+    """Enable Firefly via the plugin registry."""
+    return _registry().enable("firefly", {"helper_path": helper_path, "account_id": account_id})
 
 
 def disable_firefly() -> None:
-    """Disable Firefly III integration."""
-    integrations = load_integrations()
-    if "firefly" in integrations:
-        integrations["firefly"]["enabled"] = False
-    save_integrations(integrations)
+    """Disable the Firefly plugin."""
+    _registry().disable("firefly")
 
 
 def get_firefly_provider() -> Optional[FireflyProvider]:
-    """Get Firefly provider if enabled."""
-    integrations = load_integrations()
-    firefly = integrations.get("firefly", {})
-    
-    if not firefly.get("enabled"):
+    """Return FireflyProvider if the plugin is enabled, else None."""
+    if not _is_enabled("firefly"):
         return None
-    
-    return FireflyProvider(FireflyConfig(enabled=True))
+    cfg = _get_plugin_config("firefly")
+    return FireflyProvider(
+        FireflyConfig(
+            enabled=True,
+            helper_path=cfg.get("helper_path", ""),
+            default_account_id=cfg.get("account_id", ""),
+        )
+    )

@@ -1,0 +1,79 @@
+"""Vikunja plugin — wraps the existing VikunjaTaskProvider."""
+import logging
+
+from .base import Plugin
+
+logger = logging.getLogger(__name__)
+
+
+class VikunjaPlugin(Plugin):
+    """Task management via a self-hosted Vikunja instance."""
+
+    id          = "vikunja"
+    name        = "Vikunja"
+    description = "Sync tasks and projects with a self-hosted Vikunja instance."
+    category    = "tasks"
+    icon        = "V"
+
+    def get_config_fields(self) -> list[dict]:
+        return [
+            {
+                "id":          "api_url",
+                "label":       "API URL",
+                "type":        "url",
+                "required":    True,
+                "placeholder": "https://vikunja.example.com/api/v1",
+            },
+            {
+                "id":          "username",
+                "label":       "Username",
+                "type":        "text",
+                "required":    True,
+                "placeholder": "your-vikunja-username",
+            },
+            {
+                "id":          "password",
+                "label":       "Password",
+                "type":        "password",
+                "required":    True,
+                "placeholder": "your-vikunja-password",
+            },
+        ]
+
+    def test_connection(self, config: dict) -> bool:
+        """Attempt to authenticate against the Vikunja API."""
+        from src.infrastructure.providers.vikunja import VikunjaTaskProvider, VikunjaConfig
+
+        try:
+            provider = VikunjaTaskProvider(
+                VikunjaConfig(
+                    api_url=config.get("api_url", ""),
+                    username=config.get("username", ""),
+                    password=config.get("password", ""),
+                )
+            )
+            return provider.test_connection()
+        except Exception:
+            logger.debug("Vikunja connection test failed", exc_info=True)
+            return False
+
+    def get_status(self, config: dict) -> dict:
+        """Return connected state and a short status message."""
+        connected = self.test_connection(config)
+        return {
+            "connected": connected,
+            "detail":    "Connected to Vikunja" if connected else "Unable to reach Vikunja API",
+        }
+
+    def get_provider(self, config: dict):
+        """Return a ready-to-use VikunjaTaskProvider (not part of the Plugin interface,
+        but useful for the factory bridge)."""
+        from src.infrastructure.providers.vikunja import VikunjaTaskProvider, VikunjaConfig
+
+        return VikunjaTaskProvider(
+            VikunjaConfig(
+                api_url=config.get("api_url", ""),
+                username=config.get("username", ""),
+                password=config.get("password", ""),
+            )
+        )

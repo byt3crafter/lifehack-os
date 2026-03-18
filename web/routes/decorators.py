@@ -18,6 +18,22 @@ def login_required(f):
     return decorated
 
 
+def admin_required(f):
+    """Require user to be logged in AND have admin privileges."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'user' not in session:
+            if request.is_json or request.path.startswith('/api/'):
+                return jsonify({'error': 'Unauthorized'}), 401
+            return redirect(url_for('auth.login'))
+        if not session.get('is_admin'):
+            if request.is_json or request.path.startswith('/api/'):
+                return jsonify({'error': 'Forbidden'}), 403
+            return redirect(url_for('auth.index'))
+        return f(*args, **kwargs)
+    return decorated
+
+
 def api_key_required(f):
     """Require valid API key for OpenClaw endpoints."""
     @wraps(f)
