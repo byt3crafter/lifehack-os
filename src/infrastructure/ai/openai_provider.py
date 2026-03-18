@@ -31,8 +31,27 @@ class OpenAIProvider(AIProvider):
             pass
         return ''
 
-    def _chat(self, system: str, user: str) -> str:
-        """Send a chat completion request."""
+    def _chat(self, system: str, user: str, image_base64: str = None) -> str:
+        """Send a chat completion request.
+
+        When ``image_base64`` is provided the user turn is sent as a
+        multipart content array so vision-capable models (e.g. gpt-4o) can
+        use the image.
+        """
+        if image_base64:
+            user_content = [
+                {"type": "text", "text": user},
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{image_base64}",
+                        "detail": "low"
+                    }
+                }
+            ]
+        else:
+            user_content = user
+
         try:
             resp = requests.post(
                 f"{self.base_url}/chat/completions",
@@ -44,7 +63,7 @@ class OpenAIProvider(AIProvider):
                     "model": self.model,
                     "messages": [
                         {"role": "system", "content": system},
-                        {"role": "user", "content": user}
+                        {"role": "user", "content": user_content}
                     ],
                     "temperature": 0.7,
                     "max_tokens": 500
@@ -73,13 +92,14 @@ class OpenAIProvider(AIProvider):
                     pass
         return {}
 
-    def analyze_food(self, description: str) -> FoodAnalysis:
+    def analyze_food(self, description: str, image_base64: str = None) -> FoodAnalysis:
         system = "You are a nutrition analyst. Return ONLY valid JSON, no other text."
-        user = f"""Estimate the nutritional content of: {description}
+        food_ref = description if description else "the food shown in the image"
+        user = f"""Estimate the nutritional content of: {food_ref}
 
 Return: {{"calories": number, "protein_g": number, "carbs_g": number, "fat_g": number, "description": "brief description"}}"""
 
-        response = self._chat(system, user)
+        response = self._chat(system, user, image_base64=image_base64)
         data = self._parse_json(response)
 
         if not data:

@@ -28,8 +28,15 @@ class AIProvider(ABC):
     """Abstract base class for AI providers."""
 
     @abstractmethod
-    def analyze_food(self, description: str) -> FoodAnalysis:
-        """Estimate nutrition from a food description."""
+    def analyze_food(self, description: str, image_base64: Optional[str] = None) -> FoodAnalysis:
+        """Estimate nutrition from a food description or image.
+
+        Args:
+            description: Text description of the food item.
+            image_base64: Optional base64-encoded image (JPEG/PNG/WebP).
+                          When provided, providers that support vision will
+                          use the image as the primary signal.
+        """
         ...
 
     @abstractmethod

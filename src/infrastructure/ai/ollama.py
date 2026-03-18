@@ -30,12 +30,19 @@ class OllamaProvider(AIProvider):
             pass
         return ''
 
-    def _generate(self, prompt: str) -> str:
-        """Send a prompt to Ollama and return the response text."""
+    def _generate(self, prompt: str, images: list = None) -> str:
+        """Send a prompt to Ollama and return the response text.
+
+        ``images`` is a list of base64-encoded image strings — only used
+        with multimodal models such as llava.
+        """
         try:
+            payload = {"model": self.model, "prompt": prompt, "stream": False}
+            if images:
+                payload["images"] = images
             resp = requests.post(
                 f"{self.base_url}/api/generate",
-                json={"model": self.model, "prompt": prompt, "stream": False},
+                json=payload,
                 timeout=60
             )
             resp.raise_for_status()
@@ -62,15 +69,17 @@ class OllamaProvider(AIProvider):
                     pass
         return {}
 
-    def analyze_food(self, description: str) -> FoodAnalysis:
+    def analyze_food(self, description: str, image_base64: str = None) -> FoodAnalysis:
+        food_ref = description if description else "the food shown in the image"
         prompt = f"""Estimate the nutritional content of this food. Return ONLY a JSON object, no other text.
 
-Food: {description}
+Food: {food_ref}
 
 JSON format:
 {{"calories": number, "protein_g": number, "carbs_g": number, "fat_g": number, "description": "brief description"}}"""
 
-        response = self._generate(prompt)
+        images = [image_base64] if image_base64 else None
+        response = self._generate(prompt, images=images)
         data = self._parse_json(response)
 
         if not data:

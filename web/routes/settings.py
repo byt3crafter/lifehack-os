@@ -7,7 +7,7 @@ from src.infrastructure.database import get_connection
 settings_bp = Blueprint('settings', __name__, url_prefix='/api/settings')
 
 # Keys that hold sensitive values and should be masked in GET responses
-_SENSITIVE_KEYS = {'openclaw_api_key', 'ai_openai_key'}
+_SENSITIVE_KEYS = {'openclaw_api_key', 'ai_openai_key', 'ai_anthropic_key'}
 
 # All recognised setting keys and their defaults
 _SETTING_KEYS = {
@@ -18,6 +18,9 @@ _SETTING_KEYS = {
     'ai_openai_model',
     'ai_ollama_url',
     'ai_ollama_model',
+    'ai_anthropic_key',
+    'ai_anthropic_model',
+    'daily_calorie_goal',
 }
 
 # Tables to truncate on reset (order matters for FK constraints)
@@ -35,6 +38,7 @@ _RESET_TABLES = [
     'challenge_logs',
     'challenges',
     'deep_work_sessions',
+    'replacement_actions',
     'replacement_logs',
     'ai_insights',
     'openclaw_log',

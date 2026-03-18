@@ -27,7 +27,7 @@ def get_ai_provider() -> AIProvider:
     1. ``ai_provider`` row in app_settings (configurable from the UI).
     2. ``LIFEHACK_AI_PROVIDER`` environment variable (legacy / Docker fallback).
 
-    Options: none (default), ollama, openai
+    Options: none (default), ollama, openai, anthropic
     """
     provider = (
         _get_setting('ai_provider')
@@ -40,5 +40,8 @@ def get_ai_provider() -> AIProvider:
     elif provider == 'openai':
         from .openai_provider import OpenAIProvider
         return OpenAIProvider()
+    elif provider == 'anthropic':
+        from .anthropic_provider import AnthropicProvider
+        return AnthropicProvider()
     else:
         return NullAIProvider()

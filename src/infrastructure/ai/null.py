@@ -7,7 +7,7 @@ from .base import AIProvider, FoodAnalysis, Insight
 class NullAIProvider(AIProvider):
     """No-op provider. All features degrade gracefully to manual input."""
 
-    def analyze_food(self, description: str) -> FoodAnalysis:
+    def analyze_food(self, description: str, image_base64: Optional[str] = None) -> FoodAnalysis:
         return FoodAnalysis(estimated=False)
 
     def generate_insight(self, user_state: dict) -> Optional[Insight]:

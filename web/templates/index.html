@@ -949,10 +949,13 @@
                 <div class="mb-5 p-4 rounded-2xl" style="background:linear-gradient(135deg,#171a1c 0%,#141e1a 100%);border:1px solid rgba(234,179,8,0.2);">
                     <div class="flex items-end justify-between mb-3">
                         <div>
-                            <div class="text-xs font-semibold mb-1" style="color:#9898a6;letter-spacing:0.06em;text-transform:uppercase;">Today's Calories</div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <div class="text-xs font-semibold" style="color:#9898a6;letter-spacing:0.06em;text-transform:uppercase;">Today's Calories</div>
+                                <button onclick="setCalorieGoalModal()" class="text-xs font-medium" style="color:#4f80ff;background:none;border:none;cursor:pointer;padding:0;font-family:inherit;">Set goal</button>
+                            </div>
                             <div class="flex items-baseline gap-2">
                                 <span id="food-today-cals" class="font-mono font-bold" style="color:#eab308;font-size:2rem;line-height:1;">0</span>
-                                <span class="text-sm" style="color:#5c5c6b;">/ 2000 kcal</span>
+                                <span class="text-sm" style="color:#5c5c6b;">/ <span id="food-cal-goal">2000</span> kcal</span>
                             </div>
                         </div>
                         <div id="food-cal-pct" class="font-mono font-semibold text-lg" style="color:#5c5c6b;">0%</div>
@@ -1266,6 +1269,7 @@
                                         <option value="none">None (standalone)</option>
                                         <option value="ollama">Ollama (local LLM)</option>
                                         <option value="openai">OpenAI-compatible</option>
+                                        <option value="anthropic">Claude (Anthropic)</option>
                                     </select>
                                 </div>
 
@@ -1294,6 +1298,18 @@
                                     <div>
                                         <label class="field-label" for="ai-openai-model">Model</label>
                                         <input id="ai-openai-model" type="text" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="gpt-4o-mini">
+                                    </div>
+                                </div>
+
+                                <!-- Anthropic fields -->
+                                <div id="ai-anthropic-fields" style="display:none;" class="space-y-3">
+                                    <div>
+                                        <label class="field-label" for="ai-anthropic-key">API Key</label>
+                                        <input id="ai-anthropic-key" type="password" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="sk-ant-...">
+                                    </div>
+                                    <div>
+                                        <label class="field-label" for="ai-anthropic-model">Model</label>
+                                        <input id="ai-anthropic-model" type="text" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="claude-sonnet-4-20250514" placeholder="claude-sonnet-4-20250514">
                                     </div>
                                 </div>
 
@@ -1893,9 +1909,10 @@
         if(!f) return;
 
         const cals = f.today_calories || 0;
-        const goal = 2000;
+        const goal = f.daily_goal || 2000;
         const pct = Math.min(100, Math.round((cals / goal) * 100));
         $('#food-today-cals').textContent = cals.toLocaleString();
+        const goalEl = $('#food-cal-goal'); if(goalEl) goalEl.textContent = goal.toLocaleString();
         $('#food-cal-bar').style.width = pct + '%';
         const pctEl = $('#food-cal-pct');
         if(pctEl) pctEl.textContent = pct + '%';
@@ -1984,6 +2001,20 @@
                     </select>
                 </div>
                 <div>
+                    <label class="field-label">Photo (optional — AI will analyze nutrition)</label>
+                    <input type="file" id="food-photo" accept="image/*" capture="environment"
+                           class="w-full px-3 py-2 rounded-lg border text-sm"
+                           style="cursor:pointer;"
+                           onchange="previewFoodPhoto(this)">
+                    <div id="food-photo-preview" class="hidden mt-2 relative">
+                        <img id="food-photo-img" src="" alt="Food photo preview"
+                             class="w-full rounded-lg object-cover" style="max-height:180px;">
+                        <div id="food-photo-analyzing" class="hidden absolute inset-0 flex items-center justify-center rounded-lg" style="background:rgba(12,12,14,0.75);">
+                            <span class="text-sm font-medium" style="color:#c4b5fd;">Analyzing...</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
                     <label class="field-label">What did you eat?</label>
                     <textarea id="nf-desc" class="w-full px-3 py-2.5 rounded-lg border text-sm" rows="2" placeholder="e.g. Chicken salad with avocado"></textarea>
                 </div>
@@ -1997,6 +2028,16 @@
                         <input id="nf-protein" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="optional">
                     </div>
                 </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="field-label">Carbs (g)</label>
+                        <input id="nf-carbs" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="optional">
+                    </div>
+                    <div>
+                        <label class="field-label">Fat (g)</label>
+                        <input id="nf-fat" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="optional">
+                    </div>
+                </div>
                 <div class="flex gap-2 pt-1">
                     <button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>
                     <button onclick="saveFoodLog()" class="btn-primary flex-1 py-2.5">Log meal</button>
@@ -2005,17 +2046,76 @@
         `);
     }
 
+    function previewFoodPhoto(input) {
+        const preview = document.getElementById('food-photo-preview');
+        const img = document.getElementById('food-photo-img');
+        if(!input.files || !input.files.length) {
+            if(preview) preview.classList.add('hidden');
+            return;
+        }
+        const url = URL.createObjectURL(input.files[0]);
+        if(img) img.src = url;
+        if(preview) preview.classList.remove('hidden');
+    }
+
+    async function uploadFoodPhoto() {
+        const fileInput = document.getElementById('food-photo');
+        if(!fileInput || !fileInput.files.length) return null;
+
+        const formData = new FormData();
+        formData.append('image', fileInput.files[0]);
+
+        const resp = await fetch('/api/food/upload', {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin'
+        });
+        return resp.json();
+    }
+
     async function saveFoodLog() {
         const desc = $('#nf-desc').value.trim();
-        if(!desc) return showToast('Describe what you ate','error');
-        
+        const fileInput = document.getElementById('food-photo');
+        const hasPhoto = fileInput && fileInput.files && fileInput.files.length > 0;
+
+        // If photo selected, upload it first and auto-fill from AI response
+        let imagePath = null;
+        if(hasPhoto) {
+            const analyzingEl = document.getElementById('food-photo-analyzing');
+            if(analyzingEl) analyzingEl.classList.remove('hidden');
+            try {
+                const uploadResult = await uploadFoodPhoto();
+                if(analyzingEl) analyzingEl.classList.add('hidden');
+                if(uploadResult) {
+                    imagePath = uploadResult.image_path || null;
+                    // Auto-fill nutrition fields from AI analysis
+                    if(uploadResult.calories   != null) { const el = $('#nf-cal');     if(el) el.value = uploadResult.calories; }
+                    if(uploadResult.protein_g  != null) { const el = $('#nf-protein'); if(el) el.value = uploadResult.protein_g; }
+                    if(uploadResult.carbs_g    != null) { const el = $('#nf-carbs');   if(el) el.value = uploadResult.carbs_g; }
+                    if(uploadResult.fat_g      != null) { const el = $('#nf-fat');     if(el) el.value = uploadResult.fat_g; }
+                    if(uploadResult.description && !desc) { const el = $('#nf-desc'); if(el) el.value = uploadResult.description; }
+                    showToast('Photo analyzed — review and confirm', 'info');
+                    return; // Let user review the auto-filled values before submitting
+                }
+            } catch(e) {
+                if(analyzingEl) analyzingEl.classList.add('hidden');
+                showToast('Photo upload failed — fill in manually', 'warning');
+            }
+        }
+
+        const finalDesc = $('#nf-desc').value.trim();
+        if(!finalDesc) return showToast('Describe what you ate','error');
+
         const data = {
             meal_type: $('#nf-type').value,
-            description: desc,
-            calories: +$('#nf-cal').value || null,
-            protein_g: +$('#nf-protein').value || null
+            description: finalDesc,
+            calories:   +$('#nf-cal').value     || null,
+            protein_g:  +$('#nf-protein').value || null,
+            carbs_g:    +$('#nf-carbs').value   || null,
+            fat_g:      +$('#nf-fat').value     || null
         };
-        
+        if(imagePath) data.image_path = imagePath;
+
         const r = await api('/food', 'POST', data);
         hideModal();
         if(r) showToast('Meal logged!', 'success');
@@ -2089,6 +2189,34 @@
         if(!window._confirm) { showToast('Click delete again to confirm','warning'); window._confirm=setTimeout(()=>window._confirm=null,3000); return; } clearTimeout(window._confirm); window._confirm=null;
         await api('/food/' + id, 'DELETE');
         loadFood();
+    }
+
+    function setCalorieGoalModal() {
+        const currentGoal = (document.getElementById('food-cal-goal') || {}).textContent || '2000';
+        showModal('Set Daily Calorie Goal', `
+            <div class="space-y-4">
+                <div>
+                    <label class="field-label" for="goal-calories">Daily calorie goal (kcal)</label>
+                    <input id="goal-calories" type="number" min="500" max="10000"
+                           class="w-full px-3 py-2.5 rounded-lg border text-sm"
+                           value="${currentGoal.replace(/,/g, '')}" placeholder="2000">
+                </div>
+                <p class="text-xs" style="color:#5c5c6b;">A typical adult needs 1800–2500 kcal/day. Adjust based on your goals.</p>
+                <div class="flex gap-2 pt-1">
+                    <button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>
+                    <button onclick="saveCalorieGoal()" class="btn-primary flex-1 py-2.5">Save goal</button>
+                </div>
+            </div>
+        `);
+    }
+
+    async function saveCalorieGoal() {
+        const val = parseInt($('#goal-calories').value, 10);
+        if(!val || val < 500 || val > 10000) return showToast('Enter a valid goal (500–10000 kcal)', 'error');
+        const r = await api('/settings', 'POST', {daily_calorie_goal: val});
+        hideModal();
+        if(r && r.error) showToast('Failed to save goal', 'error');
+        else { showToast('Calorie goal updated', 'success'); loadFood(); }
     }
 
     // ============== CHALLENGES ==============
@@ -2572,7 +2700,7 @@
         // ── AI Provider ──────────────────────────────────────────
         const ai = await api('/ai/status');
         if(ai) {
-            const names = {none:'Standalone (No AI)', ollama:'Ollama (Local LLM)', openai:'OpenAI-Compatible'};
+            const names = {none:'Standalone (No AI)', ollama:'Ollama (Local LLM)', openai:'OpenAI-Compatible', anthropic:'Claude (Anthropic)'};
             $('#ai-provider-name').textContent = names[ai.provider] || ai.provider;
             $('#ai-provider-desc').textContent = ai.available
                 ? 'Connected and ready'
@@ -2598,10 +2726,11 @@
         try {
             const savedSettings = await api('/settings');
             if(savedSettings) {
-                if(savedSettings.ai_ollama_url)   { const el = $('#ai-ollama-url');   if(el) el.value = savedSettings.ai_ollama_url; }
-                if(savedSettings.ai_ollama_model) { const el = $('#ai-ollama-model'); if(el) el.value = savedSettings.ai_ollama_model; }
-                if(savedSettings.ai_openai_url)   { const el = $('#ai-openai-url');   if(el) el.value = savedSettings.ai_openai_url; }
-                if(savedSettings.ai_openai_model) { const el = $('#ai-openai-model'); if(el) el.value = savedSettings.ai_openai_model; }
+                if(savedSettings.ai_ollama_url)      { const el = $('#ai-ollama-url');      if(el) el.value = savedSettings.ai_ollama_url; }
+                if(savedSettings.ai_ollama_model)    { const el = $('#ai-ollama-model');    if(el) el.value = savedSettings.ai_ollama_model; }
+                if(savedSettings.ai_openai_url)      { const el = $('#ai-openai-url');      if(el) el.value = savedSettings.ai_openai_url; }
+                if(savedSettings.ai_openai_model)    { const el = $('#ai-openai-model');    if(el) el.value = savedSettings.ai_openai_model; }
+                if(savedSettings.ai_anthropic_model) { const el = $('#ai-anthropic-model'); if(el) el.value = savedSettings.ai_anthropic_model; }
                 // Do not pre-fill API key values for security — just show placeholder if set
                 const keyInput = $('#openclaw-api-key-input');
                 if(keyInput && savedSettings.openclaw_api_key_set) {
@@ -2790,10 +2919,12 @@
 
     // ── AI Provider helpers ──────────────────────────────────────
     function onAiProviderChange(provider) {
-        const ollamaFields = $('#ai-ollama-fields');
-        const openaiFields = $('#ai-openai-fields');
-        if(ollamaFields) ollamaFields.style.display = (provider === 'ollama') ? '' : 'none';
-        if(openaiFields) openaiFields.style.display = (provider === 'openai') ? '' : 'none';
+        const ollamaFields    = $('#ai-ollama-fields');
+        const openaiFields    = $('#ai-openai-fields');
+        const anthropicFields = $('#ai-anthropic-fields');
+        if(ollamaFields)    ollamaFields.style.display    = (provider === 'ollama')    ? '' : 'none';
+        if(openaiFields)    openaiFields.style.display    = (provider === 'openai')    ? '' : 'none';
+        if(anthropicFields) anthropicFields.style.display = (provider === 'anthropic') ? '' : 'none';
     }
 
     async function saveAiProvider() {
@@ -2806,6 +2937,9 @@
             payload.ai_openai_key   = $('#ai-openai-key').value.trim();
             payload.ai_openai_url   = $('#ai-openai-url').value.trim();
             payload.ai_openai_model = $('#ai-openai-model').value.trim();
+        } else if(provider === 'anthropic') {
+            payload.ai_anthropic_key   = $('#ai-anthropic-key').value.trim();
+            payload.ai_anthropic_model = $('#ai-anthropic-model').value.trim() || 'claude-sonnet-4-20250514';
         }
         const r = await api('/settings', 'POST', payload);
         if(r && r.error) showToast('Failed: ' + r.error, 'error');

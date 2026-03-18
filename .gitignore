@@ -8,3 +8,5 @@ config/integrations.json
 .venv/
 .ruff_cache/
 .pytest_cache/
+web/static/uploads/*
+!web/static/uploads/.gitkeep
