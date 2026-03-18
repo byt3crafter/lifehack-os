@@ -67,6 +67,11 @@ def create_app():
     app.register_blueprint(modules_bp)
     app.register_blueprint(ai_bp)
     
+    # Health check endpoint (used by Docker HEALTHCHECK)
+    @app.route('/health')
+    def health():
+        return 'ok', 200
+
     return app
 
 

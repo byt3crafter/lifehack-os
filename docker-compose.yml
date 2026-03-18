@@ -1,0 +1,66 @@
+# LifeHack OS — Docker Compose (production)
+#
+# Quick start:
+#   cp .env.example .env   # then edit credentials
+#   docker compose up --build -d
+#
+# Persistent data is stored in the named volume "lifehack_data"
+# and mounted at /app/data inside the container (SQLite DB lives here).
+
+services:
+  lifehack-os:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: lifehack-os:latest
+    container_name: lifehack-os
+    restart: unless-stopped
+
+    ports:
+      - "8420:8420"
+
+    volumes:
+      # Named volume keeps the SQLite database across container rebuilds.
+      - lifehack_data:/app/data
+      # Bind-mount config so rule/category changes take effect without rebuild.
+      - ./config:/app/config:ro
+
+    env_file:
+      - .env
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8420/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # ---------------------------------------------------------------------------
+  # OPTIONAL: Ollama sidecar (local LLM)
+  #
+  # Uncomment this service when LIFEHACK_AI_PROVIDER=ollama in your .env.
+  # Then set OLLAMA_URL=http://ollama:11434 so the app reaches it by service name.
+  #
+  # First run: docker compose exec ollama ollama pull llama3
+  # GPU passthrough requires the nvidia or rocm container toolkit.
+  # ---------------------------------------------------------------------------
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   container_name: ollama
+  #   restart: unless-stopped
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #   # Uncomment for NVIDIA GPU support:
+  #   # deploy:
+  #   #   resources:
+  #   #     reservations:
+  #   #       devices:
+  #   #         - driver: nvidia
+  #   #           count: all
+  #   #           capabilities: [gpu]
+
+volumes:
+  lifehack_data:
+    driver: local
+  # ollama_data:
+  #   driver: local

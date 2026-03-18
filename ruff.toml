@@ -1,0 +1,17 @@
+# LifeHack OS — Ruff linter configuration
+target-version = "py311"
+line-length = 120
+
+[lint]
+select = ["E", "F", "W"]
+ignore = [
+    "E501",  # line too long — handled by formatter
+    "E722",  # bare except — used intentionally for graceful degradation
+    "F401",  # unused import — some are re-exports in __init__.py
+]
+
+exclude = [
+    ".venv",
+    "__pycache__",
+    "src/ui",  # legacy desktop GUI, not actively maintained
+]

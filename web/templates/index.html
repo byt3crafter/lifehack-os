@@ -732,108 +732,291 @@
 
             <!-- SETTINGS -->
             <div id="v-settings" class="view hidden">
-                <h2 class="text-xl font-semibold tracking-tight mt-6 mb-5" style="color:#f0f0f2;">Settings</h2>
-                <div class="max-w-lg space-y-6">
-
-                    <!-- MODULES -->
-                    <div>
-                        <h3 class="font-bold text-sm text-gray-400 mb-3">Modules</h3>
-                        <p class="text-xs text-gray-500 mb-3">Enable only the features you need. Disabled modules are hidden from navigation.</p>
-                        <div id="module-toggles" class="space-y-2"></div>
-                    </div>
-
-                    <!-- AI PROVIDER -->
-                    <div>
-                        <h3 class="font-bold text-sm text-gray-400 mb-3">AI Provider</h3>
-                        <div class="card rounded-lg p-4">
-                            <div class="flex items-center justify-between mb-2">
-                                <div>
-                                    <div class="font-bold" id="ai-provider-name">Checking...</div>
-                                    <div class="text-xs text-gray-400" id="ai-provider-desc">Loading AI status</div>
-                                </div>
-                                <div id="ai-provider-badge" class="text-xs px-2 py-0.5 rounded-full"></div>
-                            </div>
-                            <p class="text-xs text-gray-500 mt-2">Set <code class="text-gray-400">LIFEHACK_AI_PROVIDER</code> in your <code class="text-gray-400">.env</code> file. Options: none, ollama, openai</p>
-                        </div>
-                    </div>
-
-                    <!-- OPENCLAW -->
-                    <div>
-                        <h3 class="font-bold text-sm text-gray-400 mb-3">AI Agent (OpenClaw)</h3>
-                        <div class="card rounded-lg p-4">
-                            <div class="flex items-center justify-between mb-2">
-                                <div>
-                                    <div class="font-bold">External AI Agent API</div>
-                                    <div class="text-xs text-gray-400">Let an AI agent monitor and interact with your data</div>
-                                </div>
-                            </div>
-                            <div class="text-xs mt-2 space-y-1">
-                                <div>Schema: <code class="text-gray-400">/api/openclaw/schema</code></div>
-                                <div>Auth: <code class="text-gray-400">X-API-Key</code> header (set in .env)</div>
-                            </div>
-                            <div id="openclaw-log" class="mt-3 text-xs text-gray-500"></div>
-                        </div>
-                    </div>
-
-                    <!-- INTEGRATIONS -->
-                    <div>
-                        <h3 class="font-bold text-sm text-gray-400 mb-3">Integrations</h3>
-
-                        <!-- Vikunja -->
-                        <div class="card rounded-lg p-4 mb-2">
-                            <div class="flex items-center justify-between mb-2">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-xl">📋</span>
-                                    <div>
-                                        <div class="font-bold">Vikunja</div>
-                                        <div class="text-xs text-gray-400">Task management</div>
-                                    </div>
-                                </div>
-                                <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" id="int-vikunja" class="sr-only peer" onchange="toggleVikunja(this.checked)">
-                                    <div class="w-11 h-6 bg-gray-700 peer-focus:ring-2 peer-focus:ring-accent rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
-                                </label>
-                            </div>
-                            <div id="vikunja-status" class="text-xs"></div>
-                        </div>
-
-                        <!-- Google Calendar -->
-                        <div class="card rounded-lg p-4 mb-2">
-                            <div class="flex items-center justify-between mb-2">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-xl">📅</span>
-                                    <div>
-                                        <div class="font-bold">Google Calendar</div>
-                                        <div class="text-xs text-gray-400">Events & reminders</div>
-                                    </div>
-                                </div>
-                                <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" id="int-gcal" class="sr-only peer" onchange="toggleGCal(this.checked)">
-                                    <div class="w-11 h-6 bg-gray-700 peer-focus:ring-2 peer-focus:ring-accent rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
-                                </label>
-                            </div>
-                            <div id="gcal-status" class="text-xs"></div>
-                        </div>
-
-                        <!-- Firefly III -->
-                        <div class="card rounded-lg p-4">
-                            <div class="flex items-center justify-between mb-2">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-xl">💰</span>
-                                    <div>
-                                        <div class="font-bold">Firefly III</div>
-                                        <div class="text-xs text-gray-400">Personal finance</div>
-                                    </div>
-                                </div>
-                                <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" id="int-firefly" class="sr-only peer" onchange="toggleFirefly(this.checked)">
-                                    <div class="w-11 h-6 bg-gray-700 peer-focus:ring-2 peer-focus:ring-accent rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
-                                </label>
-                            </div>
-                            <div id="firefly-status" class="text-xs"></div>
-                        </div>
-                    </div>
+                <!-- Page header -->
+                <div class="mt-6 mb-6">
+                    <h2 class="text-2xl font-semibold tracking-tight" style="color:#f0f0f2;">Settings</h2>
+                    <p class="text-sm mt-1" style="color:#5c5c6b;">Configure modules, integrations, and AI connections</p>
                 </div>
+
+                <!-- Settings layout: sidebar tabs + content panel -->
+                <div style="display:flex; gap:1.5rem; align-items:flex-start; max-width:960px;">
+
+                    <!-- Tab sidebar — hidden on mobile, shown as vertical list on desktop -->
+                    <nav aria-label="Settings sections"
+                         id="settings-tabs"
+                         class="hidden md:flex"
+                         style="flex-shrink:0; width:176px; flex-direction:column; gap:2px; position:sticky; top:1.5rem;">
+                        <button onclick="settingsTab('modules')"    id="stab-modules"      class="settings-tab-btn" aria-selected="true"  style="display:flex;align-items:center;gap:0.625rem;width:100%;text-align:left;padding:0.5rem 0.75rem;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-size:0.8125rem;font-weight:500;transition:background 0.12s,color 0.12s;background:rgba(79,128,255,0.15);color:#f0f0f2;">
+                            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;color:#4f80ff;" viewBox="0 0 20 20"><rect x="2" y="2" width="7" height="7" rx="1.5"/><rect x="11" y="2" width="7" height="7" rx="1.5"/><rect x="2" y="11" width="7" height="7" rx="1.5"/><rect x="11" y="11" width="7" height="7" rx="1.5"/></svg>
+                            Modules
+                        </button>
+                        <button onclick="settingsTab('ai')"         id="stab-ai"           class="settings-tab-btn" aria-selected="false" style="display:flex;align-items:center;gap:0.625rem;width:100%;text-align:left;padding:0.5rem 0.75rem;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-size:0.8125rem;font-weight:500;transition:background 0.12s,color 0.12s;background:transparent;color:#9898a6;">
+                            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/><path d="M10 7v3l2 2"/></svg>
+                            AI Provider
+                        </button>
+                        <button onclick="settingsTab('openclaw')"   id="stab-openclaw"     class="settings-tab-btn" aria-selected="false" style="display:flex;align-items:center;gap:0.625rem;width:100%;text-align:left;padding:0.5rem 0.75rem;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-size:0.8125rem;font-weight:500;transition:background 0.12s,color 0.12s;background:transparent;color:#9898a6;">
+                            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" viewBox="0 0 20 20"><path d="M4 13s1-1 4-1 5 2 8 2"/><path d="M4 9s1-1 4-1 5 2 8 2"/><path d="M4 5s1-1 4-1 5 2 8 2"/></svg>
+                            AI Agent
+                        </button>
+                        <button onclick="settingsTab('integrations')" id="stab-integrations" class="settings-tab-btn" aria-selected="false" style="display:flex;align-items:center;gap:0.625rem;width:100%;text-align:left;padding:0.5rem 0.75rem;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-size:0.8125rem;font-weight:500;transition:background 0.12s,color 0.12s;background:transparent;color:#9898a6;">
+                            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" viewBox="0 0 20 20"><circle cx="6" cy="10" r="2.5"/><circle cx="14" cy="6" r="2.5"/><circle cx="14" cy="14" r="2.5"/><path d="M8.4 9l4.2-2.2M8.4 11l4.2 2.2"/></svg>
+                            Integrations
+                        </button>
+                        <button onclick="settingsTab('about')"      id="stab-about"        class="settings-tab-btn" aria-selected="false" style="display:flex;align-items:center;gap:0.625rem;width:100%;text-align:left;padding:0.5rem 0.75rem;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-size:0.8125rem;font-weight:500;transition:background 0.12s,color 0.12s;background:transparent;color:#9898a6;">
+                            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/><path d="M10 9v5M10 7v.01"/></svg>
+                            About
+                        </button>
+                    </nav>
+
+                    <!-- Content panels -->
+                    <div style="flex:1; min-width:0;">
+
+                        <!-- Mobile-only horizontal tab strip (visible only on small screens) -->
+                        <div class="md:hidden mb-4" style="display:flex;gap:4px;overflow-x:auto;padding-bottom:2px;">
+                            <button onclick="settingsTab('modules')"      id="stab-m-modules"      style="flex-shrink:0;padding:0.375rem 0.875rem;border-radius:100px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;transition:background 0.12s,color 0.12s,border-color 0.12s;background:rgba(79,128,255,0.15);color:#f0f0f2;border-color:rgba(79,128,255,0.3);">Modules</button>
+                            <button onclick="settingsTab('ai')"           id="stab-m-ai"           style="flex-shrink:0;padding:0.375rem 0.875rem;border-radius:100px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;transition:background 0.12s,color 0.12s,border-color 0.12s;background:transparent;color:#9898a6;">AI Provider</button>
+                            <button onclick="settingsTab('openclaw')"     id="stab-m-openclaw"     style="flex-shrink:0;padding:0.375rem 0.875rem;border-radius:100px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;transition:background 0.12s,color 0.12s,border-color 0.12s;background:transparent;color:#9898a6;">AI Agent</button>
+                            <button onclick="settingsTab('integrations')" id="stab-m-integrations" style="flex-shrink:0;padding:0.375rem 0.875rem;border-radius:100px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;transition:background 0.12s,color 0.12s,border-color 0.12s;background:transparent;color:#9898a6;">Integrations</button>
+                            <button onclick="settingsTab('about')"        id="stab-m-about"        style="flex-shrink:0;padding:0.375rem 0.875rem;border-radius:100px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;transition:background 0.12s,color 0.12s,border-color 0.12s;background:transparent;color:#9898a6;">About</button>
+                        </div>
+
+                        <!-- ── MODULES panel ─────────────────────────────── -->
+                        <div id="spanel-modules">
+                            <div class="mb-5">
+                                <h3 class="text-base font-semibold mb-1" style="color:#f0f0f2;">Modules</h3>
+                                <p class="text-sm" style="color:#5c5c6b;">Enable only the features you use. Disabled modules are hidden from the navigation sidebar.</p>
+                            </div>
+
+                            <!-- Core group -->
+                            <div class="mb-2" style="font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#5c5c6b;">Core</div>
+                            <div id="module-toggles-core" class="space-y-2 mb-5"></div>
+
+                            <!-- Optional group -->
+                            <div class="mb-2" style="font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#5c5c6b;">Optional</div>
+                            <div id="module-toggles-optional" class="space-y-2"></div>
+
+                            <!-- Hidden fallback used by old code path -->
+                            <div id="module-toggles" class="hidden"></div>
+                        </div>
+
+                        <!-- ── AI PROVIDER panel ─────────────────────────── -->
+                        <div id="spanel-ai" style="display:none;">
+                            <div class="mb-5">
+                                <h3 class="text-base font-semibold mb-1" style="color:#f0f0f2;">AI Provider</h3>
+                                <p class="text-sm" style="color:#5c5c6b;">Life Hack OS works fully without AI. An AI provider unlocks smart insights and natural-language summaries.</p>
+                            </div>
+
+                            <!-- Active provider status card -->
+                            <div class="card p-4 mb-4">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-semibold mb-0.5" style="color:#f0f0f2;" id="ai-provider-name">Checking...</div>
+                                        <div class="text-sm" style="color:#9898a6;" id="ai-provider-desc">Loading AI status</div>
+                                    </div>
+                                    <div id="ai-provider-badge" class="flex-shrink-0 text-xs px-2.5 py-1 rounded-full font-medium" style="background:rgba(100,100,120,0.2);color:#9898a6;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Provider options -->
+                            <div class="mb-2" style="font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#5c5c6b;">Available providers</div>
+                            <div class="space-y-2 mb-5">
+                                <div class="card p-3 flex items-center gap-3">
+                                    <div id="ai-opt-none-indicator" style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:#2a2a2e;"></div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-medium" style="color:#f0f0f2;">None (standalone)</div>
+                                        <div class="text-xs" style="color:#5c5c6b;">Full functionality, no external services required</div>
+                                    </div>
+                                    <code class="text-xs font-mono" style="color:#9898a6;">none</code>
+                                </div>
+                                <div class="card p-3 flex items-center gap-3">
+                                    <div id="ai-opt-ollama-indicator" style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:#2a2a2e;"></div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-medium" style="color:#f0f0f2;">Ollama</div>
+                                        <div class="text-xs" style="color:#5c5c6b;">Local LLM — private, runs on your machine</div>
+                                    </div>
+                                    <code class="text-xs font-mono" style="color:#9898a6;">ollama</code>
+                                </div>
+                                <div class="card p-3 flex items-center gap-3">
+                                    <div id="ai-opt-openai-indicator" style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:#2a2a2e;"></div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-medium" style="color:#f0f0f2;">OpenAI-compatible</div>
+                                        <div class="text-xs" style="color:#5c5c6b;">OpenAI, Groq, LM Studio, or any compatible endpoint</div>
+                                    </div>
+                                    <code class="text-xs font-mono" style="color:#9898a6;">openai</code>
+                                </div>
+                            </div>
+
+                            <!-- Config note -->
+                            <div class="p-3 rounded-lg" style="background:#141416;border:1px solid #2a2a2e;">
+                                <div class="text-xs font-semibold mb-1.5" style="color:#9898a6;letter-spacing:0.04em;text-transform:uppercase;">Configuration</div>
+                                <p class="text-sm" style="color:#5c5c6b;">Set <code style="color:#9898a6;font-family:'DM Mono',monospace;">LIFEHACK_AI_PROVIDER</code> in your <code style="color:#9898a6;font-family:'DM Mono',monospace;">.env</code> file and restart the server. Options: <code style="color:#9898a6;font-family:'DM Mono',monospace;">none</code>, <code style="color:#9898a6;font-family:'DM Mono',monospace;">ollama</code>, <code style="color:#9898a6;font-family:'DM Mono',monospace;">openai</code></p>
+                            </div>
+                        </div>
+
+                        <!-- ── AI AGENT (OpenClaw) panel ─────────────────── -->
+                        <div id="spanel-openclaw" style="display:none;">
+                            <div class="mb-5">
+                                <h3 class="text-base font-semibold mb-1" style="color:#f0f0f2;">AI Agent — OpenClaw</h3>
+                                <p class="text-sm" style="color:#5c5c6b;">Expose a read/write API so an external AI agent can monitor and interact with your data.</p>
+                            </div>
+
+                            <!-- Connection details -->
+                            <div class="card p-4 mb-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="text-sm font-semibold" style="color:#f0f0f2;">Connection details</span>
+                                    <span id="openclaw-status-badge" class="text-xs px-2.5 py-1 rounded-full font-medium" style="background:rgba(100,100,120,0.2);color:#9898a6;">Unknown</span>
+                                </div>
+                                <div class="space-y-2.5">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs" style="color:#5c5c6b;">Schema endpoint</span>
+                                        <code class="text-xs font-mono px-2 py-0.5 rounded" style="background:#141416;color:#9898a6;border:1px solid #2a2a2e;">/api/openclaw/schema</code>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs" style="color:#5c5c6b;">Authentication</span>
+                                        <code class="text-xs font-mono px-2 py-0.5 rounded" style="background:#141416;color:#9898a6;border:1px solid #2a2a2e;">X-API-Key: &lt;.env key&gt;</code>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs" style="color:#5c5c6b;">Log endpoint</span>
+                                        <code class="text-xs font-mono px-2 py-0.5 rounded" style="background:#141416;color:#9898a6;border:1px solid #2a2a2e;">/api/openclaw/log</code>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Recent activity log -->
+                            <div class="mb-2" style="font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#5c5c6b;">Recent activity</div>
+                            <div id="openclaw-log" class="card p-4">
+                                <p class="text-sm" style="color:#5c5c6b;">No recent activity.</p>
+                            </div>
+                        </div>
+
+                        <!-- ── INTEGRATIONS panel ────────────────────────── -->
+                        <div id="spanel-integrations" style="display:none;">
+                            <div class="mb-5">
+                                <h3 class="text-base font-semibold mb-1" style="color:#f0f0f2;">Integrations</h3>
+                                <p class="text-sm" style="color:#5c5c6b;">Connect third-party services to sync tasks, events, and finances.</p>
+                            </div>
+
+                            <div class="space-y-3">
+                                <!-- Vikunja -->
+                                <div class="card p-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center" style="background:#141416;border:1px solid #2a2a2e;">
+                                            <svg width="18" height="18" fill="none" stroke="#9898a6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 20 20"><rect x="3" y="4" width="14" height="13" rx="2"/><path d="M3 8h14M7 4V2M13 4V2"/></svg>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="text-sm font-semibold" style="color:#f0f0f2;">Vikunja</div>
+                                            <div class="text-xs" style="color:#5c5c6b;">Task management &amp; project tracking</div>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer flex-shrink-0" aria-label="Toggle Vikunja">
+                                            <input type="checkbox" id="int-vikunja" class="sr-only peer" onchange="toggleVikunja(this.checked)">
+                                            <div class="w-11 h-6 rounded-full transition-colors peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all" style="background:#2a2a2e;" id="toggle-bg-vikunja"></div>
+                                        </label>
+                                    </div>
+                                    <div id="vikunja-status" class="text-xs mt-3 pt-3" style="border-top:1px solid #2a2a2e;color:#5c5c6b;"></div>
+                                </div>
+
+                                <!-- Google Calendar -->
+                                <div class="card p-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center" style="background:#141416;border:1px solid #2a2a2e;">
+                                            <svg width="18" height="18" fill="none" stroke="#9898a6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 20 20"><rect x="3" y="4" width="14" height="13" rx="2"/><path d="M3 8h14M7 4V2M13 4V2"/><circle cx="10" cy="12" r="1"/></svg>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="text-sm font-semibold" style="color:#f0f0f2;">Google Calendar</div>
+                                            <div class="text-xs" style="color:#5c5c6b;">Events, reminders, and scheduling</div>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer flex-shrink-0" aria-label="Toggle Google Calendar">
+                                            <input type="checkbox" id="int-gcal" class="sr-only peer" onchange="toggleGCal(this.checked)">
+                                            <div class="w-11 h-6 rounded-full transition-colors peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all" style="background:#2a2a2e;" id="toggle-bg-gcal"></div>
+                                        </label>
+                                    </div>
+                                    <div id="gcal-status" class="text-xs mt-3 pt-3" style="border-top:1px solid #2a2a2e;color:#5c5c6b;"></div>
+                                </div>
+
+                                <!-- Firefly III -->
+                                <div class="card p-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center" style="background:#141416;border:1px solid #2a2a2e;">
+                                            <svg width="18" height="18" fill="none" stroke="#9898a6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 20 20"><path d="M10 3v14M6 7h6a2 2 0 010 4H7a2 2 0 000 4h7"/></svg>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="text-sm font-semibold" style="color:#f0f0f2;">Firefly III</div>
+                                            <div class="text-xs" style="color:#5c5c6b;">Personal finance &amp; budgeting</div>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer flex-shrink-0" aria-label="Toggle Firefly III">
+                                            <input type="checkbox" id="int-firefly" class="sr-only peer" onchange="toggleFirefly(this.checked)">
+                                            <div class="w-11 h-6 rounded-full transition-colors peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all" style="background:#2a2a2e;" id="toggle-bg-firefly"></div>
+                                        </label>
+                                    </div>
+                                    <div id="firefly-status" class="text-xs mt-3 pt-3" style="border-top:1px solid #2a2a2e;color:#5c5c6b;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ── ABOUT panel ───────────────────────────────── -->
+                        <div id="spanel-about" style="display:none;">
+                            <div class="mb-5">
+                                <h3 class="text-base font-semibold mb-1" style="color:#f0f0f2;">About</h3>
+                                <p class="text-sm" style="color:#5c5c6b;">Application information and credits.</p>
+                            </div>
+
+                            <!-- App identity -->
+                            <div class="card p-5 mb-4">
+                                <div class="flex items-center gap-4 mb-4">
+                                    <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(79,128,255,0.12);border:1px solid rgba(79,128,255,0.2);">
+                                        <svg width="22" height="22" fill="none" stroke="#4f80ff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 20 20"><circle cx="10" cy="10" r="2.5"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.2 4.2l1.4 1.4M14.4 14.4l1.4 1.4M4.2 15.8l1.4-1.4M14.4 5.6l1.4-1.4"/></svg>
+                                    </div>
+                                    <div>
+                                        <div class="text-base font-semibold" style="color:#f0f0f2;">Life Hack OS</div>
+                                        <div class="text-sm" style="color:#5c5c6b;">Personal Operating System</div>
+                                    </div>
+                                </div>
+                                <div class="space-y-2.5">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm" style="color:#9898a6;">Version</span>
+                                        <span class="text-sm font-mono" style="color:#f0f0f2;">1.0.0</span>
+                                    </div>
+                                    <div style="height:1px;background:#2a2a2e;"></div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm" style="color:#9898a6;">Created by</span>
+                                        <span class="text-sm" style="color:#f0f0f2;">Ludovic Micinthe</span>
+                                    </div>
+                                    <div style="height:1px;background:#2a2a2e;"></div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm" style="color:#9898a6;">Built with</span>
+                                        <span class="text-sm" style="color:#9898a6;">Python · SQLite · Tailwind</span>
+                                    </div>
+                                    <div style="height:1px;background:#2a2a2e;"></div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm" style="color:#9898a6;">License</span>
+                                        <span class="text-sm" style="color:#9898a6;">MIT</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Credit -->
+                            <div class="p-4 rounded-lg mb-4" style="background:rgba(79,128,255,0.06);border:1px solid rgba(79,128,255,0.15);">
+                                <p class="text-sm" style="color:#9898a6;">Created by <span style="color:#f0f0f2;font-weight:600;">Ludovic Micinthe</span> &mdash; Vibe Coder</p>
+                                <p class="text-xs mt-1" style="color:#5c5c6b;">Designed for personal use. Modify and self-host freely.</p>
+                            </div>
+
+                            <!-- Links -->
+                            <div class="space-y-2">
+                                <a href="https://github.com" target="_blank" rel="noopener noreferrer"
+                                   class="card p-3 flex items-center justify-between hover:border-border-default transition-colors" style="display:flex;border-color:#2a2a2e;text-decoration:none;">
+                                    <span class="text-sm" style="color:#f0f0f2;">Documentation</span>
+                                    <svg width="14" height="14" fill="none" stroke="#5c5c6b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 20 20"><path d="M4 10h12M11 6l5 4-5 4"/></svg>
+                                </a>
+                                <a href="https://github.com" target="_blank" rel="noopener noreferrer"
+                                   class="card p-3 flex items-center justify-between hover:border-border-default transition-colors" style="display:flex;border-color:#2a2a2e;text-decoration:none;">
+                                    <span class="text-sm" style="color:#f0f0f2;">Source code</span>
+                                    <svg width="14" height="14" fill="none" stroke="#5c5c6b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 20 20"><path d="M4 10h12M11 6l5 4-5 4"/></svg>
+                                </a>
+                            </div>
+                        </div>
+
+                    </div><!-- /content panels -->
+                </div><!-- /settings layout -->
             </div>
         </main>
     </div>
@@ -1557,71 +1740,181 @@
         }
     }
 
+    // ── Settings tab switcher ───────────────────────────────────
+    function settingsTab(tab) {
+        const panels = ['modules','ai','openclaw','integrations','about'];
+        panels.forEach(p => {
+            const panel = $(`#spanel-${p}`);
+            if(panel) panel.style.display = (p === tab) ? '' : 'none';
+        });
+        // Desktop sidebar tabs
+        panels.forEach(p => {
+            const btn = $(`#stab-${p}`);
+            if(!btn) return;
+            if(p === tab) {
+                btn.style.background = 'rgba(79,128,255,0.15)';
+                btn.style.color = '#f0f0f2';
+                btn.setAttribute('aria-selected','true');
+                const icon = btn.querySelector('svg');
+                if(icon) icon.style.color = '#4f80ff';
+            } else {
+                btn.style.background = 'transparent';
+                btn.style.color = '#9898a6';
+                btn.setAttribute('aria-selected','false');
+                const icon = btn.querySelector('svg');
+                if(icon) icon.style.color = '';
+            }
+        });
+        // Mobile pill tabs
+        panels.forEach(p => {
+            const btn = $(`#stab-m-${p}`);
+            if(!btn) return;
+            if(p === tab) {
+                btn.style.background = 'rgba(79,128,255,0.15)';
+                btn.style.color = '#f0f0f2';
+                btn.style.borderColor = 'rgba(79,128,255,0.3)';
+            } else {
+                btn.style.background = 'transparent';
+                btn.style.color = '#9898a6';
+                btn.style.borderColor = '#2a2a2e';
+            }
+        });
+    }
+
+    // Toggle switch helper — keeps toggle visually consistent with peer-checked state
+    function _setToggleBg(id, checked) {
+        const bg = $(`#toggle-bg-${id}`);
+        if(bg) bg.style.background = checked ? '#4f80ff' : '#2a2a2e';
+    }
+
     async function loadSettings() {
-        // Load modules
+        // ── Modules ─────────────────────────────────────────────
+        const CORE_MODULES = ['habits','checkin','analytics'];
         const mods = await api('/modules');
         if(mods) {
-            const container = $('#module-toggles');
-            container.innerHTML = mods.map(m => `
-                <div class="card rounded-lg p-3 flex items-center justify-between">
-                    <div class="flex-1">
-                        <div class="font-medium text-sm">${m.name}</div>
-                        <div class="text-xs text-gray-500">${m.description}</div>
+            enabledModules = {};
+            mods.forEach(m => { enabledModules[m.id] = m.enabled; });
+            applyModuleVisibility();
+
+            const makeRow = m => `
+                <div class="card p-3 flex items-center gap-3">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-0.5">
+                            <span class="text-sm font-medium" style="color:#f0f0f2;">${m.name}</span>
+                            ${m.default ? '<span style="font-size:0.625rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;padding:1px 6px;border-radius:4px;background:rgba(79,128,255,0.12);color:#4f80ff;">default</span>' : ''}
+                        </div>
+                        <div class="text-xs" style="color:#5c5c6b;">${m.description || ''}</div>
                     </div>
-                    <label class="relative inline-flex items-center cursor-pointer ml-3">
-                        <input type="checkbox" class="sr-only peer" ${m.enabled ? 'checked' : ''} onchange="toggleModule('${m.id}', this.checked)">
-                        <div class="w-11 h-6 bg-gray-700 peer-focus:ring-2 peer-focus:ring-accent rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
+                    <label class="relative inline-flex items-center cursor-pointer flex-shrink-0 ml-2" aria-label="Toggle ${m.name}">
+                        <input type="checkbox" class="sr-only peer" id="mod-tog-${m.id}" ${m.enabled ? 'checked' : ''} onchange="toggleModule('${m.id}', this.checked); _setToggleBg('mod-${m.id}', this.checked);">
+                        <div id="toggle-bg-mod-${m.id}" class="w-11 h-6 rounded-full transition-colors peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all" style="background:${m.enabled ? '#4f80ff' : '#2a2a2e'};"></div>
                     </label>
-                </div>
-            `).join('');
+                </div>`;
+
+            const coreEl = $('#module-toggles-core');
+            const optEl  = $('#module-toggles-optional');
+            if(coreEl && optEl) {
+                const coreMods = mods.filter(m => CORE_MODULES.includes(m.id));
+                const optMods  = mods.filter(m => !CORE_MODULES.includes(m.id));
+                coreEl.innerHTML = coreMods.length ? coreMods.map(makeRow).join('') : '<p class="text-sm" style="color:#5c5c6b;">No core modules found.</p>';
+                optEl.innerHTML  = optMods.length  ? optMods.map(makeRow).join('')  : '<p class="text-sm" style="color:#5c5c6b;">No optional modules found.</p>';
+            }
         }
 
-        // Load AI provider status
+        // ── AI Provider ──────────────────────────────────────────
         const ai = await api('/ai/status');
         if(ai) {
             const names = {none:'Standalone (No AI)', ollama:'Ollama (Local LLM)', openai:'OpenAI-Compatible'};
             $('#ai-provider-name').textContent = names[ai.provider] || ai.provider;
-            $('#ai-provider-desc').textContent = ai.available ? 'Connected and ready' : (ai.provider === 'none' ? 'App works fully without AI' : 'Not connected — check .env config');
+            $('#ai-provider-desc').textContent = ai.available
+                ? 'Connected and ready'
+                : (ai.provider === 'none' ? 'App works fully without AI' : 'Not connected — check .env config');
             const badge = $('#ai-provider-badge');
             if(ai.provider === 'none') {
                 badge.textContent = 'Standalone';
-                badge.style.cssText = 'background:rgba(100,100,120,0.2);color:#9898a6;';
+                badge.style.cssText = 'background:rgba(100,100,120,0.2);color:#9898a6;font-size:0.75rem;padding:0.25rem 0.625rem;border-radius:100px;font-weight:500;';
             } else if(ai.available) {
                 badge.textContent = 'Active';
-                badge.style.cssText = 'background:rgba(16,185,129,0.15);color:#10b981;';
+                badge.style.cssText = 'background:rgba(34,197,94,0.12);color:#22c55e;font-size:0.75rem;padding:0.25rem 0.625rem;border-radius:100px;font-weight:500;';
             } else {
                 badge.textContent = 'Offline';
-                badge.style.cssText = 'background:rgba(239,68,68,0.15);color:#ef4444;';
+                badge.style.cssText = 'background:rgba(239,68,68,0.12);color:#ef4444;font-size:0.75rem;padding:0.25rem 0.625rem;border-radius:100px;font-weight:500;';
             }
+            // Highlight active provider option
+            ['none','ollama','openai'].forEach(p => {
+                const ind = $(`#ai-opt-${p}-indicator`);
+                if(!ind) return;
+                ind.style.background = (ai.provider === p)
+                    ? (ai.available || p === 'none' ? '#22c55e' : '#ef4444')
+                    : '#2a2a2e';
+            });
         }
 
-        // Load OpenClaw recent activity
+        // ── OpenClaw ─────────────────────────────────────────────
+        const logEl = $('#openclaw-log');
         try {
-            const logResp = await fetch('/api/openclaw/log', {headers:{'X-API-Key':'check'}, credentials:'same-origin'});
-            // Only show if openclaw module is enabled — don't worry about auth failures
-        } catch(e) {}
+            const logResp = await fetch('/api/openclaw/log', {credentials:'same-origin'});
+            if(logResp.ok) {
+                const logData = await logResp.json();
+                const badge = $('#openclaw-status-badge');
+                if(badge) { badge.textContent = 'Active'; badge.style.cssText = 'background:rgba(34,197,94,0.12);color:#22c55e;font-size:0.75rem;padding:0.25rem 0.625rem;border-radius:100px;font-weight:500;'; }
+                if(logEl) {
+                    const entries = Array.isArray(logData) ? logData : (logData.entries || logData.log || []);
+                    if(entries.length) {
+                        logEl.innerHTML = '<div style="display:flex;flex-direction:column;gap:6px;">' +
+                            entries.slice(0,20).map(e => {
+                                const ts = e.timestamp || e.time || '';
+                                const msg = e.message || e.action || JSON.stringify(e);
+                                return `<div style="display:flex;gap:10px;align-items:baseline;">
+                                    <span style="font-family:'DM Mono',monospace;font-size:0.6875rem;color:#5c5c6b;flex-shrink:0;">${ts ? new Date(ts).toLocaleTimeString() : ''}</span>
+                                    <span style="font-size:0.8125rem;color:#9898a6;">${msg}</span>
+                                </div>`;
+                            }).join('') +
+                        '</div>';
+                    } else {
+                        logEl.innerHTML = '<p class="text-sm" style="color:#5c5c6b;">No recent activity.</p>';
+                    }
+                }
+            } else if(logResp.status === 403 || logResp.status === 401) {
+                const badge = $('#openclaw-status-badge');
+                if(badge) { badge.textContent = 'Auth required'; badge.style.cssText = 'background:rgba(245,158,11,0.12);color:#f59e0b;font-size:0.75rem;padding:0.25rem 0.625rem;border-radius:100px;font-weight:500;'; }
+                if(logEl) logEl.innerHTML = '<p class="text-sm" style="color:#5c5c6b;">Set <code style="color:#9898a6;font-family:\'DM Mono\',monospace;">OPENCLAW_API_KEY</code> in your .env to view log.</p>';
+            } else if(logResp.status === 404) {
+                const badge = $('#openclaw-status-badge');
+                if(badge) { badge.textContent = 'Disabled'; badge.style.cssText = 'background:rgba(100,100,120,0.2);color:#5c5c6b;font-size:0.75rem;padding:0.25rem 0.625rem;border-radius:100px;font-weight:500;'; }
+                if(logEl) logEl.innerHTML = '<p class="text-sm" style="color:#5c5c6b;">OpenClaw module is not enabled.</p>';
+            }
+        } catch(e) {
+            if(logEl) logEl.innerHTML = '<p class="text-sm" style="color:#5c5c6b;">Could not reach OpenClaw endpoint.</p>';
+        }
 
-        // Load integrations
+        // ── Integrations ─────────────────────────────────────────
         const int = await api('/integrations');
         if(!int) return;
 
         // Vikunja
-        $('#int-vikunja').checked = int.vikunja?.enabled || false;
+        const vikEnabled = int.vikunja?.enabled || false;
+        $('#int-vikunja').checked = vikEnabled;
+        _setToggleBg('vikunja', vikEnabled);
         $('#vikunja-status').innerHTML = int.vikunja?.connected
-            ? '<span class="text-success">✓ Connected</span>'
-            : (int.vikunja?.enabled ? '<span class="text-warning">⚠ Not connected</span>' : '<span class="text-gray-500">Disabled</span>');
+            ? '<span style="color:#22c55e;">Connected</span>'
+            : (vikEnabled ? '<span style="color:#f59e0b;">Enabled — not yet connected</span>' : 'Disabled');
 
         // Google Calendar
-        $('#int-gcal').checked = int.google_calendar?.enabled || false;
+        const gcalEnabled = int.google_calendar?.enabled || false;
+        $('#int-gcal').checked = gcalEnabled;
+        _setToggleBg('gcal', gcalEnabled);
         $('#gcal-status').innerHTML = int.google_calendar?.connected
-            ? '<span class="text-success">✓ Connected</span>'
-            : (int.google_calendar?.enabled ? '<span class="text-warning">⚠ Not connected</span>' : '<span class="text-gray-500">Disabled</span>');
+            ? '<span style="color:#22c55e;">Connected</span>'
+            : (gcalEnabled ? '<span style="color:#f59e0b;">Enabled — not yet connected</span>' : 'Disabled');
 
         // Firefly
-        $('#int-firefly').checked = int.firefly?.enabled || false;
+        const ffEnabled = int.firefly?.enabled || false;
+        $('#int-firefly').checked = ffEnabled;
+        _setToggleBg('firefly', ffEnabled);
         $('#firefly-status').innerHTML = int.firefly?.connected
-            ? '<span class="text-success">✓ Connected</span>'
-            : (int.firefly?.enabled ? '<span class="text-warning">⚠ Not connected</span>' : '<span class="text-gray-500">Disabled</span>');
+            ? '<span style="color:#22c55e;">Connected</span>'
+            : (ffEnabled ? '<span style="color:#f59e0b;">Enabled — not yet connected</span>' : 'Disabled');
     }
 
     async function toggleModule(id, enabled) {

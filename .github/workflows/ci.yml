@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-check:
+    name: Lint & import check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      # Install web dependencies only (skip desktop GUI packages)
+      - name: Install web dependencies
+        run: |
+          pip install --upgrade pip
+          pip install \
+            "flask>=3.0.0" \
+            "flask-cors>=4.0.0" \
+            "requests>=2.31.0" \
+            "python-dotenv>=1.0.0" \
+            "toml>=0.10.2" \
+            ruff
+
+      # Lint — ruff is fast and covers flake8 + isort rules
+      - name: Lint with ruff
+        run: ruff check .
+
+      # Smoke-test: verify the app factory imports and initialises cleanly.
+      # web/app.py inserts the project root onto sys.path at import time, so
+      # running from the web/ directory is all that's needed — identical to how
+      # the app runs locally and inside the Docker container.
+      - name: Import & factory check
+        env:
+          LIFEHACK_SECRET_KEY: ci-smoke-test-key
+          LIFEHACK_USERNAME: ci
+          LIFEHACK_PASSWORD: ci
+          LIFEHACK_API_KEY: ci
+          LIFEHACK_AI_PROVIDER: none
+        working-directory: web
+        run: |
+          python -c "from app import create_app; app = create_app(); print('create_app() OK:', app.name)"
+
+  # ---------------------------------------------------------------------------
+  # Tests — placeholder, runs when tests/ directory exists
+  # ---------------------------------------------------------------------------
+  test:
+    name: Test suite
+    runs-on: ubuntu-latest
+    # Remove or update this condition once tests exist
+    if: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install \
+            "flask>=3.0.0" \
+            "flask-cors>=4.0.0" \
+            "requests>=2.31.0" \
+            "python-dotenv>=1.0.0" \
+            "toml>=0.10.2" \
+            ruff \
+            pytest
+
+      - name: Run tests
+        run: pytest tests/ -v

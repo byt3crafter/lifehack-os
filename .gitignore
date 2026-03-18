@@ -5,3 +5,6 @@ __pycache__/
 .env
 data/
 config/integrations.json
+.venv/
+.ruff_cache/
+.pytest_cache/

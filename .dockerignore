@@ -1,0 +1,53 @@
+# LifeHack OS — .dockerignore
+# Keeps the build context lean and prevents secrets from leaking into the image.
+
+# --- Secrets & environment ---
+.env
+*.env
+.env.*
+!.env.example
+
+# --- Persistent data (managed as a Docker volume) ---
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# --- Python bytecode ---
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Virtual environments ---
+.venv/
+venv/
+env/
+ENV/
+
+# --- Version control ---
+.git/
+.gitignore
+.gitattributes
+
+# --- Documentation & non-runtime assets ---
+docs/
+*.md
+!README.md
+
+# --- OS / editor noise ---
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# --- Desktop GUI entry point (not used in the container) ---
+main.py
+
+# --- CI configuration (not needed at runtime) ---
+.github/
+Makefile
