@@ -2882,6 +2882,12 @@
         // ── AI Providers (multi-provider) ────────────────────────
         try {
             const savedSettings = await api('/settings');
+            // Check ChatGPT OAuth status
+            try {
+                const oauthResp = await fetch('/auth/openai/status', {credentials:'same-origin'});
+                const oauthStatus = await oauthResp.json();
+                if(oauthStatus && oauthStatus.connected) savedSettings._chatgpt_oauth_configured = true;
+            } catch(e) {}
             if(savedSettings) {
                 renderProviderCards(savedSettings);
                 populateAssignmentDropdowns(savedSettings);
@@ -3141,7 +3147,7 @@
         if(id === 'anthropic')     return !!(s.ai_anthropic_key_set || s.ai_anthropic_key);
         if(id === 'minimax')       return !!(s.ai_minimax_key_set || s.ai_minimax_key);
         if(id === 'ollama')        return !!(s.ai_ollama_url && s.ai_ollama_url !== 'http://localhost:11434' || s.ai_ollama_model);
-        if(id === 'chatgpt_oauth') return !!(s.chatgpt_connected);
+        if(id === 'chatgpt_oauth') return !!(s.openai_oauth_connected || s._chatgpt_oauth_configured);
         return false;
     }
 
