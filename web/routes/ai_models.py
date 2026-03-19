@@ -111,6 +111,30 @@ def _test_ollama(base_url: str) -> tuple[bool, str]:
         return False, str(exc)
 
 
+def _test_minimax(base_url: str, api_key: str) -> tuple[bool, str]:
+    """Test MiniMax by sending a tiny chat completion (no /models endpoint)."""
+    try:
+        resp = requests.post(
+            f"{base_url.rstrip('/')}/chat/completions",
+            headers=_bearer_headers(api_key),
+            json={
+                'model': 'MiniMax-M2',
+                'messages': [{'role': 'user', 'content': 'hi'}],
+                'max_tokens': 1,
+            },
+            timeout=15,
+        )
+        if resp.status_code == 200:
+            return True, ''
+        if resp.status_code == 401:
+            return False, 'Invalid API key'
+        return False, f"HTTP {resp.status_code}"
+    except requests.exceptions.Timeout:
+        return False, 'Request timed out'
+    except Exception as exc:
+        return False, str(exc)
+
+
 def _test_chatgpt_oauth() -> tuple[bool, str]:
     """Check if the OAuth token exists and is present."""
     token = _get_setting('openai_oauth_token')
@@ -229,15 +253,19 @@ def test_provider():
     if not provider:
         return jsonify({'valid': False, 'error': 'provider is required'}), 400
 
-    if provider in ('openai', 'minimax'):
+    if provider == 'openai':
         if not api_key:
             return jsonify({'valid': False, 'error': 'api_key is required'})
         if not base_url:
-            base_url = (
-                'https://api.openai.com/v1' if provider == 'openai'
-                else 'https://api.minimax.io/v1'
-            )
+            base_url = 'https://api.openai.com/v1'
         valid, error = _test_openai_compatible(base_url, api_key)
+
+    elif provider == 'minimax':
+        if not api_key:
+            return jsonify({'valid': False, 'error': 'api_key is required'})
+        if not base_url:
+            base_url = 'https://api.minimax.io/v1'
+        valid, error = _test_minimax(base_url, api_key)
 
     elif provider == 'anthropic':
         if not api_key:
@@ -278,16 +306,14 @@ def list_models():
     if not provider:
         return jsonify({'error': 'provider is required'}), 400
 
-    if provider in ('openai', 'minimax'):
+    if provider == 'openai':
         if not base_url:
-            base_url = (
-                'https://api.openai.com/v1' if provider == 'openai'
-                else 'https://api.minimax.io/v1'
-            )
-        # For OpenAI specifically, filter out non-chat models.
-        models = _fetch_openai_compatible_models(
-            base_url, api_key, filter_chat=(provider == 'openai')
-        )
+            base_url = 'https://api.openai.com/v1'
+        models = _fetch_openai_compatible_models(base_url, api_key, filter_chat=True)
+
+    elif provider == 'minimax':
+        # MiniMax doesn't expose /models — use known list
+        models = ['MiniMax-M2', 'MiniMax-M2-Stable']
 
     elif provider == 'anthropic':
         models = list(_ANTHROPIC_MODELS)
