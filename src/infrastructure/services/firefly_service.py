@@ -147,12 +147,15 @@ class FireflyService:
         if liability_data:
             for a in liability_data.get('data', []):
                 attrs = a.get('attributes', {})
+                bal = abs(float(attrs.get('current_balance', 0)))
+                # Skip zero-balance liabilities to avoid clutter
+                if bal == 0:
+                    continue
                 accounts.append({
                     'id': a['id'],
                     'name': attrs.get('name', ''),
                     'type': 'liability',
-                    # Liabilities are shown as negative to reflect net-worth impact
-                    'balance': -abs(float(attrs.get('current_balance', 0))),
+                    'balance': -bal,
                     'currency_code': attrs.get('currency_code', 'USD'),
                     'currency_symbol': attrs.get('currency_symbol', '$'),
                 })
