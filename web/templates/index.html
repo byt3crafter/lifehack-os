@@ -6493,7 +6493,7 @@
             }
             html += '<div style="display:flex;flex-direction:column;align-items:' + align + ';margin-bottom:10px;">'
                 + '<div style="max-width:85%;padding:10px 14px;border-radius:16px;background:' + bg + ';color:' + color + ';border:' + border + ';font-size:0.875rem;line-height:1.5;word-break:break-word;">'
-                + chatEscapeHtml(m.content)
+                + chatFormatMsg(m.content)
                 + '</div>'
                 + ts
                 + '</div>';
@@ -6508,12 +6508,16 @@
         container.scrollTop = container.scrollHeight;
     }
 
-    function chatEscapeHtml(text) {
-        return text
+    function chatFormatMsg(text) {
+        var s = text
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/\n/g, '<br>');
+            .replace(/>/g, '&gt;');
+        s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
+        s = s.replace(/`([^`]+)`/g, '<code style="background:rgba(255,255,255,0.08);padding:1px 4px;border-radius:3px;font-size:0.8em;">$1</code>');
+        s = s.replace(/\n/g, '<br>');
+        return s;
     }
 
     // ── Typing indicator ────────────────────────────────────────────
