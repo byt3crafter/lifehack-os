@@ -253,8 +253,8 @@ def run_migrations(conn) -> None:
 
     # Migration 8 (extra): Add Discover columns to wishlist — ALTER TABLE is not
     # idempotent in SQLite so each column is guarded by a presence check.
-    current = get_current_version(conn)  # re-read after possible earlier changes
-    if current < 8:
+    # Always check columns — SQL migration may have already incremented the version
+    if True:
         wishlist_cols = [r[1] for r in conn.execute("PRAGMA table_info(wishlist)").fetchall()]
         discover_cols = [
             ("status",       "TEXT DEFAULT 'want'"),

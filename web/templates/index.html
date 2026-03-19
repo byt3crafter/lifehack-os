@@ -6827,6 +6827,10 @@
             + '<label class="field-label">Description (optional)</label>'
             + '<textarea id="nd-desc" class="w-full px-3 py-2.5 rounded-lg border text-sm" rows="2" placeholder="Why do you want to do this?"></textarea>'
             + '</div>'
+            + '<div>'
+            + '<label class="field-label">Photo (optional)</label>'
+            + '<input type="file" id="nd-photo" accept="image/*" class="w-full px-3 py-2 rounded-lg border text-sm">'
+            + '</div>'
             + '<div class="flex gap-2 pt-1">'
             + '<button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>'
             + '<button onclick="saveDiscovery()" class="btn-primary flex-1 py-2.5">Add</button>'
@@ -6838,15 +6842,23 @@
     async function saveDiscovery() {
         var title = (document.getElementById('nd-title') || {}).value || '';
         if(!title.trim()) return showToast('Enter a title', 'error');
-        var r = await api('/discover', 'POST', {
+        var data = {
             title: title,
             category: (document.getElementById('nd-category') || {}).value || 'Places',
-            status: (document.getElementById('nd-status') || {}).value || 'want_to_do',
+            status: (document.getElementById('nd-status') || {}).value || 'want',
             location: (document.getElementById('nd-location') || {}).value || '',
             description: (document.getElementById('nd-desc') || {}).value || ''
-        });
+        };
+        var r = await api('/discover', 'POST', data);
+        // Upload photo if selected
+        var photoInput = document.getElementById('nd-photo');
+        if(r && r.id && photoInput && photoInput.files && photoInput.files.length) {
+            var formData = new FormData();
+            formData.append('image', photoInput.files[0]);
+            await fetch('/api/discover/' + r.id + '/upload-photo', {method: 'POST', body: formData, credentials: 'same-origin'});
+        }
         hideModal();
-        if(r && !r.error) showToast('Discovery added', 'success');
+        if(r && !r.error) showToast('Discovery added!', 'success');
         loadDiscover();
     }
 
