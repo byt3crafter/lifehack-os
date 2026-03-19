@@ -4765,6 +4765,15 @@
                 phaseEditorHtml += buildPhaseEditCard(pi2);
             }
             phaseEditorHtml += '</div></div>';
+        } else {
+            // Simple habit (no phases) — show micro-task adder
+            // Create a virtual "phase 0" to hold new tasks
+            _editPhaseData = [{ id: null, name: name, description: '', tasks: [] }];
+            phaseEditorHtml = '<div class="mt-4">'
+                + '<div class="text-xs font-semibold mb-2" style="color:#5c5c6b;letter-spacing:0.06em;text-transform:uppercase;">Micro-tasks</div>'
+                + '<div id="eh-simple-tasks"></div>'
+                + '<button onclick="addEditTask(0)" class="text-xs mt-2 px-2 py-1 rounded" style="color:#4f80ff;background:rgba(79,128,255,0.1);">+ Add micro-task</button>'
+                + '</div>';
         }
 
         var bodyHtml = '<div class="space-y-3">'

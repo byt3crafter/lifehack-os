@@ -418,6 +418,26 @@ def update_habit(habit_id):
     for phase_data in phases:
         phase_id = phase_data.get('id')
         if not phase_id:
+            # New phase (simple habit getting its first phase)
+            tasks = phase_data.get('tasks', [])
+            if not tasks:
+                continue
+            phase_cursor = conn.execute(
+                "INSERT INTO habit_phases (habit_id, phase_number, name, description, is_current) VALUES (?, 1, ?, ?, 1)",
+                (habit_id, phase_data.get('name', habit.name), phase_data.get('description', ''))
+            )
+            phase_id = phase_cursor.lastrowid
+            for j, task_data in enumerate(tasks):
+                task_name = (task_data.get('name') or '').strip()
+                if not task_name:
+                    continue
+                vr = task_data.get('verification_rule', '{"type": "manual"}')
+                if isinstance(vr, dict):
+                    vr = json.dumps(vr)
+                conn.execute(
+                    "INSERT INTO habit_micro_tasks (phase_id, name, verification_rule, sort_order) VALUES (?, ?, ?, ?)",
+                    (phase_id, task_name, vr, j)
+                )
             continue
         # Update phase name/description
         conn.execute(

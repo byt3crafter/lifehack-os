@@ -9,7 +9,7 @@ TOOL_DEFINITIONS = [
     # ── Habits ──────────────────────────────────────────────────────────────
     {
         "name": "create_habit",
-        "description": "Create a new simple habit",
+        "description": "Create a simple habit WITHOUT phases or micro-tasks. Use generate_and_create_habit instead for better habits with progressive phases.",
         "parameters": {
             "name": "string (required)",
             "category": "string — e.g. health, fitness, mindfulness (default: health)",
@@ -19,8 +19,8 @@ TOOL_DEFINITIONS = [
     {
         "name": "generate_and_create_habit",
         "description": (
-            "Use AI to generate a phased habit plan from a goal description, "
-            "then persist it with phases and micro-tasks"
+            "PREFERRED way to create habits. Generates a progressive phased plan with micro-tasks "
+            "from a goal description. Always use this unless the user explicitly wants a bare habit."
         ),
         "parameters": {
             "goal": "string (required) — describe what the user wants to achieve",
