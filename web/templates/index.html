@@ -3231,7 +3231,7 @@
         showModal('Add Provider', '<div class="space-y-2">' + btns + '</div>');
     }
 
-    function configureProvider(providerId) {
+    async function configureProvider(providerId) {
         var meta = AI_PROVIDER_META[providerId] || {label: providerId};
         if(providerId === 'openai') {
             showModal('Configure OpenAI',
