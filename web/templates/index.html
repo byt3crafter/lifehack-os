@@ -324,6 +324,45 @@
         /* ── Session bar ─────────────────────────────── */
         .session-bar { transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
 
+        /* ── Deep Work project chip ───────────────────── */
+        .dw-chip {
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.375rem 0.875rem;
+            border-radius: 100px;
+            border: 1px solid #2a2a2e;
+            background: #141416;
+            color: #9898a6;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s, color 0.15s;
+            white-space: nowrap;
+            font-family: inherit;
+        }
+        .dw-chip:hover { border-color: #444449; color: #f0f0f2; }
+        .dw-chip.selected {
+            border-color: var(--chip-color, #8b5cf6);
+            background: color-mix(in srgb, var(--chip-color, #8b5cf6) 12%, transparent);
+            color: #f0f0f2;
+        }
+        .dw-chip .chip-hours {
+            font-size: 0.625rem;
+            font-weight: 600;
+            font-family: 'DM Mono', monospace;
+            color: #5c5c6b;
+        }
+        .dw-chip.selected .chip-hours { color: var(--chip-color, #8b5cf6); opacity: 0.8; }
+
+        /* ── DW report bar ─────────────────────────────── */
+        .dw-report-bar-fill { transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
+
+        /* ── Projects bar hide scrollbar ───────────────── */
+        #dw-projects-bar::-webkit-scrollbar { display: none; }
+
         /* ── Wishlist card ───────────────────────────── */
         .wish-card { transition: border-color 0.15s, transform 0.15s; }
         .wish-card:hover { border-color: #333338 !important; transform: translateY(-1px); }
@@ -1596,13 +1635,37 @@
                     </div>
                 </div>
 
+                <!-- Projects bar -->
+                <div class="mb-5">
+                    <div class="flex items-center gap-2 overflow-x-auto pb-2" id="dw-projects-bar" style="-webkit-overflow-scrolling:touch;scrollbar-width:none;">
+                        <button onclick="createDWProject()"
+                                class="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all"
+                                style="background:#141416;border-color:#333338;color:#9898a6;">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 4v12M4 10h12"/></svg>
+                            New
+                        </button>
+                        <!-- Project chips rendered by JS into #dw-project-chips -->
+                        <div id="dw-project-chips" class="flex items-center gap-2"></div>
+                    </div>
+                </div>
+
                 <!-- Active session card -->
                 <div id="dw-active-card" class="hidden mb-5">
                     <div class="p-6 rounded-2xl text-center" style="background:linear-gradient(135deg,#17141e 0%,#1a1428 100%);border:1px solid rgba(139,92,246,0.25);">
-                        <div class="text-xs font-semibold mb-4" style="color:#8b5cf6;letter-spacing:0.08em;text-transform:uppercase;">Focus Mode Active</div>
+                        <!-- Status badge -->
+                        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full mb-5" style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.25);">
+                            <span class="w-1.5 h-1.5 rounded-full pulse" style="background:#ef4444;flex-shrink:0;"></span>
+                            <span class="text-xs font-bold tracking-widest" style="color:#ef4444;">IN FOCUS</span>
+                        </div>
 
-                        <div id="dw-timer" class="timer-display mb-2" style="color:#f0f0f2;">00:00:00</div>
-                        <div id="dw-project-name" class="text-sm mb-5" style="color:#9898a6;">General Focus</div>
+                        <div id="dw-timer" class="timer-display mb-3" style="color:#f0f0f2;">00:00:00</div>
+
+                        <div class="mb-1 text-xs font-semibold" style="color:#5c5c6b;letter-spacing:0.04em;text-transform:uppercase;">Project</div>
+                        <div id="dw-active-project" class="flex items-center justify-center gap-2 mb-2">
+                            <span id="dw-active-dot" class="w-2 h-2 rounded-full flex-shrink-0" style="background:#8b5cf6;"></span>
+                            <span id="dw-project-name" class="text-sm font-semibold" style="color:#f0f0f2;">General Focus</span>
+                        </div>
+                        <div id="dw-active-desc" class="text-xs mb-5 px-4 leading-relaxed" style="color:#9898a6;min-height:1rem;"></div>
 
                         <!-- Progress bar -->
                         <div class="h-1 rounded-full overflow-hidden max-w-xs mx-auto mb-5" style="background:rgba(139,92,246,0.15);">
@@ -1611,7 +1674,7 @@
 
                         <button onclick="endDeepWork()"
                                 class="px-8 py-2.5 rounded-xl font-semibold text-sm transition-all"
-                                style="background:rgba(139,92,246,0.1);color:#8b5cf6;border:1px solid rgba(139,92,246,0.3);">
+                                style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);">
                             End Session
                         </button>
                     </div>
@@ -1620,17 +1683,21 @@
                 <!-- Start session card -->
                 <div id="dw-start-card" class="hidden mb-5">
                     <div class="card p-5">
-                        <div class="text-sm font-semibold mb-4" style="color:#f0f0f2;">Start New Session</div>
+                        <div id="dw-start-project-label" class="flex items-center gap-2 mb-4">
+                            <span id="dw-start-dot" class="w-2 h-2 rounded-full flex-shrink-0" style="background:#8b5cf6;"></span>
+                            <span class="text-sm font-semibold" style="color:#f0f0f2;" id="dw-start-name">General Focus</span>
+                        </div>
                         <div class="space-y-3">
                             <div>
-                                <label class="field-label">Project (optional)</label>
-                                <select id="dw-project" class="w-full p-3 rounded-lg border text-sm">
-                                    <option value="">General Focus</option>
-                                </select>
+                                <label class="field-label" for="dw-notes">What are you working on?</label>
+                                <textarea id="dw-notes" class="w-full p-3 rounded-lg border text-sm" rows="3" placeholder="Describe your focus goal..."></textarea>
                             </div>
-                            <div>
-                                <label class="field-label">What are you working on?</label>
-                                <textarea id="dw-notes" class="w-full p-3 rounded-lg border text-sm" rows="2" placeholder="Describe your focus goal..."></textarea>
+                            <!-- Vikunja task selector (shown when Vikunja project is selected) -->
+                            <div id="dw-vikunja-tasks" class="hidden">
+                                <label class="field-label">Task (optional)</label>
+                                <select id="dw-task-id" class="w-full p-3 rounded-lg border text-sm">
+                                    <option value="">None</option>
+                                </select>
                             </div>
                             <button onclick="startDeepWork()"
                                     class="w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2"
@@ -1638,6 +1705,26 @@
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><circle cx="10" cy="10" r="7"/><path stroke-linecap="round" stroke-linejoin="round" d="M10 6v4l2.5 2.5"/></svg>
                                 Enter Deep Work
                             </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weekly report card -->
+                <div id="dw-report-card" class="card p-4 mb-5 hidden">
+                    <div class="section-label mb-3">This Week</div>
+                    <div class="flex items-baseline gap-2 mb-4">
+                        <span id="dw-report-total" class="font-mono font-bold" style="color:#f0f0f2;font-size:1.75rem;line-height:1;">0h</span>
+                        <span class="text-xs" style="color:#5c5c6b;">total focus time</span>
+                    </div>
+                    <div id="dw-report-bars" class="space-y-2.5 mb-4"></div>
+                    <div class="flex items-center gap-4 pt-3" style="border-top:1px solid #2a2a2e;">
+                        <div>
+                            <div id="dw-report-sessions" class="font-mono text-sm font-semibold" style="color:#f0f0f2;">0</div>
+                            <div class="text-xs" style="color:#5c5c6b;">Sessions</div>
+                        </div>
+                        <div>
+                            <div id="dw-report-avg" class="font-mono text-sm font-semibold" style="color:#f0f0f2;">0 min</div>
+                            <div class="text-xs" style="color:#5c5c6b;">Avg session</div>
                         </div>
                     </div>
                 </div>
@@ -2293,80 +2380,340 @@
     document.addEventListener('keydown', e => { if(e.key === 'Escape') hideModal(); });
     document.addEventListener('click', e => { if(e.target.id === 'modal') hideModal(); });
 
+    // ── Deep Work state ───────────────────────────────────────────
     let dwInterval;
-    async function loadDeepWork() {
-        const dw = await api('/deepwork/status');
-        const projects = await api('/projects');
-        if(!dw) return;
+    window._dwProjects = [];
+    window._dwSelectedProject = null;  // {id, name, color, source}
+    window._dwPendingDeleteId = null;
 
-        if(projects) {
-            $('#dw-project').innerHTML = '<option value="">General Focus</option>' +
-                projects.map(p => `<option value="${p.id}">${p.title || p.name}</option>`).join('');
+    // Default project colors palette
+    var DW_COLORS = ['#8b5cf6','#4f80ff','#22c55e','#f59e0b','#ef4444','#14b8a6','#f97316','#ec4899'];
+
+    function dwProjectColor(p) {
+        return (p && p.color) ? p.color : '#8b5cf6';
+    }
+
+    function dwFormatHours(minutes) {
+        if(!minutes) return '0h';
+        var h = Math.floor(minutes / 60);
+        var m = minutes % 60;
+        if(h === 0) return m + 'm';
+        if(m === 0) return h + 'h';
+        return h + 'h ' + m + 'm';
+    }
+
+    function dwFormatHoursDecimal(minutes) {
+        if(!minutes) return '0h';
+        return (minutes / 60).toFixed(1) + 'h';
+    }
+
+    function renderDWProjectChips() {
+        var chips = '';
+        var projects = window._dwProjects || [];
+        var selId = window._dwSelectedProject ? window._dwSelectedProject.id : null;
+
+        // "General Focus" chip (id = null)
+        var genSel = selId === null || selId === undefined;
+        chips += '<button onclick="selectDWProject(null)" class="dw-chip' + (genSel ? ' selected' : '') + '" style="--chip-color:#8b5cf6;">';
+        chips += '<span>General Focus</span>';
+        chips += '</button>';
+
+        for(var i = 0; i < projects.length; i++) {
+            var p = projects[i];
+            var isSel = selId === p.id;
+            var color = dwProjectColor(p);
+            var vikunjaBadge = (p.source === 'vikunja') ? '<span style="font-size:0.5rem;font-weight:700;letter-spacing:0.04em;background:rgba(79,128,255,0.18);color:#6b96ff;border-radius:3px;padding:0 3px;margin-left:3px;vertical-align:middle;">V</span>' : '';
+            chips += '<button onclick="selectDWProject(' + JSON.stringify(p.id) + ')" class="dw-chip' + (isSel ? ' selected' : '') + '" style="--chip-color:' + color + ';">';
+            chips += '<span>' + (p.name || p.title || 'Unnamed') + vikunjaBadge + '</span>';
+            if(p.total_minutes) {
+                chips += '<span class="chip-hours">' + dwFormatHoursDecimal(p.total_minutes) + '</span>';
+            }
+            chips += '</button>';
         }
+
+        var el = document.getElementById('dw-project-chips');
+        if(el) el.innerHTML = chips;
+    }
+
+    function selectDWProject(id) {
+        var projects = window._dwProjects || [];
+        if(id === null || id === undefined) {
+            window._dwSelectedProject = null;
+        } else {
+            var found = null;
+            for(var i = 0; i < projects.length; i++) {
+                if(projects[i].id === id) { found = projects[i]; break; }
+            }
+            window._dwSelectedProject = found || {id: id, name: 'Unknown', color: '#8b5cf6'};
+        }
+        renderDWProjectChips();
+        updateDWStartCard();
+
+        // If Vikunja project: try to load tasks
+        var sel = window._dwSelectedProject;
+        if(sel && sel.source === 'vikunja') {
+            loadDWVikunjaTasks(sel.id);
+        } else {
+            var tv = document.getElementById('dw-vikunja-tasks');
+            if(tv) tv.classList.add('hidden');
+        }
+    }
+
+    function updateDWStartCard() {
+        var sel = window._dwSelectedProject;
+        var name = sel ? (sel.name || sel.title || 'Unnamed') : 'General Focus';
+        var color = sel ? dwProjectColor(sel) : '#8b5cf6';
+        var dotEl = document.getElementById('dw-start-dot');
+        var nameEl = document.getElementById('dw-start-name');
+        if(dotEl) dotEl.style.background = color;
+        if(nameEl) nameEl.textContent = name;
+    }
+
+    async function loadDWVikunjaTasks(projectId) {
+        var tv = document.getElementById('dw-vikunja-tasks');
+        var ts = document.getElementById('dw-task-id');
+        if(!tv || !ts) return;
+        tv.classList.remove('hidden');
+        ts.innerHTML = '<option value="">Loading...</option>';
+        var tasks = await api('/vikunja/tasks?project_id=' + projectId);
+        if(tasks && tasks.length) {
+            ts.innerHTML = '<option value="">None</option>';
+            for(var i = 0; i < tasks.length; i++) {
+                ts.innerHTML += '<option value="' + tasks[i].id + '">' + (tasks[i].title || tasks[i].name) + '</option>';
+            }
+        } else {
+            ts.innerHTML = '<option value="">No tasks found</option>';
+        }
+    }
+
+    function createDWProject() {
+        var colOpts = '';
+        for(var ci = 0; ci < DW_COLORS.length; ci++) {
+            var hex = DW_COLORS[ci];
+            colOpts += '<button type="button" onclick="dwPickColor(this, \'' + hex + '\')" class="dw-color-btn" style="width:22px;height:22px;border-radius:50%;background:' + hex + ';border:2px solid transparent;cursor:pointer;transition:border-color 0.12s;flex-shrink:0;" data-color="' + hex + '"></button>';
+        }
+        var body = '<div class="space-y-3">'
+            + '<div>'
+            + '<label class="field-label" for="np-name">Project name</label>'
+            + '<input id="np-name" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="e.g. My Project" maxlength="60">'
+            + '</div>'
+            + '<div>'
+            + '<label class="field-label">Color</label>'
+            + '<div class="flex flex-wrap gap-2 mt-1" id="dw-color-picker">' + colOpts + '</div>'
+            + '<input type="hidden" id="np-color" value="' + DW_COLORS[0] + '">'
+            + '</div>'
+            + '<div class="flex gap-2 pt-1">'
+            + '<button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>'
+            + '<button onclick="saveDWProject()" class="btn-primary flex-1 py-2.5">Create project</button>'
+            + '</div>'
+            + '</div>';
+        showModal('New Project', body);
+        // Pre-select first color
+        setTimeout(function() {
+            var first = document.querySelector('.dw-color-btn');
+            if(first) dwPickColor(first, DW_COLORS[0]);
+        }, 60);
+    }
+
+    function dwPickColor(btn, hex) {
+        document.querySelectorAll('.dw-color-btn').forEach(function(b) {
+            b.style.borderColor = 'transparent';
+        });
+        btn.style.borderColor = '#fff';
+        var inp = document.getElementById('np-color');
+        if(inp) inp.value = hex;
+    }
+
+    async function saveDWProject() {
+        var name = (document.getElementById('np-name') || {}).value;
+        if(!name || !name.trim()) { showToast('Enter a project name', 'warning'); return; }
+        var color = (document.getElementById('np-color') || {}).value || '#8b5cf6';
+        var result = await api('/deepwork/projects', 'POST', {name: name.trim(), color: color});
+        hideModal();
+        if(result) {
+            showToast('Project created', 'success');
+            await loadDeepWork();
+            if(result.id) selectDWProject(result.id);
+        }
+    }
+
+    async function deleteDWSession(id, btn) {
+        if(window._dwPendingDeleteId === id) {
+            // Second click: confirm delete
+            window._dwPendingDeleteId = null;
+            await api('/deepwork/sessions/' + id, 'DELETE');
+            showToast('Session deleted', 'success');
+            loadDeepWork();
+        } else {
+            // First click: mark pending
+            window._dwPendingDeleteId = id;
+            if(btn) {
+                btn.textContent = 'Confirm';
+                btn.style.color = '#ef4444';
+                setTimeout(function() {
+                    if(window._dwPendingDeleteId === id) {
+                        window._dwPendingDeleteId = null;
+                        btn.textContent = 'X';
+                        btn.style.color = '';
+                    }
+                }, 3000);
+            }
+        }
+    }
+
+    async function loadDeepWork() {
+        var dwProjectsData = await api('/deepwork/projects');
+        var dw = await api('/deepwork/status');
+        var report = await api('/deepwork/report');
+
+        // Merge in generic /projects if deepwork/projects fails
+        if(!dwProjectsData) {
+            var gp = await api('/projects');
+            dwProjectsData = gp ? gp.map(function(p) { return {id: p.id, name: p.title || p.name, color: '#8b5cf6'}; }) : [];
+        }
+        window._dwProjects = dwProjectsData || [];
+
+        renderDWProjectChips();
+        updateDWStartCard();
+
+        if(!dw) return;
 
         clearInterval(dwInterval);
         if(dw.active) {
-            $('#dw-active-card').classList.remove('hidden');
-            $('#dw-start-card').classList.add('hidden');
-            $('#dw-project-name').textContent = dw.active.project_name || 'General Focus';
+            document.getElementById('dw-active-card').classList.remove('hidden');
+            document.getElementById('dw-start-card').classList.add('hidden');
 
-            const startStr = dw.active.started_at.replace(' ', 'T');
-            const start = new Date(startStr).getTime();
-            // Target: default 90 min session for progress bar
-            const targetMs = 90 * 60 * 1000;
+            var activeProject = dw.active.project_name || 'General Focus';
+            var activeColor = dw.active.project_color || '#8b5cf6';
+            var activeDot = document.getElementById('dw-active-dot');
+            var activeName = document.getElementById('dw-project-name');
+            var activeDesc = document.getElementById('dw-active-desc');
+            if(activeDot) activeDot.style.background = activeColor;
+            if(activeName) activeName.textContent = activeProject;
+            if(activeDesc) activeDesc.textContent = dw.active.notes || '';
 
-            dwInterval = setInterval(() => {
-                const elapsed = Date.now() - start;
-                const h = Math.floor(elapsed / 3600000);
-                const m = Math.floor((elapsed % 3600000) / 60000);
-                const s = Math.floor((elapsed % 60000) / 1000);
-                $('#dw-timer').textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-                const bar = $('#dw-session-bar');
-                if(bar) bar.style.width = Math.min(100, Math.round(elapsed/targetMs*100)) + '%';
+            var startStr = dw.active.started_at.replace(' ', 'T');
+            var start = new Date(startStr).getTime();
+            var targetMs = 90 * 60 * 1000;
+
+            dwInterval = setInterval(function() {
+                var elapsed = Date.now() - start;
+                var h = Math.floor(elapsed / 3600000);
+                var m = Math.floor((elapsed % 3600000) / 60000);
+                var s = Math.floor((elapsed % 60000) / 1000);
+                var timerEl = document.getElementById('dw-timer');
+                if(timerEl) timerEl.textContent = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+                var bar = document.getElementById('dw-session-bar');
+                if(bar) bar.style.width = Math.min(100, Math.round(elapsed / targetMs * 100)) + '%';
             }, 1000);
         } else {
-            $('#dw-active-card').classList.add('hidden');
-            $('#dw-start-card').classList.remove('hidden');
+            document.getElementById('dw-active-card').classList.add('hidden');
+            document.getElementById('dw-start-card').classList.remove('hidden');
         }
 
-        if(!dw.history.length) {
-            $('#dw-history').innerHTML = '<div class="empty-state"><p>No deep work sessions yet. Start your first session!</p></div>';
+        // Weekly report
+        var reportCard = document.getElementById('dw-report-card');
+        if(report && reportCard) {
+            reportCard.classList.remove('hidden');
+            var totalMins = report.total_minutes || 0;
+            var sessions = report.sessions || 0;
+            var avgMin = sessions > 0 ? Math.round(totalMins / sessions) : 0;
+
+            var totalEl = document.getElementById('dw-report-total');
+            if(totalEl) totalEl.textContent = dwFormatHoursDecimal(totalMins);
+            var sessEl = document.getElementById('dw-report-sessions');
+            if(sessEl) sessEl.textContent = sessions;
+            var avgEl = document.getElementById('dw-report-avg');
+            if(avgEl) avgEl.textContent = avgMin + ' min';
+
+            var byProject = report.by_project || [];
+            var maxMins = 1;
+            for(var bi = 0; bi < byProject.length; bi++) {
+                if(byProject[bi].minutes > maxMins) maxMins = byProject[bi].minutes;
+            }
+            var barsHtml = '';
+            for(var bj = 0; bj < byProject.length; bj++) {
+                var bp = byProject[bj];
+                var pct = Math.round((bp.minutes / maxMins) * 100);
+                var col = bp.color || '#8b5cf6';
+                barsHtml += '<div class="flex items-center gap-2">'
+                    + '<div class="text-xs truncate" style="color:#9898a6;min-width:80px;max-width:110px;">' + (bp.name || 'General Focus') + '</div>'
+                    + '<div class="flex-1 h-1.5 rounded-full overflow-hidden" style="background:#242428;">'
+                    + '<div class="dw-report-bar-fill h-full rounded-full" style="width:' + pct + '%;background:' + col + ';"></div>'
+                    + '</div>'
+                    + '<div class="text-xs font-mono font-semibold flex-shrink-0" style="color:#9898a6;min-width:38px;text-align:right;">' + dwFormatHoursDecimal(bp.minutes) + '</div>'
+                    + '</div>';
+            }
+            var barsEl = document.getElementById('dw-report-bars');
+            if(barsEl) barsEl.innerHTML = barsHtml || '<p class="text-xs" style="color:#5c5c6b;">No sessions this week yet.</p>';
+        }
+
+        // Session history
+        var histEl = document.getElementById('dw-history');
+        if(!dw.history || !dw.history.length) {
+            if(histEl) histEl.innerHTML = '<div class="empty-state"><p class="text-sm" style="color:#5c5c6b;">No deep work sessions yet. Start your first session!</p></div>';
             return;
         }
 
-        // Max duration for bar scaling
-        const maxMin = Math.max(...dw.history.map(h=>h.duration_minutes), 1);
-        $('#dw-history').innerHTML = dw.history.map(h => {
-            const barPct = Math.round((h.duration_minutes / maxMin) * 100);
-            const dateStr = new Date(h.ended_at).toLocaleDateString('en-US', {month:'short',day:'numeric'});
-            return `
-            <div class="card rounded-xl p-3" style="border:1px solid #2a2a2e;">
-                <div class="flex items-start justify-between mb-2">
-                    <div class="flex-1 min-w-0 pr-3">
-                        <div class="text-sm font-medium truncate" style="color:#f0f0f2;">${h.project_name || 'General Focus'}</div>
-                        <div class="text-xs mt-0.5" style="color:#5c5c6b;">${dateStr} · ${h.duration_minutes}m session</div>
-                    </div>
-                    <span class="font-mono text-xs font-semibold flex-shrink-0" style="color:#eab308;">+${h.points_earned}</span>
-                </div>
-                <div class="h-1 rounded-full overflow-hidden" style="background:#242428;">
-                    <div class="h-full rounded-full session-bar" style="width:${barPct}%;background:linear-gradient(90deg,#8b5cf6,#4f80ff);"></div>
-                </div>
-            </div>`;
-        }).join('');
+        var maxMin = 1;
+        for(var hi = 0; hi < dw.history.length; hi++) {
+            if(dw.history[hi].duration_minutes > maxMin) maxMin = dw.history[hi].duration_minutes;
+        }
+
+        var histHtml = '';
+        for(var hj = 0; hj < dw.history.length; hj++) {
+            var h = dw.history[hj];
+            var barPct = Math.round((h.duration_minutes / maxMin) * 100);
+            var sessionDate = new Date(h.ended_at);
+            var dateStr = sessionDate.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+            var timeStr = sessionDate.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+            var sessionColor = h.project_color || '#8b5cf6';
+            var durLabel = dwFormatHours(h.duration_minutes);
+            var notes = h.notes || h.description || '';
+            var sid = h.id;
+
+            histHtml += '<div class="card rounded-xl p-4" style="border:1px solid #2a2a2e;">'
+                + '<div class="flex items-start justify-between mb-2">'
+                + '<div class="flex items-center gap-2 flex-1 min-w-0 pr-2">'
+                + '<span class="w-2 h-2 rounded-full flex-shrink-0" style="background:' + sessionColor + ';"></span>'
+                + '<span class="text-sm font-semibold truncate" style="color:#f0f0f2;">' + (h.project_name || 'General Focus') + '</span>'
+                + '</div>'
+                + '<div class="flex items-center gap-2 flex-shrink-0">'
+                + '<span class="font-mono text-xs font-bold" style="color:#f0f0f2;">' + durLabel + '</span>'
+                + '<button onclick="deleteDWSession(' + sid + ', this)" class="action-link-danger text-xs px-1.5 py-0.5 rounded" style="font-size:0.75rem;padding:0.125rem 0.375rem;" title="Delete session">X</button>'
+                + '</div>'
+                + '</div>';
+            if(notes) {
+                histHtml += '<p class="text-xs leading-relaxed mb-2" style="color:#9898a6;">' + notes + '</p>';
+            }
+            histHtml += '<div class="flex items-center gap-2">'
+                + '<div class="flex-1 h-1 rounded-full overflow-hidden" style="background:#242428;">'
+                + '<div class="h-full rounded-full session-bar" style="width:' + barPct + '%;background:linear-gradient(90deg,' + sessionColor + ',#4f80ff);"></div>'
+                + '</div>'
+                + '<span class="text-xs flex-shrink-0" style="color:#5c5c6b;">' + dateStr + ' ' + timeStr + '</span>'
+                + '</div>'
+                + '</div>';
+        }
+        if(histEl) histEl.innerHTML = histHtml;
     }
 
     async function startDeepWork() {
+        var notes = (document.getElementById('dw-notes') || {}).value || '';
+        var taskId = (document.getElementById('dw-task-id') || {}).value || null;
+        var sel = window._dwSelectedProject;
+        var projectId = sel ? sel.id : null;
         await api('/deepwork/start', 'POST', {
-            project_id: $('#dw-project').value || null,
-            notes: $('#dw-notes').value
+            project_id: projectId,
+            notes: notes,
+            task_id: taskId || null
         });
         showToast('Focus Mode engaged', 'info');
         loadDeepWork();
     }
 
     async function endDeepWork() {
-        const r = await api('/deepwork/end', 'POST');
-        if(r) showToast(`Session complete: ${r.duration}m! +${r.points} XP`, 'success');
+        var r = await api('/deepwork/end', 'POST');
+        if(r) showToast('Session complete: ' + (r.duration || 0) + 'm! +' + (r.points || 0) + ' XP', 'success');
         loadDeepWork(); loadStats();
     }
 

@@ -134,6 +134,18 @@ MIGRATIONS = [
         );
         CREATE INDEX IF NOT EXISTS idx_chat_created ON chat_messages(created_at);
     '''),
+    (10, "Add deep_work_projects table and extend deep_work_sessions", '''
+        CREATE TABLE IF NOT EXISTS deep_work_projects (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            color TEXT DEFAULT '#4f80ff',
+            active INTEGER DEFAULT 1,
+            total_minutes INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_dw_projects_active ON deep_work_projects(active);
+    '''),
     (8, "Add finance tables (rules, log, advice) and discover columns on wishlist", '''
         CREATE TABLE IF NOT EXISTS finance_rules (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -241,7 +253,7 @@ def run_migrations(conn) -> None:
 
     # Migration 8 (extra): Add Discover columns to wishlist — ALTER TABLE is not
     # idempotent in SQLite so each column is guarded by a presence check.
-    current = get_current_version(conn)
+    current = get_current_version(conn)  # re-read after possible earlier changes
     if current < 8:
         wishlist_cols = [r[1] for r in conn.execute("PRAGMA table_info(wishlist)").fetchall()]
         discover_cols = [
@@ -256,3 +268,20 @@ def run_migrations(conn) -> None:
                 conn.execute(f"ALTER TABLE wishlist ADD COLUMN {col_name} {col_def}")
         conn.commit()
         print("  Migration 8 (wishlist discover columns): applied")
+
+    # Migration 10 (extra): Add new columns to deep_work_sessions. SQLite does
+    # not support ADD COLUMN IF NOT EXISTS so we guard each with a PRAGMA check.
+    current = get_current_version(conn)
+    if current < 10:
+        dw_cols = [r[1] for r in conn.execute("PRAGMA table_info(deep_work_sessions)").fetchall()]
+        dw_new_cols = [
+            ("local_project_id", "INTEGER"),
+            ("vikunja_task_id",  "TEXT"),
+            ("description",      "TEXT DEFAULT ''"),
+        ]
+        for col_name, col_def in dw_new_cols:
+            if col_name not in dw_cols:
+                conn.execute(f"ALTER TABLE deep_work_sessions ADD COLUMN {col_name} {col_def}")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_dw_sessions_local_project ON deep_work_sessions(local_project_id)")
+        conn.commit()
+        print("  Migration 10 (deep_work_sessions new columns): applied")

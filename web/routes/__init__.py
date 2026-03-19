@@ -28,6 +28,7 @@ from .app_log import app_log_bp
 from .finance import finance_bp
 from .discover import discover_bp
 from .chat import chat_bp
+from .deepwork import deepwork_bp
 
 __all__ = [
     'auth_bp',
@@ -54,4 +55,5 @@ __all__ = [
     'finance_bp',
     'discover_bp',
     'chat_bp',
+    'deepwork_bp',
 ]

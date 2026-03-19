@@ -355,65 +355,30 @@ def complete_wishlist_item(item_id):
     return jsonify({'success': True})
 
 
-# ============== DEEP WORK ==============
+# ============== DEEP WORK (backwards-compat shims) ==============
+# These routes are kept so any existing clients that still call /api/deepwork/*
+# via the misc blueprint continue to work. They delegate to the canonical
+# implementations in web/routes/deepwork.py.
+
 @misc_bp.route('/deepwork/status')
 @login_required
 def get_deepwork_status():
-    conn = get_connection()
-    active = conn.execute(
-        """SELECT dw.*, p.name as project_name FROM deep_work_sessions dw 
-           LEFT JOIN projects p ON dw.project_id = p.id 
-           WHERE dw.ended_at IS NULL ORDER BY dw.started_at DESC LIMIT 1"""
-    ).fetchone()
-    
-    history = conn.execute(
-        """SELECT dw.*, p.name as project_name FROM deep_work_sessions dw 
-           LEFT JOIN projects p ON dw.project_id = p.id 
-           WHERE dw.ended_at IS NOT NULL ORDER BY dw.ended_at DESC LIMIT 5"""
-    ).fetchall()
-    
-    return jsonify({
-        'active': dict(active) if active else None,
-        'history': [dict(r) for r in history]
-    })
+    from .deepwork import get_status
+    return get_status()
 
 
 @misc_bp.route('/deepwork/start', methods=['POST'])
 @login_required
 def start_deepwork():
-    data = request.json
-    conn = get_connection()
-    conn.execute("UPDATE deep_work_sessions SET ended_at = CURRENT_TIMESTAMP WHERE ended_at IS NULL")
-    
-    cursor = conn.execute(
-        "INSERT INTO deep_work_sessions (project_id, notes) VALUES (?, ?)",
-        (data.get('project_id'), data.get('notes', ''))
-    )
-    conn.commit()
-    return jsonify({'success': True, 'id': cursor.lastrowid})
+    from .deepwork import start_session
+    return start_session()
 
 
 @misc_bp.route('/deepwork/end', methods=['POST'])
 @login_required
 def end_deepwork():
-    conn = get_connection()
-    active = conn.execute("SELECT id, started_at FROM deep_work_sessions WHERE ended_at IS NULL").fetchone()
-    if not active:
-        return jsonify({'error': 'No active session'}), 400
-        
-    start_at = datetime.fromisoformat(active['started_at'].replace(' ', 'T'))
-    end_at = datetime.now()
-    duration = int((end_at - start_at).total_seconds() / 60)
-    
-    points = int(duration / 10) * 5
-    
-    conn.execute(
-        "UPDATE deep_work_sessions SET ended_at = ?, duration_minutes = ?, points_earned = ? WHERE id = ?",
-        (end_at.isoformat(), duration, points, active['id'])
-    )
-    stats_repo.add_points('deepwork', points, f"Deep Work: {duration} mins")
-    conn.commit()
-    return jsonify({'success': True, 'duration': duration, 'points': points})
+    from .deepwork import end_session
+    return end_session()
 
 
 # ============== CALENDAR ==============
