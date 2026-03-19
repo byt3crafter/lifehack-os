@@ -438,6 +438,135 @@
             border: 1px dashed #2a2a2e;
         }
 
+        /* ── Discover cards ──────────────────────────── */
+        .disc-card {
+            background: #1c1c20;
+            border: 1px solid #2a2a2e;
+            border-radius: 14px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+        }
+        .disc-card:hover {
+            border-color: #333338;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+            transform: translateY(-1px);
+        }
+        .disc-photo {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            display: block;
+            flex-shrink: 0;
+        }
+        .disc-placeholder {
+            width: 100%;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.75rem;
+            flex-shrink: 0;
+        }
+        .disc-body {
+            padding: 0.875rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .disc-title {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: #f0f0f2;
+            line-height: 1.3;
+            margin-bottom: 0.25rem;
+        }
+        .disc-meta {
+            font-size: 0.75rem;
+            color: #9898a6;
+            margin-bottom: 0.5rem;
+        }
+        .disc-desc {
+            font-size: 0.8125rem;
+            color: #9898a6;
+            line-height: 1.5;
+            flex: 1;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .disc-actions {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            margin-top: 0.75rem;
+            padding-top: 0.625rem;
+            border-top: 1px solid #242428;
+            flex-wrap: wrap;
+        }
+        .disc-photo-badge {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0,0,0,0.65);
+            color: #fff;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            padding: 0.2rem 0.5rem;
+            border-radius: 100px;
+            backdrop-filter: blur(4px);
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.12);
+        }
+        .disc-photo-wrap {
+            position: relative;
+            flex-shrink: 0;
+        }
+        .disc-stars {
+            display: flex;
+            align-items: center;
+            gap: 1px;
+            margin-bottom: 0.25rem;
+        }
+        /* Gallery overlay */
+        #disc-gallery-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 500;
+            background: rgba(0,0,0,0.92);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+        #disc-gallery-overlay.hidden { display: none; }
+        #disc-gallery-img {
+            max-width: min(90vw, 860px);
+            max-height: 70vh;
+            object-fit: contain;
+            border-radius: 10px;
+        }
+        .disc-gallery-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        /* Photo upload preview */
+        .disc-photo-preview {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
         /* ── Fasting ring ────────────────────────────── */
         #fast-ring-fill { transition: stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1); }
 
@@ -1906,7 +2035,20 @@
                     <button onclick="discoverTab('done')" id="dtab-done" class="flex-1 py-1.5 rounded-lg text-sm font-medium transition-colors" style="background:transparent;color:#9898a6;">Done</button>
                 </div>
 
-                <div id="discover-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+                <div id="discover-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;"></div>
+            </div>
+
+            <!-- Gallery overlay (hidden by default) -->
+            <div id="disc-gallery-overlay" class="hidden" role="dialog" aria-modal="true" aria-label="Photo gallery">
+                <button onclick="closeDiscoverGallery()" aria-label="Close gallery"
+                    style="position:absolute;top:1rem;right:1rem;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:50%;width:2.5rem;height:2.5rem;color:#fff;font-size:1.25rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#215;</button>
+                <button onclick="discGalleryNav(-1)" aria-label="Previous photo"
+                    style="position:absolute;left:1rem;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:50%;width:2.5rem;height:2.5rem;color:#fff;font-size:1.25rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#8249;</button>
+                <img id="disc-gallery-img" src="" alt="Discovery photo">
+                <div id="disc-gallery-counter" style="color:rgba(255,255,255,0.6);font-size:0.8125rem;"></div>
+                <div id="disc-gallery-dots" style="display:flex;gap:6px;"></div>
+                <button onclick="discGalleryNav(1)" aria-label="Next photo"
+                    style="position:absolute;right:1rem;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:50%;width:2.5rem;height:2.5rem;color:#fff;font-size:1.25rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#8250;</button>
             </div>
 
             <!-- SETTINGS -->
@@ -6713,6 +6855,17 @@
     // ── Discover ──────────────────────────────────────────────────
     var _discoverActiveTab = 'want';
     var _discoverItems = [];
+    var _discoverGalleryPhotos = [];
+    var _discoverGalleryIdx = 0;
+
+    var _discCatColors = {
+        Places:      'linear-gradient(135deg,#1a2540,#1e3a5f)',
+        Skills:      'linear-gradient(135deg,#1a2a1a,#1e4a2a)',
+        Experiences: 'linear-gradient(135deg,#2a1a3a,#3a1a4a)',
+        Food:        'linear-gradient(135deg,#3a2010,#4a2a10)',
+        Creative:    'linear-gradient(135deg,#1a1a3a,#2a1a4a)'
+    };
+    var _discCatIcons = {Places:'&#128205;', Skills:'&#127979;', Experiences:'&#127881;', Food:'&#127859;', Creative:'&#127912;'};
 
     function discoverTab(tab) {
         _discoverActiveTab = tab;
@@ -6738,12 +6891,29 @@
         renderDiscoverGrid();
     }
 
+    function _discGetPhotos(x) {
+        var photos = [];
+        try { photos = JSON.parse(x.photos_json || '[]'); } catch(e) {}
+        if(!photos.length && x.photo_url) photos = [x.photo_url];
+        return photos;
+    }
+
+    function _discStars(rating, size) {
+        var s = size || '1rem';
+        var html = '<div class="disc-stars">';
+        for(var i = 1; i <= 5; i++) {
+            html += '<span style="font-size:' + s + ';color:' + (i <= (rating || 0) ? '#eab308' : '#333338') + ';">&#9733;</span>';
+        }
+        html += '</div>';
+        return html;
+    }
+
     function renderDiscoverGrid() {
         var el = document.getElementById('discover-grid');
         if(!el) return;
         var tab = _discoverActiveTab || 'want';
         var filtered = _discoverItems.filter(function(x) {
-            if(tab === 'want') return x.status === 'want' || x.status === 'want' || !x.status;
+            if(tab === 'want') return x.status === 'want' || !x.status;
             if(tab === 'planning') return x.status === 'planning';
             if(tab === 'done') return x.status === 'done' || x.status === 'completed';
             return true;
@@ -6751,57 +6921,127 @@
 
         if(!filtered.length) {
             el.innerHTML = '<div class="empty-state" style="grid-column:1/-1;">'
-                + '<p>Nothing here yet. Add a discovery to get started!</p>'
+                + '<p style="color:#5c5c6b;">Nothing here yet. Add a discovery to get started!</p>'
                 + '</div>';
             return;
         }
 
-        var catIcons = {Places: '&#128205;', Skills: '&#127979;', Experiences: '&#127881;', Food: '&#127859;', Creative: '&#127912;'};
-
         el.innerHTML = filtered.map(function(x) {
-            var icon = catIcons[x.category] || '&#127775;';
-            if(x.status === 'done') {
-                // Completed card with photo
-                var stars = '';
-                for(var si = 1; si <= 5; si++) {
-                    stars += '<span style="color:' + (si <= (x.rating || 0) ? '#eab308' : '#2a2a2e') + ';">&#9733;</span>';
+            var icon = _discCatIcons[x.category] || '&#127775;';
+            var bg   = _discCatColors[x.category] || 'linear-gradient(135deg,#1a1a20,#242428)';
+            var photos = _discGetPhotos(x);
+            var mainPhoto = photos[0] || null;
+            var safeTitle = x.title.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
+            if(x.status === 'done' || x.status === 'completed') {
+                var dateStr = x.completed_date
+                    ? new Date(x.completed_date + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})
+                    : '';
+                var photoSection = '';
+                if(mainPhoto) {
+                    photoSection = '<div class="disc-photo-wrap">'
+                        + '<img src="' + mainPhoto + '" alt="" class="disc-photo">'
+                        + (photos.length > 1
+                            ? '<button class="disc-photo-badge" onclick="viewDiscoverGallery(' + x.id + ')" aria-label="View ' + photos.length + ' photos">'
+                              + '&#128247; +' + (photos.length - 1) + ' more'
+                              + '</button>'
+                            : '')
+                        + '</div>';
+                } else {
+                    photoSection = '<div class="disc-placeholder" style="background:' + bg + ';">' + icon + '</div>';
                 }
-                var dateStr = x.completed_date ? new Date(x.completed_date + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '';
-                return '<div class="card rounded-xl overflow-hidden" style="border:1px solid #2a2a2e;">'
-                    + (x.photo_url ? '<img src="' + x.photo_url + '" alt="" class="w-full object-cover" style="height:140px;">' : '<div class="w-full flex items-center justify-center" style="height:100px;background:#141416;font-size:2.5rem;">' + icon + '</div>')
-                    + '<div class="p-3">'
-                    + '<div class="flex items-center gap-1 mb-0.5">' + stars + '</div>'
-                    + '<div class="text-sm font-semibold" style="color:#f0f0f2;">' + x.title + '</div>'
-                    + (x.notes ? '<p class="text-xs mt-1 leading-relaxed" style="color:#9898a6;">"' + x.notes + '"</p>' : '')
-                    + '<div class="text-xs mt-2" style="color:#5c5c6b;">Done' + (dateStr ? ' · ' + dateStr : '') + '</div>'
-                    + '<div class="flex items-center gap-1 mt-2 pt-2" style="border-top:1px solid #242428;">'
+                return '<div class="disc-card">'
+                    + photoSection
+                    + '<div class="disc-body">'
+                    + _discStars(x.rating, '1.125rem')
+                    + '<div class="disc-title">' + x.title + '</div>'
+                    + '<div class="disc-meta">' + (x.category || 'Discover') + (x.location ? ' &middot; ' + x.location : '') + '</div>'
+                    + (x.notes ? '<p class="disc-desc" style="font-style:italic;">"' + x.notes + '"</p>' : '')
+                    + '<div class="disc-actions">'
+                    + '<span style="font-size:0.6875rem;color:#5c5c6b;flex:1;">Done' + (dateStr ? ' &middot; ' + dateStr : '') + '</span>'
+                    + '<button onclick="editDiscoveryModal(' + x.id + ')" class="action-link">Edit</button>'
                     + '<button onclick="deleteDiscovery(' + x.id + ')" class="action-link-danger">Delete</button>'
                     + '</div>'
                     + '</div>'
                     + '</div>';
             } else {
-                // Want to do / Planning card
-                return '<div class="card rounded-xl p-4" style="border:1px solid #2a2a2e;">'
-                    + '<div class="flex items-start gap-3 mb-3">'
-                    + '<div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl" style="background:#242428;">' + icon + '</div>'
-                    + '<div class="flex-1 min-w-0">'
-                    + '<div class="text-sm font-semibold" style="color:#f0f0f2;">' + x.title + '</div>'
-                    + '<div class="text-xs mt-0.5" style="color:#9898a6;">' + (x.category || 'Discover') + (x.location ? ' · ' + x.location : '') + '</div>'
-                    + '<div class="text-xs mt-0.5" style="color:#5c5c6b;">' + (x.status === 'planning' ? 'Planning' : 'Want to do') + '</div>'
+                var photoSection = '';
+                if(mainPhoto) {
+                    photoSection = '<div class="disc-photo-wrap">'
+                        + '<img src="' + mainPhoto + '" alt="" class="disc-photo">'
+                        + '</div>';
+                } else {
+                    photoSection = '<div class="disc-placeholder" style="background:' + bg + ';">' + icon + '</div>';
+                }
+                return '<div class="disc-card">'
+                    + photoSection
+                    + '<div class="disc-body">'
+                    + '<div class="disc-title">' + x.title + '</div>'
+                    + '<div class="disc-meta">'
+                    + (x.category || 'Discover') + (x.location ? ' &middot; ' + x.location : '')
                     + '</div>'
-                    + '</div>'
-                    + (x.description ? '<p class="text-xs leading-relaxed mb-3" style="color:#9898a6;">' + x.description + '</p>' : '')
-                    + '<div class="flex items-center gap-1 pt-2" style="border-top:1px solid #242428;">'
-                    + '<button onclick="completeDiscoveryModal(' + x.id + ', \'' + x.title.replace(/'/g, "\\'") + '\')" class="action-link-success">Mark Done</button>'
-                    + '<button onclick="startDiscoveryAs(' + x.id + ', \'habit\', \'' + x.title.replace(/'/g, "\\'") + '\')" class="action-link">Start as Habit</button>'
-                    + '<button onclick="startDiscoveryAs(' + x.id + ', \'challenge\', \'' + x.title.replace(/'/g, "\\'") + '\')" class="action-link">Challenge</button>'
+                    + (x.description ? '<p class="disc-desc">' + x.description + '</p>' : '')
+                    + '<div class="disc-actions">'
+                    + '<button onclick="editDiscoveryModal(' + x.id + ')" class="action-link">Edit</button>'
+                    + '<button onclick="completeDiscoveryModal(' + x.id + ', \'' + safeTitle + '\')" class="action-link-success">Mark Done</button>'
+                    + '<button onclick="startDiscoveryAs(' + x.id + ', \'habit\', \'' + safeTitle + '\')" class="action-link">As Habit</button>'
+                    + '<button onclick="startDiscoveryAs(' + x.id + ', \'challenge\', \'' + safeTitle + '\')" class="action-link">Challenge</button>'
                     + '<button onclick="deleteDiscovery(' + x.id + ')" class="action-link-danger">Delete</button>'
+                    + '</div>'
                     + '</div>'
                     + '</div>';
             }
         }).join('');
     }
 
+    // ── Gallery ───────────────────────────────────────────────────
+    function viewDiscoverGallery(id) {
+        var item = _discoverItems.find(function(x) { return x.id === id; });
+        if(!item) return;
+        var photos = _discGetPhotos(item);
+        if(!photos.length) return;
+        _discoverGalleryPhotos = photos;
+        _discoverGalleryIdx = 0;
+        _discGalleryRender();
+        var overlay = document.getElementById('disc-gallery-overlay');
+        if(overlay) overlay.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function _discGalleryRender() {
+        var img = document.getElementById('disc-gallery-img');
+        var counter = document.getElementById('disc-gallery-counter');
+        var dots = document.getElementById('disc-gallery-dots');
+        if(!img || !_discoverGalleryPhotos.length) return;
+        img.src = _discoverGalleryPhotos[_discoverGalleryIdx];
+        if(counter) counter.textContent = (_discoverGalleryIdx + 1) + ' / ' + _discoverGalleryPhotos.length;
+        if(dots) {
+            dots.innerHTML = _discoverGalleryPhotos.map(function(p, i) {
+                return '<button class="disc-gallery-dot" onclick="discGalleryGoTo(' + i + ')" aria-label="Photo ' + (i+1) + '"'
+                    + ' style="background:' + (i === _discoverGalleryIdx ? '#fff' : 'rgba(255,255,255,0.3)') + ';"></button>';
+            }).join('');
+        }
+    }
+
+    function discGalleryNav(dir) {
+        var len = _discoverGalleryPhotos.length;
+        if(!len) return;
+        _discoverGalleryIdx = (_discoverGalleryIdx + dir + len) % len;
+        _discGalleryRender();
+    }
+
+    function discGalleryGoTo(idx) {
+        _discoverGalleryIdx = idx;
+        _discGalleryRender();
+    }
+
+    function closeDiscoverGallery() {
+        var overlay = document.getElementById('disc-gallery-overlay');
+        if(overlay) overlay.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+    // ── Add discovery modal ───────────────────────────────────────
     function addDiscoveryModal() {
         showModal('Add Discovery',
             '<div class="space-y-3">'
@@ -6836,7 +7076,8 @@
             + '</div>'
             + '<div>'
             + '<label class="field-label">Photo (optional)</label>'
-            + '<input type="file" id="nd-photo" accept="image/*" class="w-full px-3 py-2 rounded-lg border text-sm">'
+            + '<img id="nd-photo-preview" class="disc-photo-preview hidden" alt="">'
+            + '<input type="file" id="nd-photo" accept="image/*" class="w-full px-3 py-2 rounded-lg border text-sm" onchange="discPreviewPhoto(this,\'nd-photo-preview\')">'
             + '</div>'
             + '<div class="flex gap-2 pt-1">'
             + '<button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>'
@@ -6844,6 +7085,17 @@
             + '</div>'
             + '</div>'
         );
+    }
+
+    function discPreviewPhoto(input, previewId) {
+        var preview = document.getElementById(previewId);
+        if(!preview || !input.files || !input.files.length) return;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            preview.classList.remove('hidden');
+        };
+        reader.readAsDataURL(input.files[0]);
     }
 
     async function saveDiscovery() {
@@ -6857,7 +7109,6 @@
             description: (document.getElementById('nd-desc') || {}).value || ''
         };
         var r = await api('/discover', 'POST', data);
-        // Upload photo if selected
         var photoInput = document.getElementById('nd-photo');
         if(r && r.id && photoInput && photoInput.files && photoInput.files.length) {
             var formData = new FormData();
@@ -6869,30 +7120,108 @@
         loadDiscover();
     }
 
-    function completeDiscoveryModal(id, name) {
-        showModal('Complete: ' + name,
+    // ── Edit discovery modal ──────────────────────────────────────
+    function editDiscoveryModal(id) {
+        var item = _discoverItems.find(function(x) { return x.id === id; });
+        if(!item) return;
+        var photos = _discGetPhotos(item);
+        var mainPhoto = photos[0] || null;
+        var catOptions = ['Places','Skills','Experiences','Food','Creative'];
+        var catHtml = catOptions.map(function(c) {
+            return '<option value="' + c + '"' + (item.category === c ? ' selected' : '') + '>' + c + '</option>';
+        }).join('');
+        var statusOptions = [['want','Want to Do'],['planning','Planning'],['done','Done']];
+        var statusHtml = statusOptions.map(function(s) {
+            return '<option value="' + s[0] + '"' + (item.status === s[0] ? ' selected' : '') + '>' + s[1] + '</option>';
+        }).join('');
+        var photoHtml = mainPhoto
+            ? '<img id="ed-photo-preview" class="disc-photo-preview" src="' + mainPhoto + '" alt="Current photo">'
+            + '<p style="font-size:0.75rem;color:#5c5c6b;margin-bottom:0.5rem;">Change photo:</p>'
+            : '<img id="ed-photo-preview" class="disc-photo-preview hidden" alt="">';
+
+        showModal('Edit Discovery',
             '<div class="space-y-3">'
             + '<div>'
-            + '<label class="field-label">Rating (1-5)</label>'
-            + '<div class="flex gap-2">'
-            + '<button onclick="selectDiscoverRating(1,this)" class="discover-rating-btn text-2xl" aria-label="1 star">&#9733;</button>'
-            + '<button onclick="selectDiscoverRating(2,this)" class="discover-rating-btn text-2xl" aria-label="2 stars">&#9733;</button>'
-            + '<button onclick="selectDiscoverRating(3,this)" class="discover-rating-btn text-2xl" aria-label="3 stars">&#9733;</button>'
-            + '<button onclick="selectDiscoverRating(4,this)" class="discover-rating-btn text-2xl" aria-label="4 stars">&#9733;</button>'
-            + '<button onclick="selectDiscoverRating(5,this)" class="discover-rating-btn text-2xl" aria-label="5 stars">&#9733;</button>'
+            + '<label class="field-label">Title</label>'
+            + '<input id="ed-title" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="' + item.title.replace(/"/g, '&quot;') + '">'
+            + '</div>'
+            + '<div>'
+            + '<label class="field-label">Category</label>'
+            + '<select id="ed-category" class="w-full px-3 py-2.5 rounded-lg border text-sm">' + catHtml + '</select>'
+            + '</div>'
+            + '<div>'
+            + '<label class="field-label">Status</label>'
+            + '<select id="ed-status" class="w-full px-3 py-2.5 rounded-lg border text-sm">' + statusHtml + '</select>'
+            + '</div>'
+            + '<div>'
+            + '<label class="field-label">Location (optional)</label>'
+            + '<input id="ed-location" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="' + (item.location || '').replace(/"/g, '&quot;') + '" placeholder="City, Country">'
+            + '</div>'
+            + '<div>'
+            + '<label class="field-label">Description (optional)</label>'
+            + '<textarea id="ed-desc" class="w-full px-3 py-2.5 rounded-lg border text-sm" rows="2">' + (item.description || '') + '</textarea>'
+            + '</div>'
+            + '<div>'
+            + '<label class="field-label">Photo</label>'
+            + photoHtml
+            + '<input type="file" id="ed-photo" accept="image/*" class="w-full px-3 py-2 rounded-lg border text-sm" onchange="discPreviewPhoto(this,\'ed-photo-preview\')">'
+            + '</div>'
+            + '<div class="flex gap-2 pt-1">'
+            + '<button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>'
+            + '<button onclick="saveEditDiscovery(' + id + ')" class="btn-primary flex-1 py-2.5">Save</button>'
+            + '</div>'
+            + '</div>'
+        );
+    }
+
+    async function saveEditDiscovery(id) {
+        var title = (document.getElementById('ed-title') || {}).value || '';
+        if(!title.trim()) return showToast('Enter a title', 'error');
+        var payload = {
+            title: title,
+            category: (document.getElementById('ed-category') || {}).value || 'Places',
+            status: (document.getElementById('ed-status') || {}).value || 'want',
+            location: (document.getElementById('ed-location') || {}).value || '',
+            description: (document.getElementById('ed-desc') || {}).value || ''
+        };
+        var r = await api('/discover/' + id, 'PUT', payload);
+        var photoInput = document.getElementById('ed-photo');
+        if(r && !r.error && photoInput && photoInput.files && photoInput.files.length) {
+            var formData = new FormData();
+            formData.append('image', photoInput.files[0]);
+            await fetch('/api/discover/' + id + '/upload-photo', {method: 'POST', body: formData, credentials: 'same-origin'});
+        }
+        hideModal();
+        if(r && !r.error) showToast('Discovery updated!', 'success');
+        loadDiscover();
+    }
+
+    // ── Complete discovery modal ──────────────────────────────────
+    function completeDiscoveryModal(id, name) {
+        showModal('Mark Done: ' + name,
+            '<div class="space-y-3">'
+            + '<div>'
+            + '<label class="field-label">How was it? (1-5 stars)</label>'
+            + '<div style="display:flex;gap:4px;">'
+            + '<button onclick="selectDiscoverRating(1,this)" class="discover-rating-btn" aria-label="1 star" style="font-size:1.75rem;color:#333338;background:none;border:none;cursor:pointer;padding:0 3px;font-family:inherit;line-height:1;">&#9733;</button>'
+            + '<button onclick="selectDiscoverRating(2,this)" class="discover-rating-btn" aria-label="2 stars" style="font-size:1.75rem;color:#333338;background:none;border:none;cursor:pointer;padding:0 3px;font-family:inherit;line-height:1;">&#9733;</button>'
+            + '<button onclick="selectDiscoverRating(3,this)" class="discover-rating-btn" aria-label="3 stars" style="font-size:1.75rem;color:#333338;background:none;border:none;cursor:pointer;padding:0 3px;font-family:inherit;line-height:1;">&#9733;</button>'
+            + '<button onclick="selectDiscoverRating(4,this)" class="discover-rating-btn" aria-label="4 stars" style="font-size:1.75rem;color:#333338;background:none;border:none;cursor:pointer;padding:0 3px;font-family:inherit;line-height:1;">&#9733;</button>'
+            + '<button onclick="selectDiscoverRating(5,this)" class="discover-rating-btn" aria-label="5 stars" style="font-size:1.75rem;color:#333338;background:none;border:none;cursor:pointer;padding:0 3px;font-family:inherit;line-height:1;">&#9733;</button>'
             + '</div>'
             + '</div>'
             + '<div>'
-            + '<label class="field-label">Notes</label>'
-            + '<textarea id="dc-notes" class="w-full px-3 py-2.5 rounded-lg border text-sm" rows="2" placeholder="How was it?"></textarea>'
+            + '<label class="field-label">Your thoughts</label>'
+            + '<textarea id="dc-notes" class="w-full px-3 py-2.5 rounded-lg border text-sm" rows="2" placeholder="How was it? What stood out?"></textarea>'
             + '</div>'
             + '<div>'
             + '<label class="field-label">Date completed</label>'
             + '<input id="dc-date" type="date" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="' + new Date().toISOString().split('T')[0] + '">'
             + '</div>'
             + '<div>'
-            + '<label class="field-label">Photo (optional)</label>'
-            + '<input type="file" id="dc-photo" accept="image/*" class="w-full px-3 py-2 rounded-lg border text-sm" style="cursor:pointer;">'
+            + '<label class="field-label">Photos (optional, select multiple)</label>'
+            + '<div id="dc-photo-previews" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:0.375rem;"></div>'
+            + '<input type="file" id="dc-photo" accept="image/*" multiple class="w-full px-3 py-2 rounded-lg border text-sm" style="cursor:pointer;" onchange="discPreviewMultiPhotos(this)">'
             + '</div>'
             + '<div class="flex gap-2 pt-1">'
             + '<button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>'
@@ -6903,16 +7232,35 @@
         window._discoverRating = 0;
     }
 
+    function discPreviewMultiPhotos(input) {
+        var container = document.getElementById('dc-photo-previews');
+        if(!container || !input.files || !input.files.length) return;
+        container.innerHTML = '';
+        var files = Array.from(input.files);
+        files.slice(0, 6).forEach(function(file) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.cssText = 'width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid #2a2a2e;';
+                img.alt = '';
+                container.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+        });
+        if(files.length > 6) {
+            var more = document.createElement('div');
+            more.style.cssText = 'width:60px;height:60px;border-radius:6px;border:1px solid #2a2a2e;display:flex;align-items:center;justify-content:center;font-size:0.75rem;color:#9898a6;background:#141416;';
+            more.textContent = '+' + (files.length - 6);
+            container.appendChild(more);
+        }
+    }
+
     function selectDiscoverRating(val, btn) {
         window._discoverRating = val;
         var btns = document.querySelectorAll('.discover-rating-btn');
         for(var i = 0; i < btns.length; i++) {
-            btns[i].style.color = (i + 1) <= val ? '#eab308' : '#2a2a2e';
-            btns[i].style.background = 'none';
-            btns[i].style.border = 'none';
-            btns[i].style.cursor = 'pointer';
-            btns[i].style.padding = '0 2px';
-            btns[i].style.fontFamily = 'inherit';
+            btns[i].style.color = (i + 1) <= val ? '#eab308' : '#333338';
         }
     }
 
@@ -6921,16 +7269,19 @@
         var date = (document.getElementById('dc-date') || {}).value || new Date().toISOString().split('T')[0];
         var payload = {status: 'done', rating: window._discoverRating || 0, notes: notes, completed_date: date};
 
-        // Upload photo if selected
         var photoInput = document.getElementById('dc-photo');
         if(photoInput && photoInput.files && photoInput.files.length) {
-            try {
-                var formData = new FormData();
-                formData.append('image', photoInput.files[0]);
-                var resp = await fetch('/api/discover/' + id + '/photo', {method:'POST', body: formData, credentials:'same-origin'});
-                var result = await resp.json();
-                if(result && result.photo_url) payload.photo_url = result.photo_url;
-            } catch(e) {}
+            var uploadedPhotos = [];
+            for(var pi = 0; pi < photoInput.files.length; pi++) {
+                try {
+                    var formData = new FormData();
+                    formData.append('image', photoInput.files[pi]);
+                    var resp = await fetch('/api/discover/' + id + '/upload-photo', {method:'POST', body: formData, credentials:'same-origin'});
+                    var result = await resp.json();
+                    if(result && result.photo_url) uploadedPhotos.push(result.photo_url);
+                } catch(e) {}
+            }
+            if(uploadedPhotos.length) payload.photo_url = uploadedPhotos[0];
         }
 
         var r = await api('/discover/' + id, 'PUT', payload);
