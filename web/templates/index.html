@@ -3580,11 +3580,19 @@
                 if(pct >= 75) barColor = '#22c55e';
                 else if(pct >= 50) barColor = '#f59e0b';
                 const catColor = CAT_COLORS[c.category] || '#9898a6';
+                const safeName = c.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                const safeStartDate = (c.start_date || '').replace(/'/g, "\\'");
+                const safeCategory = (c.category || '').replace(/'/g, "\\'");
+                const safeFreq = (c.check_in_frequency || '').replace(/'/g, "\\'");
 
                 // Milestone markers: 25%, 50%, 75%, 100%
                 const milestones = c.target_days ? [25,50,75,100].map(m => `
                     <div class="absolute top-0 h-full w-px" style="left:${m}%;background:${pct >= m ? 'transparent' : 'rgba(255,255,255,0.08)'}"></div>
                 `).join('') : '';
+
+                const completeBtn = pct >= 100
+                    ? '<button onclick="completeChallenge(' + c.id + ')" class="action-link" style="color:#22c55e;">Complete!</button>'
+                    : '';
 
                 return `
                 <div class="challenge-card card rounded-xl p-4" style="border:1px solid #2a2a2e;border-left:3px solid ${catColor};">
@@ -3620,13 +3628,14 @@
                             </div>
                         </div>` : ''}
 
-                    <div class="flex flex-wrap items-center gap-1 mt-3 pt-2.5" style="border-top:1px solid #242428;">
-                        <button onclick="viewChallengeHistory(${c.id}, '${c.name}', '${c.start_date}')" class="action-link">History</button>
-                        <button onclick="checkinChallengeModal(${c.id}, '${c.name}')" class="action-link-success">Check-in</button>
-                        <button onclick="failChallengeModal(${c.id}, '${c.name}')" class="action-link-danger">I broke it</button>
-                        <button onclick="editChallengeModal(${c.id}, '${c.name.replace(/'/g, "\\'")}', '${c.category}', ${c.target_days || 'null'}, '${c.check_in_frequency}')" class="action-link">Edit</button>
-                        <button onclick="deleteChallenge(${c.id}, '${c.name}')" class="action-link-danger">Delete</button>
-                        ${pct >= 100 ? `<button onclick="completeChallenge(${c.id})" class="action-link" style="color:#22c55e;">Complete!</button>` : ''}
+                    <div class="flex flex-wrap items-center gap-1 mt-3 pt-2.5" style="border-top:1px solid #242428;">`
+                    + '<button onclick="viewChallengeHistory(' + c.id + ', \'' + safeName + '\', \'' + safeStartDate + '\')" class="action-link">History</button>'
+                    + '<button onclick="checkinChallengeModal(' + c.id + ', \'' + safeName + '\')" class="action-link-success">Check-in</button>'
+                    + '<button onclick="failChallengeModal(' + c.id + ', \'' + safeName + '\')" class="action-link-danger">I broke it</button>'
+                    + '<button onclick="editChallengeModal(' + c.id + ', \'' + safeName + '\', \'' + safeCategory + '\', ' + (c.target_days || 'null') + ', \'' + safeFreq + '\')" class="action-link">Edit</button>'
+                    + '<button onclick="deleteChallenge(' + c.id + ', \'' + safeName + '\')" class="action-link-danger">Delete</button>'
+                    + completeBtn
+                    + `
                     </div>
                 </div>`;
             }).join('');
@@ -3639,6 +3648,7 @@
 
         $('#challenges-history').innerHTML = history.map(c => {
             const completed = c.status === 'completed';
+            const safeName = c.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
             return `
             <div class="card rounded-xl p-3 flex items-center gap-3" style="border:1px solid #2a2a2e;opacity:0.75;">
                 <div class="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -3651,9 +3661,10 @@
                     <div class="text-sm font-medium truncate" style="color:#f0f0f2;">${c.name}</div>
                     <div class="text-xs" style="color:#5c5c6b;">${c.start_date} → ${c.end_date || '?'} · ${c.streak_days || 0} days</div>
                 </div>
-                <div class="flex items-center gap-1 flex-shrink-0">
-                    <button onclick="restartChallenge(${c.id})" class="action-link">Restart</button>
-                    <button onclick="deleteChallenge(${c.id}, '${c.name}')" class="action-link-danger">Delete</button>
+                <div class="flex items-center gap-1 flex-shrink-0">`
+                + '<button onclick="restartChallenge(' + c.id + ')" class="action-link">Restart</button>'
+                + '<button onclick="deleteChallenge(' + c.id + ', \'' + safeName + '\')" class="action-link-danger">Delete</button>'
+                + `
                 </div>
             </div>`;
         }).join('');
