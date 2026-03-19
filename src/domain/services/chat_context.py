@@ -30,20 +30,20 @@ def assemble_context(conn) -> dict:
     # Today's mood/energy
     context['mood_today'] = _safe_query(conn, "SELECT mood, energy, improvement_note FROM daily_checkins WHERE date = ?", (today,))
 
-    # Habits (all active with strength)
+    # Habits (ALL — active and inactive, AI needs full history)
     context['habits'] = _safe_query(conn, """
-        SELECT h.id, h.name, h.category, h.difficulty,
+        SELECT h.id, h.name, h.category, h.difficulty, h.active,
                hs.strength, hs.peak_strength, hs.total_completions, hs.total_misses,
                hp.name as current_phase, hp.phase_number
         FROM habits h
         LEFT JOIN habit_strength hs ON hs.habit_id = h.id
         LEFT JOIN habit_phases hp ON hp.habit_id = h.id AND hp.is_current = 1
-        WHERE h.active = 1
+        ORDER BY h.active DESC, h.name
     """)
 
     # Today's habit completions
     context['habit_completions_today'] = _safe_query(conn,
-        "SELECT hc.habit_id, h.name FROM habit_completions hc JOIN habits h ON h.id = hc.habit_id WHERE date(hc.completed_at) = ? AND h.active = 1",
+        "SELECT hc.habit_id, h.name, h.active FROM habit_completions hc JOIN habits h ON h.id = hc.habit_id WHERE date(hc.completed_at) = ?",
         (today,))
 
     # Food today (full details)
