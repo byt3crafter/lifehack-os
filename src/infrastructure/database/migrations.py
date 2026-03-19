@@ -51,6 +51,76 @@ MIGRATIONS = [
         );
         CREATE INDEX IF NOT EXISTS idx_app_log_timestamp ON app_log(timestamp);
     '''),
+    (6, "Add habit phases, micro-tasks, strength, miss log, stacks, and templates", '''
+        CREATE TABLE IF NOT EXISTS habit_phases (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            habit_id INTEGER NOT NULL,
+            phase_number INTEGER NOT NULL DEFAULT 1,
+            name TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            unlock_after_days INTEGER DEFAULT 14,
+            is_current INTEGER DEFAULT 0,
+            completed_at TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (habit_id) REFERENCES habits(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS habit_micro_tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            phase_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            sort_order INTEGER DEFAULT 0,
+            FOREIGN KEY (phase_id) REFERENCES habit_phases(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS habit_strength (
+            habit_id INTEGER PRIMARY KEY,
+            strength REAL DEFAULT 0,
+            peak_strength REAL DEFAULT 0,
+            last_completed TEXT,
+            last_missed TEXT,
+            total_completions INTEGER DEFAULT 0,
+            total_misses INTEGER DEFAULT 0,
+            FOREIGN KEY (habit_id) REFERENCES habits(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS habit_miss_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            habit_id INTEGER NOT NULL,
+            date TEXT NOT NULL,
+            reason TEXT DEFAULT '',
+            blocker TEXT DEFAULT '',
+            logged_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (habit_id) REFERENCES habits(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS habit_stacks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            trigger_text TEXT NOT NULL,
+            habit_id INTEGER NOT NULL,
+            FOREIGN KEY (habit_id) REFERENCES habits(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS habit_templates (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            category TEXT DEFAULT 'health',
+            difficulty TEXT DEFAULT 'beginner',
+            duration_weeks INTEGER DEFAULT 8,
+            icon TEXT DEFAULT '',
+            phases_json TEXT NOT NULL DEFAULT '[]',
+            created_by TEXT DEFAULT 'system',
+            is_featured INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_habit_phases_habit ON habit_phases(habit_id);
+        CREATE INDEX IF NOT EXISTS idx_habit_micro_tasks_phase ON habit_micro_tasks(phase_id);
+        CREATE INDEX IF NOT EXISTS idx_habit_miss_log_habit ON habit_miss_log(habit_id);
+        CREATE INDEX IF NOT EXISTS idx_habit_stacks_habit ON habit_stacks(habit_id);
+    '''),
 ]
 
 

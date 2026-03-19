@@ -397,6 +397,122 @@
             flex-shrink: 0;
         }
 
+        /* ── Habit strength bar ──────────────────────── */
+        .strength-bar-track {
+            height: 5px;
+            border-radius: 3px;
+            background: #242428;
+            overflow: hidden;
+            flex: 1;
+        }
+        .strength-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+        }
+
+        /* ── Micro-task checkbox ─────────────────────── */
+        .micro-task {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: #9898a6;
+            cursor: pointer;
+            padding: 0.1875rem 0;
+            user-select: none;
+        }
+        .micro-task input[type="checkbox"] {
+            width: 13px !important;
+            height: 13px !important;
+            accent-color: #4f80ff;
+            background: transparent !important;
+            border: 1px solid #444449 !important;
+            border-radius: 3px;
+            flex-shrink: 0;
+            padding: 0 !important;
+            cursor: pointer;
+        }
+        .micro-task.done { color: #5c5c6b; text-decoration: line-through; }
+
+        /* ── Template card ───────────────────────────── */
+        .tmpl-card {
+            background: #1c1c20;
+            border: 1px solid #2a2a2e;
+            border-radius: 10px;
+            padding: 0.875rem;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .tmpl-card:hover { border-color: #444449; box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+
+        /* ── Miss reason button ──────────────────────── */
+        .miss-btn {
+            flex: 1 1 auto;
+            min-width: calc(33% - 0.25rem);
+            padding: 0.4375rem 0.5rem;
+            border-radius: 8px;
+            border: 1px solid #2a2a2e;
+            background: #141416;
+            color: #9898a6;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s, color 0.15s;
+            text-align: center;
+            font-family: inherit;
+        }
+        .miss-btn:hover { border-color: #ef4444; background: rgba(239,68,68,0.08); color: #f87171; }
+        .miss-btn.selected { border-color: rgba(239,68,68,0.5); background: rgba(239,68,68,0.1); color: #f87171; }
+
+        /* ── Phase badge ─────────────────────────────── */
+        .phase-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            color: #9898a6;
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+            padding: 0.125rem 0.4375rem;
+        }
+
+        /* ── Habit detail phase list ─────────────────── */
+        .phase-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.625rem 0;
+            border-bottom: 1px solid #2a2a2e;
+        }
+        .phase-row:last-child { border-bottom: none; }
+        .phase-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        /* ── Mini bar (dashboard) ─────────────────────── */
+        .mini-strength-track {
+            flex: 1;
+            height: 4px;
+            border-radius: 2px;
+            background: #242428;
+            overflow: hidden;
+        }
+        .mini-strength-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+        }
+
         /* ── Subtle input label ──────────────────────── */
         .field-label {
             font-size: 0.75rem;
@@ -772,10 +888,16 @@
                         <h2 class="view-title">Habits</h2>
                         <p class="text-xs mt-0.5" style="color:#5c5c6b;" id="habits-subtitle">Track your daily practices</p>
                     </div>
-                    <button onclick="addHabitModal()" class="btn-primary flex items-center gap-1.5">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 4v12M4 10h12"/></svg>
-                        Add habit
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <button onclick="openTemplatesModal()" class="btn-ghost flex items-center gap-1.5 text-xs px-3 py-2">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h12M4 10h8M4 14h5"/></svg>
+                            From Template
+                        </button>
+                        <button onclick="addHabitModal()" class="btn-primary flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 4v12M4 10h12"/></svg>
+                            Add habit
+                        </button>
+                    </div>
                 </div>
                 <div id="habits-list" class="space-y-2"></div>
             </div>
@@ -3885,21 +4007,41 @@
         const done = h.filter(x=>x.completed).length;
         $('#h-progress').textContent = `${done}/${h.length}`;
         
-        $('#dash-habits').innerHTML = h.length ? h.slice(0,6).map(x => `
-            <div class="rounded-xl p-2.5 flex items-center gap-3 cursor-pointer habit-row transition-colors"
-                 style="background:${x.completed ? 'rgba(34,197,94,0.06)' : '#1c1c20'};border:1px solid ${x.completed ? 'rgba(34,197,94,0.2)' : '#2a2a2e'};"
-                 onclick="toggleH(${x.id}, ${!x.completed})" data-id="${x.id}"
-                 role="button" tabindex="0" aria-pressed="${x.completed}"
-                 onkeydown="if(event.key==='Enter'||event.key===' ')toggleH(${x.id},${!x.completed})">
-                <div class="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 transition-all"
-                     style="border:2px solid ${x.completed ? '#22c55e' : '#444449'};background:${x.completed ? '#22c55e' : 'transparent'};">
-                    ${x.completed ? '<svg class="w-3 h-3" fill="none" stroke="white" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' : ''}
-                </div>
-                <span class="flex-1 truncate text-sm" style="color:${x.completed ? '#5c5c6b' : '#f0f0f2'};text-decoration:${x.completed ? 'line-through' : 'none'};">${x.name}</span>
-                ${x.streak > 0 ? `<span class="text-xs font-mono" style="color:#f97316;">${x.streak}d</span>` : ''}
-                <span class="text-xs font-mono" style="color:#eab308;">+${x.points}</span>
-            </div>
-        `).join('') : '<div class="rounded-xl p-5 text-center" style="background:#1c1c20;border:1px dashed #2a2a2e;"><p class="text-sm" style="color:#5c5c6b;">No habits yet — <button onclick="desktopNav(\'habits\')" class="underline" style="color:#4f80ff;">add your first habit</button></p></div>';
+        if(!h.length) {
+            $('#dash-habits').innerHTML = '<div class="rounded-xl p-5 text-center" style="background:#1c1c20;border:1px dashed #2a2a2e;"><p class="text-sm" style="color:#5c5c6b;">No habits yet \u2014 <button onclick="desktopNav(\'habits\')" class="underline" style="color:#4f80ff;">add your first habit</button></p></div>';
+        } else {
+            var dashHHtml = '';
+            var hSlice = h.slice(0,6);
+            for(var dhi = 0; dhi < hSlice.length; dhi++) {
+                var dhx = hSlice[dhi];
+                var dhPct = Math.round(dhx.strength || 0);
+                var dhGrad = strengthGradient(dhPct);
+                var dhColor = strengthColor(dhPct);
+                var dhBg = dhx.completed ? 'rgba(34,197,94,0.06)' : '#1c1c20';
+                var dhBorder = dhx.completed ? 'rgba(34,197,94,0.2)' : '#2a2a2e';
+                dashHHtml += '<div class="rounded-xl px-2.5 py-2 habit-row" data-id="' + dhx.id + '"'
+                    + ' style="background:' + dhBg + ';border:1px solid ' + dhBorder + ';">'
+                    + '<div class="flex items-center gap-2.5">'
+                    // check button
+                    + '<button onclick="toggleH(' + dhx.id + ',' + (!dhx.completed) + ')"'
+                    + ' class="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 transition-all cursor-pointer"'
+                    + ' style="border:2px solid ' + (dhx.completed ? '#22c55e' : '#444449') + ';background:' + (dhx.completed ? '#22c55e' : 'transparent') + ';"'
+                    + ' aria-label="' + (dhx.completed ? 'Undo' : 'Complete') + '" role="checkbox" aria-checked="' + dhx.completed + '">'
+                    + (dhx.completed ? '<svg class="w-2.5 h-2.5" fill="none" stroke="white" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' : '')
+                    + '</button>'
+                    // name
+                    + '<span class="text-sm flex-shrink-0 truncate" style="min-width:0;max-width:7rem;color:' + (dhx.completed ? '#5c5c6b' : '#f0f0f2') + ';text-decoration:' + (dhx.completed ? 'line-through' : 'none') + ';">' + dhx.name + '</span>'
+                    // mini strength bar
+                    + '<div class="mini-strength-track">'
+                    + '<div class="mini-strength-fill" style="width:' + dhPct + '%;background:' + dhGrad + ';"></div>'
+                    + '</div>'
+                    // pct label
+                    + '<span class="text-xs font-mono flex-shrink-0" style="color:' + dhColor + ';min-width:2rem;text-align:right;">' + dhPct + '%</span>'
+                    + '</div>'
+                    + '</div>';
+            }
+            $('#dash-habits').innerHTML = dashHHtml;
+        }
         
         $('#dash-projects').innerHTML = (p||[]).length ? (p||[]).slice(0,3).map(x => `
             <div class="rounded-xl p-3" style="background:#1c1c20;border:1px solid #2a2a2e;">
@@ -3914,64 +4056,138 @@
         `).join('') : '<div class="rounded-xl p-4 text-center" style="background:#1c1c20;border:1px dashed #2a2a2e;"><p class="text-sm" style="color:#5c5c6b;">No projects yet</p></div>';
     }
 
+    // ── Habit strength helpers ────────────────────────────────────
+    function strengthColor(pct) {
+        if(pct < 20) return '#ef4444';
+        if(pct < 40) return '#f97316';
+        if(pct < 60) return '#f59e0b';
+        if(pct < 80) return '#22c55e';
+        return '#4ade80';
+    }
+
+    function strengthGradient(pct) {
+        if(pct < 20) return 'linear-gradient(90deg,#ef4444,#f97316)';
+        if(pct < 40) return 'linear-gradient(90deg,#f97316,#f59e0b)';
+        if(pct < 60) return 'linear-gradient(90deg,#f59e0b,#22c55e)';
+        if(pct < 80) return 'linear-gradient(90deg,#22c55e,#4ade80)';
+        return 'linear-gradient(90deg,#4ade80,#86efac)';
+    }
+
     async function loadHabits() {
         const h = await api('/habits');
         if(!h) return;
         // Update subtitle
         const done = h.filter(x=>x.completed).length;
         const sub = $('#habits-subtitle');
-        if(sub) sub.textContent = h.length ? `${done} of ${h.length} completed today` : 'No habits yet';
+        if(sub) sub.textContent = h.length ? (done + ' of ' + h.length + ' completed today') : 'No habits yet';
 
         if(!h.length) {
             $('#habits-list').innerHTML = '<div class="empty-state"><p>No habits yet. Add your first habit to get started.</p></div>';
             return;
         }
 
-        $('#habits-list').innerHTML = h.map(x => {
-            const catColor = x.category_color || '#9898a6';
-            const diffDots = Array.from({length:5}, (_,i) =>
-                `<span style="width:5px;height:5px;border-radius:50%;background:${i < x.difficulty ? catColor : '#2a2a2e'};display:inline-block;"></span>`
-            ).join('');
-            return `
-            <div class="rounded-xl p-3 flex items-center gap-3 habit-row cursor-pointer"
-                 style="background:${x.completed ? 'rgba(34,197,94,0.05)' : '#1c1c20'};border:1px solid ${x.completed ? 'rgba(34,197,94,0.18)' : '#2a2a2e'};"
-                 data-id="${x.id}">
-                <!-- Category color indicator -->
-                <div class="w-1 self-stretch rounded-full flex-shrink-0" style="background:${catColor};"></div>
-                <!-- Check circle -->
-                <div class="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 cursor-pointer transition-all"
-                     style="border:2px solid ${x.completed ? '#22c55e' : '#444449'};background:${x.completed ? '#22c55e' : 'transparent'};"
-                     onclick="toggleH(${x.id}, ${!x.completed})"
-                     title="${x.completed ? 'Click to undo' : 'Click to complete'}">
-                    ${x.completed ? '<svg class="w-3 h-3" fill="none" stroke="white" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' : ''}
-                </div>
-                <!-- Info -->
-                <div class="flex-1 min-w-0" onclick="toggleH(${x.id}, ${!x.completed})" style="cursor:pointer;">
-                    <div class="text-sm font-medium truncate" style="color:${x.completed ? '#5c5c6b' : '#f0f0f2'};text-decoration:${x.completed ? 'line-through' : 'none'};">${x.name}</div>
-                    <div class="flex items-center gap-2 mt-0.5">
-                        <span class="text-xs" style="color:${catColor};">${x.category_name}</span>
-                        <span class="text-xs" style="color:#2a2a2e;">•</span>
-                        <span class="flex items-center gap-0.5">${diffDots}</span>
-                    </div>
-                </div>
-                <!-- Right side: streak + XP + actions -->
-                <div class="flex items-center gap-1 flex-shrink-0">
-                    ${x.streak > 0 ? `<span class="font-mono text-xs font-semibold" style="color:#f97316;">${x.streak}🔥</span>` : ''}
-                    <span class="font-mono text-xs font-semibold ml-1" style="color:#eab308;">+${x.points}</span>
-                    <div class="flex items-center ml-2 gap-0.5">
-                        ${!x.completed ? `<button onclick="event.stopPropagation(); skipH(${x.id})" class="action-link-danger text-xs" title="Skip for today">Skip</button>` : ''}
-                        <button onclick="event.stopPropagation(); editHabitModal(${x.id}, '${x.name.replace(/'/g, "\\'")}', '${x.category}', ${x.difficulty})"
-                            class="action-link" title="Edit">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M14.5 3.5l2 2L7 15H5v-2L14.5 3.5z"/></svg>
-                        </button>
-                        <button onclick="event.stopPropagation(); deleteHabit(${x.id}, '${x.name.replace(/'/g, "\\'")}')"
-                            class="action-link-danger" title="Delete">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5l10 10M15 5L5 15"/></svg>
-                        </button>
-                    </div>
-                </div>
-            </div>`;
-        }).join('');
+        var html = '';
+        for(var i = 0; i < h.length; i++) {
+            var x = h[i];
+            var catColor = x.category_color || '#9898a6';
+            var pct = Math.round(x.strength || 0);
+            var lbl = x.strength_label || 'Starting';
+            var fillColor = strengthColor(pct);
+            var fillGrad = strengthGradient(pct);
+            var safeName = x.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+
+            // Strength bar row
+            var barHtml = '<div class="flex items-center gap-2 mt-1.5">'
+                + '<div class="strength-bar-track">'
+                + '<div class="strength-bar-fill" style="width:' + pct + '%;background:' + fillGrad + ';"></div>'
+                + '</div>'
+                + '<span class="text-xs font-mono flex-shrink-0" style="color:' + fillColor + ';min-width:2.25rem;">' + pct + '%</span>'
+                + '<span class="text-xs flex-shrink-0" style="color:#5c5c6b;">' + lbl + '</span>'
+                + '</div>';
+
+            // Phase badge
+            var phaseHtml = '';
+            if(x.current_phase) {
+                var prog = x.phase_progress ? (' <span style="color:#5c5c6b;font-weight:400;">' + x.phase_progress + '</span>') : '';
+                phaseHtml = '<div class="mt-1">'
+                    + '<span class="phase-badge">' + x.current_phase + prog + '</span>'
+                    + '</div>';
+            }
+
+            // Micro-tasks
+            var microHtml = '';
+            if(x.micro_tasks && x.micro_tasks.length) {
+                microHtml = '<div class="mt-2 space-y-0.5">';
+                for(var m = 0; m < x.micro_tasks.length; m++) {
+                    var mt = x.micro_tasks[m];
+                    var doneClass = mt.completed ? ' done' : '';
+                    microHtml += '<label class="micro-task' + doneClass + '">'
+                        + '<input type="checkbox"' + (mt.completed ? ' checked' : '') + ' onclick="event.stopPropagation();">'
+                        + '<span>' + mt.name + '</span>'
+                        + '</label>';
+                }
+                microHtml += '</div>';
+            }
+
+            // Stack trigger
+            var stackHtml = '';
+            if(x.stack_trigger) {
+                stackHtml = '<div class="mt-1.5 text-xs" style="color:#5c5c6b;">Stack: ' + x.stack_trigger + '</div>';
+            }
+
+            // Action buttons row
+            var actHtml = '<div class="flex items-center justify-between mt-2.5 pt-2.5" style="border-top:1px solid #2a2a2e;">'
+                + '<div class="flex items-center gap-1">';
+            if(x.streak && x.streak > 0) {
+                actHtml += '<span class="font-mono text-xs font-semibold" style="color:#f97316;">' + x.streak + '\uD83D\uDD25</span>';
+            }
+            actHtml += '<span class="font-mono text-xs font-semibold ml-1" style="color:#eab308;">+' + x.points + ' XP</span>';
+            actHtml += '</div>';
+            actHtml += '<div class="flex items-center gap-0.5">';
+            if(!x.completed) {
+                actHtml += '<button onclick="event.stopPropagation(); missHabitModal(' + x.id + ', \'' + safeName + '\')" class="action-link-danger text-xs" title="Log a miss">Miss</button>';
+            }
+            actHtml += '<button onclick="event.stopPropagation(); editHabitModal(' + x.id + ', \'' + safeName + '\', \'' + x.category + '\', ' + x.difficulty + ')" class="action-link" title="Edit">'
+                + '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M14.5 3.5l2 2L7 15H5v-2L14.5 3.5z"/></svg>'
+                + '</button>'
+                + '<button onclick="event.stopPropagation(); deleteHabit(' + x.id + ', \'' + safeName + '\')" class="action-link-danger" title="Delete">'
+                + '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5l10 10M15 5L5 15"/></svg>'
+                + '</button>'
+                + '</div></div>';
+
+            var cardBg = x.completed ? 'rgba(34,197,94,0.05)' : '#1c1c20';
+            var cardBorder = x.completed ? 'rgba(34,197,94,0.18)' : '#2a2a2e';
+
+            html += '<div class="rounded-xl p-3 habit-row" data-id="' + x.id + '" style="background:' + cardBg + ';border:1px solid ' + cardBorder + ';">'
+                // Top row: color bar + check + name + complete btn
+                + '<div class="flex items-start gap-2.5">'
+                + '<div class="w-1 rounded-full flex-shrink-0 mt-0.5" style="background:' + catColor + ';height:1.25rem;"></div>'
+                // check button
+                + '<button onclick="toggleH(' + x.id + ',' + (!x.completed) + ')" title="' + (x.completed ? 'Undo' : 'Complete') + '"'
+                + ' class="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 transition-all mt-0.5 cursor-pointer"'
+                + ' style="border:2px solid ' + (x.completed ? '#22c55e' : '#444449') + ';background:' + (x.completed ? '#22c55e' : 'transparent') + ';">'
+                + (x.completed ? '<svg class="w-3 h-3" fill="none" stroke="white" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' : '')
+                + '</button>'
+                // name + category
+                + '<div class="flex-1 min-w-0">'
+                + '<button onclick="openHabitDetail(' + x.id + ')" class="text-sm font-medium text-left w-full truncate hover:underline" style="color:' + (x.completed ? '#5c5c6b' : '#f0f0f2') + ';text-decoration:' + (x.completed ? 'line-through' : 'none') + ';background:none;border:none;cursor:pointer;font-family:inherit;">' + x.name + '</button>'
+                + '<span class="text-xs" style="color:' + catColor + ';">' + x.category_name + '</span>'
+                + phaseHtml
+                + barHtml
+                + microHtml
+                + stackHtml
+                + '</div>'
+                // complete button (right)
+                + '<button onclick="toggleH(' + x.id + ',' + (!x.completed) + ')" class="flex-shrink-0 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-colors" style="background:' + (x.completed ? 'rgba(34,197,94,0.1)' : 'rgba(79,128,255,0.1)') + ';color:' + (x.completed ? '#22c55e' : '#4f80ff') + ';border:1px solid ' + (x.completed ? 'rgba(34,197,94,0.25)' : 'rgba(79,128,255,0.25)') + ';white-space:nowrap;">'
+                + (x.completed ? '\u2713 Done' : '\u2713 Complete')
+                + '</button>'
+                + '</div>'
+                // actions row
+                + actHtml
+                + '</div>';
+        }
+
+        $('#habits-list').innerHTML = html;
     }
     
     function editHabitModal(id, name, category, difficulty) {
@@ -4050,14 +4266,192 @@
     
     async function skipH(id) {
         try {
-            await api(`/habits/${id}/skip`, 'POST');
+            await api('/habits/' + id + '/skip', 'POST');
             showToast('Skipped for today', 'info');
             await Promise.all([loadDash(), loadHabits()]);
         } catch(e) {
             showToast('Failed', 'error');
         }
     }
-    
+
+    // ── Miss tracking ─────────────────────────────────────────────
+    var _selectedMissReason = '';
+
+    function missHabitModal(id, name) {
+        _selectedMissReason = '';
+        var reasons = ['Tired', 'Forgot', 'Busy', 'Sick', 'Traveling', 'No Motivation'];
+        var btnHtml = '';
+        for(var ri = 0; ri < reasons.length; ri++) {
+            var r = reasons[ri];
+            btnHtml += '<button class="miss-btn" onclick="selectMissReason(this, \'' + r + '\')">' + r + '</button>';
+        }
+        var body = '<div class="space-y-3">'
+            + '<p class="text-sm" style="color:#9898a6;">What stopped you today?</p>'
+            + '<div class="flex flex-wrap gap-1.5">' + btnHtml + '</div>'
+            + '<div>'
+            + '<label class="field-label">Note (optional)</label>'
+            + '<textarea id="miss-note" class="w-full px-3 py-2 rounded-lg border text-sm" rows="2" placeholder="Anything else..."></textarea>'
+            + '</div>'
+            + '<div class="flex gap-2 pt-1">'
+            + '<button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>'
+            + '<button onclick="submitMiss(' + id + ')" class="btn-primary flex-1 py-2.5" style="background:#ef4444;">Log Miss</button>'
+            + '</div>'
+            + '</div>';
+        showModal('Miss: ' + name, body);
+    }
+
+    function selectMissReason(btn, reason) {
+        _selectedMissReason = reason;
+        document.querySelectorAll('.miss-btn').forEach(function(b) { b.classList.remove('selected'); });
+        btn.classList.add('selected');
+    }
+
+    async function submitMiss(id) {
+        var note = $('#miss-note') ? $('#miss-note').value.trim() : '';
+        var payload = {};
+        if(_selectedMissReason) payload.reason = _selectedMissReason;
+        if(note) payload.note = note;
+        var r = await api('/habits/' + id + '/miss', 'POST', payload);
+        hideModal();
+        if(r) showToast('Miss logged', 'warning');
+        _selectedMissReason = '';
+        await Promise.all([loadHabits(), loadDash()]);
+    }
+
+    // ── Templates modal ───────────────────────────────────────────
+    async function openTemplatesModal() {
+        showModal('Habit Templates', '<div class="text-sm" style="color:#9898a6;">Loading templates...</div>');
+        var templates = await api('/habits/templates');
+        if(!templates || !templates.length) {
+            $('#modal-body').innerHTML = '<div class="text-sm" style="color:#9898a6;">No templates available right now.</div>';
+            return;
+        }
+        var html = '<div class="space-y-2">';
+        for(var ti = 0; ti < templates.length; ti++) {
+            var t = templates[ti];
+            var featuredBadge = t.featured ? '<span class="text-xs px-1.5 py-0.5 rounded" style="background:rgba(234,179,8,0.15);color:#eab308;">\u2605 Featured</span>' : '';
+            var diffBadge = t.difficulty ? '<span class="text-xs px-1.5 py-0.5 rounded" style="background:#242428;color:#9898a6;">' + t.difficulty + '</span>' : '';
+            html += '<div class="tmpl-card">'
+                + '<div class="flex items-start justify-between gap-3">'
+                + '<div class="flex-1 min-w-0">'
+                + '<div class="text-sm font-semibold mb-0.5" style="color:#f0f0f2;">' + (t.icon || '') + ' ' + t.name + '</div>'
+                + '<div class="text-xs" style="color:#9898a6;">' + (t.description || '') + '</div>'
+                + '<div class="flex items-center gap-1.5 mt-1.5">' + featuredBadge + diffBadge + '</div>'
+                + '</div>'
+                + '<button onclick="startTemplate(' + t.id + ')" class="btn-primary text-xs px-3 py-1.5 flex-shrink-0">Start</button>'
+                + '</div>'
+                + '</div>';
+        }
+        html += '</div>';
+        $('#modal-body').innerHTML = html;
+    }
+
+    async function startTemplate(templateId) {
+        var r = await api('/habits/templates/' + templateId + '/start', 'POST');
+        hideModal();
+        if(r) {
+            showToast('Habit journey started!', 'success');
+            await Promise.all([loadHabits(), loadDash()]);
+        } else {
+            showToast('Failed to start template', 'error');
+        }
+    }
+
+    // ── Habit detail modal ────────────────────────────────────────
+    async function openHabitDetail(id) {
+        showModal('Habit Detail', '<div class="text-sm" style="color:#9898a6;">Loading...</div>');
+        var detail = await api('/habits/' + id + '/detail');
+        if(!detail) {
+            $('#modal-body').innerHTML = '<div class="text-sm" style="color:#9898a6;">Could not load detail.</div>';
+            return;
+        }
+        var pct = Math.round(detail.strength || 0);
+        var lbl = detail.strength_label || 'Starting';
+        var fillGrad = strengthGradient(pct);
+        var fillColor = strengthColor(pct);
+
+        // Phases list
+        var phasesHtml = '';
+        if(detail.phases && detail.phases.length) {
+            phasesHtml = '<div class="mt-4">'
+                + '<div class="text-xs font-semibold mb-2" style="color:#5c5c6b;letter-spacing:0.06em;text-transform:uppercase;">Phases</div>'
+                + '<div class="card p-3">';
+            for(var pi = 0; pi < detail.phases.length; pi++) {
+                var ph = detail.phases[pi];
+                var phIcon = ph.completed ? '\u2713' : (ph.current ? '\u25B6' : (pi + 1));
+                var phBg = ph.completed ? '#22c55e' : (ph.current ? '#4f80ff' : '#242428');
+                var phColor = ph.locked ? '#5c5c6b' : '#f0f0f2';
+                var phLabel = ph.completed ? 'completed' : (ph.current ? 'current' : (ph.locked ? 'locked' : 'unlocked'));
+                phasesHtml += '<div class="phase-row">'
+                    + '<div class="phase-icon" style="background:' + phBg + ';color:#fff;">' + phIcon + '</div>'
+                    + '<div class="flex-1 min-w-0">'
+                    + '<div class="text-sm font-medium" style="color:' + phColor + ';">' + ph.name + '</div>'
+                    + '<div class="text-xs" style="color:#5c5c6b;">' + phLabel + (ph.duration ? ' \u00B7 ' + ph.duration : '') + '</div>'
+                    + '</div>'
+                    + '</div>';
+            }
+            phasesHtml += '</div></div>';
+        }
+
+        // Miss history
+        var missHtml = '';
+        if(detail.miss_history && detail.miss_history.length) {
+            missHtml = '<div class="mt-4">'
+                + '<div class="text-xs font-semibold mb-2" style="color:#5c5c6b;letter-spacing:0.06em;text-transform:uppercase;">Miss History</div>'
+                + '<div class="space-y-1">';
+            for(var mi = 0; mi < detail.miss_history.slice(0,5).length; mi++) {
+                var ms = detail.miss_history[mi];
+                missHtml += '<div class="flex items-center justify-between py-1 text-xs" style="border-bottom:1px solid #2a2a2e;">'
+                    + '<span style="color:#9898a6;">' + ms.date + '</span>'
+                    + '<span style="color:#f87171;">' + (ms.reason || 'No reason') + '</span>'
+                    + (ms.note ? ('<span class="truncate ml-2" style="color:#5c5c6b;max-width:8rem;">' + ms.note + '</span>') : '')
+                    + '</div>';
+            }
+            missHtml += '</div></div>';
+        }
+
+        // Strength history bar chart (last 14 days)
+        var histHtml = '';
+        if(detail.strength_history && detail.strength_history.length) {
+            histHtml = '<div class="mt-4">'
+                + '<div class="text-xs font-semibold mb-2" style="color:#5c5c6b;letter-spacing:0.06em;text-transform:uppercase;">Strength (14 days)</div>'
+                + '<div class="flex items-end gap-0.5" style="height:40px;">';
+            var hist = detail.strength_history.slice(-14);
+            for(var hi = 0; hi < hist.length; hi++) {
+                var hv = hist[hi];
+                var barH = Math.max(4, Math.round((hv / 100) * 40));
+                histHtml += '<div class="flex-1 rounded-sm" style="height:' + barH + 'px;background:' + strengthColor(hv) + ';opacity:0.7;" title="' + hv + '%"></div>';
+            }
+            histHtml += '</div></div>';
+        }
+
+        var stackHtml2 = detail.stack_trigger
+            ? ('<div class="mt-3 text-xs" style="color:#5c5c6b;">Stack: <span style="color:#9898a6;">' + detail.stack_trigger + '</span></div>')
+            : '';
+
+        var bodyHtml = '<div class="space-y-1">'
+            + '<div class="flex items-center justify-between">'
+            + '<span class="text-base font-semibold" style="color:#f0f0f2;">' + detail.name + '</span>'
+            + '<span class="phase-badge">' + lbl + '</span>'
+            + '</div>'
+            + (detail.phase_progress ? ('<div class="text-xs" style="color:#5c5c6b;">' + detail.phase_progress + '</div>') : '')
+            + '<div class="flex items-center gap-2 mt-2">'
+            + '<div class="strength-bar-track" style="flex:1;">'
+            + '<div class="strength-bar-fill" style="width:' + pct + '%;background:' + fillGrad + ';"></div>'
+            + '</div>'
+            + '<span class="text-sm font-mono font-semibold" style="color:' + fillColor + ';">' + pct + '%</span>'
+            + '</div>'
+            + stackHtml2
+            + phasesHtml
+            + histHtml
+            + missHtml
+            + '<button onclick="hideModal()" class="btn-ghost w-full py-2.5 mt-4">Close</button>'
+            + '</div>';
+
+        $('#modal-title').textContent = detail.name || 'Habit Detail';
+        $('#modal-body').innerHTML = bodyHtml;
+    }
+
     function showToast(msg, type='info') {
         // Remove any existing toast
         document.querySelectorAll('.toast').forEach(t => t.remove());

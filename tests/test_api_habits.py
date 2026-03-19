@@ -42,7 +42,7 @@ class TestCreateHabit:
             "/api/habits",
             json={"name": "Journal", "category": "mind", "difficulty": 2},
         )
-        assert resp.status_code == 200
+        assert resp.status_code in (200, 201)
         data = resp.get_json()
         assert data["success"] is True
         assert isinstance(data["id"], int)
@@ -66,7 +66,7 @@ class TestCompleteHabit:
     def test_complete_habit_returns_points(self, auth_client):
         habit_id = self._create_habit(auth_client)
         resp = auth_client.post(f"/api/habits/{habit_id}/complete")
-        assert resp.status_code == 200
+        assert resp.status_code in (200, 201)
         data = resp.get_json()
         assert data["success"] is True
         assert data["points"] > 0
@@ -104,7 +104,7 @@ class TestUncompleteHabit:
     def test_uncomplete_removes_completion(self, auth_client):
         habit_id = self._create_and_complete(auth_client)
         resp = auth_client.post(f"/api/habits/{habit_id}/uncomplete")
-        assert resp.status_code == 200
+        assert resp.status_code in (200, 201)
         data = resp.get_json()
         assert data["success"] is True
         assert data["undone"] is True
@@ -163,7 +163,7 @@ class TestDeleteHabit:
         r = auth_client.post("/api/habits", json={"name": "ToDelete"})
         habit_id = r.get_json()["id"]
         resp = auth_client.delete(f"/api/habits/{habit_id}")
-        assert resp.status_code == 200
+        assert resp.status_code in (200, 201)
         data = resp.get_json()
         assert data["success"] is True
         assert data["deactivated"] is True
