@@ -119,10 +119,32 @@ TOOL_DEFINITIONS = [
     },
     # ── Deep Work ───────────────────────────────────────────────────────────
     {
-        "name": "start_deep_work",
-        "description": "Start a deep-work / focus session (ends any active session first)",
+        "name": "create_dw_project",
+        "description": "Create a new local deep work project",
         "parameters": {
-            "project_id": "integer (optional) — link to a project",
+            "name": "string (required)",
+            "description": "string (optional)",
+            "color": "hex color (optional, e.g. #4f80ff)",
+        },
+    },
+    {
+        "name": "delete_dw_project",
+        "description": "Delete a local deep work project",
+        "parameters": {
+            "project_id": "integer (required)",
+        },
+    },
+    {
+        "name": "list_dw_projects",
+        "description": "List all deep work projects with total hours",
+        "parameters": {},
+    },
+    {
+        "name": "start_deep_work",
+        "description": "Start a deep-work / focus session",
+        "parameters": {
+            "project_name": "string (optional) — name of the project to work on",
+            "project_id": "integer (optional) — ID of existing project",
             "notes": "string (optional) — what you're working on",
         },
     },

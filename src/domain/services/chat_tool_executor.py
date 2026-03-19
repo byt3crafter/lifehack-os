@@ -39,6 +39,9 @@ def execute_tool(tool_name: str, args: dict, conn) -> dict:
         "add_budget_rule": _add_budget_rule,
         "create_challenge": _create_challenge,
         "add_discovery": _add_discovery,
+        "create_dw_project": _create_dw_project,
+        "delete_dw_project": _delete_dw_project,
+        "list_dw_projects": _list_dw_projects,
         "start_deep_work": _start_deep_work,
         "end_deep_work": _end_deep_work,
         "log_mood": _log_mood,
@@ -608,7 +611,46 @@ def _add_discovery(args: dict, conn) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Deep Work
+# Deep Work — Projects
+# ---------------------------------------------------------------------------
+
+
+def _create_dw_project(args: dict, conn) -> dict:
+    name = (args.get("name") or "").strip()
+    if not name:
+        return {"error": "name is required"}
+    color = args.get("color", "#4f80ff")
+    desc = args.get("description", "")
+    cursor = conn.execute(
+        "INSERT INTO deep_work_projects (name, description, color) VALUES (?, ?, ?)",
+        (name, desc, color),
+    )
+    conn.commit()
+    return {"success": True, "project_id": cursor.lastrowid, "message": f'Created project "{name}"'}
+
+
+def _delete_dw_project(args: dict, conn) -> dict:
+    pid = args.get("project_id")
+    if not pid:
+        return {"error": "project_id is required"}
+    conn.execute("UPDATE deep_work_projects SET active = 0 WHERE id = ?", (int(pid),))
+    conn.commit()
+    return {"success": True, "message": "Project deleted"}
+
+
+def _list_dw_projects(args: dict, conn) -> dict:
+    rows = conn.execute(
+        "SELECT id, name, color, total_minutes FROM deep_work_projects WHERE active = 1 ORDER BY name"
+    ).fetchall()
+    projects = []
+    for r in rows:
+        hours = round(r["total_minutes"] / 60, 1) if r["total_minutes"] else 0
+        projects.append({"id": r["id"], "name": r["name"], "hours": hours})
+    return {"success": True, "projects": projects, "message": f"{len(projects)} projects"}
+
+
+# ---------------------------------------------------------------------------
+# Deep Work — Sessions
 # ---------------------------------------------------------------------------
 
 def _start_deep_work(args: dict, conn) -> dict:
