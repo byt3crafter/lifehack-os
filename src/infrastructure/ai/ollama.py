@@ -2,6 +2,7 @@
 import json
 import os
 import time
+import traceback
 from typing import Optional
 
 import requests
@@ -73,6 +74,11 @@ class OllamaProvider(AIProvider):
                 error_message=str(exc),
                 duration_ms=duration_ms,
             )
+            try:
+                from web.routes.app_log import log_event
+                log_event('error', 'ai', f'Ollama call failed [{action}]: {str(exc)}', traceback.format_exc())
+            except Exception:
+                pass
             return ""
 
     def _parse_json(self, text: str) -> dict:

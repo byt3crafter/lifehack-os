@@ -38,6 +38,19 @@ MIGRATIONS = [
         );
         CREATE INDEX IF NOT EXISTS idx_ai_usage_timestamp ON ai_usage_log(timestamp);
     '''),
+    (5, "Add app_log table for application-wide error and event logging", '''
+        CREATE TABLE IF NOT EXISTS app_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+            level TEXT NOT NULL DEFAULT 'error',
+            source TEXT NOT NULL DEFAULT 'app',
+            message TEXT NOT NULL,
+            detail TEXT DEFAULT '',
+            request_path TEXT DEFAULT '',
+            request_method TEXT DEFAULT ''
+        );
+        CREATE INDEX IF NOT EXISTS idx_app_log_timestamp ON app_log(timestamp);
+    '''),
 ]
 
 

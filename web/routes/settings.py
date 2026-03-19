@@ -114,6 +114,9 @@ def save_settings():
 @admin_required
 def reset_all_data():
     """Delete all user data. Does NOT remove users or app_settings."""
+    from .app_log import log_event
+    log_event('warning', 'settings', 'All data reset by admin')
+
     conn = get_connection()
 
     for table in _RESET_TABLES:

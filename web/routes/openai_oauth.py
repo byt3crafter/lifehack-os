@@ -128,7 +128,8 @@ def callback():
         resp.raise_for_status()
         token_data = resp.json()
     except Exception as exc:
-        # Log server-side; surface a generic error to the browser
+        from .app_log import log_event
+        log_event('error', 'openai_oauth', f'Token exchange failed: {str(exc)}')
         print(f"[openai_oauth] token exchange failed: {exc}")
         return redirect('/#settings?error=oauth_token_exchange_failed')
 
@@ -136,6 +137,8 @@ def callback():
     refresh_token = token_data.get('refresh_token', '')
 
     if not access_token:
+        from .app_log import log_event
+        log_event('error', 'openai_oauth', 'Token exchange succeeded but no access_token in response')
         return redirect('/#settings?error=oauth_no_access_token')
 
     conn = get_connection()
@@ -144,6 +147,9 @@ def callback():
         _upsert_setting(conn, 'openai_oauth_refresh', refresh_token)
     _upsert_setting(conn, 'ai_provider', 'chatgpt_oauth')
     conn.commit()
+
+    from .app_log import log_event
+    log_event('info', 'openai_oauth', 'OAuth connection established successfully')
 
     return redirect('/#settings')
 

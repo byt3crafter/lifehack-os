@@ -1238,6 +1238,10 @@
                             <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/><path d="M10 9v5M10 7v.01"/></svg>
                             About
                         </button>
+                        <button onclick="settingsTab('debug')"      id="stab-debug"        class="settings-tab-btn" aria-selected="false" style="display:flex;align-items:center;gap:0.625rem;width:100%;text-align:left;padding:0.5rem 0.75rem;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-size:0.8125rem;font-weight:500;transition:background 0.12s,color 0.12s;background:transparent;color:#9898a6;">
+                            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" viewBox="0 0 20 20"><path d="M6 3l-3 4h4l-2 10 9-11H9l3-6z"/></svg>
+                            Debug Log
+                        </button>
                     </nav>
 
                     <!-- Content panels -->
@@ -1250,6 +1254,7 @@
                             <button onclick="settingsTab('openclaw')"     id="stab-m-openclaw"     style="flex-shrink:0;padding:0.375rem 0.875rem;border-radius:100px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;transition:background 0.12s,color 0.12s,border-color 0.12s;background:transparent;color:#9898a6;">AI Agent</button>
                             <button onclick="settingsTab('integrations')" id="stab-m-integrations" style="flex-shrink:0;padding:0.375rem 0.875rem;border-radius:100px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;transition:background 0.12s,color 0.12s,border-color 0.12s;background:transparent;color:#9898a6;">Integrations</button>
                             <button onclick="settingsTab('about')"        id="stab-m-about"        style="flex-shrink:0;padding:0.375rem 0.875rem;border-radius:100px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;transition:background 0.12s,color 0.12s,border-color 0.12s;background:transparent;color:#9898a6;">About</button>
+                            <button onclick="settingsTab('debug')"        id="stab-m-debug"        style="flex-shrink:0;padding:0.375rem 0.875rem;border-radius:100px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;transition:background 0.12s,color 0.12s,border-color 0.12s;background:transparent;color:#9898a6;">Debug Log</button>
                         </div>
 
                         <!-- ── MODULES panel ─────────────────────────────── -->
@@ -1635,6 +1640,31 @@
                             </div>
                         </div>
 
+                        <!-- ── DEBUG LOG panel ──────────────────────────── -->
+                        <div id="spanel-debug" style="display:none;">
+                            <div class="mb-5">
+                                <h3 class="text-base font-semibold mb-1" style="color:#f0f0f2;">Debug Log</h3>
+                                <p class="text-sm" style="color:#5c5c6b;">Server-side log entries. Auto-refreshes every 10 seconds while this panel is open.</p>
+                            </div>
+
+                            <!-- Toolbar -->
+                            <div class="flex items-center gap-2 mb-3 flex-wrap">
+                                <div class="flex gap-1">
+                                    <button id="dlog-filter-all"     onclick="debugLogFilter('all')"     style="padding:0.25rem 0.625rem;border-radius:6px;border:1px solid rgba(79,128,255,0.4);font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;background:rgba(79,128,255,0.15);color:#f0f0f2;">All</button>
+                                    <button id="dlog-filter-error"   onclick="debugLogFilter('error')"   style="padding:0.25rem 0.625rem;border-radius:6px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;background:transparent;color:#9898a6;">Errors</button>
+                                    <button id="dlog-filter-warning" onclick="debugLogFilter('warning')" style="padding:0.25rem 0.625rem;border-radius:6px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;background:transparent;color:#9898a6;">Warnings</button>
+                                    <button id="dlog-filter-info"    onclick="debugLogFilter('info')"    style="padding:0.25rem 0.625rem;border-radius:6px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;background:transparent;color:#9898a6;">Info</button>
+                                </div>
+                                <div style="flex:1;"></div>
+                                <button onclick="clearDebugLogs()" style="padding:0.25rem 0.75rem;border-radius:6px;border:1px solid rgba(239,68,68,0.3);font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;background:rgba(239,68,68,0.1);color:#ef4444;transition:background 0.12s;">Clear Logs</button>
+                            </div>
+
+                            <!-- Log list -->
+                            <div id="debug-log-list" class="card overflow-y-auto" style="max-height:420px;padding:0;">
+                                <p class="text-sm p-4" style="color:#5c5c6b;">Loading logs...</p>
+                            </div>
+                        </div>
+
                     </div><!-- /content panels -->
                 </div><!-- /settings layout -->
             </div>
@@ -1655,6 +1685,11 @@
     <script>
     const $ = s => document.querySelector(s);
     const $$ = s => document.querySelectorAll(s);
+
+    window.addEventListener('error', function(e) {
+        console.error('[LifeHack] JS Error:', e.message, e.filename, e.lineno);
+    });
+
     let cats = {};
     let enabledModules = {};
 
@@ -2198,8 +2233,8 @@
                     imagePath = uploadResult.image_path || null;
                     // Show AI error if analysis failed but photo still uploaded
                     if(uploadResult.ai_error) {
-                        showToast('AI analysis failed: ' + uploadResult.ai_error, 'warning');
-                        // Still continue so user can fill in manually
+                        showToast('AI failed: ' + uploadResult.ai_error, 'error');
+                        // Still continue so user can fill in manually with photo attached
                     } else {
                         // Auto-fill nutrition fields from AI analysis
                         if(uploadResult.calories   != null) { const el = $('#nf-cal');     if(el) el.value = uploadResult.calories; }
@@ -2731,8 +2766,11 @@
     }
 
     // ── Settings tab switcher ───────────────────────────────────
+    var _debugLogInterval = null;
+    var _debugLogActiveFilter = 'all';
+
     function settingsTab(tab) {
-        const panels = ['modules','ai','openclaw','integrations','about'];
+        const panels = ['modules','ai','openclaw','integrations','about','debug'];
         panels.forEach(p => {
             const panel = $(`#spanel-${p}`);
             if(panel) panel.style.display = (p === tab) ? '' : 'none';
@@ -2769,6 +2807,102 @@
                 btn.style.borderColor = '#2a2a2e';
             }
         });
+        // Start/stop debug log auto-refresh
+        if(_debugLogInterval) { clearInterval(_debugLogInterval); _debugLogInterval = null; }
+        if(tab === 'debug') {
+            loadDebugLogs();
+            _debugLogInterval = setInterval(loadDebugLogs, 10000);
+        }
+    }
+
+    function debugLogFilter(level) {
+        _debugLogActiveFilter = level;
+        var filterBtns = ['all','error','warning','info'];
+        filterBtns.forEach(function(f) {
+            var btn = $('#dlog-filter-' + f);
+            if(!btn) return;
+            if(f === level) {
+                btn.style.background = 'rgba(79,128,255,0.15)';
+                btn.style.color = '#f0f0f2';
+                btn.style.borderColor = 'rgba(79,128,255,0.4)';
+            } else {
+                btn.style.background = 'transparent';
+                btn.style.color = '#9898a6';
+                btn.style.borderColor = '#2a2a2e';
+            }
+        });
+        loadDebugLogs();
+    }
+
+    async function loadDebugLogs() {
+        var listEl = $('#debug-log-list');
+        if(!listEl) return;
+        try {
+            var url = '/api/logs';
+            if(_debugLogActiveFilter && _debugLogActiveFilter !== 'all') {
+                url += '?level=' + _debugLogActiveFilter;
+            }
+            var resp = await fetch(url, {credentials: 'same-origin'});
+            if(!resp.ok) throw new Error('HTTP ' + resp.status);
+            var data = await resp.json();
+            var entries = Array.isArray(data) ? data : (Array.isArray(data.entries) ? data.entries : []);
+            if(!entries.length) {
+                listEl.innerHTML = '<p class="text-sm p-4" style="color:#5c5c6b;">No log entries found.</p>';
+                return;
+            }
+            var html = '';
+            entries.slice(0, 200).forEach(function(entry, idx) {
+                var ts = entry.timestamp ? new Date(entry.timestamp).toLocaleString() : '';
+                var lvl = (entry.level || 'info').toLowerCase();
+                var badgeStyle = lvl === 'error'
+                    ? 'background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.25);'
+                    : lvl === 'warning'
+                    ? 'background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.25);'
+                    : 'background:rgba(79,128,255,0.12);color:#7ea8ff;border:1px solid rgba(79,128,255,0.2);';
+                var src = entry.source || '';
+                var msg = entry.message || '';
+                var hasDetail = !!(entry.detail || entry.stack);
+                var detailId = 'dlog-detail-' + idx;
+                html += '<div style="border-bottom:1px solid #2a2a2e;">';
+                html += '<div onclick="toggleDebugDetail(' + "'" + detailId + "'" + ')" style="display:flex;align-items:flex-start;gap:8px;padding:8px 12px;cursor:pointer;transition:background 0.1s;" onmouseover="this.style.background=\'rgba(255,255,255,0.02)\'" onmouseout="this.style.background=\'transparent\'">';
+                html += '<span style="font-family:\'DM Mono\',monospace;font-size:0.625rem;color:#5c5c6b;flex-shrink:0;min-width:9rem;padding-top:1px;">' + ts + '</span>';
+                html += '<span style="font-size:0.625rem;font-weight:600;padding:1px 5px;border-radius:4px;flex-shrink:0;' + badgeStyle + '">' + lvl.toUpperCase() + '</span>';
+                if(src) html += '<span style="font-size:0.6875rem;color:#9898a6;flex-shrink:0;font-family:\'DM Mono\',monospace;">' + src + '</span>';
+                html += '<span style="font-size:0.8125rem;color:#f0f0f2;flex:1;min-width:0;word-break:break-word;">' + msg + '</span>';
+                if(hasDetail) html += '<svg width="12" height="12" fill="none" stroke="#5c5c6b" stroke-width="2" viewBox="0 0 20 20" style="flex-shrink:0;margin-top:2px;"><path d="M5 8l5 5 5-5"/></svg>';
+                html += '</div>';
+                if(hasDetail) {
+                    var detailText = entry.detail || entry.stack || '';
+                    html += '<div id="' + detailId + '" style="display:none;padding:8px 12px 10px 12px;border-top:1px solid #2a2a2e;">';
+                    html += '<pre style="font-family:\'DM Mono\',monospace;font-size:0.6875rem;color:#9898a6;white-space:pre-wrap;word-break:break-all;margin:0;line-height:1.5;">' + detailText + '</pre>';
+                    html += '</div>';
+                }
+                html += '</div>';
+            });
+            listEl.innerHTML = html;
+        } catch(err) {
+            listEl.innerHTML = '<p class="text-sm p-4" style="color:#ef4444;">Could not load logs: ' + err.message + '</p>';
+        }
+    }
+
+    function toggleDebugDetail(id) {
+        var el = document.getElementById(id);
+        if(!el) return;
+        el.style.display = el.style.display === 'none' ? '' : 'none';
+    }
+
+    async function clearDebugLogs() {
+        try {
+            var resp = await fetch('/api/logs/clear', {method: 'POST', credentials: 'same-origin'});
+            if(resp.ok) {
+                showToast('Logs cleared', 'success');
+                loadDebugLogs();
+            } else {
+                showToast('Could not clear logs', 'error');
+            }
+        } catch(err) {
+            showToast('Could not clear logs', 'error');
+        }
     }
 
     // Toggle switch helper — keeps toggle visually consistent with peer-checked state
@@ -2924,13 +3058,21 @@
                             var badge = ok
                                 ? '<span style="font-size:0.6875rem;font-weight:600;padding:1px 6px;border-radius:4px;background:rgba(34,197,94,0.12);color:#22c55e;">ok</span>'
                                 : '<span style="font-size:0.6875rem;font-weight:600;padding:1px 6px;border-radius:4px;background:rgba(239,68,68,0.12);color:#ef4444;">fail</span>';
-                            return '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid #2a2a2e;">'
+                            var errMsg = '';
+                            if(!ok && e.error_message) {
+                                var truncated = e.error_message.length > 100 ? e.error_message.slice(0, 100) + '...' : e.error_message;
+                                errMsg = '<div style="width:100%;font-size:0.6875rem;color:#ef4444;margin-top:3px;padding-left:0.25rem;border-left:2px solid rgba(239,68,68,0.4);">' + truncated + '</div>';
+                            }
+                            return '<div style="padding:6px 0;border-bottom:1px solid #2a2a2e;">'
+                                + '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;">'
                                 + '<span style="font-family:\'DM Mono\',monospace;font-size:0.6875rem;color:#5c5c6b;flex-shrink:0;min-width:9rem;">' + ts + '</span>'
                                 + '<span style="font-size:0.8125rem;color:#f0f0f2;flex:1;min-width:8rem;">' + model + '</span>'
                                 + '<span style="font-size:0.75rem;color:#9898a6;flex-shrink:0;">' + action + '</span>'
                                 + '<span style="font-family:\'DM Mono\',monospace;font-size:0.75rem;color:#9898a6;flex-shrink:0;">' + tokens + ' tok</span>'
                                 + '<span style="font-family:\'DM Mono\',monospace;font-size:0.75rem;color:#9898a6;flex-shrink:0;">' + cost + '</span>'
                                 + badge
+                                + '</div>'
+                                + errMsg
                                 + '</div>';
                         });
                         logEl.innerHTML = '<div>' + rows.join('') + '</div>';

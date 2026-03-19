@@ -275,6 +275,18 @@ def init_database() -> None:
             duration_ms INTEGER DEFAULT 0
         );
 
+        -- App Log (application-wide error and event log)
+        CREATE TABLE IF NOT EXISTS app_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+            level TEXT NOT NULL DEFAULT 'error',
+            source TEXT NOT NULL DEFAULT 'app',
+            message TEXT NOT NULL,
+            detail TEXT DEFAULT '',
+            request_path TEXT DEFAULT '',
+            request_method TEXT DEFAULT ''
+        );
+
         -- Indexes
         CREATE INDEX IF NOT EXISTS idx_habit_completions_date ON habit_completions(completed_at);
         CREATE INDEX IF NOT EXISTS idx_checkins_date ON daily_checkins(date);
@@ -283,6 +295,7 @@ def init_database() -> None:
         CREATE INDEX IF NOT EXISTS idx_food_date ON food_logs(logged_at);
         CREATE INDEX IF NOT EXISTS idx_challenges_status ON challenges(status);
         CREATE INDEX IF NOT EXISTS idx_ai_usage_timestamp ON ai_usage_log(timestamp);
+        CREATE INDEX IF NOT EXISTS idx_app_log_timestamp ON app_log(timestamp);
     """)
 
     conn.commit()

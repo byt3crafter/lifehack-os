@@ -24,6 +24,7 @@ from .plugins import plugins_bp
 from .settings import settings_bp
 from .openai_oauth import openai_oauth_bp
 from .ai_models import ai_models_bp
+from .app_log import app_log_bp
 
 __all__ = [
     'auth_bp',
@@ -45,4 +46,5 @@ __all__ = [
     'settings_bp',
     'openai_oauth_bp',
     'ai_models_bp',
+    'app_log_bp',
 ]

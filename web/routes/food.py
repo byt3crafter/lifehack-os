@@ -1,5 +1,6 @@
 """Food/nutrition routes."""
 import base64
+import traceback
 import uuid
 from pathlib import Path
 from flask import Blueprint, jsonify, request
@@ -175,6 +176,9 @@ def upload_food_photo():
 
     image_url = f"/static/uploads/{filename}"
 
+    from .app_log import log_event
+    log_event('info', 'food', 'Photo uploaded', image_url)
+
     # Attempt AI analysis if a provider is configured.
     description = request.form.get('description', '')
     analysis_dict = None
@@ -203,6 +207,7 @@ def upload_food_photo():
     except Exception as exc:
         # AI analysis is best-effort; always return the saved image path.
         ai_error = str(exc)
+        log_event('error', 'ai', f'Food analysis failed: {ai_error}', traceback.format_exc())
 
     response = {
         'success': True,

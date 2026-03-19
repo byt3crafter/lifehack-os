@@ -3,11 +3,12 @@
 
 Created by Ludovic Micinthe (dovik@micinthe.com) | Vibe Coder
 """
-from flask import Flask
+from flask import Flask, jsonify
 from flask_cors import CORS
 import os
 import secrets
 import sys
+import traceback
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -28,7 +29,7 @@ from routes import (
     patterns_bp, reports_bp, projects_bp, integrations_bp,
     misc_bp, openclaw_bp, challenges_bp, modules_bp, ai_bp,
     api_docs_bp, plugins_bp, settings_bp,
-    openai_oauth_bp, ai_models_bp,
+    openai_oauth_bp, ai_models_bp, app_log_bp,
 )
 
 
@@ -81,6 +82,21 @@ def create_app():
     app.register_blueprint(settings_bp)
     app.register_blueprint(openai_oauth_bp)
     app.register_blueprint(ai_models_bp)
+    app.register_blueprint(app_log_bp)
+
+    # Flask error handlers — log to app_log table and return safe JSON responses
+
+    @app.errorhandler(500)
+    def handle_500(e):
+        from web.routes.app_log import log_event
+        log_event('error', 'flask', f'500 Internal Server Error: {str(e)}', traceback.format_exc())
+        return jsonify({'error': 'Internal server error'}), 500
+
+    @app.errorhandler(Exception)
+    def handle_exception(e):
+        from web.routes.app_log import log_event
+        log_event('error', 'flask', str(e), traceback.format_exc())
+        return jsonify({'error': str(e)}), 500
 
     # Health check endpoint (used by Docker HEALTHCHECK)
     @app.route('/health')
