@@ -2232,13 +2232,14 @@
                     if(uploadResult.ai_error) {
                         showToast('AI failed: ' + uploadResult.ai_error, 'error');
                         // Still continue so user can fill in manually with photo attached
-                    } else {
+                    } else if(uploadResult.analysis) {
                         // Auto-fill nutrition fields from AI analysis
-                        if(uploadResult.calories   != null) { const el = $('#nf-cal');     if(el) el.value = uploadResult.calories; }
-                        if(uploadResult.protein_g  != null) { const el = $('#nf-protein'); if(el) el.value = uploadResult.protein_g; }
-                        if(uploadResult.carbs_g    != null) { const el = $('#nf-carbs');   if(el) el.value = uploadResult.carbs_g; }
-                        if(uploadResult.fat_g      != null) { const el = $('#nf-fat');     if(el) el.value = uploadResult.fat_g; }
-                        if(uploadResult.description && !desc) { const el = $('#nf-desc'); if(el) el.value = uploadResult.description; }
+                        const a = uploadResult.analysis;
+                        if(a.calories   != null) { const el = $('#nf-cal');     if(el) el.value = Math.round(a.calories); }
+                        if(a.protein_g  != null) { const el = $('#nf-protein'); if(el) el.value = Math.round(a.protein_g); }
+                        if(a.carbs_g    != null) { const el = $('#nf-carbs');   if(el) el.value = Math.round(a.carbs_g); }
+                        if(a.fat_g      != null) { const el = $('#nf-fat');     if(el) el.value = Math.round(a.fat_g); }
+                        if(a.description && !desc) { const el = $('#nf-desc'); if(el) el.value = a.description; }
                         showToast('Photo analyzed — review and confirm', 'info');
                         return; // Let user review the auto-filled values before submitting
                     }
