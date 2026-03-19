@@ -4665,8 +4665,9 @@
             actHtml += '</div>';
             actHtml += '<div class="flex items-center gap-0.5">';
             if(x.active === 0) {
-                // Inactive habit — show reactivate button
+                // Inactive habit — reactivate + permanent delete
                 actHtml += '<button onclick="event.stopPropagation(); reactivateHabit(' + x.id + ')" class="text-xs px-2 py-1 rounded" style="color:#22c55e;background:rgba(34,197,94,0.1);">Reactivate</button>';
+                actHtml += '<button onclick="event.stopPropagation(); permanentDeleteHabit(' + x.id + ')" class="text-xs px-2 py-1 rounded" style="color:#ef4444;background:rgba(239,68,68,0.1);">Delete</button>';
             } else {
                 if(!x.completed) {
                     actHtml += '<button onclick="event.stopPropagation(); missHabitModal(' + x.id + ', \'' + safeName + '\')" class="action-link-danger text-xs" title="Log a miss">Miss</button>';
@@ -4892,6 +4893,14 @@
         await api('/habits/' + id, 'PUT', data);
         hideModal();
         showToast('Habit updated', 'success');
+        loadHabits();
+    }
+
+    async function permanentDeleteHabit(id) {
+        if(!window._pdconfirm) { showToast('Click again to permanently delete','warning'); window._pdconfirm=setTimeout(function(){window._pdconfirm=null;},3000); return; }
+        clearTimeout(window._pdconfirm); window._pdconfirm=null;
+        await api('/habits/' + id + '/permanent', 'DELETE');
+        showToast('Habit permanently deleted', 'info');
         loadHabits();
     }
 

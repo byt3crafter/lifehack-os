@@ -489,6 +489,29 @@ def reactivate_habit(habit_id):
     return jsonify({'success': True})
 
 
+@habits_bp.route('/<int:habit_id>/permanent', methods=['DELETE'])
+@login_required
+def permanent_delete_habit(habit_id):
+    """Permanently delete a habit and all associated data."""
+    conn = get_connection()
+    row = conn.execute("SELECT id FROM habits WHERE id = ?", (habit_id,)).fetchone()
+    if not row:
+        return jsonify({'error': 'Not found'}), 404
+    # Delete all related data
+    phases = conn.execute("SELECT id FROM habit_phases WHERE habit_id = ?", (habit_id,)).fetchall()
+    for p in phases:
+        conn.execute("DELETE FROM micro_task_completions WHERE micro_task_id IN (SELECT id FROM habit_micro_tasks WHERE phase_id = ?)", (p['id'],))
+        conn.execute("DELETE FROM habit_micro_tasks WHERE phase_id = ?", (p['id'],))
+    conn.execute("DELETE FROM habit_phases WHERE habit_id = ?", (habit_id,))
+    conn.execute("DELETE FROM habit_strength WHERE habit_id = ?", (habit_id,))
+    conn.execute("DELETE FROM habit_stacks WHERE habit_id = ?", (habit_id,))
+    conn.execute("DELETE FROM habit_miss_log WHERE habit_id = ?", (habit_id,))
+    conn.execute("DELETE FROM habit_completions WHERE habit_id = ?", (habit_id,))
+    conn.execute("DELETE FROM habits WHERE id = ?", (habit_id,))
+    conn.commit()
+    return jsonify({'success': True})
+
+
 # ---------------------------------------------------------------------------
 # New endpoints
 # ---------------------------------------------------------------------------
