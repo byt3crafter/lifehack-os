@@ -6983,10 +6983,14 @@
                     + (x.description ? '<p class="disc-desc">' + x.description + '</p>' : '')
                     + '<div class="disc-actions">'
                     + '<button onclick="editDiscoveryModal(' + x.id + ')" class="action-link">Edit</button>'
-                    + '<button onclick="completeDiscoveryModal(' + x.id + ', \'' + safeTitle + '\')" class="action-link-success">Mark Done</button>'
-                    + '<button onclick="startDiscoveryAs(' + x.id + ', \'habit\', \'' + safeTitle + '\')" class="action-link">As Habit</button>'
-                    + '<button onclick="startDiscoveryAs(' + x.id + ', \'challenge\', \'' + safeTitle + '\')" class="action-link">Challenge</button>'
-                    + '<button onclick="deleteDiscovery(' + x.id + ')" class="action-link-danger">Delete</button>'
+                    + '<button onclick="completeDiscoveryModal(' + x.id + ', \'' + safeTitle + '\')" class="action-link-success">Done</button>'
+                    + '<div style="position:relative;display:inline-block;">'
+                    + '<button onclick="toggleDiscMenu(' + x.id + ')" class="action-link" style="color:#5c5c6b;">...</button>'
+                    + '<div id="disc-menu-' + x.id + '" style="display:none;position:absolute;bottom:100%;right:0;background:#1c1c20;border:1px solid #2a2a2e;border-radius:8px;padding:4px 0;min-width:120px;z-index:50;">'
+                    + '<button onclick="startDiscoveryAs(' + x.id + ', \'habit\', \'' + safeTitle + '\')" style="display:block;width:100%;text-align:left;padding:6px 12px;font-size:0.75rem;color:#9898a6;background:none;border:none;cursor:pointer;">Start as Habit</button>'
+                    + '<button onclick="startDiscoveryAs(' + x.id + ', \'challenge\', \'' + safeTitle + '\')" style="display:block;width:100%;text-align:left;padding:6px 12px;font-size:0.75rem;color:#9898a6;background:none;border:none;cursor:pointer;">Start as Challenge</button>'
+                    + '<button onclick="deleteDiscovery(' + x.id + ')" style="display:block;width:100%;text-align:left;padding:6px 12px;font-size:0.75rem;color:#ef4444;background:none;border:none;cursor:pointer;">Delete</button>'
+                    + '</div></div>'
                     + '</div>'
                     + '</div>'
                     + '</div>';
@@ -7112,7 +7116,7 @@
         var photoInput = document.getElementById('nd-photo');
         if(r && r.id && photoInput && photoInput.files && photoInput.files.length) {
             var formData = new FormData();
-            formData.append('image', photoInput.files[0]);
+            formData.append('photo', photoInput.files[0]);
             await fetch('/api/discover/' + r.id + '/upload-photo', {method: 'POST', body: formData, credentials: 'same-origin'});
         }
         hideModal();
@@ -7188,7 +7192,7 @@
         var photoInput = document.getElementById('ed-photo');
         if(r && !r.error && photoInput && photoInput.files && photoInput.files.length) {
             var formData = new FormData();
-            formData.append('image', photoInput.files[0]);
+            formData.append('photo', photoInput.files[0]);
             await fetch('/api/discover/' + id + '/upload-photo', {method: 'POST', body: formData, credentials: 'same-origin'});
         }
         hideModal();
@@ -7275,7 +7279,7 @@
             for(var pi = 0; pi < photoInput.files.length; pi++) {
                 try {
                     var formData = new FormData();
-                    formData.append('image', photoInput.files[pi]);
+                    formData.append('photo', photoInput.files[pi]);
                     var resp = await fetch('/api/discover/' + id + '/upload-photo', {method:'POST', body: formData, credentials:'same-origin'});
                     var result = await resp.json();
                     if(result && result.photo_url) uploadedPhotos.push(result.photo_url);
@@ -7289,6 +7293,22 @@
         if(r && !r.error) showToast('Discovery completed!', 'success');
         loadDiscover();
     }
+
+    function toggleDiscMenu(id) {
+        var menu = document.getElementById('disc-menu-' + id);
+        if(!menu) return;
+        var isOpen = menu.style.display !== 'none';
+        // Close all menus first
+        document.querySelectorAll('[id^="disc-menu-"]').forEach(function(m) { m.style.display = 'none'; });
+        if(!isOpen) menu.style.display = 'block';
+    }
+
+    // Close disc menus on outside click
+    document.addEventListener('click', function(e) {
+        if(!e.target.closest('[id^="disc-menu-"]') && !e.target.textContent.trim().match(/^\.\.\.$/)) {
+            document.querySelectorAll('[id^="disc-menu-"]').forEach(function(m) { m.style.display = 'none'; });
+        }
+    });
 
     async function deleteDiscovery(id) {
         if(!window._dconfirm) { showToast('Click again to confirm','warning'); window._dconfirm=setTimeout(function(){window._dconfirm=null;},3000); return; }
