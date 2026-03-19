@@ -4864,7 +4864,10 @@
     function removeEditTask(phaseIdx, taskIdx) {
         if(!_editPhaseData[phaseIdx]) return;
         _editPhaseData[phaseIdx].tasks.splice(taskIdx, 1);
-        // Re-render the phase card
+        // Try to remove the DOM row directly
+        var taskRow = document.getElementById('eh-task-' + phaseIdx + '-' + taskIdx);
+        if(taskRow) taskRow.remove();
+        // Also try re-render for phased habits
         var phaseEl = document.getElementById('eh-phase-' + phaseIdx);
         if(phaseEl) {
             var parent = phaseEl.parentNode;
