@@ -4347,7 +4347,7 @@
     }
 
     async function startTemplate(templateId) {
-        var r = await api('/habits/templates/' + templateId + '/start', 'POST');
+        var r = await api('/habits/templates/' + templateId + '/start', 'POST', {});
         hideModal();
         if(r) {
             showToast('Habit journey started!', 'success');

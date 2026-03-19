@@ -467,7 +467,7 @@ def log_habit_miss(habit_id):
     if not habit:
         return jsonify({'error': 'Not found'}), 404
 
-    data = request.json or {}
+    data = request.get_json(silent=True) or {}
     reason = data.get('reason', '')
     blocker = data.get('blocker', '')
     miss_date = data.get('date', date.today().isoformat())
@@ -503,7 +503,7 @@ def add_habit_phase(habit_id):
     if not habit:
         return jsonify({'error': 'Not found'}), 404
 
-    data = request.json or {}
+    data = request.get_json(silent=True) or {}
     if not data.get('name'):
         return jsonify({'error': 'name is required'}), 400
 
@@ -591,7 +591,7 @@ def start_from_template(template_id):
     if not tpl_row:
         return jsonify({'error': 'Template not found'}), 404
 
-    data = request.json or {}
+    data = request.get_json(silent=True) or {}
 
     # Allow caller to override habit name
     habit_name = data.get('name', tpl_row['name'])
@@ -660,7 +660,7 @@ def add_habit_stack(habit_id):
     if not habit:
         return jsonify({'error': 'Not found'}), 404
 
-    data = request.json or {}
+    data = request.get_json(silent=True) or {}
     trigger = (data.get('trigger') or '').strip()
     if not trigger:
         return jsonify({'error': 'trigger text is required'}), 400
