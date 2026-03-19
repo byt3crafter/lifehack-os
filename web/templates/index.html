@@ -3549,14 +3549,6 @@
             ? '<span style="color:#22c55e;">Connected</span>'
             : (vikEnabled ? '<span style="color:#f59e0b;">Enabled — not yet connected</span>' : 'Disabled');
 
-        // Google Calendar
-        const gcalEnabled = int.google_calendar?.enabled || false;
-        $('#int-gcal').checked = gcalEnabled;
-        _setToggleBg('gcal', gcalEnabled);
-        $('#gcal-status').innerHTML = int.google_calendar?.connected
-            ? '<span style="color:#22c55e;">Connected</span>'
-            : (gcalEnabled ? '<span style="color:#f59e0b;">Enabled — not yet connected</span>' : 'Disabled');
-
         // Firefly
         const ffEnabled = int.firefly?.enabled || false;
         $('#int-firefly').checked = ffEnabled;
