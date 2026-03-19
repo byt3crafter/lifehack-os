@@ -963,10 +963,6 @@
                         <p class="text-xs mt-0.5" style="color:#5c5c6b;">Track meals and nutrition</p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button onclick="analyzeFood()" id="ai-food-btn" class="btn-ghost flex items-center gap-1.5 text-xs" style="color:#8b5cf6;border-color:rgba(139,92,246,0.25);">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><circle cx="10" cy="10" r="7"/><path stroke-linecap="round" stroke-linejoin="round" d="M10 7v3l2 2"/></svg>
-                            AI Estimate
-                        </button>
                         <button onclick="addFoodModal()" class="btn-primary flex items-center gap-1.5">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 4v12M4 10h12"/></svg>
                             Log meal
@@ -2039,13 +2035,13 @@
         const groups = {};
         const groupOrder = [];
         f.logs.forEach(m => {
-            const day = m.logged_at ? m.logged_at.split('T')[0] : d;
+            const day = m.logged_at ? m.logged_at.replace(' ','T').split('T')[0] : d;
             if(!groups[day]) { groups[day] = []; groupOrder.push(day); }
             groups[day].push(m);
         });
 
         const renderCard = m => {
-            const time = m.logged_at ? new Date(m.logged_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
+            const time = m.logged_at ? new Date(m.logged_at.replace(' ','T')).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
             const meta = mealMeta[m.meal_type] || mealMeta.snack;
             const hasNutrition = m.protein_g || m.carbs_g || m.fat_g;
             const maxMacro = Math.max(m.protein_g||0, m.carbs_g||0, m.fat_g||0, 1);

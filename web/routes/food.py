@@ -130,15 +130,16 @@ def log_food():
 
     cursor = conn.execute(
         """INSERT INTO food_logs
-           (meal_type, description, calories, protein_g, carbs_g, fat_g, notes)
-           VALUES (?, ?, ?, ?, ?, ?, ?)""",
+           (meal_type, description, calories, protein_g, carbs_g, fat_g, notes, image_path)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
         (data.get('meal_type', 'meal'),
          data.get('description', ''),
          data.get('calories'),
          data.get('protein_g'),
          data.get('carbs_g'),
          data.get('fat_g'),
-         data.get('notes', ''))
+         data.get('notes', ''),
+         data.get('image_path'))
     )
     conn.commit()
 
