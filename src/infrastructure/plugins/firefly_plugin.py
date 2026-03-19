@@ -24,7 +24,7 @@ class FireflyPlugin(Plugin):
                 "label":       "Firefly III API URL",
                 "type":        "url",
                 "required":    True,
-                "placeholder": "https://firefly.example.com",
+                "placeholder": "https://firefly.example.com (without /api/v1)",
             },
             {
                 "id":          "api_token",
@@ -42,9 +42,19 @@ class FireflyPlugin(Plugin):
             },
         ]
 
+    @staticmethod
+    def _base_url(api_url: str) -> str:
+        """Normalize the URL — strip trailing /api/v1 if user included it."""
+        url = api_url.rstrip("/")
+        if url.endswith("/api/v1"):
+            url = url[:-7]
+        if url.endswith("/api"):
+            url = url[:-4]
+        return url
+
     def test_connection(self, config: dict) -> bool:
         """Verify the API URL and token are valid by calling /api/v1/about."""
-        api_url = config.get("api_url", "").rstrip("/")
+        api_url = self._base_url(config.get("api_url", ""))
         api_token = config.get("api_token", "")
         if not api_url or not api_token:
             return False
