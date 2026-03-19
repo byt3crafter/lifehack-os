@@ -1236,6 +1236,12 @@
                         </button>
                     </div>
                 </div>
+                <div class="flex items-center gap-2 mb-3">
+                    <label class="text-xs flex items-center gap-1.5 cursor-pointer" style="color:#5c5c6b;">
+                        <input type="checkbox" id="show-inactive-habits" onchange="loadHabits()" style="accent-color:#4f80ff;">
+                        Show inactive
+                    </label>
+                </div>
                 <div id="habits-list" class="space-y-2"></div>
             </div>
 
@@ -4522,11 +4528,15 @@
     }
 
     async function loadHabits() {
-        var h = await api('/habits');
+        var showInactive = document.getElementById('show-inactive-habits');
+        var includeInactive = showInactive && showInactive.checked;
+        var url = includeInactive ? '/habits?include_inactive=true' : '/habits';
+        var h = await api(url);
         if(!h) return;
 
         // Update subtitle
-        var done = h.filter(function(x) { return x.completed; }).length;
+        var active = h.filter(function(x) { return x.active !== 0; });
+        var done = active.filter(function(x) { return x.completed; }).length;
         var sub = document.querySelector('#habits-subtitle');
         if(sub) sub.textContent = h.length ? (done + ' of ' + h.length + ' completed today') : 'No habits yet';
 
@@ -4654,16 +4664,21 @@
             if(taskSummaryHtml) actHtml += taskSummaryHtml;
             actHtml += '</div>';
             actHtml += '<div class="flex items-center gap-0.5">';
-            if(!x.completed) {
-                actHtml += '<button onclick="event.stopPropagation(); missHabitModal(' + x.id + ', \'' + safeName + '\')" class="action-link-danger text-xs" title="Log a miss">Miss</button>';
+            if(x.active === 0) {
+                // Inactive habit — show reactivate button
+                actHtml += '<button onclick="event.stopPropagation(); reactivateHabit(' + x.id + ')" class="text-xs px-2 py-1 rounded" style="color:#22c55e;background:rgba(34,197,94,0.1);">Reactivate</button>';
+            } else {
+                if(!x.completed) {
+                    actHtml += '<button onclick="event.stopPropagation(); missHabitModal(' + x.id + ', \'' + safeName + '\')" class="action-link-danger text-xs" title="Log a miss">Miss</button>';
+                }
+                actHtml += '<button onclick="event.stopPropagation(); editHabitModal(' + x.id + ', \'' + safeName + '\', \'' + x.category + '\', ' + x.difficulty + ')" class="action-link" title="Edit">'
+                    + '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M14.5 3.5l2 2L7 15H5v-2L14.5 3.5z"/></svg>'
+                    + '</button>'
+                    + '<button onclick="event.stopPropagation(); deleteHabit(' + x.id + ', \'' + safeName + '\')" class="action-link-danger" title="Delete">'
+                    + '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5l10 10M15 5L5 15"/></svg>'
+                    + '</button>';
             }
-            actHtml += '<button onclick="event.stopPropagation(); editHabitModal(' + x.id + ', \'' + safeName + '\', \'' + x.category + '\', ' + x.difficulty + ')" class="action-link" title="Edit">'
-                + '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M14.5 3.5l2 2L7 15H5v-2L14.5 3.5z"/></svg>'
-                + '</button>'
-                + '<button onclick="event.stopPropagation(); deleteHabit(' + x.id + ', \'' + safeName + '\')" class="action-link-danger" title="Delete">'
-                + '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5l10 10M15 5L5 15"/></svg>'
-                + '</button>'
-                + '</div></div>';
+            actHtml += '</div></div>';
 
             var cardBg = x.completed ? 'rgba(34,197,94,0.05)' : '#1c1c20';
             var cardBorder = x.completed ? 'rgba(34,197,94,0.18)' : '#2a2a2e';
@@ -4674,7 +4689,8 @@
                 ? 'event.stopPropagation(); toggleH(' + x.id + ', false);'
                 : (completeBtnGated ? 'event.stopPropagation(); showToast("Complete all tasks first","warning");' : 'event.stopPropagation(); toggleH(' + x.id + ', true);');
 
-            html += '<div class="rounded-xl p-3 habit-row" data-id="' + x.id + '" style="background:' + cardBg + ';border:1px solid ' + cardBorder + ';">'
+            var inactiveStyle = (x.active === 0) ? 'opacity:0.5;' : '';
+            html += '<div class="rounded-xl p-3 habit-row" data-id="' + x.id + '" style="' + inactiveStyle + 'background:' + cardBg + ';border:1px solid ' + cardBorder + ';">'
                 + '<div class="flex items-start gap-2.5">'
                 + '<div class="w-1 rounded-full flex-shrink-0 mt-0.5" style="background:' + catColor + ';height:1.25rem;"></div>'
                 // small check button
@@ -4876,6 +4892,12 @@
         await api('/habits/' + id, 'PUT', data);
         hideModal();
         showToast('Habit updated', 'success');
+        loadHabits();
+    }
+
+    async function reactivateHabit(id) {
+        await api('/habits/' + id + '/reactivate', 'POST', {});
+        showToast('Habit reactivated!', 'success');
         loadHabits();
     }
 

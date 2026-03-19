@@ -200,9 +200,14 @@ def _apply_daily_decay(conn) -> None:
 @habits_bp.route('')
 @login_required
 def get_habits():
-    """List all active habits with strength, current phase, and phase progress."""
+    """List habits with strength, current phase, and phase progress.
+
+    Query params:
+        include_inactive=true — also return inactive (soft-deleted) habits
+    """
     conn = get_connection()
-    habits = habit_repo.get_all()
+    include_inactive = request.args.get('include_inactive', '').lower() == 'true'
+    habits = habit_repo.get_all(active_only=not include_inactive)
     completions = habit_repo.get_completions_for_date(date.today())
     completed_ids = {c.habit_id for c in completions}
 
@@ -249,6 +254,7 @@ def get_habits():
             'difficulty': h.difficulty,
             'points': h.points,
             'streak': streak,
+            'active': h.active,
             'completed': h.id in completed_ids,
             'strength': strength,
             'strength_label': strength_label,
@@ -468,6 +474,19 @@ def delete_habit(habit_id):
     habit.active = False
     habit_repo.update(habit)
     return jsonify({'success': True, 'deactivated': True})
+
+
+@habits_bp.route('/<int:habit_id>/reactivate', methods=['POST'])
+@login_required
+def reactivate_habit(habit_id):
+    """Reactivate a soft-deleted habit."""
+    conn = get_connection()
+    row = conn.execute("SELECT id FROM habits WHERE id = ?", (habit_id,)).fetchone()
+    if not row:
+        return jsonify({'error': 'Not found'}), 404
+    conn.execute("UPDATE habits SET active = 1 WHERE id = ?", (habit_id,))
+    conn.commit()
+    return jsonify({'success': True})
 
 
 # ---------------------------------------------------------------------------
