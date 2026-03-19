@@ -184,9 +184,14 @@ def upload_food_photo():
     analysis_dict = None
     ai_error = None
 
+    provider_info = {'name': 'none', 'model': ''}
     try:
         from src.infrastructure.ai.factory import get_ai_provider
         provider = get_ai_provider('food')
+        provider_info = {
+            'name': type(provider).__name__.replace('Provider', '').lower(),
+            'model': getattr(provider, 'model', ''),
+        }
         if not provider.is_available():
             ai_error = 'AI provider not configured'
         else:
@@ -205,7 +210,6 @@ def upload_food_photo():
             else:
                 ai_error = 'AI returned no usable analysis'
     except Exception as exc:
-        # AI analysis is best-effort; always return the saved image path.
         ai_error = str(exc)
         log_event('error', 'ai', f'Food analysis failed: {ai_error}', traceback.format_exc())
 
@@ -213,6 +217,7 @@ def upload_food_photo():
         'success': True,
         'image_path': image_url,
         'analysis': analysis_dict,
+        'provider': provider_info,
     }
     if ai_error:
         response['ai_error'] = ai_error

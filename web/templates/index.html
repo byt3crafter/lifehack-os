@@ -2174,7 +2174,8 @@
                         if(a.carbs_g    != null) { const el = $('#nf-carbs');   if(el) el.value = Math.round(a.carbs_g); }
                         if(a.fat_g      != null) { const el = $('#nf-fat');     if(el) el.value = Math.round(a.fat_g); }
                         if(a.description && !desc) { const el = $('#nf-desc'); if(el) el.value = a.description; }
-                        showToast('Photo analyzed — review and confirm', 'info');
+                        var pName = uploadResult.provider ? (uploadResult.provider.name + (uploadResult.provider.model ? ' · ' + uploadResult.provider.model : '')) : 'AI';
+                        showToast('Analyzed by ' + pName + ' — review and confirm', 'info');
                         return; // Let user review the auto-filled values before submitting
                     }
                 }

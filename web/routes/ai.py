@@ -138,9 +138,10 @@ def ai_providers():
                 available = instance.is_available()
             except Exception:
                 available = False
-            providers_info[provider_name] = {'configured': True, 'available': available}
+            model = getattr(instance, 'model', '')
+            providers_info[provider_name] = {'configured': True, 'available': available, 'model': model}
         else:
-            providers_info[provider_name] = {'configured': False}
+            providers_info[provider_name] = {'configured': False, 'model': ''}
 
     # Build task assignments by replicating the factory resolution order.
     env_fallback = os.environ.get('LIFEHACK_AI_PROVIDER', 'none')
