@@ -3195,7 +3195,7 @@
                 + '</div>'
                 + '</div>'
                 + '<div class="flex items-center gap-1 mt-2.5 pt-2.5" style="border-top:1px solid #242428;">'
-                + '<button onclick="editFoodModal(' + m.id + ', \'' + (m.meal_type||'snack') + '\', \'' + safeDesc + '\', ' + (m.calories||0) + ', ' + (m.protein_g||0) + ', ' + (m.carbs_g||0) + ', ' + (m.fat_g||0) + ', \'' + imgSrc + '\')" class="action-link">Edit</button>'
+                + '<button onclick="editFoodModal(' + m.id + ', \'' + (m.meal_type||'snack') + '\', \'' + safeDesc + '\', ' + (m.calories||0) + ', ' + (m.protein_g||0) + ', ' + (m.carbs_g||0) + ', ' + (m.fat_g||0) + ', \'' + imgSrc + '\', \'' + (m.notes||'').replace(/'/g,'&#39;') + '\')" class="action-link">Edit</button>'
                 + '<button onclick="deleteFood(' + m.id + ')" class="action-link-danger">Delete</button>'
                 + '</div>'
                 + '</div>';
@@ -3435,7 +3435,7 @@
         }
     }
 
-    function editFoodModal(id, mealType, desc, cal, protein, carbs, fat, imagePath) {
+    function editFoodModal(id, mealType, desc, cal, protein, carbs, fat, imagePath, notes) {
         const safeDesc = (desc||'').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         let photoBlock = '';
         if(imagePath) {
@@ -3475,6 +3475,10 @@
             + '<div><label class="field-label" for="ef-carbs">Carbs (g)</label><input id="ef-carbs" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="' + (carbs||'') + '"></div>'
             + '<div><label class="field-label" for="ef-fat">Fat (g)</label><input id="ef-fat" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="' + (fat||'') + '"></div>'
             + '</div>'
+            + '<div>'
+            + '<label class="field-label" for="ef-notes">Notes (medicine, how you felt, etc.)</label>'
+            + '<input id="ef-notes" type="text" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="' + ((notes||'').replace(/"/g,'&quot;')) + '" placeholder="e.g. Took vitamin D, felt bloated">'
+            + '</div>'
             + '<div class="flex gap-2 pt-1">'
             + '<button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>'
             + '<button onclick="updateFood(' + id + ')" class="btn-primary flex-1 py-2.5">Save changes</button>'
@@ -3496,13 +3500,15 @@
         const desc = ($('#ef-desc') || {}).value ? $('#ef-desc').value.trim() : '';
         if(!desc) return showToast('Description required', 'error');
 
+        var notesEl = document.getElementById('ef-notes');
         const data = {
             meal_type:   ($('#ef-type')    || {}).value || 'snack',
             description: desc,
             calories:    +($('#ef-cal')     || {}).value || null,
             protein_g:   +($('#ef-protein') || {}).value || null,
             carbs_g:     +($('#ef-carbs')   || {}).value || null,
-            fat_g:       +($('#ef-fat')     || {}).value || null
+            fat_g:       +($('#ef-fat')     || {}).value || null,
+            notes:       notesEl ? notesEl.value.trim() : ''
         };
 
         // Upload new photo if selected

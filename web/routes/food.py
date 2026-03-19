@@ -166,7 +166,7 @@ def update_food(food_id):
     conn.execute(
         """UPDATE food_logs
            SET meal_type = ?, description = ?, calories = ?,
-               protein_g = ?, carbs_g = ?, fat_g = ?, image_path = ?
+               protein_g = ?, carbs_g = ?, fat_g = ?, image_path = ?, notes = ?
            WHERE id = ?""",
         (data.get('meal_type'),
          data.get('description'),
@@ -175,6 +175,7 @@ def update_food(food_id):
          data.get('carbs_g'),
          data.get('fat_g'),
          data.get('image_path'),
+         data.get('notes', ''),
          food_id)
     )
     conn.commit()

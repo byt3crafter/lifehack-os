@@ -48,7 +48,7 @@ def assemble_context(conn) -> dict:
 
     # Food today (full details)
     context['food_today'] = _safe_query(conn,
-        "SELECT meal_type, description, calories, protein_g, carbs_g, fat_g, logged_at FROM food_logs WHERE date(logged_at) = ? ORDER BY logged_at",
+        "SELECT meal_type, description, calories, protein_g, carbs_g, fat_g, notes, logged_at FROM food_logs WHERE date(logged_at) = ? ORDER BY logged_at",
         (today,))
 
     # Calorie goal
