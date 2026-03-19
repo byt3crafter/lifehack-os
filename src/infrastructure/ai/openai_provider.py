@@ -252,5 +252,54 @@ Return this exact JSON structure:
         except Exception:
             return None
 
+    def chat_with_context(self, system_prompt: str, messages: list) -> str:
+        """Send a multi-turn conversation using the OpenAI chat/completions endpoint."""
+        start = time.time()
+        try:
+            resp = requests.post(
+                f"{self.base_url}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": self.model,
+                    "messages": [{"role": "system", "content": system_prompt}] + messages,
+                    "temperature": 0.7,
+                    "max_tokens": 1024,
+                },
+                timeout=60,
+            )
+            duration_ms = int((time.time() - start) * 1000)
+            resp.raise_for_status()
+            body = resp.json()
+            usage = body.get("usage", {})
+            log_ai_usage(
+                provider="openai",
+                model=self.model,
+                action="chat",
+                input_tokens=usage.get("prompt_tokens", 0),
+                output_tokens=usage.get("completion_tokens", 0),
+                success=True,
+                duration_ms=duration_ms,
+            )
+            return body["choices"][0]["message"]["content"]
+        except Exception as exc:
+            duration_ms = int((time.time() - start) * 1000)
+            log_ai_usage(
+                provider="openai",
+                model=self.model,
+                action="chat",
+                success=False,
+                error_message=str(exc),
+                duration_ms=duration_ms,
+            )
+            try:
+                from web.routes.app_log import log_event
+                log_event("error", "ai", f"OpenAI chat_with_context failed: {exc}", traceback.format_exc())
+            except Exception:
+                pass
+            return ""
+
     def is_available(self) -> bool:
         return bool(self.api_key)

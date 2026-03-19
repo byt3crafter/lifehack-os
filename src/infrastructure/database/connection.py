@@ -310,6 +310,19 @@ def init_database() -> None:
             duration_ms INTEGER DEFAULT 0
         );
 
+        -- Chat Messages (universal AI chat history)
+        CREATE TABLE IF NOT EXISTS chat_messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            role TEXT NOT NULL,
+            content TEXT NOT NULL,
+            context_summary TEXT DEFAULT '',
+            tokens_used INTEGER DEFAULT 0,
+            provider TEXT DEFAULT '',
+            model TEXT DEFAULT '',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_chat_created ON chat_messages(created_at);
+
         -- App Log (application-wide error and event log)
         CREATE TABLE IF NOT EXISTS app_log (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

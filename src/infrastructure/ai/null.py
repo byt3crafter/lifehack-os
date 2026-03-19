@@ -22,5 +22,8 @@ class NullAIProvider(AIProvider):
     def generate_habit_plan(self, goal: str) -> Optional[HabitPlan]:
         return None
 
+    def chat_with_context(self, system_prompt: str, messages: list) -> str:
+        return ""
+
     def is_available(self) -> bool:
         return True  # Always available — does nothing

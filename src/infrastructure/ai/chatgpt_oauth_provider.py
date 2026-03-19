@@ -282,5 +282,31 @@ Return this exact JSON structure:
         except Exception:
             return None
 
+    def chat_with_context(self, system_prompt: str, messages: list) -> str:
+        """Send a multi-turn conversation via the Codex Responses API.
+
+        The Codex endpoint does not natively support multi-turn message arrays,
+        so we serialise the conversation history into the user turn and pass
+        the system prompt as the ``instructions`` field.
+        """
+        # Fold all but the final user message into a readable transcript
+        history_lines = []
+        for m in messages[:-1]:
+            role_label = "User" if m.get("role") == "user" else "Assistant"
+            history_lines.append(f"{role_label}: {m.get('content', '')}")
+
+        current = messages[-1].get("content", "") if messages else ""
+
+        if history_lines:
+            user_input = (
+                "Conversation so far:\n"
+                + "\n".join(history_lines)
+                + f"\n\nUser: {current}"
+            )
+        else:
+            user_input = current
+
+        return self._call_codex(system_prompt, user_input, action="chat")
+
     def is_available(self) -> bool:
         return bool(self.token and self.account_id)

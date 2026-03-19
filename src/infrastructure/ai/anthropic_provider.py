@@ -277,5 +277,58 @@ Return this exact JSON structure:
         except Exception:
             return None
 
+    def chat_with_context(self, system_prompt: str, messages: list) -> str:
+        """Send a multi-turn conversation using the Anthropic messages API."""
+        start = time.time()
+        try:
+            resp = requests.post(
+                f"{self.base_url}/messages",
+                headers={
+                    "x-api-key": self.api_key,
+                    "anthropic-version": _ANTHROPIC_API_VERSION,
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": self.model,
+                    "max_tokens": 1024,
+                    "system": system_prompt,
+                    "messages": messages,
+                },
+                timeout=60,
+            )
+            duration_ms = int((time.time() - start) * 1000)
+            resp.raise_for_status()
+            data = resp.json()
+            usage = data.get("usage", {})
+            log_ai_usage(
+                provider="anthropic",
+                model=self.model,
+                action="chat",
+                input_tokens=usage.get("input_tokens", 0),
+                output_tokens=usage.get("output_tokens", 0),
+                success=True,
+                duration_ms=duration_ms,
+            )
+            for block in data.get("content", []):
+                if block.get("type") == "text":
+                    return block["text"]
+            return ""
+        except Exception as exc:
+            duration_ms = int((time.time() - start) * 1000)
+            log_ai_usage(
+                provider="anthropic",
+                model=self.model,
+                action="chat",
+                success=False,
+                error_message=str(exc),
+                duration_ms=duration_ms,
+            )
+            try:
+                from web.routes.app_log import log_event
+                log_event("error", "ai", f"Anthropic chat_with_context failed: {exc}", traceback.format_exc())
+            except Exception:
+                pass
+            return ""
+
     def is_available(self) -> bool:
         return bool(self.api_key)

@@ -27,6 +27,7 @@ from .ai_models import ai_models_bp
 from .app_log import app_log_bp
 from .finance import finance_bp
 from .discover import discover_bp
+from .chat import chat_bp
 
 __all__ = [
     'auth_bp',
@@ -52,4 +53,5 @@ __all__ = [
     'app_log_bp',
     'finance_bp',
     'discover_bp',
+    'chat_bp',
 ]

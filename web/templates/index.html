@@ -722,6 +722,180 @@
             gap: 0.5rem;
             padding: 0.25rem 0;
         }
+
+        /* ── Chat FAB ────────────────────────────────── */
+        #chat-fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #4f80ff;
+            border: none;
+            cursor: pointer;
+            z-index: 9998;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(79,128,255,0.4);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        #chat-fab:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(79,128,255,0.5); }
+        #chat-fab:active { transform: scale(0.95); }
+
+        /* ── Chat Panel ──────────────────────────────── */
+        #chat-panel {
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+            background: #0c0c0e;
+            border: 1px solid #2a2a2e;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        #chat-panel.chat-open { opacity: 1; transform: translateY(0); }
+
+        @media (max-width: 767px) {
+            #chat-panel {
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                border: none;
+                border-radius: 0;
+            }
+        }
+        @media (min-width: 768px) and (max-width: 1024px) {
+            #chat-panel {
+                bottom: 24px;
+                right: 24px;
+                width: 400px;
+                height: 60vh;
+                border-radius: 16px;
+            }
+        }
+        @media (min-width: 1025px) {
+            #chat-panel {
+                bottom: 24px;
+                right: 24px;
+                width: 420px;
+                height: 550px;
+                border-radius: 16px;
+            }
+        }
+
+        /* ── Chat Header ─────────────────────────────── */
+        #chat-header {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid #2a2a2e;
+            flex-shrink: 0;
+        }
+        #chat-header-title {
+            flex: 1;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: #f0f0f2;
+            letter-spacing: -0.01em;
+        }
+        .chat-header-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            border: 1px solid #2a2a2e;
+            background: transparent;
+            color: #9898a6;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.12s, color 0.12s, border-color 0.12s;
+            font-size: 1rem;
+            line-height: 1;
+            font-family: inherit;
+        }
+        .chat-header-btn:hover { background: rgba(255,255,255,0.06); color: #f0f0f2; border-color: #444449; }
+
+        /* ── Chat Messages ───────────────────────────── */
+        #chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        /* ── Typing indicator ────────────────────────── */
+        #chat-typing {
+            display: none;
+            align-items: center;
+            gap: 4px;
+            padding: 10px 14px;
+            border-radius: 16px;
+            background: #1c1c20;
+            border: 1px solid #2a2a2e;
+            width: fit-content;
+            margin-bottom: 8px;
+        }
+        #chat-typing span {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #5c5c6b;
+            animation: chat-bounce 1.2s infinite ease-in-out;
+        }
+        #chat-typing span:nth-child(2) { animation-delay: 0.2s; }
+        #chat-typing span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes chat-bounce {
+            0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+            40% { transform: translateY(-5px); opacity: 1; }
+        }
+
+        /* ── Chat Input Bar ──────────────────────────── */
+        #chat-input-bar {
+            display: flex;
+            align-items: flex-end;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            border-top: 1px solid #2a2a2e;
+            flex-shrink: 0;
+        }
+        #chat-input {
+            flex: 1;
+            resize: none;
+            min-height: 38px;
+            max-height: 120px;
+            padding: 0.5rem 0.75rem !important;
+            border-radius: 10px !important;
+            font-size: 0.875rem;
+            line-height: 1.4;
+            overflow-y: auto;
+        }
+        #chat-send-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: #4f80ff;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: background 0.12s, transform 0.1s;
+            color: #fff;
+        }
+        #chat-send-btn:hover { background: #6b96ff; }
+        #chat-send-btn:active { transform: scale(0.94); }
+        #chat-send-btn:disabled { background: #2a2a2e; cursor: not-allowed; color: #5c5c6b; }
     </style>
 </head>
 <body class="min-h-screen overflow-x-hidden" style="color:#f0f0f2;">
@@ -6163,6 +6337,231 @@
         load('dashboard');
         loadStats();
     });
+    </script>
+
+    <!-- ── AI Chat FAB ─────────────────────────────────────────────── -->
+    <button id="chat-fab" onclick="toggleChat()" aria-label="Open AI chat">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#fff;">
+            <path d="M12 2l1.68 3.4 3.75.55-2.71 2.64.64 3.72L12 10.51l-3.36 1.77.64-3.72L6.57 5.95l3.75-.55z"/>
+            <path d="M4.5 14.5C3 16 3 17.5 4.5 19c1 1 2.5 1.5 4 1l1.5 2.5 1.5-2.5c3 .5 5-1 5-3.5s-2.5-4-6-4-7 1.5-6 2z"/>
+        </svg>
+    </button>
+
+    <!-- ── AI Chat Panel ────────────────────────────────────────────── -->
+    <div id="chat-panel" role="dialog" aria-label="LifeHack AI Chat" aria-modal="true">
+
+        <!-- Header -->
+        <div id="chat-header">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4f80ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 2l1.68 3.4 3.75.55-2.71 2.64.64 3.72L12 10.51l-3.36 1.77.64-3.72L6.57 5.95l3.75-.55z"/>
+                <path d="M4.5 14.5C3 16 3 17.5 4.5 19c1 1 2.5 1.5 4 1l1.5 2.5 1.5-2.5c3 .5 5-1 5-3.5s-2.5-4-6-4-7 1.5-6 2z"/>
+            </svg>
+            <span id="chat-header-title">LifeHack AI</span>
+            <button class="chat-header-btn" onclick="toggleChat()" aria-label="Close chat" title="Close">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Messages -->
+        <div id="chat-messages" aria-live="polite" aria-label="Chat messages">
+            <!-- Typing indicator lives inside here so it scrolls with content -->
+            <div id="chat-typing" role="status" aria-label="AI is typing">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+
+        <!-- Input bar -->
+        <div id="chat-input-bar">
+            <textarea
+                id="chat-input"
+                rows="1"
+                placeholder="Ask anything..."
+                aria-label="Message input"
+                autocomplete="off"
+                spellcheck="true"
+            ></textarea>
+            <button id="chat-send-btn" onclick="sendChatMessage()" aria-label="Send message">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+    // ── Chat state ──────────────────────────────────────────────────
+    var _chatOpen = false;
+    var _chatMessages = [];
+    var _chatTyping = false;
+
+    // ── Toggle panel ────────────────────────────────────────────────
+    function toggleChat() {
+        _chatOpen = !_chatOpen;
+        var panel = document.getElementById('chat-panel');
+        var fab = document.getElementById('chat-fab');
+        if (_chatOpen) {
+            panel.style.display = 'flex';
+            setTimeout(function () { panel.classList.add('chat-open'); }, 10);
+            fab.style.display = 'none';
+            if (!_chatMessages.length) {
+                loadChatHistory();
+            } else {
+                renderChatMessages();
+            }
+            setTimeout(function () {
+                var input = document.getElementById('chat-input');
+                if (input) input.focus();
+            }, 220);
+        } else {
+            panel.classList.remove('chat-open');
+            setTimeout(function () { panel.style.display = 'none'; }, 210);
+            fab.style.display = 'flex';
+        }
+    }
+
+    // ── Load history ────────────────────────────────────────────────
+    async function loadChatHistory() {
+        var welcomeMsg = { role: 'assistant', content: 'Hi! I have access to all your data. Ask me anything about your habits, finances, food, goals, or anything else on your mind.', created_at: new Date().toISOString() };
+        try {
+            var r = await api('/chat/history');
+            if (r && r.messages && r.messages.length) {
+                _chatMessages = r.messages;
+            } else {
+                _chatMessages = [welcomeMsg];
+            }
+        } catch (e) {
+            _chatMessages = [welcomeMsg];
+        }
+        renderChatMessages();
+    }
+
+    // ── Send message ────────────────────────────────────────────────
+    async function sendChatMessage() {
+        var input = document.getElementById('chat-input');
+        var sendBtn = document.getElementById('chat-send-btn');
+        if (!input || !input.value.trim() || _chatTyping) return;
+        var msg = input.value.trim();
+        input.value = '';
+        chatInputAutoResize(input);
+
+        _chatMessages.push({ role: 'user', content: msg, created_at: new Date().toISOString() });
+        renderChatMessages();
+        showChatTyping();
+        if (sendBtn) sendBtn.disabled = true;
+        if (input) input.disabled = true;
+
+        try {
+            var r = await api('/chat', 'POST', { message: msg });
+            hideChatTyping();
+            var reply;
+            if (r && r.response) {
+                reply = r.response;
+            } else {
+                reply = 'Sorry, I couldn\'t process that. Please try again.';
+            }
+            _chatMessages.push({ role: 'assistant', content: reply, created_at: new Date().toISOString() });
+        } catch (e) {
+            hideChatTyping();
+            _chatMessages.push({ role: 'assistant', content: 'Something went wrong. Please check your connection and try again.', created_at: new Date().toISOString() });
+        }
+
+        if (sendBtn) sendBtn.disabled = false;
+        if (input) { input.disabled = false; input.focus(); }
+        renderChatMessages();
+    }
+
+    // ── Render messages ─────────────────────────────────────────────
+    function renderChatMessages() {
+        var container = document.getElementById('chat-messages');
+        if (!container) return;
+        var html = '';
+        for (var i = 0; i < _chatMessages.length; i++) {
+            var m = _chatMessages[i];
+            var isUser = m.role === 'user';
+            var align = isUser ? 'flex-end' : 'flex-start';
+            var bg = isUser ? '#4f80ff' : '#1c1c20';
+            var color = isUser ? '#fff' : '#f0f0f2';
+            var border = isUser ? 'none' : '1px solid #2a2a2e';
+            var ts = '';
+            if (m.created_at) {
+                var d = new Date(m.created_at);
+                ts = '<div style="font-size:0.6875rem;color:#5c5c6b;margin-top:4px;text-align:' + (isUser ? 'right' : 'left') + ';">'
+                    + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    + '</div>';
+            }
+            html += '<div style="display:flex;flex-direction:column;align-items:' + align + ';margin-bottom:10px;">'
+                + '<div style="max-width:85%;padding:10px 14px;border-radius:16px;background:' + bg + ';color:' + color + ';border:' + border + ';font-size:0.875rem;line-height:1.5;word-break:break-word;">'
+                + chatEscapeHtml(m.content)
+                + '</div>'
+                + ts
+                + '</div>';
+        }
+        // Append typing indicator placeholder at end
+        html += '<div id="chat-typing" role="status" aria-label="AI is typing" style="display:' + (_chatTyping ? 'flex' : 'none') + ';align-items:center;gap:4px;padding:10px 14px;border-radius:16px;background:#1c1c20;border:1px solid #2a2a2e;width:fit-content;margin-bottom:8px;">'
+            + '<span style="width:6px;height:6px;border-radius:50%;background:#5c5c6b;display:inline-block;animation:chat-bounce 1.2s infinite ease-in-out;"></span>'
+            + '<span style="width:6px;height:6px;border-radius:50%;background:#5c5c6b;display:inline-block;animation:chat-bounce 1.2s 0.2s infinite ease-in-out;"></span>'
+            + '<span style="width:6px;height:6px;border-radius:50%;background:#5c5c6b;display:inline-block;animation:chat-bounce 1.2s 0.4s infinite ease-in-out;"></span>'
+            + '</div>';
+        container.innerHTML = html;
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function chatEscapeHtml(text) {
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\n/g, '<br>');
+    }
+
+    // ── Typing indicator ────────────────────────────────────────────
+    function showChatTyping() {
+        _chatTyping = true;
+        var el = document.getElementById('chat-typing');
+        if (el) el.style.display = 'flex';
+        var container = document.getElementById('chat-messages');
+        if (container) container.scrollTop = container.scrollHeight;
+    }
+
+    function hideChatTyping() {
+        _chatTyping = false;
+        var el = document.getElementById('chat-typing');
+        if (el) el.style.display = 'none';
+    }
+
+    // ── Auto-resize textarea ────────────────────────────────────────
+    function chatInputAutoResize(el) {
+        el.style.height = 'auto';
+        el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    }
+
+    // ── Keyboard handling ───────────────────────────────────────────
+    document.addEventListener('keydown', function (e) {
+        // Escape closes chat
+        if (e.key === 'Escape' && _chatOpen) {
+            toggleChat();
+            return;
+        }
+    });
+
+    // Wire up input events — script runs after DOM so elements exist
+    (function () {
+        var input = document.getElementById('chat-input');
+        if (!input) return;
+
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendChatMessage();
+            }
+        });
+
+        input.addEventListener('input', function () {
+            chatInputAutoResize(this);
+        });
+    }());
     </script>
 </body>
 </html>

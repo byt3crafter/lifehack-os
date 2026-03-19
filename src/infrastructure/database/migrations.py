@@ -121,6 +121,19 @@ MIGRATIONS = [
         CREATE INDEX IF NOT EXISTS idx_habit_miss_log_habit ON habit_miss_log(habit_id);
         CREATE INDEX IF NOT EXISTS idx_habit_stacks_habit ON habit_stacks(habit_id);
     '''),
+    (9, "Add chat_messages table for universal AI chat", '''
+        CREATE TABLE IF NOT EXISTS chat_messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            role TEXT NOT NULL,
+            content TEXT NOT NULL,
+            context_summary TEXT DEFAULT '',
+            tokens_used INTEGER DEFAULT 0,
+            provider TEXT DEFAULT '',
+            model TEXT DEFAULT '',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_chat_created ON chat_messages(created_at);
+    '''),
     (8, "Add finance tables (rules, log, advice) and discover columns on wishlist", '''
         CREATE TABLE IF NOT EXISTS finance_rules (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

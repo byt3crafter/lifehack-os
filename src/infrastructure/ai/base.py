@@ -266,3 +266,51 @@ class AIProvider(ABC):
     def is_available(self) -> bool:
         """Check if this provider is configured and reachable."""
         ...
+
+    def chat_with_context(self, system_prompt: str, messages: List[Dict[str, Any]]) -> str:
+        """Send a multi-turn conversation to the AI.
+
+        Args:
+            system_prompt: Full system prompt including live context data.
+            messages: Ordered list of prior turns plus the current user message.
+                      Each item is ``{"role": "user"|"assistant", "content": "..."}``.
+
+        Returns:
+            The AI response text, or '' on failure.
+
+        The default implementation collapses the conversation history into a
+        single user message so that providers without native multi-turn support
+        (Ollama, Anthropic single-message path, etc.) still work correctly.
+        Providers that natively support multi-turn conversations should override
+        this method and pass the messages array directly to their API.
+        """
+        # Build a compact conversation string from the message history
+        history_lines = []
+        for m in messages[:-1]:  # all except the last (current) user message
+            role_label = "User" if m.get("role") == "user" else "Assistant"
+            history_lines.append(f"{role_label}: {m.get('content', '')}")
+
+        current_message = messages[-1].get("content", "") if messages else ""
+
+        if history_lines:
+            combined = (
+                "Conversation so far:\n"
+                + "\n".join(history_lines)
+                + f"\n\nUser: {current_message}"
+            )
+        else:
+            combined = current_message
+
+        # Delegate to the existing single-message pathway via generate_insight
+        # but we cannot use that (it returns an Insight dataclass). Instead we
+        # call the internal helpers that each concrete subclass exposes.
+        # Subclasses that override this method bypass this logic entirely.
+        return self._chat_fallback(system_prompt, combined)
+
+    def _chat_fallback(self, system_prompt: str, user_message: str) -> str:
+        """Fallback: subclasses may override to call their internal _chat/_generate/_messages.
+
+        Base implementation returns '' — concrete providers override either
+        ``chat_with_context`` directly or ``_chat_fallback``.
+        """
+        return ""

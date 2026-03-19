@@ -231,6 +231,56 @@ Return this exact JSON structure:
         except Exception:
             return None
 
+    def chat_with_context(self, system_prompt: str, messages: list) -> str:
+        """Send a multi-turn conversation to Ollama.
+
+        Ollama /api/chat supports a messages array with role-based turns.
+        We prepend a system message with the full context prompt.
+        """
+        start = time.time()
+        try:
+            payload = {
+                "model": self.model,
+                "messages": [{"role": "system", "content": system_prompt}] + messages,
+                "stream": False,
+            }
+            resp = requests.post(
+                f"{self.base_url}/api/chat",
+                json=payload,
+                timeout=120,
+            )
+            duration_ms = int((time.time() - start) * 1000)
+            resp.raise_for_status()
+            body = resp.json()
+            input_tokens = body.get("prompt_eval_count", 0)
+            output_tokens = body.get("eval_count", 0)
+            log_ai_usage(
+                provider="ollama",
+                model=self.model,
+                action="chat",
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                success=True,
+                duration_ms=duration_ms,
+            )
+            return body.get("message", {}).get("content", "")
+        except Exception as exc:
+            duration_ms = int((time.time() - start) * 1000)
+            log_ai_usage(
+                provider="ollama",
+                model=self.model,
+                action="chat",
+                success=False,
+                error_message=str(exc),
+                duration_ms=duration_ms,
+            )
+            try:
+                from web.routes.app_log import log_event
+                log_event("error", "ai", f"Ollama chat_with_context failed: {exc}", traceback.format_exc())
+            except Exception:
+                pass
+            return ""
+
     def is_available(self) -> bool:
         try:
             resp = requests.get(f"{self.base_url}/api/tags", timeout=5)
