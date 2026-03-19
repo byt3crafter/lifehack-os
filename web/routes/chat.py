@@ -75,6 +75,7 @@ def send_message():
     """Send a user message, assemble full context, call AI, persist both turns."""
     data = request.get_json(silent=True) or {}
     user_message = (data.get("message") or "").strip()
+    image_base64 = (data.get("image_base64") or "").strip()
 
     if not user_message:
         return jsonify({"error": "message is required"}), 400
@@ -95,6 +96,21 @@ def send_message():
 
     system_prompt = build_system_prompt(context, tools=TOOL_DEFINITIONS)
 
+    # Add receipt scanning instructions when image is present
+    if image_base64:
+        system_prompt += (
+            "\n\n## Receipt Scanner\n"
+            "The user has attached an image. If it is a receipt, extract:\n"
+            "- Merchant/store name\n"
+            "- Total amount\n"
+            "- Date (if visible)\n"
+            "- Category (food, clothing, electronics, entertainment, health, transport, or other)\n\n"
+            "Then call the log_transaction tool to record it. Example:\n"
+            '[TOOL: log_transaction] {"description": "Walmart Grocery", "amount": 45.67, '
+            '"category": "food", "date": "2026-03-15", "type": "withdrawal"}\n\n'
+            "If it's not a receipt, describe what you see and respond normally."
+        )
+
     # Load last 10 messages for conversation continuity
     history_rows = conn.execute(
         """SELECT role, content FROM chat_messages
@@ -104,8 +120,23 @@ def send_message():
     # Rows come back newest-first; reverse to chronological order
     prior_messages = [{"role": r["role"], "content": r["content"]} for r in reversed(history_rows)]
 
-    # Append the current user turn
-    conversation = prior_messages + [{"role": "user", "content": user_message}]
+    # Build the current user turn — include image for vision models
+    if image_base64:
+        user_content = [
+            {"type": "text", "text": user_message},
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:image/jpeg;base64,{image_base64}",
+                    "detail": "low",
+                },
+            },
+        ]
+        user_turn = {"role": "user", "content": user_content}
+    else:
+        user_turn = {"role": "user", "content": user_message}
+
+    conversation = prior_messages + [user_turn]
 
     # Persist the user message first (so it's stored even if AI fails)
     conn.execute(

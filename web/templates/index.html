@@ -2053,10 +2053,15 @@
                         <h2 class="view-title">Finance</h2>
                         <p class="text-xs mt-0.5" style="color:#5c5c6b;">Budget tracking and spending decisions</p>
                     </div>
-                    <button onclick="addTransactionModal()" class="btn-primary flex items-center gap-1.5">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 4v12M4 10h12"/></svg>
-                        Log Transaction
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <button onclick="finCardSettingsModal()" class="p-2 rounded-lg" style="background:rgba(255,255,255,0.04);border:1px solid #2a2a2e;cursor:pointer;" title="Card Settings">
+                            <svg class="w-4 h-4" fill="none" stroke="#9898a6" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                        <button onclick="addTransactionModal()" class="btn-primary flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 4v12M4 10h12"/></svg>
+                            Log Transaction
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Firefly disconnected banner (hidden when connected) -->
@@ -2072,6 +2077,9 @@
                         <button onclick="showView('settings');settingsTab('integrations')" class="text-xs font-medium flex-shrink-0 px-3 py-1.5 rounded-lg" style="background:rgba(79,128,255,0.15);color:#4f80ff;border:1px solid rgba(79,128,255,0.2);cursor:pointer;font-family:inherit;">Go to Settings</button>
                     </div>
                 </div>
+
+                <!-- Anomaly Alerts (top of dashboard for visibility) -->
+                <div id="fin-anomalies-card" class="hidden mb-5"></div>
 
                 <!-- Account Overview Card -->
                 <div id="fin-accounts-card" class="hidden mb-5 p-4 rounded-2xl" style="background:linear-gradient(135deg,#141a1c 0%,#141e1a 100%);border:1px solid rgba(79,128,255,0.2);">
@@ -2098,8 +2106,14 @@
                     </div>
                 </div>
 
+                <!-- Spending Insights -->
+                <div id="fin-insights-card" class="hidden mb-5 p-4 rounded-2xl" style="background:#141416;border:1px solid #2a2a2e;">
+                    <div class="text-xs font-semibold mb-3" style="color:#9898a6;letter-spacing:0.06em;text-transform:uppercase;">Spending Insights</div>
+                    <div id="fin-insights-content"></div>
+                </div>
+
                 <!-- Savings Goals -->
-                <div class="mb-5">
+                <div id="fin-goals-wrap" class="mb-5">
                     <div class="flex items-center justify-between mb-3">
                         <span class="section-label">Savings Goals</span>
                         <button onclick="addSavingsGoalModal()" class="text-xs font-medium flex items-center gap-1" style="color:#4f80ff;background:none;border:none;cursor:pointer;font-family:inherit;">
@@ -2110,16 +2124,40 @@
                     <div id="fin-goals" class="space-y-2"></div>
                 </div>
 
-                <!-- Ask AI Button -->
-                <div class="mb-5">
-                    <button onclick="financeAskAI()" class="w-full py-3 rounded-2xl flex items-center justify-center gap-2 text-sm font-medium" style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.25);color:#c4b5fd;cursor:pointer;font-family:inherit;">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M7 16l-3 3V5a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H7z"/></svg>
-                        "Should I buy this?" - Ask AI
-                    </button>
+                <!-- Recurring Expenses -->
+                <div id="fin-recurring-card" class="hidden mb-5 p-4 rounded-2xl" style="background:#141416;border:1px solid #2a2a2e;">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="text-xs font-semibold" style="color:#9898a6;letter-spacing:0.06em;text-transform:uppercase;">Recurring Expenses</div>
+                        <button onclick="finDetectRecurring()" class="text-xs font-medium px-2.5 py-1 rounded-lg" style="background:rgba(79,128,255,0.12);color:#4f80ff;border:1px solid rgba(79,128,255,0.15);cursor:pointer;font-family:inherit;">Scan</button>
+                    </div>
+                    <div id="fin-recurring-list" class="space-y-2"></div>
+                    <div id="fin-recurring-total" class="pt-3 hidden" style="border-top:1px solid rgba(255,255,255,0.06);"></div>
                 </div>
 
+                <!-- Weekly Digest -->
+                <div id="fin-digest-card" class="hidden mb-5 p-4 rounded-2xl" style="background:linear-gradient(135deg,#141420 0%,#1a1428 100%);border:1px solid rgba(139,92,246,0.2);">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="text-xs font-semibold" style="color:#9898a6;letter-spacing:0.06em;text-transform:uppercase;">Weekly Digest</div>
+                        <button onclick="finGenerateDigest()" class="text-xs font-medium px-2.5 py-1 rounded-lg" style="background:rgba(139,92,246,0.12);color:#c4b5fd;border:1px solid rgba(139,92,246,0.15);cursor:pointer;font-family:inherit;">Generate</button>
+                    </div>
+                    <div id="fin-digest-content"></div>
+                </div>
+
+                <!-- Ask AI / Receipt Scanner -->
+                <div class="mb-5 flex gap-2">
+                    <button onclick="financeAskAI()" class="flex-1 py-3 rounded-2xl flex items-center justify-center gap-2 text-sm font-medium" style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.25);color:#c4b5fd;cursor:pointer;font-family:inherit;">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M7 16l-3 3V5a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H7z"/></svg>
+                        "Should I buy this?"
+                    </button>
+                    <button onclick="finScanReceipt()" class="py-3 px-5 rounded-2xl flex items-center justify-center gap-2 text-sm font-medium" style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);color:#86efac;cursor:pointer;font-family:inherit;">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3"/></svg>
+                        Scan Receipt
+                    </button>
+                </div>
+                <input type="file" id="fin-receipt-input" accept="image/*" capture="environment" style="display:none;" onchange="finHandleReceipt(this)">
+
                 <!-- Recent Transactions -->
-                <div>
+                <div id="fin-transactions-wrap">
                     <div class="flex items-center justify-between mb-3">
                         <span class="section-label">Recent Transactions</span>
                         <button id="fin-view-all-btn" onclick="financeViewAll()" class="hidden text-xs font-medium" style="color:#4f80ff;background:none;border:none;cursor:pointer;font-family:inherit;">View All</button>
@@ -7026,8 +7064,15 @@
 
     var _finAllTxs = [];
     var _finCurrency = {symbol: '$', code: 'USD'};
+    var _finCardSettings = {accounts:true,budgets:true,goals:true,transactions:true,insights:true,recurring:true,anomalies:true,digest:true};
 
     async function loadFinance() {
+        // Load card visibility settings
+        try {
+            var cs = await api('/finance/card-settings');
+            if(cs && !cs.error) _finCardSettings = cs;
+        } catch(e) {}
+
         var data = null;
         try { data = await api('/finance/dashboard'); } catch(e) {}
 
@@ -7054,20 +7099,41 @@
         var cur = data.currency || {symbol: '$', code: 'USD'};
         _finCurrency = cur;
 
-        if(data.accounts && data.accounts.length) {
+        // Apply card visibility
+        if(_finCardSettings.accounts !== false && data.accounts && data.accounts.length) {
             renderFinanceAccounts(data.accounts, data.net_worth, cur);
-        }
-        if(data.budgets && data.budgets.length) {
+        } else { _finHide('fin-accounts-card'); }
+
+        if(_finCardSettings.budgets !== false && data.budgets && data.budgets.length) {
             renderFinanceBudgets(data.budgets, data.monthly, cur);
-        }
-        if(data.savings_goals !== undefined) {
+        } else { _finHide('fin-budget-card'); }
+
+        if(_finCardSettings.goals !== false && data.savings_goals !== undefined) {
             renderFinanceGoals(data.savings_goals, cur);
-        }
-        if(data.recent_transactions !== undefined) {
-            renderFinanceTransactions(data.recent_transactions, cur);
-        } else if(data.transactions !== undefined) {
-            renderFinanceTransactions(data.transactions, cur);
-        }
+            _finShow('fin-goals-wrap');
+        } else { _finHide('fin-goals-wrap'); }
+
+        if(_finCardSettings.transactions !== false) {
+            if(data.recent_transactions !== undefined) {
+                renderFinanceTransactions(data.recent_transactions, cur);
+            } else if(data.transactions !== undefined) {
+                renderFinanceTransactions(data.transactions, cur);
+            }
+            _finShow('fin-transactions-wrap');
+        } else { _finHide('fin-transactions-wrap'); }
+
+        // Stage 2 cards (loaded async)
+        if(_finCardSettings.insights !== false) loadFinanceInsights(cur);
+        else _finHide('fin-insights-card');
+
+        if(_finCardSettings.recurring !== false) loadFinanceRecurring(cur);
+        else _finHide('fin-recurring-card');
+
+        if(_finCardSettings.anomalies !== false) loadFinanceAnomalies(cur);
+        else _finHide('fin-anomalies-card');
+
+        if(_finCardSettings.digest !== false) loadFinanceDigest(cur);
+        else _finHide('fin-digest-card');
     }
 
     function renderFinanceAccounts(accounts, netWorth, currency) {
@@ -7479,6 +7545,369 @@
         clearTimeout(window._frconfirm); window._frconfirm=null;
         await api('/finance/rules/' + id, 'DELETE');
         showToast('Rule deleted', 'info');
+        loadFinance();
+    }
+
+    // ── Finance Stage 2 ─────────────────────────────────────────────
+
+    // -- Spending Insights --
+    async function loadFinanceInsights(cur) {
+        try {
+            var data = await api('/finance/insights');
+            if(!data || data.error) { _finHide('fin-insights-card'); return; }
+            renderFinanceInsights(data, cur || _finCurrency);
+        } catch(e) { _finHide('fin-insights-card'); }
+    }
+
+    function renderFinanceInsights(data, currency) {
+        var el = document.getElementById('fin-insights-content');
+        if(!el) return;
+        _finShow('fin-insights-card');
+
+        var mom = data.month_over_month || {};
+        var momColor = mom.change_pct > 0 ? '#ef4444' : '#22c55e';
+        var momArrow = mom.change_pct > 0 ? '&#9650;' : (mom.change_pct < 0 ? '&#9660;' : '&#9644;');
+        var momSign = mom.change_pct > 0 ? '+' : '';
+
+        var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">';
+
+        // Top Categories
+        html += '<div class="p-3 rounded-xl" style="background:rgba(255,255,255,0.03);">'
+            + '<div class="text-xs font-medium mb-2" style="color:#9898a6;">Top Categories</div>';
+        if(data.top_categories && data.top_categories.length) {
+            var maxAmt = data.top_categories[0].amount || 1;
+            data.top_categories.forEach(function(c) {
+                var w = Math.round((c.amount / maxAmt) * 100);
+                html += '<div class="mb-1.5">'
+                    + '<div class="flex justify-between mb-0.5">'
+                    + '<span class="text-xs" style="color:#f0f0f2;">' + c.category + '</span>'
+                    + '<span class="text-xs font-mono" style="color:#9898a6;">' + formatMoney(c.amount, currency) + '</span>'
+                    + '</div>'
+                    + '<div class="h-1.5 rounded-full" style="background:rgba(255,255,255,0.06);">'
+                    + '<div class="h-full rounded-full" style="width:' + w + '%;background:#4f80ff;"></div>'
+                    + '</div></div>';
+            });
+        } else {
+            html += '<div class="text-xs" style="color:#5c5c6b;">No data yet</div>';
+        }
+        html += '</div>';
+
+        // Month over Month
+        html += '<div class="p-3 rounded-xl" style="background:rgba(255,255,255,0.03);">'
+            + '<div class="text-xs font-medium mb-2" style="color:#9898a6;">vs Last Month</div>'
+            + '<div class="flex items-center gap-2 mb-1">'
+            + '<span style="color:' + momColor + ';font-size:1.2rem;">' + momArrow + '</span>'
+            + '<span class="font-mono font-bold" style="color:' + momColor + ';font-size:1.1rem;">' + momSign + mom.change_pct + '%</span>'
+            + '</div>'
+            + '<div class="text-xs" style="color:#5c5c6b;">Current: ' + formatMoney(mom.current_total || 0, currency) + '</div>'
+            + '<div class="text-xs" style="color:#5c5c6b;">Previous: ' + formatMoney(mom.previous_total || 0, currency) + '</div>'
+            + '</div>';
+
+        // Daily Average
+        html += '<div class="p-3 rounded-xl" style="background:rgba(255,255,255,0.03);">'
+            + '<div class="text-xs font-medium mb-2" style="color:#9898a6;">Daily Average</div>'
+            + '<div class="font-mono font-bold" style="color:#f59e0b;font-size:1.1rem;">' + formatMoney(data.daily_average || 0, currency) + '</div>'
+            + '<div class="text-xs mt-1" style="color:#5c5c6b;">per day this month</div>'
+            + '</div>';
+
+        // Biggest Transaction
+        var big = data.biggest_transaction;
+        html += '<div class="p-3 rounded-xl" style="background:rgba(255,255,255,0.03);">'
+            + '<div class="text-xs font-medium mb-2" style="color:#9898a6;">Biggest Purchase</div>';
+        if(big) {
+            html += '<div class="font-mono font-bold" style="color:#ef4444;font-size:1.1rem;">' + formatMoney(big.amount, currency) + '</div>'
+                + '<div class="text-xs mt-1 truncate" style="color:#5c5c6b;">' + (big.description || '') + '</div>';
+        } else {
+            html += '<div class="text-xs" style="color:#5c5c6b;">No purchases yet</div>';
+        }
+        html += '</div>';
+
+        html += '</div>';
+        el.innerHTML = html;
+    }
+
+    // -- Recurring Expenses --
+    async function loadFinanceRecurring(cur) {
+        try {
+            var data = await api('/finance/recurring');
+            if(!data || data.error || !Array.isArray(data)) { _finHide('fin-recurring-card'); return; }
+            renderFinanceRecurring(data, cur || _finCurrency);
+        } catch(e) { _finHide('fin-recurring-card'); }
+    }
+
+    function renderFinanceRecurring(items, currency) {
+        var listEl = document.getElementById('fin-recurring-list');
+        var totalEl = document.getElementById('fin-recurring-total');
+        if(!listEl) return;
+        _finShow('fin-recurring-card');
+
+        if(!items || !items.length) {
+            listEl.innerHTML = '<div class="text-xs" style="color:#5c5c6b;">No recurring expenses detected yet. Click Scan to analyze.</div>';
+            if(totalEl) totalEl.classList.add('hidden');
+            return;
+        }
+
+        var total = 0;
+        var freqLabels = {monthly:'/ mo', weekly:'/ wk', biweekly:'/ 2wk'};
+        listEl.innerHTML = items.map(function(r) {
+            total += r.estimated_amount;
+            var confPct = Math.round((r.confidence || 0) * 100);
+            var confColor = confPct >= 70 ? '#22c55e' : (confPct >= 40 ? '#f59e0b' : '#9898a6');
+            return '<div class="flex items-center justify-between py-2" style="border-bottom:1px solid rgba(255,255,255,0.04);">'
+                + '<div class="flex-1 min-w-0">'
+                + '<div class="text-sm truncate" style="color:#f0f0f2;">' + (r.description || '') + '</div>'
+                + '<div class="text-xs mt-0.5 flex gap-2" style="color:#5c5c6b;">'
+                + (r.category ? '<span>' + r.category + '</span>' : '')
+                + '<span style="color:' + confColor + ';">' + confPct + '% match</span>'
+                + '</div></div>'
+                + '<div class="flex items-center gap-2 flex-shrink-0">'
+                + '<span class="font-mono text-sm" style="color:#f59e0b;">' + formatMoney(r.estimated_amount, currency) + ' <span class="text-xs" style="color:#5c5c6b;">' + (freqLabels[r.frequency] || '/ mo') + '</span></span>'
+                + '<button onclick="finDismissRecurring(' + r.id + ')" class="text-xs px-1" style="color:#5c5c6b;background:none;border:none;cursor:pointer;" title="Dismiss">&#10005;</button>'
+                + '</div></div>';
+        }).join('');
+
+        if(totalEl) {
+            totalEl.classList.remove('hidden');
+            totalEl.innerHTML = '<div class="flex items-center justify-between">'
+                + '<span class="text-xs font-semibold" style="color:#9898a6;">Monthly Total</span>'
+                + '<span class="font-mono font-bold" style="color:#f59e0b;">' + formatMoney(total, currency) + '</span>'
+                + '</div>';
+        }
+    }
+
+    async function finDetectRecurring() {
+        showToast('Scanning transactions...', 'info');
+        try {
+            var data = await api('/finance/recurring/detect', 'POST');
+            if(data && !data.error) {
+                showToast('Found ' + (data.detected || 0) + ' recurring expenses', 'success');
+                loadFinanceRecurring(_finCurrency);
+            } else {
+                showToast(data?.error || 'Scan failed', 'error');
+            }
+        } catch(e) { showToast('Scan failed', 'error'); }
+    }
+
+    async function finDismissRecurring(id) {
+        await api('/finance/recurring/' + id + '/dismiss', 'PUT');
+        loadFinanceRecurring(_finCurrency);
+    }
+
+    // -- Anomaly Alerts --
+    async function loadFinanceAnomalies(cur) {
+        try {
+            // Also trigger a scan
+            try { await api('/finance/anomalies/scan', 'POST'); } catch(e) {}
+            var data = await api('/finance/anomalies');
+            if(!data || data.error || !Array.isArray(data) || !data.length) {
+                _finHide('fin-anomalies-card');
+                return;
+            }
+            renderFinanceAnomalies(data, cur || _finCurrency);
+        } catch(e) { _finHide('fin-anomalies-card'); }
+    }
+
+    function renderFinanceAnomalies(items, currency) {
+        var el = document.getElementById('fin-anomalies-card');
+        if(!el || !items || !items.length) { _finHide('fin-anomalies-card'); return; }
+        _finShow('fin-anomalies-card');
+
+        var html = '<div class="p-4 rounded-2xl" style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);">'
+            + '<div class="flex items-center gap-2 mb-3">'
+            + '<span style="font-size:1rem;">&#9888;&#65039;</span>'
+            + '<span class="text-xs font-semibold" style="color:#fca5a5;letter-spacing:0.06em;text-transform:uppercase;">Unusual Spending (' + items.length + ')</span>'
+            + '</div>';
+
+        items.forEach(function(a) {
+            html += '<div class="flex items-center justify-between py-2" style="border-bottom:1px solid rgba(255,255,255,0.04);">'
+                + '<div class="flex-1 min-w-0">'
+                + '<div class="text-sm truncate" style="color:#f0f0f2;">' + (a.description || 'Transaction') + '</div>'
+                + '<div class="text-xs mt-0.5" style="color:#5c5c6b;">'
+                + (a.category || '') + ' &middot; ' + a.deviation_factor + 'x your avg (' + formatMoney(a.category_average || 0, currency) + ')'
+                + '</div></div>'
+                + '<div class="flex items-center gap-2 flex-shrink-0">'
+                + '<span class="font-mono font-semibold text-sm" style="color:#ef4444;">' + formatMoney(a.amount, currency) + '</span>'
+                + '<button onclick="finAckAnomaly(' + a.id + ')" class="text-xs px-1.5 py-0.5 rounded" style="color:#9898a6;background:rgba(255,255,255,0.06);border:none;cursor:pointer;">OK</button>'
+                + '</div></div>';
+        });
+
+        html += '</div>';
+        el.innerHTML = html;
+    }
+
+    async function finAckAnomaly(id) {
+        await api('/finance/anomalies/' + id + '/acknowledge', 'PUT');
+        loadFinanceAnomalies(_finCurrency);
+    }
+
+    // -- Weekly Digest --
+    async function loadFinanceDigest(cur) {
+        try {
+            var data = await api('/finance/digest');
+            if(!data || data.error || data.message) {
+                // Show card with empty state so user can generate
+                _finShow('fin-digest-card');
+                var el = document.getElementById('fin-digest-content');
+                if(el) el.innerHTML = '<div class="text-xs" style="color:#5c5c6b;">No digest yet. Click Generate to create your first weekly summary.</div>';
+                return;
+            }
+            renderFinanceDigest(data, cur || _finCurrency);
+        } catch(e) {
+            _finShow('fin-digest-card');
+            var el2 = document.getElementById('fin-digest-content');
+            if(el2) el2.innerHTML = '<div class="text-xs" style="color:#5c5c6b;">Click Generate to create your weekly summary.</div>';
+        }
+    }
+
+    function renderFinanceDigest(data, currency) {
+        var el = document.getElementById('fin-digest-content');
+        if(!el) return;
+        _finShow('fin-digest-card');
+
+        var weekLabel = '';
+        try {
+            var ws = new Date(data.week_start + 'T12:00:00');
+            var we = new Date(data.week_end + 'T12:00:00');
+            weekLabel = ws.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' - ' + we.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+        } catch(e) { weekLabel = data.week_start + ' to ' + data.week_end; }
+
+        var html = '<div class="text-xs mb-3" style="color:#c4b5fd;">' + weekLabel + '</div>';
+
+        // Total spent
+        html += '<div class="mb-3 p-3 rounded-xl" style="background:rgba(255,255,255,0.03);">'
+            + '<div class="text-xs" style="color:#9898a6;">Total Spent</div>'
+            + '<div class="font-mono font-bold" style="color:#f0f0f2;font-size:1.1rem;">' + formatMoney(data.total_spent || 0, currency) + '</div>'
+            + '</div>';
+
+        // Top categories
+        if(data.top_categories && data.top_categories.length) {
+            html += '<div class="mb-3">'
+                + '<div class="text-xs font-medium mb-2" style="color:#9898a6;">Top Categories</div>';
+            data.top_categories.forEach(function(c) {
+                html += '<div class="flex justify-between py-1">'
+                    + '<span class="text-xs" style="color:#f0f0f2;">' + c.category + '</span>'
+                    + '<span class="text-xs font-mono" style="color:#9898a6;">' + formatMoney(c.amount, currency) + '</span>'
+                    + '</div>';
+            });
+            html += '</div>';
+        }
+
+        // Notable transactions
+        if(data.notable_transactions && data.notable_transactions.length) {
+            html += '<div class="mb-3">'
+                + '<div class="text-xs font-medium mb-2" style="color:#9898a6;">Biggest Purchases</div>';
+            data.notable_transactions.forEach(function(t) {
+                html += '<div class="flex justify-between py-1">'
+                    + '<span class="text-xs truncate" style="color:#f0f0f2;max-width:60%;">' + (t.description || '') + '</span>'
+                    + '<span class="text-xs font-mono" style="color:#ef4444;">' + formatMoney(t.amount, currency) + '</span>'
+                    + '</div>';
+            });
+            html += '</div>';
+        }
+
+        // AI Summary
+        if(data.ai_summary) {
+            html += '<div class="p-3 rounded-xl" style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.12);">'
+                + '<div class="text-xs" style="color:#c4b5fd;line-height:1.5;">' + data.ai_summary + '</div>'
+                + '</div>';
+        }
+
+        el.innerHTML = html;
+    }
+
+    async function finGenerateDigest() {
+        showToast('Generating weekly digest...', 'info');
+        try {
+            var data = await api('/finance/digest/generate', 'POST');
+            if(data && !data.error) {
+                showToast('Digest generated', 'success');
+                renderFinanceDigest(data, _finCurrency);
+            } else {
+                showToast(data?.error || 'Generation failed', 'error');
+            }
+        } catch(e) { showToast('Generation failed', 'error'); }
+    }
+
+    // -- Receipt Scanner --
+    function finScanReceipt() {
+        var inp = document.getElementById('fin-receipt-input');
+        if(inp) inp.click();
+    }
+
+    function finHandleReceipt(input) {
+        if(!input.files || !input.files[0]) return;
+        var file = input.files[0];
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var base64 = e.target.result.split(',')[1];
+            // Open chat with the receipt image
+            if(!_chatOpen) toggleChat();
+            var chatInput = document.getElementById('chat-input');
+            if(chatInput) chatInput.value = 'Please scan this receipt and log the transaction.';
+            // Send via chat with image
+            _finSendReceiptToChat(base64);
+        };
+        reader.readAsDataURL(file);
+        input.value = '';
+    }
+
+    async function _finSendReceiptToChat(imageBase64) {
+        var message = 'Please scan this receipt and log the transaction.';
+        // Show user message in chat
+        var chatMessages = document.getElementById('chat-messages');
+        if(chatMessages) {
+            chatMessages.innerHTML += '<div class="flex justify-end mb-2"><div class="px-3 py-2 rounded-2xl text-sm" style="background:rgba(79,128,255,0.15);color:#f0f0f2;max-width:80%;">'
+                + '<div class="mb-1"><img src="data:image/jpeg;base64,' + imageBase64.substring(0, 100) + '..." style="max-width:120px;border-radius:8px;opacity:0.7;" alt="Receipt"></div>'
+                + message + '</div></div>';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        var chatInput = document.getElementById('chat-input');
+        if(chatInput) chatInput.value = '';
+
+        try {
+            var resp = await api('/chat', 'POST', {message: message, image_base64: imageBase64});
+            if(resp && chatMessages) {
+                var reply = resp.response || resp.message || 'Receipt processed.';
+                chatMessages.innerHTML += '<div class="flex justify-start mb-2"><div class="px-3 py-2 rounded-2xl text-sm" style="background:#1e1e22;color:#f0f0f2;max-width:80%;">'
+                    + reply + '</div></div>';
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                // Refresh finance data
+                loadFinance();
+            }
+        } catch(e) {
+            showToast('Receipt scan failed', 'error');
+        }
+    }
+
+    // -- Card Visibility Settings Modal --
+    function finCardSettingsModal() {
+        var cardNames = {
+            accounts: 'Accounts & Net Worth',
+            budgets: 'Monthly Budgets',
+            goals: 'Savings Goals',
+            insights: 'Spending Insights',
+            recurring: 'Recurring Expenses',
+            anomalies: 'Anomaly Alerts',
+            digest: 'Weekly Digest',
+            transactions: 'Recent Transactions'
+        };
+        var html = '<div class="space-y-2">';
+        Object.keys(cardNames).forEach(function(key) {
+            var checked = _finCardSettings[key] !== false ? 'checked' : '';
+            html += '<label class="flex items-center justify-between py-2 px-1" style="cursor:pointer;">'
+                + '<span class="text-sm" style="color:#f0f0f2;">' + cardNames[key] + '</span>'
+                + '<input type="checkbox" id="fcs-' + key + '" ' + checked + ' onchange="finToggleCard(\'' + key + '\', this.checked)" style="accent-color:#4f80ff;width:18px;height:18px;cursor:pointer;">'
+                + '</label>';
+        });
+        html += '<div class="pt-2"><button onclick="hideModal()" class="btn-primary w-full py-2.5">Done</button></div></div>';
+        showModal('Finance Card Settings', html);
+    }
+
+    async function finToggleCard(card, visible) {
+        _finCardSettings[card] = visible;
+        var payload = {};
+        payload[card] = visible;
+        await api('/finance/card-settings', 'PUT', payload);
         loadFinance();
     }
 

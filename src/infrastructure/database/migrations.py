@@ -315,3 +315,58 @@ def run_migrations(conn) -> None:
         )
         conn.commit()
         print("  Migration 12: Add savings_goals table")
+
+    # Migration 13: Finance Stage 2 tables (recurring, anomalies, digests)
+    current = get_current_version(conn)
+    if current < 13:
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS finance_recurring (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                description TEXT NOT NULL,
+                category TEXT DEFAULT '',
+                estimated_amount REAL NOT NULL,
+                frequency TEXT DEFAULT 'monthly',
+                confidence REAL DEFAULT 0.0,
+                last_seen_date TEXT,
+                transaction_count INTEGER DEFAULT 0,
+                active INTEGER DEFAULT 1,
+                dismissed INTEGER DEFAULT 0,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_finance_recurring_active ON finance_recurring(active);
+
+            CREATE TABLE IF NOT EXISTS finance_anomalies (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                transaction_id TEXT,
+                description TEXT NOT NULL,
+                amount REAL NOT NULL,
+                category TEXT DEFAULT '',
+                category_average REAL,
+                deviation_factor REAL,
+                alert_type TEXT DEFAULT 'high_spend',
+                acknowledged INTEGER DEFAULT 0,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_finance_anomalies_ack ON finance_anomalies(acknowledged);
+
+            CREATE TABLE IF NOT EXISTS finance_digests (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                week_start TEXT NOT NULL,
+                week_end TEXT NOT NULL,
+                total_spent REAL DEFAULT 0,
+                top_categories_json TEXT DEFAULT '[]',
+                budget_status_json TEXT DEFAULT '[]',
+                notable_transactions_json TEXT DEFAULT '[]',
+                recurring_total REAL DEFAULT 0,
+                anomaly_count INTEGER DEFAULT 0,
+                ai_summary TEXT DEFAULT '',
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(week_start)
+            );
+        """)
+        conn.execute(
+            "INSERT OR IGNORE INTO schema_version (version, description) VALUES (13, 'Finance Stage 2: recurring, anomalies, digests')"
+        )
+        conn.commit()
+        print("  Migration 13: Finance Stage 2 tables")

@@ -1,9 +1,11 @@
 """Finance module routes — Firefly III integration, savings goals, budget rules,
-spending log, and AI advice."""
+spending log, AI advice, and Stage 2 analytics (insights, recurring, anomalies, digest)."""
 import calendar
+import json
 import logging
 import traceback
-from datetime import date, datetime
+from collections import defaultdict
+from datetime import date, datetime, timedelta
 from flask import Blueprint, jsonify, request
 
 from .decorators import login_required
@@ -739,3 +741,369 @@ def get_report():
         'net': total_deposited - total_withdrawn,
         'breakdown': breakdown,
     })
+
+
+# ---------------------------------------------------------------------------
+# Card visibility settings
+# ---------------------------------------------------------------------------
+
+_DEFAULT_CARD_VISIBILITY = {
+    'accounts': True,
+    'budgets': True,
+    'goals': True,
+    'transactions': True,
+    'insights': True,
+    'recurring': True,
+    'anomalies': True,
+    'digest': True,
+}
+
+
+@finance_bp.route('/card-settings')
+@login_required
+def get_card_settings():
+    """Return card visibility preferences."""
+    conn = get_connection()
+    row = conn.execute(
+        "SELECT value FROM app_settings WHERE key = 'finance_card_visibility'"
+    ).fetchone()
+    if row and row['value']:
+        try:
+            saved = json.loads(row['value'])
+            merged = {**_DEFAULT_CARD_VISIBILITY, **saved}
+            return jsonify(merged)
+        except (json.JSONDecodeError, TypeError):
+            pass
+    return jsonify(_DEFAULT_CARD_VISIBILITY)
+
+
+@finance_bp.route('/card-settings', methods=['PUT'])
+@login_required
+def update_card_settings():
+    """Update card visibility preferences."""
+    data = request.json or {}
+    conn = get_connection()
+    # Merge with existing
+    row = conn.execute(
+        "SELECT value FROM app_settings WHERE key = 'finance_card_visibility'"
+    ).fetchone()
+    current = {}
+    if row and row['value']:
+        try:
+            current = json.loads(row['value'])
+        except (json.JSONDecodeError, TypeError):
+            pass
+    current.update(data)
+    conn.execute(
+        """INSERT INTO app_settings (key, value, updated_at)
+           VALUES ('finance_card_visibility', ?, CURRENT_TIMESTAMP)
+           ON CONFLICT(key) DO UPDATE SET value = excluded.value,
+                                          updated_at = excluded.updated_at""",
+        (json.dumps(current),),
+    )
+    conn.commit()
+    merged = {**_DEFAULT_CARD_VISIBILITY, **current}
+    return jsonify(merged)
+
+
+# ---------------------------------------------------------------------------
+# GET /api/finance/insights — spending insights
+# ---------------------------------------------------------------------------
+
+@finance_bp.route('/insights')
+@login_required
+def get_insights():
+    """Spending insights: top categories, month-over-month, daily avg, biggest tx."""
+    try:
+        connected = firefly_service.is_connected()
+        if not connected:
+            return jsonify({'error': 'Firefly not connected'}), 503
+
+        currency = firefly_service.get_default_currency()
+        today = date.today()
+
+        # Current month transactions
+        cur_start = today.replace(day=1)
+        cur_txns = firefly_service.get_transactions(days=today.day, limit=500)
+        cur_withdrawals = [t for t in cur_txns if t.get('type') == 'withdrawal']
+
+        # Previous month transactions
+        prev_end = cur_start - timedelta(days=1)
+        prev_start = prev_end.replace(day=1)
+        prev_days = (today - prev_start).days
+        all_txns = firefly_service.get_transactions(days=prev_days, limit=500)
+        prev_withdrawals = [
+            t for t in all_txns
+            if t.get('type') == 'withdrawal'
+            and prev_start.isoformat() <= (t.get('date', '')[:10]) <= prev_end.isoformat()
+        ]
+
+        # Top categories (current month)
+        cat_totals = defaultdict(float)
+        for t in cur_withdrawals:
+            cat = t.get('category', '') or 'Uncategorized'
+            cat_totals[cat] += float(t.get('amount', 0))
+        top_categories = sorted(
+            [{'category': k, 'amount': round(v, 2)} for k, v in cat_totals.items()],
+            key=lambda x: x['amount'], reverse=True,
+        )[:5]
+
+        # Month-over-month
+        cur_total = sum(float(t.get('amount', 0)) for t in cur_withdrawals)
+        prev_total = sum(float(t.get('amount', 0)) for t in prev_withdrawals)
+        mom_pct = round(((cur_total - prev_total) / prev_total * 100), 1) if prev_total > 0 else 0
+
+        # Daily average
+        day_of_month = today.day
+        daily_avg = round(cur_total / day_of_month, 2) if day_of_month > 0 else 0
+
+        # Biggest transaction
+        biggest = None
+        if cur_withdrawals:
+            big_tx = max(cur_withdrawals, key=lambda t: float(t.get('amount', 0)))
+            biggest = {
+                'description': big_tx.get('description', ''),
+                'amount': float(big_tx.get('amount', 0)),
+                'category': big_tx.get('category', ''),
+                'date': big_tx.get('date', '')[:10],
+            }
+
+        # Category trends (current vs previous)
+        prev_cat_totals = defaultdict(float)
+        for t in prev_withdrawals:
+            cat = t.get('category', '') or 'Uncategorized'
+            prev_cat_totals[cat] += float(t.get('amount', 0))
+        category_trends = []
+        all_cats = set(list(cat_totals.keys()) + list(prev_cat_totals.keys()))
+        for cat in list(all_cats)[:8]:
+            cur_amt = cat_totals.get(cat, 0)
+            prev_amt = prev_cat_totals.get(cat, 0)
+            category_trends.append({
+                'category': cat,
+                'current': round(cur_amt, 2),
+                'previous': round(prev_amt, 2),
+                'change_pct': round(((cur_amt - prev_amt) / prev_amt * 100), 1) if prev_amt > 0 else 0,
+            })
+
+        return jsonify({
+            'top_categories': top_categories,
+            'month_over_month': {
+                'current_total': round(cur_total, 2),
+                'previous_total': round(prev_total, 2),
+                'change_pct': mom_pct,
+            },
+            'daily_average': daily_avg,
+            'biggest_transaction': biggest,
+            'category_trends': category_trends,
+            'currency': currency,
+        })
+    except Exception:
+        logger.exception("Insights error")
+        return jsonify({'error': 'Failed to generate insights'}), 500
+
+
+# ---------------------------------------------------------------------------
+# Recurring expense detection
+# ---------------------------------------------------------------------------
+
+@finance_bp.route('/recurring')
+@login_required
+def list_recurring():
+    """List detected recurring expenses."""
+    conn = get_connection()
+    rows = conn.execute(
+        """SELECT * FROM finance_recurring
+           WHERE active = 1 AND dismissed = 0
+           ORDER BY estimated_amount DESC"""
+    ).fetchall()
+    return jsonify([{
+        'id': r['id'],
+        'description': r['description'],
+        'category': r['category'],
+        'estimated_amount': r['estimated_amount'],
+        'frequency': r['frequency'],
+        'confidence': r['confidence'],
+        'last_seen_date': r['last_seen_date'],
+        'transaction_count': r['transaction_count'],
+    } for r in rows])
+
+
+@finance_bp.route('/recurring/detect', methods=['POST'])
+@login_required
+def detect_recurring_expenses():
+    """Trigger recurring expense detection from the last 90 days."""
+    try:
+        connected = firefly_service.is_connected()
+        if not connected:
+            return jsonify({'error': 'Firefly not connected'}), 503
+
+        txns = firefly_service.get_transactions(days=90, limit=500)
+        conn = get_connection()
+
+        from src.domain.services.finance_recurring import detect_recurring
+        results = detect_recurring(txns, conn)
+
+        return jsonify({
+            'detected': len(results),
+            'recurring': results,
+        })
+    except Exception:
+        logger.exception("Recurring detection error")
+        return jsonify({'error': 'Detection failed'}), 500
+
+
+@finance_bp.route('/recurring/<int:rec_id>/dismiss', methods=['PUT'])
+@login_required
+def dismiss_recurring(rec_id: int):
+    """Dismiss a recurring expense detection."""
+    conn = get_connection()
+    conn.execute(
+        "UPDATE finance_recurring SET dismissed = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+        (rec_id,),
+    )
+    conn.commit()
+    return '', 204
+
+
+# ---------------------------------------------------------------------------
+# Transaction anomaly alerts
+# ---------------------------------------------------------------------------
+
+@finance_bp.route('/anomalies')
+@login_required
+def list_anomalies():
+    """List unacknowledged anomaly alerts."""
+    conn = get_connection()
+    rows = conn.execute(
+        """SELECT * FROM finance_anomalies
+           WHERE acknowledged = 0
+           ORDER BY created_at DESC"""
+    ).fetchall()
+    return jsonify([{
+        'id': r['id'],
+        'transaction_id': r['transaction_id'],
+        'description': r['description'],
+        'amount': r['amount'],
+        'category': r['category'],
+        'category_average': r['category_average'],
+        'deviation_factor': r['deviation_factor'],
+        'alert_type': r['alert_type'],
+        'created_at': r['created_at'],
+    } for r in rows])
+
+
+@finance_bp.route('/anomalies/scan', methods=['POST'])
+@login_required
+def scan_anomalies():
+    """Trigger anomaly detection on recent transactions."""
+    try:
+        connected = firefly_service.is_connected()
+        if not connected:
+            return jsonify({'error': 'Firefly not connected'}), 503
+
+        txns = firefly_service.get_transactions(days=90, limit=500)
+        conn = get_connection()
+
+        from src.domain.services.finance_anomalies import detect_anomalies
+        results = detect_anomalies(txns, conn)
+
+        return jsonify({
+            'detected': len(results),
+            'anomalies': results,
+        })
+    except Exception:
+        logger.exception("Anomaly scan error")
+        return jsonify({'error': 'Scan failed'}), 500
+
+
+@finance_bp.route('/anomalies/<int:anomaly_id>/acknowledge', methods=['PUT'])
+@login_required
+def acknowledge_anomaly(anomaly_id: int):
+    """Acknowledge an anomaly alert."""
+    conn = get_connection()
+    conn.execute(
+        "UPDATE finance_anomalies SET acknowledged = 1 WHERE id = ?",
+        (anomaly_id,),
+    )
+    conn.commit()
+    return '', 204
+
+
+# ---------------------------------------------------------------------------
+# Weekly financial digest
+# ---------------------------------------------------------------------------
+
+@finance_bp.route('/digest')
+@login_required
+def get_digest():
+    """Get the most recent weekly digest, or history with ?history=true."""
+    conn = get_connection()
+    show_history = request.args.get('history', '').lower() in ('true', '1')
+
+    if show_history:
+        rows = conn.execute(
+            "SELECT * FROM finance_digests ORDER BY week_start DESC LIMIT 12"
+        ).fetchall()
+        return jsonify([{
+            'id': r['id'],
+            'week_start': r['week_start'],
+            'week_end': r['week_end'],
+            'total_spent': r['total_spent'],
+            'top_categories': json.loads(r['top_categories_json'] or '[]'),
+            'budget_status': json.loads(r['budget_status_json'] or '[]'),
+            'notable_transactions': json.loads(r['notable_transactions_json'] or '[]'),
+            'recurring_total': r['recurring_total'],
+            'anomaly_count': r['anomaly_count'],
+            'ai_summary': r['ai_summary'],
+        } for r in rows])
+
+    row = conn.execute(
+        "SELECT * FROM finance_digests ORDER BY week_start DESC LIMIT 1"
+    ).fetchone()
+    if not row:
+        return jsonify({'message': 'No digests yet. Click Generate to create one.'}), 404
+
+    return jsonify({
+        'id': row['id'],
+        'week_start': row['week_start'],
+        'week_end': row['week_end'],
+        'total_spent': row['total_spent'],
+        'top_categories': json.loads(row['top_categories_json'] or '[]'),
+        'budget_status': json.loads(row['budget_status_json'] or '[]'),
+        'notable_transactions': json.loads(row['notable_transactions_json'] or '[]'),
+        'recurring_total': row['recurring_total'],
+        'anomaly_count': row['anomaly_count'],
+        'ai_summary': row['ai_summary'],
+    })
+
+
+@finance_bp.route('/digest/generate', methods=['POST'])
+@login_required
+def generate_digest():
+    """Generate a weekly digest for the most recent complete week."""
+    try:
+        connected = firefly_service.is_connected()
+        if not connected:
+            return jsonify({'error': 'Firefly not connected'}), 503
+
+        txns = firefly_service.get_transactions(days=30, limit=500)
+        budgets = firefly_service.get_budgets()
+        conn = get_connection()
+
+        # Try to get AI provider for narrative summary
+        ai_provider = None
+        try:
+            from src.infrastructure.ai import get_ai_provider
+            provider = get_ai_provider()
+            if provider.is_available():
+                ai_provider = provider
+        except Exception:
+            pass
+
+        from src.domain.services.finance_digest import generate_digest as gen
+        result = gen(txns, budgets, conn, ai_provider)
+
+        return jsonify(result)
+    except Exception:
+        logger.exception("Digest generation error")
+        return jsonify({'error': 'Digest generation failed'}), 500
