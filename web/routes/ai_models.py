@@ -119,8 +119,29 @@ def _test_chatgpt_oauth() -> tuple[bool, str]:
     return False, 'No OAuth token found — connect via ChatGPT OAuth first'
 
 
-def _fetch_openai_compatible_models(base_url: str, api_key: str) -> list[str]:
-    """Return model IDs from an OpenAI-compatible /models endpoint."""
+# Prefixes of OpenAI model IDs that are NOT chat completion models.
+_OPENAI_EXCLUDE_PREFIXES = (
+    'text-embedding', 'text-moderation', 'text-search', 'text-similarity',
+    'code-search', 'whisper', 'dall-e', 'tts', 'davinci', 'babbage',
+    'curie', 'ada', 'cushman', 'canary',
+)
+
+
+def _is_openai_chat_model(model_id: str) -> bool:
+    """Return True if the model is a chat-completion model worth exposing."""
+    lower = model_id.lower()
+    for prefix in _OPENAI_EXCLUDE_PREFIXES:
+        if lower.startswith(prefix):
+            return False
+    return True
+
+
+def _fetch_openai_compatible_models(base_url: str, api_key: str, filter_chat: bool = False) -> list[str]:
+    """Return model IDs from an OpenAI-compatible /models endpoint.
+
+    When ``filter_chat`` is True, non-chat models (embeddings, whisper,
+    dall-e, tts, etc.) are excluded.
+    """
     try:
         resp = requests.get(
             f"{base_url.rstrip('/')}/models",
@@ -130,6 +151,8 @@ def _fetch_openai_compatible_models(base_url: str, api_key: str) -> list[str]:
         resp.raise_for_status()
         data = resp.json()
         models = [m.get('id', '') for m in data.get('data', []) if m.get('id')]
+        if filter_chat:
+            models = [m for m in models if _is_openai_chat_model(m)]
         return sorted(models)
     except Exception:
         return []
@@ -148,6 +171,34 @@ def _fetch_ollama_models(base_url: str) -> list[str]:
         return sorted(models)
     except Exception:
         return []
+
+
+def _get_recommended(provider: str, models: list[str]) -> tuple[str, str]:
+    """Return (recommended_model, reason) for the given provider."""
+    _static = {
+        'openai': ('gpt-4o-mini', 'Best balance of cost and quality for food analysis'),
+        'anthropic': ('claude-sonnet-4-20250514', 'Good balance of capability and cost'),
+        'minimax': ('MiniMax-Text-01', 'Default MiniMax chat model'),
+        'chatgpt_oauth': ('gpt-4o', 'Full-capability model available via ChatGPT OAuth'),
+    }
+    if provider in _static:
+        model, reason = _static[provider]
+        # Prefer the static recommendation if available in the model list
+        if model in models or not models:
+            return model, reason
+        # Fall back to first available
+        return models[0], reason
+
+    # ollama — prefer llama3 if present, else first available
+    if provider == 'ollama':
+        preferred = 'llama3'
+        if preferred in models:
+            return preferred, 'Recommended general-purpose local model'
+        if models:
+            return models[0], 'First available local model'
+        return '', 'No models found; pull one with: ollama pull llama3'
+
+    return '', ''
 
 
 # ---------------------------------------------------------------------------
@@ -207,22 +258,22 @@ def test_provider():
     return jsonify({'valid': valid, 'error': error})
 
 
-@ai_models_bp.route('/models', methods=['GET'])
+@ai_models_bp.route('/models', methods=['GET', 'POST'])
 @login_required
 def list_models():
     """Return available models for a given provider.
 
-    Query parameters:
-        provider  — provider name
-        api_key   — API key (where applicable)
-        base_url  — base URL (where applicable)
-
-    Response:
-        {"models": ["gpt-4o", "gpt-4o-mini", ...]}
+    Accepts GET (query params) or POST (JSON body) to avoid leaking API keys in URLs.
     """
-    provider = (request.args.get('provider') or '').strip().lower()
-    api_key = (request.args.get('api_key') or '').strip()
-    base_url = (request.args.get('base_url') or '').strip()
+    if request.method == 'POST':
+        data = request.get_json(silent=True) or {}
+        provider = (data.get('provider') or '').strip().lower()
+        api_key = (data.get('api_key') or '').strip()
+        base_url = (data.get('base_url') or '').strip()
+    else:
+        provider = (request.args.get('provider') or '').strip().lower()
+        api_key = (request.args.get('api_key') or '').strip()
+        base_url = (request.args.get('base_url') or '').strip()
 
     if not provider:
         return jsonify({'error': 'provider is required'}), 400
@@ -233,7 +284,10 @@ def list_models():
                 'https://api.openai.com/v1' if provider == 'openai'
                 else 'https://api.minimaxi.chat/v1'
             )
-        models = _fetch_openai_compatible_models(base_url, api_key)
+        # For OpenAI specifically, filter out non-chat models.
+        models = _fetch_openai_compatible_models(
+            base_url, api_key, filter_chat=(provider == 'openai')
+        )
 
     elif provider == 'anthropic':
         models = list(_ANTHROPIC_MODELS)
@@ -249,4 +303,9 @@ def list_models():
     else:
         return jsonify({'error': f"Unknown provider: {provider}"}), 400
 
-    return jsonify({'models': models})
+    recommended, recommended_reason = _get_recommended(provider, models)
+    return jsonify({
+        'models': models,
+        'recommended': recommended,
+        'recommended_reason': recommended_reason,
+    })

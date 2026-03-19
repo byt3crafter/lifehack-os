@@ -259,6 +259,22 @@ def init_database() -> None:
             dismissed INTEGER DEFAULT 0
         );
 
+        -- AI Usage Log
+        CREATE TABLE IF NOT EXISTS ai_usage_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+            provider TEXT NOT NULL,
+            model TEXT NOT NULL,
+            action TEXT NOT NULL,
+            input_tokens INTEGER DEFAULT 0,
+            output_tokens INTEGER DEFAULT 0,
+            total_tokens INTEGER DEFAULT 0,
+            cost_usd REAL DEFAULT 0,
+            success INTEGER DEFAULT 1,
+            error_message TEXT DEFAULT '',
+            duration_ms INTEGER DEFAULT 0
+        );
+
         -- Indexes
         CREATE INDEX IF NOT EXISTS idx_habit_completions_date ON habit_completions(completed_at);
         CREATE INDEX IF NOT EXISTS idx_checkins_date ON daily_checkins(date);
@@ -266,6 +282,7 @@ def init_database() -> None:
         CREATE INDEX IF NOT EXISTS idx_ledger_timestamp ON point_ledger(timestamp);
         CREATE INDEX IF NOT EXISTS idx_food_date ON food_logs(logged_at);
         CREATE INDEX IF NOT EXISTS idx_challenges_status ON challenges(status);
+        CREATE INDEX IF NOT EXISTS idx_ai_usage_timestamp ON ai_usage_log(timestamp);
     """)
 
     conn.commit()

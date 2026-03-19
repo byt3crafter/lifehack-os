@@ -1,11 +1,12 @@
 """Ollama AI provider — free, local, private LLM."""
 import json
 import os
+import time
 from typing import Optional
 
 import requests
 
-from .base import AIProvider, FoodAnalysis, Insight
+from .base import AIProvider, FoodAnalysis, Insight, log_ai_usage
 
 
 class OllamaProvider(AIProvider):
@@ -30,12 +31,13 @@ class OllamaProvider(AIProvider):
             pass
         return ''
 
-    def _generate(self, prompt: str, images: list = None) -> str:
+    def _generate(self, prompt: str, images: list = None, action: str = 'chat') -> str:
         """Send a prompt to Ollama and return the response text.
 
         ``images`` is a list of base64-encoded image strings — only used
         with multimodal models such as llava.
         """
+        start = time.time()
         try:
             payload = {"model": self.model, "prompt": prompt, "stream": False}
             if images:
@@ -45,9 +47,32 @@ class OllamaProvider(AIProvider):
                 json=payload,
                 timeout=60
             )
+            duration_ms = int((time.time() - start) * 1000)
             resp.raise_for_status()
-            return resp.json().get("response", "")
-        except Exception:
+            body = resp.json()
+            # Ollama returns prompt_eval_count (input) and eval_count (output)
+            input_tokens = body.get('prompt_eval_count', 0)
+            output_tokens = body.get('eval_count', 0)
+            log_ai_usage(
+                provider='ollama',
+                model=self.model,
+                action=action,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                success=True,
+                duration_ms=duration_ms,
+            )
+            return body.get("response", "")
+        except Exception as exc:
+            duration_ms = int((time.time() - start) * 1000)
+            log_ai_usage(
+                provider='ollama',
+                model=self.model,
+                action=action,
+                success=False,
+                error_message=str(exc),
+                duration_ms=duration_ms,
+            )
             return ""
 
     def _parse_json(self, text: str) -> dict:
@@ -79,7 +104,7 @@ JSON format:
 {{"calories": number, "protein_g": number, "carbs_g": number, "fat_g": number, "description": "brief description"}}"""
 
         images = [image_base64] if image_base64 else None
-        response = self._generate(prompt, images=images)
+        response = self._generate(prompt, images=images, action='food_analysis')
         data = self._parse_json(response)
 
         if not data:
@@ -107,7 +132,7 @@ Stats: {xp} XP, {habits_done}/{habits_total} habits done today, best streak: {st
 
 Return ONLY JSON: {{"title": "short title", "content": "1-2 sentence insight", "type": "advice"}}"""
 
-        response = self._generate(prompt)
+        response = self._generate(prompt, action='generate_insight')
         data = self._parse_json(response)
 
         if not data or 'content' not in data:
@@ -130,7 +155,7 @@ Mood trend: {weekly_data.get('mood_trend', 'stable')}
 
 Be encouraging but honest. No fluff."""
 
-        return self._generate(prompt).strip()
+        return self._generate(prompt, action='weekly_report').strip()
 
     def is_available(self) -> bool:
         try:

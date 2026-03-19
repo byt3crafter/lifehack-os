@@ -18,6 +18,66 @@ stats_repo = StatsRepository()
 config = load_config()
 
 
+@ai_bp.route('/usage')
+@login_required
+def ai_usage():
+    """Return recent AI usage log with aggregate totals.
+
+    Query parameters:
+        limit  — number of recent entries to return (default 100)
+    """
+    limit = request.args.get('limit', 100, type=int)
+    conn = get_connection()
+
+    rows = conn.execute(
+        """SELECT timestamp, provider, model, action,
+                  input_tokens, output_tokens, total_tokens,
+                  cost_usd, success, error_message, duration_ms
+           FROM ai_usage_log
+           ORDER BY timestamp DESC
+           LIMIT ?""",
+        (limit,),
+    ).fetchall()
+
+    totals_row = conn.execute(
+        """SELECT
+               COUNT(*) AS total_calls,
+               SUM(total_tokens) AS total_tokens,
+               SUM(cost_usd) AS total_cost_usd,
+               SUM(success) AS success_count
+           FROM ai_usage_log"""
+    ).fetchone()
+
+    total_calls = totals_row['total_calls'] or 0
+    success_count = totals_row['success_count'] or 0
+    success_rate = round((success_count / total_calls * 100), 1) if total_calls > 0 else 0.0
+
+    return jsonify({
+        'entries': [
+            {
+                'timestamp': r['timestamp'],
+                'provider': r['provider'],
+                'model': r['model'],
+                'action': r['action'],
+                'input_tokens': r['input_tokens'],
+                'output_tokens': r['output_tokens'],
+                'total_tokens': r['total_tokens'],
+                'cost_usd': r['cost_usd'],
+                'success': bool(r['success']),
+                'error_message': r['error_message'],
+                'duration_ms': r['duration_ms'],
+            }
+            for r in rows
+        ],
+        'totals': {
+            'total_calls': total_calls,
+            'total_tokens': totals_row['total_tokens'] or 0,
+            'total_cost_usd': round(totals_row['total_cost_usd'] or 0, 6),
+            'success_rate': success_rate,
+        },
+    })
+
+
 @ai_bp.route('/status')
 @login_required
 def ai_status():
@@ -46,15 +106,23 @@ def analyze_food():
     if not provider.is_available():
         return jsonify({'error': 'AI not configured', 'estimated': False}), 200
 
-    result = provider.analyze_food(description)
-    return jsonify({
-        'estimated': result.estimated,
-        'calories': result.calories,
-        'protein_g': result.protein_g,
-        'carbs_g': result.carbs_g,
-        'fat_g': result.fat_g,
-        'description': result.description
-    })
+    try:
+        result = provider.analyze_food(description)
+        if not result.estimated:
+            return jsonify({
+                'estimated': False,
+                'ai_error': 'AI returned no usable data',
+            })
+        return jsonify({
+            'estimated': result.estimated,
+            'calories': result.calories,
+            'protein_g': result.protein_g,
+            'carbs_g': result.carbs_g,
+            'fat_g': result.fat_g,
+            'description': result.description,
+        })
+    except Exception as exc:
+        return jsonify({'estimated': False, 'ai_error': str(exc)})
 
 
 @ai_bp.route('/insight', methods=['POST'])
@@ -87,9 +155,13 @@ def generate_insight():
         'energy': checkin.energy if checkin else None,
     }
 
-    insight = provider.generate_insight(user_state)
+    try:
+        insight = provider.generate_insight(user_state)
+    except Exception as exc:
+        return jsonify({'generated': False, 'ai_error': str(exc)})
+
     if not insight:
-        return jsonify({'generated': False})
+        return jsonify({'generated': False, 'ai_error': 'AI returned no insight'})
 
     # Save to database so it shows on dashboard
     conn = get_connection()
@@ -103,5 +175,5 @@ def generate_insight():
         'generated': True,
         'title': insight.title,
         'content': insight.content,
-        'type': insight.insight_type
+        'type': insight.insight_type,
     })

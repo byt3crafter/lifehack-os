@@ -1393,6 +1393,36 @@
 
                                 <button onclick="saveAiProvider()" id="ai-save-btn" class="btn-primary w-full py-2.5">Save AI Settings</button>
                             </div>
+
+                            <!-- AI Usage Log -->
+                            <div class="mt-6">
+                                <div class="mb-2" style="font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#5c5c6b;">AI Usage Log</div>
+
+                                <!-- Summary card -->
+                                <div id="ai-usage-summary" class="grid grid-cols-2 gap-2 mb-3 sm:grid-cols-4">
+                                    <div class="card p-3">
+                                        <div id="ai-usage-total-calls" class="font-mono font-semibold text-base" style="color:#f0f0f2;">—</div>
+                                        <div class="text-xs mt-0.5" style="color:#5c5c6b;">Total calls</div>
+                                    </div>
+                                    <div class="card p-3">
+                                        <div id="ai-usage-total-tokens" class="font-mono font-semibold text-base" style="color:#f0f0f2;">—</div>
+                                        <div class="text-xs mt-0.5" style="color:#5c5c6b;">Total tokens</div>
+                                    </div>
+                                    <div class="card p-3">
+                                        <div id="ai-usage-total-cost" class="font-mono font-semibold text-base" style="color:#f0f0f2;">—</div>
+                                        <div class="text-xs mt-0.5" style="color:#5c5c6b;">Total cost</div>
+                                    </div>
+                                    <div class="card p-3">
+                                        <div id="ai-usage-success-rate" class="font-mono font-semibold text-base" style="color:#f0f0f2;">—</div>
+                                        <div class="text-xs mt-0.5" style="color:#5c5c6b;">Success rate</div>
+                                    </div>
+                                </div>
+
+                                <!-- Recent calls list -->
+                                <div id="ai-usage-log" class="card p-4 overflow-y-auto" style="max-height:320px;">
+                                    <p class="text-sm" style="color:#5c5c6b;">Loading usage log...</p>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- ── AI AGENT (OpenClaw) panel ─────────────────── -->
@@ -2166,14 +2196,20 @@
                 if(analyzingEl) analyzingEl.classList.add('hidden');
                 if(uploadResult) {
                     imagePath = uploadResult.image_path || null;
-                    // Auto-fill nutrition fields from AI analysis
-                    if(uploadResult.calories   != null) { const el = $('#nf-cal');     if(el) el.value = uploadResult.calories; }
-                    if(uploadResult.protein_g  != null) { const el = $('#nf-protein'); if(el) el.value = uploadResult.protein_g; }
-                    if(uploadResult.carbs_g    != null) { const el = $('#nf-carbs');   if(el) el.value = uploadResult.carbs_g; }
-                    if(uploadResult.fat_g      != null) { const el = $('#nf-fat');     if(el) el.value = uploadResult.fat_g; }
-                    if(uploadResult.description && !desc) { const el = $('#nf-desc'); if(el) el.value = uploadResult.description; }
-                    showToast('Photo analyzed — review and confirm', 'info');
-                    return; // Let user review the auto-filled values before submitting
+                    // Show AI error if analysis failed but photo still uploaded
+                    if(uploadResult.ai_error) {
+                        showToast('AI analysis failed: ' + uploadResult.ai_error, 'warning');
+                        // Still continue so user can fill in manually
+                    } else {
+                        // Auto-fill nutrition fields from AI analysis
+                        if(uploadResult.calories   != null) { const el = $('#nf-cal');     if(el) el.value = uploadResult.calories; }
+                        if(uploadResult.protein_g  != null) { const el = $('#nf-protein'); if(el) el.value = uploadResult.protein_g; }
+                        if(uploadResult.carbs_g    != null) { const el = $('#nf-carbs');   if(el) el.value = uploadResult.carbs_g; }
+                        if(uploadResult.fat_g      != null) { const el = $('#nf-fat');     if(el) el.value = uploadResult.fat_g; }
+                        if(uploadResult.description && !desc) { const el = $('#nf-desc'); if(el) el.value = uploadResult.description; }
+                        showToast('Photo analyzed — review and confirm', 'info');
+                        return; // Let user review the auto-filled values before submitting
+                    }
                 }
             } catch(e) {
                 if(analyzingEl) analyzingEl.classList.add('hidden');
@@ -2858,6 +2894,53 @@
             if(logEl) logEl.innerHTML = '<p class="text-sm" style="color:#5c5c6b;">Could not reach OpenClaw endpoint.</p>';
         }
 
+        // ── AI Usage Log ─────────────────────────────────────────
+        try {
+            const usage = await api('/ai/usage');
+            if(usage) {
+                // Populate summary cards
+                const t = usage.totals || {};
+                const callsEl = $('#ai-usage-total-calls');
+                const tokensEl = $('#ai-usage-total-tokens');
+                const costEl = $('#ai-usage-total-cost');
+                const rateEl = $('#ai-usage-success-rate');
+                if(callsEl) callsEl.textContent = (t.total_calls != null) ? t.total_calls : '0';
+                if(tokensEl) tokensEl.textContent = (t.total_tokens != null) ? t.total_tokens.toLocaleString() : '0';
+                if(costEl) costEl.textContent = (t.total_cost_usd != null) ? '$' + t.total_cost_usd.toFixed(4) : '$0.0000';
+                if(rateEl) rateEl.textContent = (t.success_rate != null) ? (t.success_rate * 100).toFixed(0) + '%' : '—';
+
+                // Populate entries list
+                const logEl = $('#ai-usage-log');
+                if(logEl) {
+                    const entries = Array.isArray(usage.entries) ? usage.entries : [];
+                    if(entries.length) {
+                        var rows = entries.slice(0, 20).map(function(e) {
+                            var ts = e.timestamp ? new Date(e.timestamp).toLocaleString() : '';
+                            var model = e.model || '—';
+                            var action = e.action || e.type || '—';
+                            var tokens = e.tokens != null ? e.tokens.toLocaleString() : '—';
+                            var cost = e.cost_usd != null ? '$' + e.cost_usd.toFixed(4) : '—';
+                            var ok = e.success !== false;
+                            var badge = ok
+                                ? '<span style="font-size:0.6875rem;font-weight:600;padding:1px 6px;border-radius:4px;background:rgba(34,197,94,0.12);color:#22c55e;">ok</span>'
+                                : '<span style="font-size:0.6875rem;font-weight:600;padding:1px 6px;border-radius:4px;background:rgba(239,68,68,0.12);color:#ef4444;">fail</span>';
+                            return '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid #2a2a2e;">'
+                                + '<span style="font-family:\'DM Mono\',monospace;font-size:0.6875rem;color:#5c5c6b;flex-shrink:0;min-width:9rem;">' + ts + '</span>'
+                                + '<span style="font-size:0.8125rem;color:#f0f0f2;flex:1;min-width:8rem;">' + model + '</span>'
+                                + '<span style="font-size:0.75rem;color:#9898a6;flex-shrink:0;">' + action + '</span>'
+                                + '<span style="font-family:\'DM Mono\',monospace;font-size:0.75rem;color:#9898a6;flex-shrink:0;">' + tokens + ' tok</span>'
+                                + '<span style="font-family:\'DM Mono\',monospace;font-size:0.75rem;color:#9898a6;flex-shrink:0;">' + cost + '</span>'
+                                + badge
+                                + '</div>';
+                        });
+                        logEl.innerHTML = '<div>' + rows.join('') + '</div>';
+                    } else {
+                        logEl.innerHTML = '<p class="text-sm" style="color:#5c5c6b;">No AI calls recorded yet.</p>';
+                    }
+                }
+            }
+        } catch(_) {}
+
         // ── Integrations ─────────────────────────────────────────
         const int = await api('/integrations');
         if(!int) return;
@@ -3093,8 +3176,19 @@
             const select = $('#ai-model-select');
             if(select) {
                 select.innerHTML = r.models.map(function(m) {
-                    return '<option value="' + m + '">' + m + '</option>';
+                    var isRec = m === r.recommended;
+                    return '<option value="' + m + '"' + (isRec ? ' selected' : '') + '>' + m + (isRec ? ' (recommended)' : '') + '</option>';
                 }).join('');
+            }
+            // Show recommendation note below the model select
+            var existingNote = document.getElementById('ai-model-rec-note');
+            if(existingNote) existingNote.remove();
+            if(r.recommended_reason && wrap) {
+                var note = document.createElement('p');
+                note.id = 'ai-model-rec-note';
+                note.style.cssText = 'font-size:0.75rem;color:#5c5c6b;margin-top:0.375rem;';
+                note.textContent = r.recommended_reason;
+                wrap.appendChild(note);
             }
             if(wrap) wrap.style.display = '';
             if(fallback) fallback.style.display = 'none';
@@ -3941,12 +4035,22 @@
             if(r && (r.analysis || r.message || r.result)) {
                 resultText.textContent = r.analysis || r.message || r.result;
             } else if(r && r.error) {
-                resultText.textContent = 'AI is not available: ' + r.error;
+                resultEl.classList.remove('hidden');
+                resultEl.style.background = 'rgba(239,68,68,0.08)';
+                resultEl.style.borderColor = 'rgba(239,68,68,0.2)';
+                resultText.style.color = '#f87171';
+                resultText.textContent = 'AI error: ' + r.error;
+                showToast('AI estimate failed: ' + r.error, 'error');
             } else {
                 resultEl.classList.add('hidden');
             }
         } catch(e) {
+            resultEl.classList.remove('hidden');
+            resultEl.style.background = 'rgba(239,68,68,0.08)';
+            resultEl.style.borderColor = 'rgba(239,68,68,0.2)';
+            resultText.style.color = '#f87171';
             resultText.textContent = 'Could not reach AI endpoint.';
+            showToast('AI estimate failed — could not reach endpoint', 'error');
         }
 
         btn.disabled = false;

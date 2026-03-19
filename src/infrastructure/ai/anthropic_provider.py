@@ -1,11 +1,12 @@
 """Anthropic Claude API provider."""
 import json
 import os
+import time
 from typing import Optional
 
 import requests
 
-from .base import AIProvider, FoodAnalysis, Insight
+from .base import AIProvider, FoodAnalysis, Insight, log_ai_usage
 
 _ANTHROPIC_API_VERSION = "2023-06-01"
 
@@ -36,7 +37,7 @@ class AnthropicProvider(AIProvider):
             pass
         return ''
 
-    def _messages(self, system: str, user_content) -> str:
+    def _messages(self, system: str, user_content, action: str = 'chat') -> str:
         """Call the Anthropic messages API.
 
         ``user_content`` may be a plain string or a list of content blocks
@@ -45,6 +46,7 @@ class AnthropicProvider(AIProvider):
         if isinstance(user_content, str):
             user_content = [{"type": "text", "text": user_content}]
 
+        start = time.time()
         try:
             resp = requests.post(
                 f"{self.base_url}/messages",
@@ -63,14 +65,35 @@ class AnthropicProvider(AIProvider):
                 },
                 timeout=30,
             )
+            duration_ms = int((time.time() - start) * 1000)
             resp.raise_for_status()
             data = resp.json()
+            usage = data.get('usage', {})
+            input_tokens = usage.get('input_tokens', 0)
+            output_tokens = usage.get('output_tokens', 0)
+            log_ai_usage(
+                provider='anthropic',
+                model=self.model,
+                action=action,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                success=True,
+                duration_ms=duration_ms,
+            )
             # Content is a list of blocks; grab the first text block.
             for block in data.get("content", []):
                 if block.get("type") == "text":
                     return block["text"]
-        except Exception:
-            pass
+        except Exception as exc:
+            duration_ms = int((time.time() - start) * 1000)
+            log_ai_usage(
+                provider='anthropic',
+                model=self.model,
+                action=action,
+                success=False,
+                error_message=str(exc),
+                duration_ms=duration_ms,
+            )
         return ""
 
     def _parse_json(self, text: str) -> dict:
@@ -114,7 +137,7 @@ class AnthropicProvider(AIProvider):
         else:
             user_content = text_prompt
 
-        response = self._messages(system, user_content)
+        response = self._messages(system, user_content, action='food_analysis')
         data = self._parse_json(response)
 
         if not data:
@@ -140,7 +163,7 @@ class AnthropicProvider(AIProvider):
             'Return: {"title": "short title", "content": "insight text", "type": "advice"}'
         )
 
-        response = self._messages(system, user)
+        response = self._messages(system, user, action='generate_insight')
         data = self._parse_json(response)
 
         if not data or 'content' not in data:
@@ -162,7 +185,7 @@ class AnthropicProvider(AIProvider):
             f"Best streak: {weekly_data.get('best_streak', 0)} days\n"
             f"Mood trend: {weekly_data.get('mood_trend', 'stable')}"
         )
-        return self._messages(system, user).strip()
+        return self._messages(system, user, action='weekly_report').strip()
 
     def is_available(self) -> bool:
         return bool(self.api_key)

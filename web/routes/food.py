@@ -177,36 +177,38 @@ def upload_food_photo():
 
     # Attempt AI analysis if a provider is configured.
     description = request.form.get('description', '')
-    analysis_dict = {
-        'calories': None,
-        'protein_g': None,
-        'carbs_g': None,
-        'fat_g': None,
-        'description': description,
-        'estimated': False,
-    }
+    analysis_dict = None
+    ai_error = None
 
     try:
         from src.infrastructure.ai.factory import get_ai_provider
         provider = get_ai_provider()
-        if provider.is_available():
+        if not provider.is_available():
+            ai_error = 'AI provider not configured'
+        else:
             image_bytes = save_path.read_bytes()
             image_b64 = base64.b64encode(image_bytes).decode('ascii')
             result = provider.analyze_food(description, image_base64=image_b64)
-            analysis_dict = {
-                'calories': result.calories,
-                'protein_g': result.protein_g,
-                'carbs_g': result.carbs_g,
-                'fat_g': result.fat_g,
-                'description': result.description or description,
-                'estimated': result.estimated,
-            }
-    except Exception:
+            if result.estimated:
+                analysis_dict = {
+                    'calories': result.calories,
+                    'protein_g': result.protein_g,
+                    'carbs_g': result.carbs_g,
+                    'fat_g': result.fat_g,
+                    'description': result.description or description,
+                    'estimated': result.estimated,
+                }
+            else:
+                ai_error = 'AI returned no usable analysis'
+    except Exception as exc:
         # AI analysis is best-effort; always return the saved image path.
-        pass
+        ai_error = str(exc)
 
-    return jsonify({
+    response = {
         'success': True,
         'image_path': image_url,
         'analysis': analysis_dict,
-    })
+    }
+    if ai_error:
+        response['ai_error'] = ai_error
+    return jsonify(response)

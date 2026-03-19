@@ -1,11 +1,12 @@
 """OpenAI-compatible AI provider — works with OpenAI, Azure, Groq, Together, etc."""
 import json
 import os
+import time
 from typing import Optional
 
 import requests
 
-from .base import AIProvider, FoodAnalysis, Insight
+from .base import AIProvider, FoodAnalysis, Insight, log_ai_usage
 
 
 class OpenAIProvider(AIProvider):
@@ -31,7 +32,7 @@ class OpenAIProvider(AIProvider):
             pass
         return ''
 
-    def _chat(self, system: str, user: str, image_base64: str = None) -> str:
+    def _chat(self, system: str, user: str, image_base64: str = None, action: str = 'chat') -> str:
         """Send a chat completion request.
 
         When ``image_base64`` is provided the user turn is sent as a
@@ -52,6 +53,7 @@ class OpenAIProvider(AIProvider):
         else:
             user_content = user
 
+        start = time.time()
         try:
             resp = requests.post(
                 f"{self.base_url}/chat/completions",
@@ -70,9 +72,32 @@ class OpenAIProvider(AIProvider):
                 },
                 timeout=30
             )
+            duration_ms = int((time.time() - start) * 1000)
             resp.raise_for_status()
-            return resp.json()["choices"][0]["message"]["content"]
-        except Exception:
+            body = resp.json()
+            usage = body.get('usage', {})
+            input_tokens = usage.get('prompt_tokens', 0)
+            output_tokens = usage.get('completion_tokens', 0)
+            log_ai_usage(
+                provider='openai',
+                model=self.model,
+                action=action,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                success=True,
+                duration_ms=duration_ms,
+            )
+            return body["choices"][0]["message"]["content"]
+        except Exception as exc:
+            duration_ms = int((time.time() - start) * 1000)
+            log_ai_usage(
+                provider='openai',
+                model=self.model,
+                action=action,
+                success=False,
+                error_message=str(exc),
+                duration_ms=duration_ms,
+            )
             return ""
 
     def _parse_json(self, text: str) -> dict:
@@ -99,7 +124,7 @@ class OpenAIProvider(AIProvider):
 
 Return: {{"calories": number, "protein_g": number, "carbs_g": number, "fat_g": number, "description": "brief description"}}"""
 
-        response = self._chat(system, user, image_base64=image_base64)
+        response = self._chat(system, user, image_base64=image_base64, action='food_analysis')
         data = self._parse_json(response)
 
         if not data:
@@ -122,7 +147,7 @@ Stats: {user_state.get('total_xp', 0)} XP, {user_state.get('habits_completed', 0
 
 Return: {{"title": "short title", "content": "insight text", "type": "advice"}}"""
 
-        response = self._chat(system, user)
+        response = self._chat(system, user, action='generate_insight')
         data = self._parse_json(response)
 
         if not data or 'content' not in data:
@@ -143,7 +168,7 @@ Check-ins: {weekly_data.get('checkins', 0)}/7
 Best streak: {weekly_data.get('best_streak', 0)} days
 Mood trend: {weekly_data.get('mood_trend', 'stable')}"""
 
-        return self._chat(system, user).strip()
+        return self._chat(system, user, action='weekly_report').strip()
 
     def is_available(self) -> bool:
         return bool(self.api_key)

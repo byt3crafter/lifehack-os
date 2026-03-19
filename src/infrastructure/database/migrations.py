@@ -21,6 +21,23 @@ MIGRATIONS = [
         );
     '''),
     # Note: migration 3 uses Python logic, not raw SQL (see run_migrations)
+    (4, "Add AI usage log table", '''
+        CREATE TABLE IF NOT EXISTS ai_usage_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+            provider TEXT NOT NULL,
+            model TEXT NOT NULL,
+            action TEXT NOT NULL,
+            input_tokens INTEGER DEFAULT 0,
+            output_tokens INTEGER DEFAULT 0,
+            total_tokens INTEGER DEFAULT 0,
+            cost_usd REAL DEFAULT 0,
+            success INTEGER DEFAULT 1,
+            error_message TEXT DEFAULT '',
+            duration_ms INTEGER DEFAULT 0
+        );
+        CREATE INDEX IF NOT EXISTS idx_ai_usage_timestamp ON ai_usage_log(timestamp);
+    '''),
 ]
 
 
