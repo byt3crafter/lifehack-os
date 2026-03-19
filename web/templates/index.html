@@ -4664,7 +4664,7 @@
             if(taskSummaryHtml) actHtml += taskSummaryHtml;
             actHtml += '</div>';
             actHtml += '<div class="flex items-center gap-0.5">';
-            if(x.active === 0) {
+            if(!x.active) {
                 // Inactive habit — reactivate + permanent delete
                 actHtml += '<button onclick="event.stopPropagation(); reactivateHabit(' + x.id + ')" class="text-xs px-2 py-1 rounded" style="color:#22c55e;background:rgba(34,197,94,0.1);">Reactivate</button>';
                 actHtml += '<button onclick="event.stopPropagation(); permanentDeleteHabit(' + x.id + ')" class="text-xs px-2 py-1 rounded" style="color:#ef4444;background:rgba(239,68,68,0.1);">Delete</button>';
@@ -4690,7 +4690,7 @@
                 ? 'event.stopPropagation(); toggleH(' + x.id + ', false);'
                 : (completeBtnGated ? 'event.stopPropagation(); showToast("Complete all tasks first","warning");' : 'event.stopPropagation(); toggleH(' + x.id + ', true);');
 
-            var inactiveStyle = (x.active === 0) ? 'opacity:0.5;' : '';
+            var inactiveStyle = (!x.active) ? 'opacity:0.5;' : '';
             html += '<div class="rounded-xl p-3 habit-row" data-id="' + x.id + '" style="' + inactiveStyle + 'background:' + cardBg + ';border:1px solid ' + cardBorder + ';">'
                 + '<div class="flex items-start gap-2.5">'
                 + '<div class="w-1 rounded-full flex-shrink-0 mt-0.5" style="background:' + catColor + ';height:1.25rem;"></div>'
