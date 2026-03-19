@@ -4322,11 +4322,14 @@
                         // Manual task: clickable checkbox
                         var manualColor = isVerified ? '#22c55e' : '#9898a6';
                         var strikeStyle = isVerified ? 'text-decoration:line-through;' : '';
-                        microHtml += '<label class="micro-task' + (isVerified ? ' done' : '') + '" onclick="event.stopPropagation(); toggleMicroTask(' + mt.id + ');" style="cursor:pointer;">'
-                            + '<input type="checkbox"' + (isVerified ? ' checked' : '') + ' onclick="event.preventDefault();" style="pointer-events:none;">'
-                            + '<span style="color:' + manualColor + ';' + strikeStyle + 'flex:1;">' + mt.name + '</span>'
+                        var checkIcon = isVerified
+                            ? '<svg class="w-4 h-4 flex-shrink-0" fill="#22c55e" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>'
+                            : '<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="#5c5c6b" viewBox="0 0 20 20" stroke-width="1.5"><rect x="3" y="3" width="14" height="14" rx="3"/></svg>';
+                        microHtml += '<div class="micro-task' + (isVerified ? ' done' : '') + '" onclick="toggleMicroTask(' + mt.id + ')" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:4px 0;">'
+                            + checkIcon
+                            + '<span style="color:' + manualColor + ';' + strikeStyle + 'flex:1;font-size:0.8125rem;">' + mt.name + '</span>'
                             + '<span class="vtype-badge vtype-manual">manual</span>'
-                            + '</label>';
+                            + '</div>';
                     }
                 }
                 microHtml += '</div>';

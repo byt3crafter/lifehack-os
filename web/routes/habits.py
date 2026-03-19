@@ -152,7 +152,7 @@ def _get_phases_with_tasks(conn, habit_id: int) -> list:
                     "name": t["name"],
                     "description": t["description"],
                     "sort_order": t["sort_order"],
-                    "verification_rule": _safe_parse_rule(t.get("verification_rule")),
+                    "verification_rule": _safe_parse_rule(t["verification_rule"] if "verification_rule" in t.keys() else None),
                 }
                 for t in task_rows
             ],
