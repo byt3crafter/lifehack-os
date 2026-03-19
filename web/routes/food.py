@@ -60,6 +60,8 @@ def _serialize_log(r) -> dict:
         'image_path': r['image_path'],
         'ai_analysis': r['ai_analysis'],
         'notes': r['notes'] if 'notes' in r.keys() else '',
+        'rating': r['rating'] if 'rating' in r.keys() else None,
+        'mood_after': r['mood_after'] if 'mood_after' in r.keys() else None,
     }
 
 
@@ -163,22 +165,27 @@ def update_food(food_id):
     data = request.json
     conn = get_connection()
 
-    conn.execute(
-        """UPDATE food_logs
-           SET meal_type = ?, description = ?, calories = ?,
-               protein_g = ?, carbs_g = ?, fat_g = ?, image_path = ?, notes = ?
-           WHERE id = ?""",
-        (data.get('meal_type'),
-         data.get('description'),
-         data.get('calories'),
-         data.get('protein_g'),
-         data.get('carbs_g'),
-         data.get('fat_g'),
-         data.get('image_path'),
-         data.get('notes', ''),
-         food_id)
-    )
-    conn.commit()
+    # Build dynamic UPDATE — only set fields that are provided
+    fields = []
+    values = []
+    for col, key in [
+        ('meal_type', 'meal_type'), ('description', 'description'),
+        ('calories', 'calories'), ('protein_g', 'protein_g'),
+        ('carbs_g', 'carbs_g'), ('fat_g', 'fat_g'),
+        ('notes', 'notes'), ('rating', 'rating'), ('mood_after', 'mood_after'),
+    ]:
+        if key in data:
+            fields.append(f'{col} = ?')
+            values.append(data[key])
+    # Only update image_path if explicitly sent (not None/undefined)
+    if 'image_path' in data and data['image_path']:
+        fields.append('image_path = ?')
+        values.append(data['image_path'])
+
+    if fields:
+        values.append(food_id)
+        conn.execute(f"UPDATE food_logs SET {', '.join(fields)} WHERE id = ?", values)
+        conn.commit()
 
     return jsonify({'success': True})
 

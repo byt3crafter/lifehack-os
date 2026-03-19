@@ -3192,10 +3192,14 @@
                 + aiHtml
                 + barsHtml
                 + (m.notes ? '<div class="mt-2 text-xs" style="color:#9898a6;"><span style="color:#5c5c6b;">Note:</span> ' + m.notes + '</div>' : '')
+                + ((m.rating || m.mood_after) ? '<div class="mt-1 flex items-center gap-3 text-xs">'
+                    + (m.rating ? '<span style="color:#eab308;">' + '&#9733;'.repeat(m.rating) + '<span style="color:#333;">' + '&#9733;'.repeat(5-m.rating) + '</span></span>' : '')
+                    + (m.mood_after ? '<span>' + ['&#128543;','&#128528;','&#128578;','&#128522;','&#129321;'][m.mood_after-1] + '</span>' : '')
+                    + '</div>' : '')
                 + '</div>'
                 + '</div>'
                 + '<div class="flex items-center gap-1 mt-2.5 pt-2.5" style="border-top:1px solid #242428;">'
-                + '<button onclick="editFoodModal(' + m.id + ', \'' + (m.meal_type||'snack') + '\', \'' + safeDesc + '\', ' + (m.calories||0) + ', ' + (m.protein_g||0) + ', ' + (m.carbs_g||0) + ', ' + (m.fat_g||0) + ', \'' + imgSrc + '\', \'' + (m.notes||'').replace(/'/g,'&#39;') + '\')" class="action-link">Edit</button>'
+                + '<button onclick="window._efRating=' + (m.rating||0) + '; window._efMoodAfter=' + (m.mood_after||0) + '; editFoodModal(' + m.id + ', \'' + (m.meal_type||'snack') + '\', \'' + safeDesc + '\', ' + (m.calories||0) + ', ' + (m.protein_g||0) + ', ' + (m.carbs_g||0) + ', ' + (m.fat_g||0) + ', \'' + imgSrc + '\', \'' + (m.notes||'').replace(/'/g,'&#39;') + '\')" class="action-link">Edit</button>'
                 + '<button onclick="deleteFood(' + m.id + ')" class="action-link-danger">Delete</button>'
                 + '</div>'
                 + '</div>';
@@ -3479,12 +3483,47 @@
             + '<label class="field-label" for="ef-notes">Notes (medicine, how you felt, etc.)</label>'
             + '<input id="ef-notes" type="text" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="' + ((notes||'').replace(/"/g,'&quot;')) + '" placeholder="e.g. Took vitamin D, felt bloated">'
             + '</div>'
+            + '<div class="grid grid-cols-2 gap-3">'
+            + '<div><label class="field-label">Rate this meal</label>'
+            + '<div class="flex gap-1 mt-1" id="ef-rating-stars"></div></div>'
+            + '<div><label class="field-label">Mood after eating</label>'
+            + '<div class="flex gap-1 mt-1" id="ef-mood-icons"></div></div>'
+            + '</div>'
             + '<div class="flex gap-2 pt-1">'
             + '<button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>'
             + '<button onclick="updateFood(' + id + ')" class="btn-primary flex-1 py-2.5">Save changes</button>'
             + '</div>'
             + '</div>'
         );
+        // Render rating stars and mood icons after modal is shown
+        _renderFoodRating('ef-rating-stars', window._efRating || 0);
+        _renderFoodMood('ef-mood-icons', window._efMoodAfter || 0);
+    }
+
+    window._efRating = 0;
+    window._efMoodAfter = 0;
+
+    function _renderFoodRating(containerId, current) {
+        var el = document.getElementById(containerId);
+        if(!el) return;
+        var html = '';
+        for(var i = 1; i <= 5; i++) {
+            var color = i <= current ? '#eab308' : '#333338';
+            html += '<span onclick="window._efRating=' + i + '; _renderFoodRating(\'' + containerId + '\',' + i + ')" style="cursor:pointer;font-size:1.25rem;color:' + color + ';">&#9733;</span>';
+        }
+        el.innerHTML = html;
+    }
+
+    function _renderFoodMood(containerId, current) {
+        var el = document.getElementById(containerId);
+        if(!el) return;
+        var moods = ['&#128543;', '&#128528;', '&#128578;', '&#128522;', '&#129321;'];
+        var html = '';
+        for(var i = 1; i <= 5; i++) {
+            var opacity = (current === i) ? '1' : '0.3';
+            html += '<span onclick="window._efMoodAfter=' + i + '; _renderFoodMood(\'' + containerId + '\',' + i + ')" style="cursor:pointer;font-size:1.25rem;opacity:' + opacity + ';">' + moods[i-1] + '</span>';
+        }
+        el.innerHTML = html;
     }
 
     function previewEditFoodPhoto(input) {
@@ -3508,7 +3547,9 @@
             protein_g:   +($('#ef-protein') || {}).value || null,
             carbs_g:     +($('#ef-carbs')   || {}).value || null,
             fat_g:       +($('#ef-fat')     || {}).value || null,
-            notes:       notesEl ? notesEl.value.trim() : ''
+            notes:       notesEl ? notesEl.value.trim() : '',
+            rating:      window._efRating || null,
+            mood_after:  window._efMoodAfter || null
         };
 
         // Upload new photo if selected

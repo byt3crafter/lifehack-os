@@ -182,7 +182,9 @@ def init_database() -> None:
             fat_g REAL,
             image_path TEXT,
             ai_analysis TEXT,
-            notes TEXT DEFAULT ''
+            notes TEXT DEFAULT '',
+            rating INTEGER,
+            mood_after INTEGER
         );
 
         -- Fasting Logs

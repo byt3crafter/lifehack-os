@@ -285,3 +285,12 @@ def run_migrations(conn) -> None:
         conn.execute("CREATE INDEX IF NOT EXISTS idx_dw_sessions_local_project ON deep_work_sessions(local_project_id)")
         conn.commit()
         print("  Migration 10 (deep_work_sessions new columns): applied")
+
+    # Migration 11: Add rating and mood_after to food_logs
+    fl_cols = [r[1] for r in conn.execute("PRAGMA table_info(food_logs)").fetchall()]
+    if "rating" not in fl_cols:
+        conn.execute("ALTER TABLE food_logs ADD COLUMN rating INTEGER")
+    if "mood_after" not in fl_cols:
+        conn.execute("ALTER TABLE food_logs ADD COLUMN mood_after INTEGER")
+    conn.execute("INSERT OR IGNORE INTO schema_version (version, description) VALUES (11, 'Add rating and mood_after to food_logs')")
+    conn.commit()
