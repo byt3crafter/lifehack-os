@@ -6892,8 +6892,13 @@
     }
 
     function _discGetPhotos(x) {
+        // API returns 'photos' as parsed array, or 'photos_json' as string
         var photos = [];
-        try { photos = JSON.parse(x.photos_json || '[]'); } catch(e) {}
+        if(Array.isArray(x.photos)) {
+            photos = x.photos;
+        } else if(x.photos_json) {
+            try { photos = JSON.parse(x.photos_json); } catch(e) {}
+        }
         if(!photos.length && x.photo_url) photos = [x.photo_url];
         return photos;
     }
