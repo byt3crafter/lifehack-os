@@ -59,8 +59,17 @@ class ChatGPTOAuthProvider(AIProvider):
         except Exception:
             return ''
 
-    def _call_codex(self, instructions: str, user_input: str, action: str = 'chat') -> str:
+    def _call_codex(self, instructions: str, user_input: str, action: str = 'chat', image_base64: str = None) -> str:
         """Call the Codex Responses API with streaming and return the full text."""
+        # Build input content — supports multimodal (text + image)
+        if image_base64:
+            content = [
+                {'type': 'input_text', 'text': user_input},
+                {'type': 'input_image', 'image_url': f'data:image/jpeg;base64,{image_base64}'},
+            ]
+        else:
+            content = user_input
+
         start = time.time()
         try:
             resp = requests.post(
@@ -74,7 +83,7 @@ class ChatGPTOAuthProvider(AIProvider):
                 json={
                     'model': self.model,
                     'instructions': instructions,
-                    'input': [{'role': 'user', 'content': user_input}],
+                    'input': [{'role': 'user', 'content': content}],
                     'stream': True,
                     'store': False,
                 },
@@ -152,17 +161,13 @@ class ChatGPTOAuthProvider(AIProvider):
         return {}
 
     def identify_food(self, description: str = '', image_base64: Optional[str] = None) -> FoodIdentification:
-        # Codex Responses API does not support inline images.
-        if not description and image_base64:
-            return FoodIdentification(available=False)
-
         instructions = "You are a food recognition assistant. Return ONLY valid JSON, no other text."
         hint = f" The user says: {description}." if description else ""
         user_msg = (
             f"What food is this?{hint} Describe it briefly in one sentence.\n\n"
             'Return: {"description": "Avocado toast with fried egg", "confidence": "high"}'
         )
-        response = self._call_codex(instructions, user_msg, action='food_identify')
+        response = self._call_codex(instructions, user_msg, action='food_identify', image_base64=image_base64)
         data = self._parse_json(response)
 
         if not data or not data.get('description'):
@@ -181,15 +186,8 @@ class ChatGPTOAuthProvider(AIProvider):
             f'Estimate the nutritional content of: {food_ref}\n\n'
             f'Return: {{"calories": number, "protein_g": number, "carbs_g": number, "fat_g": number, "description": "brief description"}}'
         )
-        # Note: Codex Responses API doesn't support inline images yet
         # If only image provided with no description, ask user to describe
-        if not description and image_base64:
-            return FoodAnalysis(
-                estimated=False,
-                description="Please describe the food — ChatGPT OAuth doesn't support image analysis yet."
-            )
-
-        response = self._call_codex(instructions, user_msg, action='food_analysis')
+        response = self._call_codex(instructions, user_msg, action='food_analysis', image_base64=image_base64)
         data = self._parse_json(response)
         if not data:
             return FoodAnalysis(estimated=False)
