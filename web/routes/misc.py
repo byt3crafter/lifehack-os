@@ -225,7 +225,7 @@ def get_fasting_status():
     ).fetchone()
     
     last_completed = conn.execute(
-        "SELECT * FROM fasting_logs WHERE status = 'completed' ORDER BY end_at DESC LIMIT 5"
+        "SELECT * FROM fasting_logs WHERE status IN ('completed','cancelled') ORDER BY end_at DESC LIMIT 30"
     ).fetchall()
     
     return jsonify({
@@ -285,6 +285,33 @@ def cancel_fast():
     conn.commit()
     if result.rowcount == 0:
         return jsonify({'error': 'No active fast'}), 400
+    return jsonify({'success': True})
+
+
+@misc_bp.route('/fasting/<int:fast_id>', methods=['DELETE'])
+@login_required
+def delete_fast(fast_id):
+    """Delete a fasting history entry (completed or cancelled only)."""
+    conn = get_connection()
+    row = conn.execute(
+        "SELECT id, status FROM fasting_logs WHERE id = ?", (fast_id,)
+    ).fetchone()
+    if not row:
+        return jsonify({'error': 'Not found'}), 404
+    if row['status'] == 'active':
+        return jsonify({'error': 'Cannot delete an active fast — cancel it first'}), 400
+    conn.execute("DELETE FROM fasting_logs WHERE id = ?", (fast_id,))
+    conn.commit()
+    return jsonify({'success': True})
+
+
+@misc_bp.route('/fasting/clear-history', methods=['POST'])
+@login_required
+def clear_fasting_history():
+    """Delete all completed/cancelled fasting logs (keeps active)."""
+    conn = get_connection()
+    conn.execute("DELETE FROM fasting_logs WHERE status != 'active'")
+    conn.commit()
     return jsonify({'success': True})
 
 
