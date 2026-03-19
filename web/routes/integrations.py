@@ -106,7 +106,7 @@ def configure_vikunja():
     Request body variants::
 
         {"enabled": false}                         # disable
-        {"api_url": "...", "username": "...", "password": "..."}  # enable
+        {"api_url": "...", "api_token": "..."}       # enable
     """
     data = request.get_json(silent=True) or {}
 
@@ -114,14 +114,13 @@ def configure_vikunja():
         plugin_registry.disable("vikunja")
         return jsonify({"success": True, "enabled": False})
 
-    api_url  = data.get("api_url", "")
-    username = data.get("username", "")
-    password = data.get("password", "")
+    api_url   = data.get("api_url", "")
+    api_token = data.get("api_token", "")
 
-    if not username or not password:
-        return jsonify({"error": "Username and password required"}), 400
+    if not api_token:
+        return jsonify({"error": "API token required"}), 400
 
-    config = {"api_url": api_url, "username": username, "password": password}
+    config = {"api_url": api_url, "api_token": api_token}
     ok = plugin_registry.enable("vikunja", config)
     if ok:
         return jsonify({"success": True, "enabled": True, "connected": True})
@@ -135,9 +134,8 @@ def test_vikunja():
     data = request.get_json(silent=True) or {}
 
     config = {
-        "api_url":  data.get("api_url", ""),
-        "username": data.get("username", ""),
-        "password": data.get("password", ""),
+        "api_url":   data.get("api_url", ""),
+        "api_token": data.get("api_token", ""),
     }
     plugin    = plugin_registry.get("vikunja")
     connected = plugin.test_connection(config)

@@ -3597,17 +3597,15 @@
 
     async function toggleVikunja(enabled) {
         if(enabled) {
-            showModal('Connect Vikunja', `
-                <div class="space-y-3">
-                    <div><label class="text-xs text-gray-400">API URL</label>
-                    <input id="vik-url" class="w-full rounded-lg px-3 py-2 text-sm mt-1" style="background:#141416;border:1px solid #2a2a2e;color:#f0f0f2;" placeholder="https://tasks.example.com/api/v1"></div>
-                    <div><label class="text-xs text-gray-400">Username</label>
-                    <input id="vik-user" class="w-full rounded-lg px-3 py-2 text-sm mt-1" style="background:#141416;border:1px solid #2a2a2e;color:#f0f0f2;" placeholder="your-email@example.com"></div>
-                    <div><label class="text-xs text-gray-400">Password</label>
-                    <input id="vik-pass" type="password" class="w-full rounded-lg px-3 py-2 text-sm mt-1" style="background:#141416;border:1px solid #2a2a2e;color:#f0f0f2;"></div>
-                    <button onclick="connectVikunja()" class="w-full py-2.5 rounded-lg font-medium text-sm" style="background:#4f80ff;color:#fff;">Connect</button>
-                </div>
-            `);
+            showModal('Connect Vikunja', '<div class="space-y-3">'
+                + '<div><label class="text-xs text-gray-400">API URL</label>'
+                + '<input id="vik-url" class="w-full rounded-lg px-3 py-2 text-sm mt-1" style="background:#141416;border:1px solid #2a2a2e;color:#f0f0f2;" placeholder="https://vikunja.example.com/api/v1"></div>'
+                + '<div><label class="text-xs text-gray-400">API Token</label>'
+                + '<input id="vik-token" type="password" class="w-full rounded-lg px-3 py-2 text-sm mt-1" style="background:#141416;border:1px solid #2a2a2e;color:#f0f0f2;" placeholder="Your Vikunja API token"></div>'
+                + '<p class="text-xs" style="color:#5c5c6b;">Get your token from Vikunja &gt; Settings &gt; API Tokens</p>'
+                + '<button onclick="connectVikunja()" class="w-full py-2.5 rounded-lg font-medium text-sm" style="background:#4f80ff;color:#fff;">Connect</button>'
+                + '</div>'
+            );
         } else {
             await api('/integrations/vikunja', 'POST', {enabled: false});
             loadSettings();
@@ -3615,11 +3613,10 @@
     }
 
     async function connectVikunja() {
-        const r = await api('/integrations/vikunja', 'POST', {
+        var r = await api('/integrations/vikunja', 'POST', {
             enabled: true,
-            api_url: $('#vik-url').value,
-            username: $('#vik-user').value,
-            password: $('#vik-pass').value
+            api_url: ($('#vik-url') || {}).value || '',
+            api_token: ($('#vik-token') || {}).value || ''
         });
         hideModal();
         if(r?.error) showToast('Failed: ' + r.error, 'error');
