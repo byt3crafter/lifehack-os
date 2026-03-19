@@ -271,8 +271,8 @@ def run_migrations(conn) -> None:
 
     # Migration 10 (extra): Add new columns to deep_work_sessions. SQLite does
     # not support ADD COLUMN IF NOT EXISTS so we guard each with a PRAGMA check.
-    current = get_current_version(conn)
-    if current < 10:
+    # Always check — the SQL migration may have already incremented the version
+    if True:
         dw_cols = [r[1] for r in conn.execute("PRAGMA table_info(deep_work_sessions)").fetchall()]
         dw_new_cols = [
             ("local_project_id", "INTEGER"),
