@@ -2059,76 +2059,74 @@
                     </button>
                 </div>
 
-                <!-- Budget Overview Card -->
-                <div class="mb-5 p-4 rounded-2xl" style="background:linear-gradient(135deg,#141a1c 0%,#141e1a 100%);border:1px solid rgba(34,197,94,0.2);">
-                    <div class="text-xs font-semibold mb-3" style="color:#9898a6;letter-spacing:0.06em;text-transform:uppercase;">This Month</div>
-                    <div class="grid grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <div class="font-mono font-bold" style="color:#ef4444;font-size:1.75rem;line-height:1;" id="fin-spent">$0</div>
-                            <div class="text-xs mt-0.5" style="color:#5c5c6b;">Total spent</div>
+                <!-- Firefly disconnected banner (hidden when connected) -->
+                <div id="fin-no-firefly" class="hidden mb-5 p-4 rounded-2xl" style="background:#141416;border:1px solid #2a2a2e;">
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(79,128,255,0.12);">
+                            <svg class="w-4 h-4" fill="none" stroke="#4f80ff" viewBox="0 0 20 20" stroke-width="1.8"><circle cx="6" cy="10" r="2.5"/><circle cx="14" cy="6" r="2.5"/><circle cx="14" cy="14" r="2.5"/><path d="M8.4 9l4.2-2.2M8.4 11l4.2 2.2"/></svg>
                         </div>
-                        <div>
-                            <div class="font-mono font-bold" style="color:#22c55e;font-size:1.75rem;line-height:1;" id="fin-remaining">$0</div>
-                            <div class="text-xs mt-0.5" style="color:#5c5c6b;">Remaining</div>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-medium mb-0.5" style="color:#f0f0f2;">Connect Firefly III for live data</div>
+                            <div class="text-xs" style="color:#5c5c6b;">Link your Firefly III instance to see real accounts, budgets, and transactions.</div>
                         </div>
+                        <button onclick="showView('settings');settingsTab('integrations')" class="text-xs font-medium flex-shrink-0 px-3 py-1.5 rounded-lg" style="background:rgba(79,128,255,0.15);color:#4f80ff;border:1px solid rgba(79,128,255,0.2);cursor:pointer;font-family:inherit;">Go to Settings</button>
                     </div>
-                    <div id="fin-category-bars" class="space-y-2.5"></div>
                 </div>
 
-                <!-- Should I Buy This? -->
-                <div class="card p-4 mb-5">
-                    <div class="text-sm font-semibold mb-3" style="color:#f0f0f2;">Should I Buy This?</div>
-                    <div class="space-y-3">
-                        <div>
-                            <label class="field-label">What do you want to buy?</label>
-                            <input id="sib-item" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="e.g. New running shoes">
-                        </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="field-label">Amount ($)</label>
-                                <input id="sib-amount" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="0.00">
-                            </div>
-                            <div>
-                                <label class="field-label">Category</label>
-                                <select id="sib-category" class="w-full px-3 py-2.5 rounded-lg border text-sm">
-                                    <option value="food">Food</option>
-                                    <option value="clothing">Clothing</option>
-                                    <option value="electronics">Electronics</option>
-                                    <option value="entertainment">Entertainment</option>
-                                    <option value="health">Health</option>
-                                    <option value="transport">Transport</option>
-                                    <option value="other">Other</option>
-                                </select>
-                            </div>
-                        </div>
-                        <button onclick="askShouldBuy()" class="btn-primary w-full py-2.5 flex items-center justify-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><circle cx="10" cy="10" r="7"/><path stroke-linecap="round" stroke-linejoin="round" d="M10 7v3l2 2"/></svg>
-                            Ask AI
-                        </button>
-                    </div>
-                    <div id="sib-result" class="hidden mt-3 p-3 rounded-xl" style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.2);">
-                        <div class="flex items-start gap-2">
-                            <svg class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="#8b5cf6" viewBox="0 0 20 20" stroke-width="1.8"><circle cx="10" cy="10" r="7"/><path stroke-linecap="round" stroke-linejoin="round" d="M10 7v3l2 2"/></svg>
-                            <p id="sib-result-text" class="text-sm" style="color:#c4b5fd;"></p>
+                <!-- Account Overview Card -->
+                <div id="fin-accounts-card" class="hidden mb-5 p-4 rounded-2xl" style="background:linear-gradient(135deg,#141a1c 0%,#141e1a 100%);border:1px solid rgba(79,128,255,0.2);">
+                    <div class="text-xs font-semibold mb-3" style="color:#9898a6;letter-spacing:0.06em;text-transform:uppercase;">Your Accounts</div>
+                    <div id="fin-accounts-list" class="space-y-2 mb-3"></div>
+                    <div class="pt-3" style="border-top:1px solid rgba(255,255,255,0.06);">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold" style="color:#9898a6;letter-spacing:0.04em;">Net Worth</span>
+                            <span id="fin-net-worth" class="font-mono font-bold" style="color:#22c55e;font-size:1.1rem;"></span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Budget Rules -->
+                <!-- Monthly Budget vs Actual -->
+                <div id="fin-budget-card" class="hidden mb-5 p-4 rounded-2xl" style="background:#141416;border:1px solid #2a2a2e;">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="text-xs font-semibold" style="color:#9898a6;letter-spacing:0.06em;text-transform:uppercase;" id="fin-month-label">This Month</div>
+                        <div class="text-xs" style="color:#5c5c6b;" id="fin-day-label"></div>
+                    </div>
+                    <div id="fin-budget-bars" class="space-y-3 mb-4"></div>
+                    <div class="flex items-center justify-between pt-3" style="border-top:1px solid rgba(255,255,255,0.06);">
+                        <div class="text-xs" style="color:#5c5c6b;">Total: <span id="fin-total-spent" class="font-mono" style="color:#f0f0f2;"></span></div>
+                        <div class="text-xs" style="color:#5c5c6b;">Projected: <span id="fin-projected" class="font-mono" style="color:#f59e0b;"></span></div>
+                    </div>
+                </div>
+
+                <!-- Savings Goals -->
                 <div class="mb-5">
                     <div class="flex items-center justify-between mb-3">
-                        <span class="section-label">Budget Rules</span>
-                        <button onclick="addBudgetRuleModal()" class="text-xs font-medium flex items-center gap-1" style="color:#4f80ff;background:none;border:none;cursor:pointer;font-family:inherit;">
+                        <span class="section-label">Savings Goals</span>
+                        <button onclick="addSavingsGoalModal()" class="text-xs font-medium flex items-center gap-1" style="color:#4f80ff;background:none;border:none;cursor:pointer;font-family:inherit;">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 4v12M4 10h12"/></svg>
-                            Add Rule
+                            Add Goal
                         </button>
                     </div>
-                    <div id="fin-rules" class="space-y-2"></div>
+                    <div id="fin-goals" class="space-y-2"></div>
+                </div>
+
+                <!-- Ask AI Button -->
+                <div class="mb-5">
+                    <button onclick="financeAskAI()" class="w-full py-3 rounded-2xl flex items-center justify-center gap-2 text-sm font-medium" style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.25);color:#c4b5fd;cursor:pointer;font-family:inherit;">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M7 16l-3 3V5a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H7z"/></svg>
+                        "Should I buy this?" - Ask AI
+                    </button>
                 </div>
 
                 <!-- Recent Transactions -->
                 <div>
-                    <div class="section-label mb-3">Recent Transactions</div>
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="section-label">Recent Transactions</span>
+                        <button id="fin-view-all-btn" onclick="financeViewAll()" class="hidden text-xs font-medium" style="color:#4f80ff;background:none;border:none;cursor:pointer;font-family:inherit;">View All</button>
+                    </div>
+                    <div class="mb-3" id="fin-tx-search-wrap" style="display:none;">
+                        <input id="fin-tx-search" type="search" class="w-full px-3 py-2 rounded-lg border text-sm" placeholder="Search transactions..." oninput="filterFinanceTransactions(this.value)">
+                    </div>
                     <div id="fin-transactions" class="space-y-2"></div>
                 </div>
             </div>
@@ -7008,88 +7006,378 @@
     }
 
     // ── Finance ───────────────────────────────────────────────────
+    // ── Finance helpers ────────────────────────────────────────────
+
+    function formatMoney(amount, currency) {
+        var sym = (currency && currency.symbol) ? currency.symbol : '$';
+        var abs = Math.abs(amount);
+        var formatted = abs.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        return (amount < 0 ? '-' : '') + sym + '\u00a0' + formatted;
+    }
+
+    function _finShow(id) {
+        var el = document.getElementById(id);
+        if(el) el.classList.remove('hidden');
+    }
+    function _finHide(id) {
+        var el = document.getElementById(id);
+        if(el) el.classList.add('hidden');
+    }
+
+    var _finAllTxs = [];
+    var _finCurrency = {symbol: '$', code: 'USD'};
+
     async function loadFinance() {
         var data = null;
-        try { data = await api('/finance'); } catch(e) {}
+        try { data = await api('/finance/dashboard'); } catch(e) {}
 
-        // Budget overview
-        var spent = (data && data.month_spent) || 0;
-        var budget = (data && data.month_budget) || 0;
-        var remaining = budget - spent;
-        var spentEl = document.getElementById('fin-spent');
-        var remEl = document.getElementById('fin-remaining');
-        if(spentEl) spentEl.textContent = '$' + spent.toLocaleString();
-        if(remEl) {
-            remEl.textContent = '$' + Math.abs(remaining).toLocaleString() + (remaining < 0 ? ' over' : '');
-            remEl.style.color = remaining < 0 ? '#ef4444' : '#22c55e';
+        // Fallback to legacy endpoint if dashboard not available
+        if(!data || data.error) {
+            try { data = await api('/finance'); } catch(e2) {}
         }
 
-        // Category bars
-        var catBarsEl = document.getElementById('fin-category-bars');
-        if(catBarsEl) {
-            var cats2 = (data && data.categories) || [];
-            if(!cats2.length) {
-                catBarsEl.innerHTML = '<p class="text-xs" style="color:#5c5c6b;">No category data yet.</p>';
+        if(!data) {
+            _finShow('fin-no-firefly');
+            return;
+        }
+
+        if(data.firefly_connected === false) {
+            _finShow('fin-no-firefly');
+            _finHide('fin-accounts-card');
+            _finHide('fin-budget-card');
+            _renderFinanceLegacy(data);
+            return;
+        }
+
+        _finHide('fin-no-firefly');
+
+        var cur = data.currency || {symbol: '$', code: 'USD'};
+        _finCurrency = cur;
+
+        if(data.accounts && data.accounts.length) {
+            renderFinanceAccounts(data.accounts, data.net_worth, cur);
+        }
+        if(data.budgets && data.budgets.length) {
+            renderFinanceBudgets(data.budgets, data.monthly, cur);
+        }
+        if(data.savings_goals !== undefined) {
+            renderFinanceGoals(data.savings_goals, cur);
+        }
+        if(data.recent_transactions !== undefined) {
+            renderFinanceTransactions(data.recent_transactions, cur);
+        } else if(data.transactions !== undefined) {
+            renderFinanceTransactions(data.transactions, cur);
+        }
+    }
+
+    function renderFinanceAccounts(accounts, netWorth, currency) {
+        var listEl = document.getElementById('fin-accounts-list');
+        var nwEl = document.getElementById('fin-net-worth');
+        if(!listEl) return;
+        _finShow('fin-accounts-card');
+
+        var accountIcons = {asset: '&#127968;', liability: '&#128179;', savings: '&#128176;', credit: '&#128179;'};
+        var html = '';
+        var assets = accounts.filter(function(a) { return a.type !== 'liability' && a.type !== 'credit'; });
+        var liabilities = accounts.filter(function(a) { return a.type === 'liability' || a.type === 'credit'; });
+        var ordered = assets.concat(liabilities);
+
+        ordered.forEach(function(acct) {
+            var icon = accountIcons[acct.type] || '&#127968;';
+            var isLiab = (acct.type === 'liability' || acct.type === 'credit');
+            var bal = parseFloat(acct.balance || 0);
+            var color = isLiab ? '#ef4444' : (bal >= 0 ? '#f0f0f2' : '#ef4444');
+            html += '<div class="flex items-center justify-between py-1.5">'
+                + '<div class="flex items-center gap-2 min-w-0">'
+                + '<span style="font-size:1rem;">' + icon + '</span>'
+                + '<span class="text-sm truncate" style="color:#9898a6;">' + (acct.name || 'Account') + '</span>'
+                + '</div>'
+                + '<span class="font-mono text-sm flex-shrink-0" style="color:' + color + ';">' + formatMoney(bal, currency) + '</span>'
+                + '</div>';
+        });
+
+        listEl.innerHTML = html || '<p class="text-xs" style="color:#5c5c6b;">No accounts found.</p>';
+
+        if(nwEl) {
+            var nw = parseFloat(netWorth || 0);
+            nwEl.textContent = formatMoney(nw, currency);
+            nwEl.style.color = nw >= 0 ? '#22c55e' : '#ef4444';
+        }
+    }
+
+    function renderFinanceBudgets(budgets, monthly, currency) {
+        var barsEl = document.getElementById('fin-budget-bars');
+        var monthLabelEl = document.getElementById('fin-month-label');
+        var dayLabelEl = document.getElementById('fin-day-label');
+        var totalEl = document.getElementById('fin-total-spent');
+        var projEl = document.getElementById('fin-projected');
+        if(!barsEl) return;
+        _finShow('fin-budget-card');
+
+        var now = new Date();
+        var dayOfMonth = now.getDate();
+        var daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        var dayFraction = dayOfMonth / daysInMonth;
+
+        var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        if(monthLabelEl) monthLabelEl.textContent = monthNames[now.getMonth()] + ' ' + now.getFullYear();
+        if(dayLabelEl) dayLabelEl.textContent = 'Day ' + dayOfMonth + ' of ' + daysInMonth;
+
+        var html = '';
+        var totalSpent = 0;
+        var totalBudget = 0;
+
+        budgets.forEach(function(b) {
+            var spent = parseFloat(b.spent || 0);
+            var budget = parseFloat(b.amount || b.budget || 0);
+            totalSpent += spent;
+            totalBudget += budget;
+
+            var pct = budget > 0 ? Math.min(100, Math.round((spent / budget) * 100)) : 0;
+            var expectedPct = Math.round(dayFraction * 100);
+            var barColor, statusIcon, statusLabel;
+
+            if(pct > 100) {
+                barColor = '#ef4444';
+                statusIcon = '&#128308;';
+                statusLabel = 'OVER';
+            } else if(pct > expectedPct + 10) {
+                barColor = '#f59e0b';
+                statusIcon = '&#9888;&#65039;';
+                statusLabel = 'AHEAD';
             } else {
-                catBarsEl.innerHTML = cats2.map(function(c) {
-                    var pct = c.budget > 0 ? Math.min(100, Math.round((c.spent / c.budget) * 100)) : 0;
-                    var barColor = pct >= 90 ? '#ef4444' : (pct >= 70 ? '#f59e0b' : '#22c55e');
-                    return '<div>'
-                        + '<div class="flex justify-between mb-1">'
-                        + '<span class="text-xs" style="color:#9898a6;">' + c.name + '</span>'
-                        + '<span class="text-xs font-mono" style="color:' + barColor + ';">$' + c.spent + ' / $' + c.budget + '</span>'
-                        + '</div>'
-                        + '<div class="h-1.5 rounded-full overflow-hidden" style="background:rgba(255,255,255,0.06);">'
-                        + '<div class="h-full rounded-full" style="width:' + pct + '%;background:' + barColor + ';transition:width 0.6s;"></div>'
-                        + '</div>'
-                        + '</div>';
-                }).join('');
+                barColor = '#22c55e';
+                statusIcon = '&#9989;';
+                statusLabel = 'ON TRACK';
             }
+
+            var barWidth = Math.min(100, pct);
+            var filled = Math.round(barWidth / 100 * 14);
+            var empty = 14 - filled;
+            var bar = '';
+            var i;
+            for(i = 0; i < filled; i++) bar += '&#9608;';
+            for(i = 0; i < empty; i++) bar += '&#9617;';
+
+            html += '<div>'
+                + '<div class="flex items-center justify-between mb-1.5">'
+                + '<span class="text-xs font-medium" style="color:#f0f0f2;">' + (b.name || b.category || 'Budget') + '</span>'
+                + '<div class="flex items-center gap-2">'
+                + '<span class="text-xs font-mono" style="color:' + barColor + ';">' + formatMoney(spent, currency) + ' / ' + formatMoney(budget, currency) + '</span>'
+                + '<span class="text-xs" title="' + statusLabel + '">' + statusIcon + '</span>'
+                + '</div>'
+                + '</div>'
+                + '<div class="h-2 rounded-full overflow-hidden" style="background:rgba(255,255,255,0.06);">'
+                + '<div class="h-full rounded-full" style="width:' + barWidth + '%;background:' + barColor + ';transition:width 0.6s;"></div>'
+                + '</div>'
+                + '</div>';
+        });
+
+        barsEl.innerHTML = html || '<p class="text-xs" style="color:#5c5c6b;">No budget data yet.</p>';
+
+        if(totalEl) totalEl.textContent = formatMoney(totalSpent, currency);
+        if(projEl) {
+            var projected = dayFraction > 0 ? totalSpent / dayFraction : 0;
+            projEl.textContent = formatMoney(projected, currency);
+        }
+    }
+
+    function renderFinanceGoals(goals, currency) {
+        var goalsEl = document.getElementById('fin-goals');
+        if(!goalsEl) return;
+
+        if(!goals || !goals.length) {
+            goalsEl.innerHTML = '<div class="empty-state"><p>No goals yet. Add one to track your progress.</p></div>';
+            return;
         }
 
-        // Budget rules
-        var rulesEl = document.getElementById('fin-rules');
-        if(rulesEl) {
-            var rules = (data && data.rules) || [];
-            if(!rules.length) {
-                rulesEl.innerHTML = '<div class="empty-state"><p>No budget rules yet. Add one to set spending limits.</p></div>';
-            } else {
-                rulesEl.innerHTML = rules.map(function(r) {
-                    return '<div class="card p-3 flex items-center gap-3" style="border:1px solid #2a2a2e;">'
-                        + '<div class="flex-1 min-w-0">'
-                        + '<div class="text-sm font-medium" style="color:#f0f0f2;">' + r.description + '</div>'
-                        + '<div class="text-xs mt-0.5" style="color:#5c5c6b;">' + r.category + '</div>'
-                        + '</div>'
-                        + '<button onclick="deleteBudgetRule(' + r.id + ')" class="action-link-danger flex-shrink-0">Delete</button>'
-                        + '</div>';
-                }).join('');
-            }
-        }
+        var now = new Date();
+        goalsEl.innerHTML = goals.map(function(g) {
+            var current = parseFloat(g.current_amount || g.current || 0);
+            var target = parseFloat(g.target_amount || g.target || 1);
+            var pct = Math.min(100, Math.round((current / target) * 100));
+            var barColor = pct >= 80 ? '#22c55e' : (pct >= 40 ? '#4f80ff' : '#f59e0b');
 
-        // Recent transactions
+            var monthsLeft = '';
+            if(g.monthly_contribution && parseFloat(g.monthly_contribution) > 0) {
+                var remaining = target - current;
+                var months = Math.ceil(remaining / parseFloat(g.monthly_contribution));
+                monthsLeft = '~' + months + ' month' + (months !== 1 ? 's' : '');
+            }
+
+            return '<div class="card p-4" style="border:1px solid #2a2a2e;">'
+                + '<div class="flex items-center justify-between mb-2">'
+                + '<div class="flex items-center gap-2">'
+                + '<span style="font-size:1.1rem;">' + (g.emoji || '&#127919;') + '</span>'
+                + '<span class="text-sm font-medium" style="color:#f0f0f2;">' + (g.name || 'Goal') + '</span>'
+                + '</div>'
+                + '<div class="flex items-center gap-2">'
+                + (monthsLeft ? '<span class="text-xs" style="color:#5c5c6b;">' + monthsLeft + '</span>' : '')
+                + '<span class="text-xs font-semibold" style="color:' + barColor + ';">' + pct + '%</span>'
+                + '<button onclick="deleteFinanceGoal(' + (g.id || 0) + ')" class="action-link-danger text-xs" style="font-size:0.7rem;">&#10005;</button>'
+                + '</div>'
+                + '</div>'
+                + '<div class="h-2 rounded-full overflow-hidden mb-1.5" style="background:rgba(255,255,255,0.06);">'
+                + '<div class="h-full rounded-full" style="width:' + pct + '%;background:' + barColor + ';transition:width 0.6s;"></div>'
+                + '</div>'
+                + '<div class="flex items-center justify-between">'
+                + '<span class="text-xs font-mono" style="color:#9898a6;">' + formatMoney(current, currency) + '</span>'
+                + '<span class="text-xs font-mono" style="color:#5c5c6b;">' + formatMoney(target, currency) + '</span>'
+                + '</div>'
+                + '</div>';
+        }).join('');
+    }
+
+    function renderFinanceTransactions(txs, currency) {
         var txEl = document.getElementById('fin-transactions');
-        if(txEl) {
-            var txs = (data && data.transactions) || [];
-            if(!txs.length) {
-                txEl.innerHTML = '<div class="empty-state"><p>No transactions yet. Log your first transaction.</p></div>';
-            } else {
-                var txColors = {food:'#f59e0b',clothing:'#4f80ff',electronics:'#8b5cf6',entertainment:'#ef4444',health:'#22c55e',transport:'#14b8a6',other:'#9898a6'};
-                txEl.innerHTML = txs.slice(0,20).map(function(t) {
-                    var c = txColors[t.category] || '#9898a6';
-                    var dateStr = t.date ? new Date(t.date + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '';
-                    return '<div class="card p-3 flex items-center gap-3" style="border:1px solid #2a2a2e;">'
-                        + '<div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:' + c + '1a;">'
-                        + '<div class="w-2 h-2 rounded-full" style="background:' + c + ';"></div>'
-                        + '</div>'
-                        + '<div class="flex-1 min-w-0">'
-                        + '<div class="text-sm font-medium truncate" style="color:#f0f0f2;">' + (t.description || t.name || 'Transaction') + '</div>'
-                        + '<div class="text-xs mt-0.5" style="color:#5c5c6b;">' + (t.category || '') + (dateStr ? ' · ' + dateStr : '') + '</div>'
-                        + '</div>'
-                        + '<div class="font-mono font-semibold text-sm flex-shrink-0" style="color:#ef4444;">-$' + parseFloat(t.amount || 0).toFixed(2) + '</div>'
-                        + '</div>';
-                }).join('');
-            }
+        var searchWrap = document.getElementById('fin-tx-search-wrap');
+        var viewAllBtn = document.getElementById('fin-view-all-btn');
+        if(!txEl) return;
+
+        _finAllTxs = txs || [];
+        _finCurrency = currency || _finCurrency;
+
+        if(txs && txs.length > 5 && searchWrap) searchWrap.style.display = '';
+        if(txs && txs.length > 10 && viewAllBtn) viewAllBtn.classList.remove('hidden');
+
+        _renderTxList(_finAllTxs.slice(0, 20), currency);
+    }
+
+    function _renderTxList(txs, currency) {
+        var txEl = document.getElementById('fin-transactions');
+        if(!txEl) return;
+        if(!txs || !txs.length) {
+            txEl.innerHTML = '<div class="empty-state"><p>No transactions yet. Log your first transaction.</p></div>';
+            return;
         }
+        var cur = currency || _finCurrency;
+        var txColors = {food:'#f59e0b', groceries:'#f59e0b', clothing:'#4f80ff', electronics:'#8b5cf6', entertainment:'#ef4444', health:'#22c55e', transport:'#14b8a6', income:'#22c55e', salary:'#22c55e', other:'#9898a6'};
+
+        txEl.innerHTML = txs.map(function(t) {
+            var catKey = (t.category || '').toLowerCase();
+            var isIncome = t.type === 'deposit' || t.type === 'income' || catKey === 'income' || catKey === 'salary';
+            var c = txColors[catKey] || (isIncome ? '#22c55e' : '#9898a6');
+            var amount = parseFloat(t.amount || 0);
+            var sign = isIncome ? '+' : '-';
+            var amountColor = isIncome ? '#22c55e' : '#ef4444';
+            var dateStr = '';
+            if(t.date) {
+                try { dateStr = new Date(t.date + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric'}); } catch(e) {}
+            }
+            var dot = isIncome ? '&#128994;' : '&#128308;';
+            return '<div class="card p-3 flex items-center gap-3" style="border:1px solid #2a2a2e;">'
+                + '<div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-sm">' + dot + '</div>'
+                + '<div class="flex-1 min-w-0">'
+                + '<div class="text-sm font-medium truncate" style="color:#f0f0f2;">' + (t.description || t.name || 'Transaction') + '</div>'
+                + '<div class="text-xs mt-0.5 flex items-center gap-1.5" style="color:#5c5c6b;">'
+                + (t.category ? '<span style="color:' + c + ';font-weight:500;">' + t.category + '</span>' : '')
+                + (dateStr ? '<span>' + (t.category ? '&#183; ' : '') + dateStr + '</span>' : '')
+                + '</div>'
+                + '</div>'
+                + '<div class="font-mono font-semibold text-sm flex-shrink-0" style="color:' + amountColor + ';">' + sign + formatMoney(amount, cur) + '</div>'
+                + '</div>';
+        }).join('');
+    }
+
+    function filterFinanceTransactions(query) {
+        if(!query || !query.trim()) {
+            _renderTxList(_finAllTxs.slice(0, 20), _finCurrency);
+            return;
+        }
+        var q = query.toLowerCase();
+        var filtered = _finAllTxs.filter(function(t) {
+            return (t.description || '').toLowerCase().indexOf(q) !== -1
+                || (t.name || '').toLowerCase().indexOf(q) !== -1
+                || (t.category || '').toLowerCase().indexOf(q) !== -1;
+        });
+        _renderTxList(filtered, _finCurrency);
+    }
+
+    function financeViewAll() {
+        _renderTxList(_finAllTxs, _finCurrency);
+        var btn = document.getElementById('fin-view-all-btn');
+        if(btn) btn.classList.add('hidden');
+    }
+
+    function financeAskAI() {
+        var input = document.getElementById('chat-input');
+        if(input) input.value = 'Should I buy this? ';
+        if(!_chatOpen) toggleChat();
+        setTimeout(function() {
+            var inp = document.getElementById('chat-input');
+            if(inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+        }, 250);
+    }
+
+    function _renderFinanceLegacy(data) {
+        // Render with legacy API shape when Firefly is not connected
+        var cur = data.currency || {symbol: '$', code: 'USD'};
+        _finCurrency = cur;
+        if(data.categories && data.categories.length) {
+            renderFinanceBudgets(data.categories.map(function(c) {
+                return {name: c.name, spent: c.spent, amount: c.budget};
+            }), null, cur);
+        }
+        if(data.transactions) renderFinanceTransactions(data.transactions, cur);
+        if(data.savings_goals) renderFinanceGoals(data.savings_goals, cur);
+    }
+
+    function addSavingsGoalModal() {
+        showModal('Add Savings Goal',
+            '<div class="space-y-3">'
+            + '<div class="grid grid-cols-4 gap-2">'
+            + '<div>'
+            + '<label class="field-label">Emoji</label>'
+            + '<input id="ng-emoji" class="w-full px-3 py-2.5 rounded-lg border text-sm text-center" placeholder="&#127919;" maxlength="2">'
+            + '</div>'
+            + '<div class="col-span-3">'
+            + '<label class="field-label">Goal Name</label>'
+            + '<input id="ng-name" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="e.g. House Fund">'
+            + '</div>'
+            + '</div>'
+            + '<div class="grid grid-cols-2 gap-3">'
+            + '<div>'
+            + '<label class="field-label">Target Amount</label>'
+            + '<input id="ng-target" type="number" step="0.01" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="0.00">'
+            + '</div>'
+            + '<div>'
+            + '<label class="field-label">Current Saved</label>'
+            + '<input id="ng-current" type="number" step="0.01" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="0.00">'
+            + '</div>'
+            + '</div>'
+            + '<div>'
+            + '<label class="field-label">Monthly Contribution (for ETA)</label>'
+            + '<input id="ng-monthly" type="number" step="0.01" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="0.00">'
+            + '</div>'
+            + '<div class="flex gap-2 pt-1">'
+            + '<button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>'
+            + '<button onclick="saveSavingsGoal()" class="btn-primary flex-1 py-2.5">Add Goal</button>'
+            + '</div>'
+            + '</div>'
+        );
+    }
+
+    async function saveSavingsGoal() {
+        var name = (document.getElementById('ng-name') || {}).value || '';
+        var emoji = (document.getElementById('ng-emoji') || {}).value || '';
+        var target = parseFloat((document.getElementById('ng-target') || {}).value) || 0;
+        var current = parseFloat((document.getElementById('ng-current') || {}).value) || 0;
+        var monthly = parseFloat((document.getElementById('ng-monthly') || {}).value) || 0;
+        if(!name.trim()) return showToast('Enter a goal name', 'error');
+        if(!target) return showToast('Enter a target amount', 'error');
+        var r = await api('/finance/goals', 'POST', {name: name, emoji: emoji, target_amount: target, current_amount: current, monthly_contribution: monthly});
+        hideModal();
+        if(r && !r.error) showToast('Goal added', 'success');
+        loadFinance();
+    }
+
+    async function deleteFinanceGoal(id) {
+        if(!id) return;
+        if(!window._fgconfirm) { showToast('Click again to confirm', 'warning'); window._fgconfirm = setTimeout(function() { window._fgconfirm = null; }, 3000); return; }
+        clearTimeout(window._fgconfirm); window._fgconfirm = null;
+        await api('/finance/goals/' + id, 'DELETE');
+        showToast('Goal deleted', 'info');
+        loadFinance();
     }
 
     function addTransactionModal() {
@@ -7140,25 +7428,6 @@
         hideModal();
         if(r && !r.error) showToast('Transaction logged', 'success');
         loadFinance();
-    }
-
-    async function askShouldBuy() {
-        var item = (document.getElementById('sib-item') || {}).value || '';
-        var amount = parseFloat((document.getElementById('sib-amount') || {}).value) || 0;
-        var category = (document.getElementById('sib-category') || {}).value || 'other';
-        if(!item.trim()) return showToast('Describe what you want to buy', 'warning');
-        var resultEl = document.getElementById('sib-result');
-        var resultText = document.getElementById('sib-result-text');
-        if(resultEl) resultEl.classList.remove('hidden');
-        if(resultText) resultText.textContent = 'Thinking...';
-        var r = await api('/finance/should-buy', 'POST', {item: item, amount: amount, category: category});
-        if(r && r.recommendation) {
-            if(resultText) resultText.textContent = r.recommendation;
-        } else if(r && r.error) {
-            if(resultText) { resultText.textContent = r.error; resultText.style.color = '#f87171'; }
-        } else {
-            if(resultText) resultText.textContent = 'No AI provider configured. Go to Settings to add one.';
-        }
     }
 
     function addBudgetRuleModal() {

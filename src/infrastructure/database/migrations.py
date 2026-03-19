@@ -294,3 +294,24 @@ def run_migrations(conn) -> None:
         conn.execute("ALTER TABLE food_logs ADD COLUMN mood_after INTEGER")
     conn.execute("INSERT OR IGNORE INTO schema_version (version, description) VALUES (11, 'Add rating and mood_after to food_logs')")
     conn.commit()
+
+    # Migration 12: Add savings_goals table for Finance module Stage 1
+    current = get_current_version(conn)
+    if current < 12:
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS savings_goals (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                icon TEXT DEFAULT '🎯',
+                target_amount REAL NOT NULL,
+                current_amount REAL DEFAULT 0,
+                firefly_account_id TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_savings_goals_created ON savings_goals(created_at);
+        """)
+        conn.execute(
+            "INSERT OR IGNORE INTO schema_version (version, description) VALUES (12, 'Add savings_goals table')"
+        )
+        conn.commit()
+        print("  Migration 12: Add savings_goals table")

@@ -245,6 +245,16 @@ def init_database() -> None:
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
 
+        CREATE TABLE IF NOT EXISTS savings_goals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            icon TEXT DEFAULT '🎯',
+            target_amount REAL NOT NULL,
+            current_amount REAL DEFAULT 0,
+            firefly_account_id TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
         -- Challenges
         CREATE TABLE IF NOT EXISTS challenges (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -438,6 +448,7 @@ def init_database() -> None:
         CREATE INDEX IF NOT EXISTS idx_finance_log_date ON finance_log(date);
         CREATE INDEX IF NOT EXISTS idx_finance_log_category ON finance_log(category);
         CREATE INDEX IF NOT EXISTS idx_finance_advice_created ON finance_advice(created_at);
+        CREATE INDEX IF NOT EXISTS idx_savings_goals_created ON savings_goals(created_at);
     """)
 
     conn.commit()
