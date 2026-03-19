@@ -14,11 +14,9 @@ _ANTHROPIC_MODELS = [
     'claude-haiku-4-5-20251001',
 ]
 _CHATGPT_OAUTH_MODELS = [
-    'gpt-4o',
-    'gpt-4o-mini',
-    'o1',
-    'o1-mini',
-    'o3-mini',
+    'gpt-5.4',
+    'gpt-5.3-codex',
+    'gpt-5.2',
 ]
 
 
@@ -136,11 +134,41 @@ def _test_minimax(base_url: str, api_key: str) -> tuple[bool, str]:
 
 
 def _test_chatgpt_oauth() -> tuple[bool, str]:
-    """Check if the OAuth token exists and is present."""
+    """Test ChatGPT OAuth by making a tiny streaming Codex call."""
     token = _get_setting('openai_oauth_token')
-    if token:
-        return True, ''
-    return False, 'No OAuth token found — connect via ChatGPT OAuth first'
+    if not token:
+        return False, 'No OAuth token found — connect via ChatGPT OAuth first'
+    try:
+        import base64, json as _json
+        parts = token.split('.')
+        payload = _json.loads(base64.urlsafe_b64decode(parts[1] + '=='))
+        account_id = payload.get('https://api.openai.com/auth', {}).get('chatgpt_account_id', '')
+        if not account_id:
+            return False, 'Cannot extract account ID from token'
+        resp = requests.post(
+            'https://chatgpt.com/backend-api/codex/responses',
+            headers={
+                'Authorization': f'Bearer {token}',
+                'Content-Type': 'application/json',
+                'chatgpt-account-id': account_id,
+                'OpenAI-Beta': 'responses=experimental',
+            },
+            json={
+                'model': 'gpt-5.4',
+                'instructions': 'Reply with one word.',
+                'input': [{'role': 'user', 'content': 'Say ok'}],
+                'stream': True, 'store': False,
+            },
+            timeout=15,
+            stream=True,
+        )
+        if resp.status_code == 200:
+            return True, ''
+        return False, f'HTTP {resp.status_code}: {resp.text[:100]}'
+    except requests.exceptions.Timeout:
+        return False, 'Request timed out'
+    except Exception as exc:
+        return False, str(exc)
 
 
 # Prefixes of OpenAI model IDs that are NOT chat completion models.
@@ -203,7 +231,7 @@ def _get_recommended(provider: str, models: list[str]) -> tuple[str, str]:
         'openai': ('gpt-4o-mini', 'Best balance of cost and quality for food analysis'),
         'anthropic': ('claude-sonnet-4-20250514', 'Good balance of capability and cost'),
         'minimax': ('MiniMax-M2', 'Latest MiniMax model with vision support'),
-        'chatgpt_oauth': ('gpt-4o', 'Full-capability model available via ChatGPT OAuth'),
+        'chatgpt_oauth': ('gpt-5.4', 'Latest model via ChatGPT Plus/Pro subscription'),
     }
     if provider in _static:
         model, reason = _static[provider]

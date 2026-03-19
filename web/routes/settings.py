@@ -30,6 +30,7 @@ _SETTING_KEYS = {
     'ai_anthropic_model',
     'ai_minimax_key',
     'ai_minimax_model',
+    'ai_chatgpt_model',
     'daily_calorie_goal',
 }
 

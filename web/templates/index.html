@@ -3156,7 +3156,7 @@
         if(id === 'anthropic')     return s.ai_anthropic_model || 'claude-sonnet-4-20250514';
         if(id === 'minimax')       return s.ai_minimax_model  || 'MiniMax-M2';
         if(id === 'ollama')        return s.ai_ollama_url     || 'http://localhost:11434';
-        if(id === 'chatgpt_oauth') return 'OAuth · ' + (s.ai_openai_model || 'gpt-4o');
+        if(id === 'chatgpt_oauth') return 'OAuth · ' + (s.ai_chatgpt_model || 'gpt-5.4');
         return '';
     }
 
@@ -3303,11 +3303,9 @@
                     + '<div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 rounded-full" style="background:#22c55e;"></div><span class="text-sm font-medium" style="color:#22c55e;">Connected via OAuth</span></div>'
                     + '<div><label class="field-label">Model</label>'
                     + '<select id="cfg-chatgpt-model" class="w-full px-3 py-2.5 rounded-lg border text-sm mt-1">'
-                    + '<option value="gpt-4o">gpt-4o (vision)</option>'
-                    + '<option value="gpt-4o-mini" selected>gpt-4o-mini (vision, cheaper)</option>'
-                    + '<option value="o1">o1 (reasoning)</option>'
-                    + '<option value="o1-mini">o1-mini</option>'
-                    + '<option value="o3-mini">o3-mini</option>'
+                    + '<option value="gpt-5.4" selected>gpt-5.4 (latest, recommended)</option>'
+                    + '<option value="gpt-5.3-codex">gpt-5.3-codex</option>'
+                    + '<option value="gpt-5.2">gpt-5.2</option>'
                     + '</select></div>'
                     + '<div id="cfg-test-status" class="text-sm"></div>'
                     + '<div class="flex gap-2">'
@@ -3415,8 +3413,7 @@
     async function saveChatGPTModel() {
         var modelEl = document.getElementById('cfg-chatgpt-model');
         if(!modelEl) return;
-        // Save model as the openai model (ChatGPT OAuth uses OpenAI API format)
-        var r = await api('/settings', 'POST', {ai_openai_model: modelEl.value});
+        var r = await api('/settings', 'POST', {ai_chatgpt_model: modelEl.value});
         if(r && !r.error) {
             showToast('Model saved: ' + modelEl.value, 'success');
             hideModal();
