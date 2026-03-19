@@ -12,7 +12,15 @@ _SENSITIVE_KEYS = {'openclaw_api_key', 'ai_openai_key', 'ai_anthropic_key', 'ai_
 # All recognised setting keys and their defaults
 _SETTING_KEYS = {
     'openclaw_api_key',
+    # Legacy single-provider key — kept for backwards compatibility.
+    # New per-task keys take precedence over this.
     'ai_provider',
+    # Per-task provider assignments
+    'ai_provider_food',
+    'ai_provider_insights',
+    'ai_provider_reports',
+    'ai_provider_default',
+    # Provider credentials / config
     'ai_openai_key',
     'ai_openai_url',
     'ai_openai_model',

@@ -1279,154 +1279,85 @@
                         <!-- ── AI PROVIDER panel ─────────────────────────── -->
                         <div id="spanel-ai" style="display:none;">
                             <div class="mb-5">
-                                <h3 class="text-base font-semibold mb-1" style="color:#f0f0f2;">AI Provider</h3>
-                                <p class="text-sm" style="color:#5c5c6b;">Life Hack OS works fully without AI. An AI provider unlocks smart insights and natural-language summaries.</p>
+                                <h3 class="text-base font-semibold mb-1" style="color:#f0f0f2;">AI Providers</h3>
+                                <p class="text-sm" style="color:#5c5c6b;">Life Hack OS works fully without AI. Configure one or more providers and assign them to specific tasks.</p>
                             </div>
 
-                            <!-- Active provider status card -->
-                            <div class="card p-4 mb-4">
-                                <div class="flex items-start justify-between gap-3">
-                                    <div class="flex-1 min-w-0">
-                                        <div class="text-sm font-semibold mb-0.5" style="color:#f0f0f2;" id="ai-provider-name">Checking...</div>
-                                        <div class="text-sm" style="color:#9898a6;" id="ai-provider-desc">Loading AI status</div>
-                                    </div>
-                                    <div id="ai-provider-badge" class="flex-shrink-0 text-xs px-2.5 py-1 rounded-full font-medium" style="background:rgba(100,100,120,0.2);color:#9898a6;"></div>
-                                </div>
+                            <!-- ── Section A: Configured Providers ── -->
+                            <div class="flex items-center justify-between mb-2">
+                                <div style="font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#5c5c6b;">Configured Providers</div>
+                                <button onclick="showAddProviderModal()" class="btn-ghost text-xs px-3 py-1.5 flex items-center gap-1.5">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 4v12M4 10h12"/></svg>
+                                    Add Provider
+                                </button>
+                            </div>
+                            <div id="ai-provider-cards" class="space-y-2 mb-6">
+                                <p class="text-sm" style="color:#5c5c6b;">Loading providers...</p>
                             </div>
 
-                            <!-- Provider configuration form -->
-                            <div class="mb-2" style="font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#5c5c6b;">Configure provider</div>
-                            <div class="card p-4 space-y-4">
-                                <div>
-                                    <label class="field-label" for="ai-provider-select">Provider</label>
-                                    <select id="ai-provider-select" class="w-full px-3 py-2.5 rounded-lg border text-sm" onchange="onAiProviderChange(this.value)">
-                                        <option value="none">None (standalone)</option>
-                                        <option value="openai">OpenAI</option>
-                                        <option value="anthropic">Claude (Anthropic)</option>
-                                        <option value="minimax">MiniMax</option>
-                                        <option value="ollama">Ollama (Local)</option>
-                                        <option value="chatgpt_oauth">ChatGPT Account</option>
-                                    </select>
-                                </div>
-
-                                <!-- Test connection status -->
-                                <div id="ai-test-status" class="text-sm"></div>
-
-                                <!-- OpenAI fields -->
-                                <div id="ai-openai-fields" style="display:none;" class="space-y-3">
-                                    <div>
-                                        <label class="field-label" for="ai-openai-key">API Key</label>
-                                        <div class="flex gap-2">
-                                            <input id="ai-openai-key" type="password" class="flex-1 px-3 py-2.5 rounded-lg border text-sm" placeholder="sk-...">
-                                            <button onclick="testAiConnection()" class="btn-ghost flex-shrink-0 px-3 py-2 text-xs">Test</button>
+                            <!-- ── Section B: Task Assignments ── -->
+                            <div class="mb-2" style="font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#5c5c6b;">Task Assignments</div>
+                            <div class="card p-4 mb-6">
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <div class="flex-1 min-w-0">
+                                            <div class="text-sm font-medium" style="color:#f0f0f2;">Food Analysis</div>
+                                            <div class="text-xs mt-0.5" style="color:#5c5c6b;">Needs vision capability</div>
                                         </div>
-                                    </div>
-                                    <div id="ai-openai-model-wrap" style="display:none;">
-                                        <label class="field-label" for="ai-model-select">Model</label>
-                                        <select id="ai-model-select" class="w-full px-3 py-2.5 rounded-lg border text-sm">
-                                            <option value="gpt-4o-mini">gpt-4o-mini</option>
+                                        <select id="assign-food" class="px-2.5 py-1.5 rounded-lg border text-xs" style="min-width:120px;" onchange="saveTaskAssignments()">
+                                            <option value="">— none —</option>
                                         </select>
                                     </div>
-                                    <div id="ai-openai-model-fallback">
-                                        <label class="field-label" for="ai-openai-model">Model (manual)</label>
-                                        <input id="ai-openai-model" type="text" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="gpt-4o-mini">
+                                    <div style="height:1px;background:#2a2a2e;"></div>
+                                    <div class="flex items-center justify-between gap-3">
+                                        <div class="text-sm font-medium" style="color:#f0f0f2;">Insights</div>
+                                        <select id="assign-insights" class="px-2.5 py-1.5 rounded-lg border text-xs" style="min-width:120px;" onchange="saveTaskAssignments()">
+                                            <option value="">— none —</option>
+                                        </select>
+                                    </div>
+                                    <div style="height:1px;background:#2a2a2e;"></div>
+                                    <div class="flex items-center justify-between gap-3">
+                                        <div class="text-sm font-medium" style="color:#f0f0f2;">Weekly Reports</div>
+                                        <select id="assign-reports" class="px-2.5 py-1.5 rounded-lg border text-xs" style="min-width:120px;" onchange="saveTaskAssignments()">
+                                            <option value="">— none —</option>
+                                        </select>
+                                    </div>
+                                    <div style="height:1px;background:#2a2a2e;"></div>
+                                    <div class="flex items-center justify-between gap-3">
+                                        <div class="text-sm font-medium" style="color:#f0f0f2;">Default</div>
+                                        <select id="assign-default" class="px-2.5 py-1.5 rounded-lg border text-xs" style="min-width:120px;" onchange="saveTaskAssignments()">
+                                            <option value="">— none —</option>
+                                        </select>
                                     </div>
                                 </div>
-
-                                <!-- Anthropic fields -->
-                                <div id="ai-anthropic-fields" style="display:none;" class="space-y-3">
-                                    <div>
-                                        <label class="field-label" for="ai-anthropic-key">API Key</label>
-                                        <div class="flex gap-2">
-                                            <input id="ai-anthropic-key" type="password" class="flex-1 px-3 py-2.5 rounded-lg border text-sm" placeholder="sk-ant-...">
-                                            <button onclick="testAiConnection()" class="btn-ghost flex-shrink-0 px-3 py-2 text-xs">Test</button>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label class="field-label" for="ai-anthropic-model">Model</label>
-                                        <input id="ai-anthropic-model" type="text" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="claude-sonnet-4-20250514" placeholder="claude-sonnet-4-20250514">
-                                    </div>
-                                </div>
-
-                                <!-- MiniMax fields -->
-                                <div id="ai-minimax-fields" style="display:none;" class="space-y-3">
-                                    <div>
-                                        <label class="field-label" for="ai-minimax-key">API Key</label>
-                                        <div class="flex gap-2">
-                                            <input id="ai-minimax-key" type="password" class="flex-1 px-3 py-2.5 rounded-lg border text-sm" placeholder="Enter MiniMax API key">
-                                            <button onclick="testAiConnection()" class="btn-ghost flex-shrink-0 px-3 py-2 text-xs">Test</button>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label class="field-label" for="ai-minimax-model">Model</label>
-                                        <input id="ai-minimax-model" type="text" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="MiniMax-M2" value="MiniMax-M2">
-                                    </div>
-                                </div>
-
-                                <!-- Ollama fields -->
-                                <div id="ai-ollama-fields" style="display:none;" class="space-y-3">
-                                    <div>
-                                        <label class="field-label" for="ai-ollama-url">Ollama URL</label>
-                                        <div class="flex gap-2">
-                                            <input id="ai-ollama-url" type="text" class="flex-1 px-3 py-2.5 rounded-lg border text-sm" placeholder="http://localhost:11434" value="http://localhost:11434">
-                                            <button onclick="testAiConnection()" class="btn-ghost flex-shrink-0 px-3 py-2 text-xs">Test</button>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label class="field-label" for="ai-ollama-model">Model</label>
-                                        <input id="ai-ollama-model" type="text" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="llama3" value="llama3">
-                                    </div>
-                                </div>
-
-                                <!-- ChatGPT OAuth fields -->
-                                <div id="ai-chatgpt-oauth-fields" style="display:none;" class="space-y-3">
-                                    <div id="ai-chatgpt-connected" style="display:none;" class="p-3 rounded-lg flex items-center justify-between gap-3" style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);">
-                                        <div class="flex items-center gap-2">
-                                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="#22c55e" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 10l4 4 8-8"/></svg>
-                                            <span class="text-sm font-medium" style="color:#22c55e;">ChatGPT account connected</span>
-                                        </div>
-                                        <button onclick="disconnectChatGPT()" class="text-xs font-medium px-2.5 py-1 rounded-lg" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);">Disconnect</button>
-                                    </div>
-                                    <div id="ai-chatgpt-disconnected">
-                                        <p class="text-sm mb-3" style="color:#9898a6;">Connect your ChatGPT account to use ChatGPT models directly.</p>
-                                        <button onclick="location.href='/auth/openai/start'" class="btn-primary w-full py-2.5 flex items-center justify-center gap-2">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 10h12M11 6l5 4-5 4"/></svg>
-                                            Connect ChatGPT Account
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <button onclick="saveAiProvider()" id="ai-save-btn" class="btn-primary w-full py-2.5">Save AI Settings</button>
                             </div>
 
-                            <!-- AI Usage Log -->
-                            <div class="mt-6">
-                                <div class="mb-2" style="font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#5c5c6b;">AI Usage Log</div>
+                            <!-- ── Section C: AI Usage Log ── -->
+                            <div class="mb-2" style="font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#5c5c6b;">AI Usage Log</div>
 
-                                <!-- Summary card -->
-                                <div id="ai-usage-summary" class="grid grid-cols-2 gap-2 mb-3 sm:grid-cols-4">
-                                    <div class="card p-3">
-                                        <div id="ai-usage-total-calls" class="font-mono font-semibold text-base" style="color:#f0f0f2;">—</div>
-                                        <div class="text-xs mt-0.5" style="color:#5c5c6b;">Total calls</div>
-                                    </div>
-                                    <div class="card p-3">
-                                        <div id="ai-usage-total-tokens" class="font-mono font-semibold text-base" style="color:#f0f0f2;">—</div>
-                                        <div class="text-xs mt-0.5" style="color:#5c5c6b;">Total tokens</div>
-                                    </div>
-                                    <div class="card p-3">
-                                        <div id="ai-usage-total-cost" class="font-mono font-semibold text-base" style="color:#f0f0f2;">—</div>
-                                        <div class="text-xs mt-0.5" style="color:#5c5c6b;">Total cost</div>
-                                    </div>
-                                    <div class="card p-3">
-                                        <div id="ai-usage-success-rate" class="font-mono font-semibold text-base" style="color:#f0f0f2;">—</div>
-                                        <div class="text-xs mt-0.5" style="color:#5c5c6b;">Success rate</div>
-                                    </div>
+                            <!-- Summary card -->
+                            <div id="ai-usage-summary" class="grid grid-cols-2 gap-2 mb-3 sm:grid-cols-4">
+                                <div class="card p-3">
+                                    <div id="ai-usage-total-calls" class="font-mono font-semibold text-base" style="color:#f0f0f2;">—</div>
+                                    <div class="text-xs mt-0.5" style="color:#5c5c6b;">Total calls</div>
                                 </div>
+                                <div class="card p-3">
+                                    <div id="ai-usage-total-tokens" class="font-mono font-semibold text-base" style="color:#f0f0f2;">—</div>
+                                    <div class="text-xs mt-0.5" style="color:#5c5c6b;">Total tokens</div>
+                                </div>
+                                <div class="card p-3">
+                                    <div id="ai-usage-total-cost" class="font-mono font-semibold text-base" style="color:#f0f0f2;">—</div>
+                                    <div class="text-xs mt-0.5" style="color:#5c5c6b;">Total cost</div>
+                                </div>
+                                <div class="card p-3">
+                                    <div id="ai-usage-success-rate" class="font-mono font-semibold text-base" style="color:#f0f0f2;">—</div>
+                                    <div class="text-xs mt-0.5" style="color:#5c5c6b;">Success rate</div>
+                                </div>
+                            </div>
 
-                                <!-- Recent calls list -->
-                                <div id="ai-usage-log" class="card p-4 overflow-y-auto" style="max-height:320px;">
-                                    <p class="text-sm" style="color:#5c5c6b;">Loading usage log...</p>
-                                </div>
+                            <!-- Recent calls list -->
+                            <div id="ai-usage-log" class="card p-4 overflow-y-auto" style="max-height:320px;">
+                                <p class="text-sm" style="color:#5c5c6b;">Loading usage log...</p>
                             </div>
                         </div>
 
@@ -2947,40 +2878,12 @@
             }
         }
 
-        // ── AI Provider ──────────────────────────────────────────
-        const ai = await api('/ai/status');
-        if(ai) {
-            const names = {none:'Standalone (No AI)', ollama:'Ollama (Local)', openai:'OpenAI', anthropic:'Claude (Anthropic)', minimax:'MiniMax', chatgpt_oauth:'ChatGPT Account'};
-            $('#ai-provider-name').textContent = names[ai.provider] || ai.provider;
-            $('#ai-provider-desc').textContent = ai.available
-                ? 'Connected and ready'
-                : (ai.provider === 'none' ? 'App works fully without AI' : 'Not connected — check configuration below');
-            const badge = $('#ai-provider-badge');
-            if(ai.provider === 'none') {
-                badge.textContent = 'Standalone';
-                badge.style.cssText = 'background:rgba(100,100,120,0.2);color:#9898a6;font-size:0.75rem;padding:0.25rem 0.625rem;border-radius:100px;font-weight:500;';
-            } else if(ai.available) {
-                badge.textContent = 'Active';
-                badge.style.cssText = 'background:rgba(34,197,94,0.12);color:#22c55e;font-size:0.75rem;padding:0.25rem 0.625rem;border-radius:100px;font-weight:500;';
-            } else {
-                badge.textContent = 'Offline';
-                badge.style.cssText = 'background:rgba(239,68,68,0.12);color:#ef4444;font-size:0.75rem;padding:0.25rem 0.625rem;border-radius:100px;font-weight:500;';
-            }
-            // Populate the provider config form
-            const sel = $('#ai-provider-select');
-            if(sel) sel.value = ai.provider || 'none';
-            onAiProviderChange(ai.provider || 'none');
-        }
-
-        // ── App settings (populate AI fields + OpenClaw key) ─────
+        // ── AI Providers (multi-provider) ────────────────────────
         try {
             const savedSettings = await api('/settings');
             if(savedSettings) {
-                if(savedSettings.ai_ollama_url)      { const el = $('#ai-ollama-url');      if(el) el.value = savedSettings.ai_ollama_url; }
-                if(savedSettings.ai_ollama_model)    { const el = $('#ai-ollama-model');    if(el) el.value = savedSettings.ai_ollama_model; }
-                if(savedSettings.ai_openai_model)    { const el = $('#ai-openai-model');    if(el) el.value = savedSettings.ai_openai_model; }
-                if(savedSettings.ai_anthropic_model) { const el = $('#ai-anthropic-model'); if(el) el.value = savedSettings.ai_anthropic_model; }
-                if(savedSettings.ai_minimax_model)   { const el = $('#ai-minimax-model');   if(el) el.value = savedSettings.ai_minimax_model; }
+                renderProviderCards(savedSettings);
+                populateAssignmentDropdowns(savedSettings);
                 // Do not pre-fill API key values for security — just show placeholder if set
                 const keyInput = $('#openclaw-api-key-input');
                 if(keyInput && savedSettings.openclaw_api_key_set) {
@@ -3222,152 +3125,283 @@
         _setToggleBg('firefly', false);
     }
 
-    // ── AI Provider helpers ──────────────────────────────────────
-    function onAiProviderChange(provider) {
-        const allFields = ['ai-openai-fields','ai-anthropic-fields','ai-minimax-fields','ai-ollama-fields','ai-chatgpt-oauth-fields'];
-        allFields.forEach(id => {
-            const el = $('#' + id);
-            if(el) el.style.display = 'none';
-        });
-        const saveBtn = $('#ai-save-btn');
-        if(saveBtn) saveBtn.style.display = (provider === 'chatgpt_oauth') ? 'none' : '';
-        const statusEl = $('#ai-test-status');
-        if(statusEl) statusEl.innerHTML = '';
+    // ── AI Provider helpers (multi-provider) ────────────────────
 
-        if(provider === 'openai') {
-            const el = $('#ai-openai-fields');
-            if(el) el.style.display = '';
-        } else if(provider === 'anthropic') {
-            const el = $('#ai-anthropic-fields');
-            if(el) el.style.display = '';
-        } else if(provider === 'minimax') {
-            const el = $('#ai-minimax-fields');
-            if(el) el.style.display = '';
-        } else if(provider === 'ollama') {
-            const el = $('#ai-ollama-fields');
-            if(el) el.style.display = '';
-        } else if(provider === 'chatgpt_oauth') {
-            const el = $('#ai-chatgpt-oauth-fields');
-            if(el) el.style.display = '';
-            checkChatGPTStatus();
+    var AI_PROVIDER_META = {
+        openai:       { label: 'OpenAI',           icon: 'O', color: '#22c55e' },
+        anthropic:    { label: 'Claude (Anthropic)', icon: 'A', color: '#8b5cf6' },
+        minimax:      { label: 'MiniMax',           icon: 'M', color: '#4f80ff' },
+        ollama:       { label: 'Ollama (Local)',    icon: 'L', color: '#f59e0b' },
+        chatgpt_oauth:{ label: 'ChatGPT Account',  icon: 'C', color: '#22c55e' }
+    };
+
+    function _providerIsConfigured(id, s) {
+        if(id === 'openai')        return !!(s.ai_openai_key_set || s.ai_openai_key);
+        if(id === 'anthropic')     return !!(s.ai_anthropic_key_set || s.ai_anthropic_key);
+        if(id === 'minimax')       return !!(s.ai_minimax_key_set || s.ai_minimax_key);
+        if(id === 'ollama')        return !!(s.ai_ollama_url && s.ai_ollama_url !== 'http://localhost:11434' || s.ai_ollama_model);
+        if(id === 'chatgpt_oauth') return !!(s.chatgpt_connected);
+        return false;
+    }
+
+    function _providerSubtitle(id, s) {
+        if(id === 'openai')        return s.ai_openai_model  || 'gpt-4o-mini';
+        if(id === 'anthropic')     return s.ai_anthropic_model || 'claude-sonnet-4-20250514';
+        if(id === 'minimax')       return s.ai_minimax_model  || 'MiniMax-M2';
+        if(id === 'ollama')        return s.ai_ollama_url     || 'http://localhost:11434';
+        if(id === 'chatgpt_oauth') return 'OAuth connected';
+        return '';
+    }
+
+    function renderProviderCards(s) {
+        var container = $('#ai-provider-cards');
+        if(!container) return;
+        var ids = ['openai','anthropic','minimax','ollama','chatgpt_oauth'];
+        var configured = ids.filter(function(id) { return _providerIsConfigured(id, s); });
+        if(!configured.length) {
+            container.innerHTML = '<div class="card p-4 text-sm" style="color:#5c5c6b;">No providers configured yet. Click "+ Add Provider" to get started.</div>';
+            return;
+        }
+        container.innerHTML = configured.map(function(id) {
+            var meta = AI_PROVIDER_META[id] || {label: id, icon: '?', color: '#9898a6'};
+            var subtitle = _providerSubtitle(id, s);
+            return '<div class="card p-3 flex items-center gap-3">'
+                + '<div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold" style="background:rgba(79,128,255,0.12);color:' + meta.color + ';">' + meta.icon + '</div>'
+                + '<div class="flex-1 min-w-0">'
+                + '<div class="text-sm font-medium" style="color:#f0f0f2;">' + meta.label + '</div>'
+                + '<div class="text-xs truncate" style="color:#5c5c6b;">' + subtitle + '</div>'
+                + '</div>'
+                + '<span class="text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0" style="background:rgba(34,197,94,0.12);color:#22c55e;">Connected</span>'
+                + '<button onclick="configureProvider(\'' + id + '\')" class="btn-ghost text-xs px-2.5 py-1.5 flex-shrink-0">Configure</button>'
+                + '</div>';
+        }).join('');
+    }
+
+    function populateAssignmentDropdowns(s) {
+        var ids = ['openai','anthropic','minimax','ollama','chatgpt_oauth'];
+        var configured = ids.filter(function(id) { return _providerIsConfigured(id, s); });
+        var optionsHtml = '<option value="">— none —</option>'
+            + configured.map(function(id) {
+                var meta = AI_PROVIDER_META[id] || {label: id};
+                return '<option value="' + id + '">' + meta.label + '</option>';
+            }).join('');
+
+        var dropdowns = {
+            'assign-food':     s.ai_provider_food    || s.ai_provider || '',
+            'assign-insights': s.ai_provider_insights || s.ai_provider || '',
+            'assign-reports':  s.ai_provider_reports  || s.ai_provider || '',
+            'assign-default':  s.ai_provider_default  || s.ai_provider || ''
+        };
+        Object.keys(dropdowns).forEach(function(elId) {
+            var sel = $('#' + elId);
+            if(!sel) return;
+            sel.innerHTML = optionsHtml;
+            sel.value = dropdowns[elId];
+        });
+    }
+
+    async function saveTaskAssignments() {
+        var payload = {
+            ai_provider_food:     ($('#assign-food')     && $('#assign-food').value)     || '',
+            ai_provider_insights: ($('#assign-insights') && $('#assign-insights').value) || '',
+            ai_provider_reports:  ($('#assign-reports')  && $('#assign-reports').value)  || '',
+            ai_provider_default:  ($('#assign-default')  && $('#assign-default').value)  || ''
+        };
+        var r = await api('/settings', 'POST', payload);
+        if(r && r.error) showToast('Failed to save assignments: ' + r.error, 'error');
+        else showToast('Task assignments saved', 'success');
+    }
+
+    function showAddProviderModal() {
+        var ids = ['openai','anthropic','minimax','ollama','chatgpt_oauth'];
+        var btns = ids.map(function(id) {
+            var meta = AI_PROVIDER_META[id] || {label: id, icon: '?', color: '#9898a6'};
+            return '<button onclick="hideModal(); configureProvider(\'' + id + '\')" class="card p-3 flex items-center gap-3 w-full text-left hover:border-accent" style="border-color:#333338;transition:border-color 0.15s;">'
+                + '<div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold" style="background:rgba(79,128,255,0.12);color:' + meta.color + ';">' + meta.icon + '</div>'
+                + '<span class="text-sm font-medium" style="color:#f0f0f2;">' + meta.label + '</span>'
+                + '</button>';
+        }).join('');
+        showModal('Add Provider', '<div class="space-y-2">' + btns + '</div>');
+    }
+
+    function configureProvider(providerId) {
+        var meta = AI_PROVIDER_META[providerId] || {label: providerId};
+        if(providerId === 'openai') {
+            showModal('Configure OpenAI',
+                '<div class="space-y-3">'
+                + '<div><label class="field-label">API Key</label>'
+                + '<input id="cfg-openai-key" type="password" class="w-full px-3 py-2.5 rounded-lg border text-sm mt-1" placeholder="sk-..."></div>'
+                + '<div><label class="field-label">Model</label>'
+                + '<input id="cfg-openai-model" type="text" class="w-full px-3 py-2.5 rounded-lg border text-sm mt-1" placeholder="gpt-4o-mini" value="gpt-4o-mini"></div>'
+                + '<div><label class="field-label">Base URL (optional)</label>'
+                + '<input id="cfg-openai-url" type="text" class="w-full px-3 py-2.5 rounded-lg border text-sm mt-1" placeholder="https://api.openai.com/v1" value="https://api.openai.com/v1"></div>'
+                + '<div id="cfg-test-status" class="text-sm"></div>'
+                + '<div class="flex gap-2">'
+                + '<button onclick="testProviderConfig(\'openai\')" class="btn-ghost flex-1 py-2.5 text-sm">Test</button>'
+                + '<button onclick="saveProviderConfig(\'openai\')" class="btn-primary flex-1 py-2.5 text-sm">Save</button>'
+                + '</div></div>'
+            );
+        } else if(providerId === 'anthropic') {
+            showModal('Configure Claude',
+                '<div class="space-y-3">'
+                + '<div><label class="field-label">API Key</label>'
+                + '<input id="cfg-anthropic-key" type="password" class="w-full px-3 py-2.5 rounded-lg border text-sm mt-1" placeholder="sk-ant-..."></div>'
+                + '<div><label class="field-label">Model</label>'
+                + '<input id="cfg-anthropic-model" type="text" class="w-full px-3 py-2.5 rounded-lg border text-sm mt-1" placeholder="claude-sonnet-4-20250514" value="claude-sonnet-4-20250514"></div>'
+                + '<div id="cfg-test-status" class="text-sm"></div>'
+                + '<div class="flex gap-2">'
+                + '<button onclick="testProviderConfig(\'anthropic\')" class="btn-ghost flex-1 py-2.5 text-sm">Test</button>'
+                + '<button onclick="saveProviderConfig(\'anthropic\')" class="btn-primary flex-1 py-2.5 text-sm">Save</button>'
+                + '</div></div>'
+            );
+        } else if(providerId === 'minimax') {
+            showModal('Configure MiniMax',
+                '<div class="space-y-3">'
+                + '<div><label class="field-label">API Key</label>'
+                + '<input id="cfg-minimax-key" type="password" class="w-full px-3 py-2.5 rounded-lg border text-sm mt-1" placeholder="Enter MiniMax API key"></div>'
+                + '<div><label class="field-label">Model</label>'
+                + '<input id="cfg-minimax-model" type="text" class="w-full px-3 py-2.5 rounded-lg border text-sm mt-1" placeholder="MiniMax-M2" value="MiniMax-M2"></div>'
+                + '<div id="cfg-test-status" class="text-sm"></div>'
+                + '<div class="flex gap-2">'
+                + '<button onclick="testProviderConfig(\'minimax\')" class="btn-ghost flex-1 py-2.5 text-sm">Test</button>'
+                + '<button onclick="saveProviderConfig(\'minimax\')" class="btn-primary flex-1 py-2.5 text-sm">Save</button>'
+                + '</div></div>'
+            );
+        } else if(providerId === 'ollama') {
+            showModal('Configure Ollama',
+                '<div class="space-y-3">'
+                + '<div><label class="field-label">Ollama URL</label>'
+                + '<input id="cfg-ollama-url" type="text" class="w-full px-3 py-2.5 rounded-lg border text-sm mt-1" placeholder="http://localhost:11434" value="http://localhost:11434"></div>'
+                + '<div><label class="field-label">Model</label>'
+                + '<input id="cfg-ollama-model" type="text" class="w-full px-3 py-2.5 rounded-lg border text-sm mt-1" placeholder="llama3" value="llama3"></div>'
+                + '<div id="cfg-test-status" class="text-sm"></div>'
+                + '<div class="flex gap-2">'
+                + '<button onclick="testProviderConfig(\'ollama\')" class="btn-ghost flex-1 py-2.5 text-sm">Test</button>'
+                + '<button onclick="saveProviderConfig(\'ollama\')" class="btn-primary flex-1 py-2.5 text-sm">Save</button>'
+                + '</div></div>'
+            );
+        } else if(providerId === 'chatgpt_oauth') {
+            showModal('Connect ChatGPT Account',
+                '<div class="space-y-4">'
+                + '<p class="text-sm" style="color:#9898a6;">Click Connect to open OpenAI login. After signing in, you\'ll be redirected to localhost:1455 which won\'t load. Copy the full URL from your browser\'s address bar and paste it below.</p>'
+                + '<button onclick="startChatGPTOAuth()" class="btn-primary w-full py-2.5 flex items-center justify-center gap-2">'
+                + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 10h12M11 6l5 4-5 4"/></svg>'
+                + 'Connect</button>'
+                + '<div id="chatgpt-paste-section" class="hidden space-y-3">'
+                + '<div><label class="field-label">Paste callback URL here</label>'
+                + '<input id="chatgpt-callback-url" type="text" class="w-full px-3 py-2.5 rounded-lg border text-sm mt-1" placeholder="http://localhost:1455/?code=...&state=..."></div>'
+                + '<button onclick="completeChatGPTOAuth()" class="btn-primary w-full py-2.5">Complete Connection</button>'
+                + '</div>'
+                + '<div id="chatgpt-oauth-status" class="text-sm"></div>'
+                + '</div>'
+            );
         }
     }
 
-    async function checkChatGPTStatus() {
-        try {
-            const r = await fetch('/auth/openai/status', {credentials:'same-origin'});
-            if(r.ok) {
-                const data = await r.json();
-                const connEl = $('#ai-chatgpt-connected');
-                const discEl = $('#ai-chatgpt-disconnected');
-                if(data && data.connected) {
-                    if(connEl) connEl.style.display = '';
-                    if(discEl) discEl.style.display = 'none';
-                } else {
-                    if(connEl) connEl.style.display = 'none';
-                    if(discEl) discEl.style.display = '';
-                }
+    async function testProviderConfig(providerId) {
+        var statusEl = document.getElementById('cfg-test-status');
+        if(statusEl) statusEl.innerHTML = '<span style="color:#eab308;">Testing...</span>';
+        var config = {provider: providerId};
+        if(providerId === 'openai') {
+            var keyEl = document.getElementById('cfg-openai-key');
+            var urlEl = document.getElementById('cfg-openai-url');
+            config.api_key  = keyEl  ? keyEl.value  : '';
+            config.base_url = urlEl  ? urlEl.value  : 'https://api.openai.com/v1';
+        } else if(providerId === 'anthropic') {
+            var keyEl = document.getElementById('cfg-anthropic-key');
+            config.api_key = keyEl ? keyEl.value : '';
+        } else if(providerId === 'minimax') {
+            var keyEl = document.getElementById('cfg-minimax-key');
+            config.api_key  = keyEl ? keyEl.value : '';
+            config.base_url = 'https://api.minimaxi.chat/v1';
+        } else if(providerId === 'ollama') {
+            var urlEl = document.getElementById('cfg-ollama-url');
+            config.base_url = urlEl ? urlEl.value : 'http://localhost:11434';
+        }
+        var r = await api('/ai/test', 'POST', config);
+        if(statusEl) {
+            if(r && r.valid) {
+                statusEl.innerHTML = '<span style="color:#22c55e;">Connected!</span>';
+            } else {
+                statusEl.innerHTML = '<span style="color:#ef4444;">Failed: ' + ((r && r.error) || 'Connection error') + '</span>';
             }
-        } catch(_) {}
+        }
+    }
+
+    async function saveProviderConfig(providerId) {
+        var payload = {};
+        if(providerId === 'openai') {
+            var keyEl   = document.getElementById('cfg-openai-key');
+            var modelEl = document.getElementById('cfg-openai-model');
+            var urlEl   = document.getElementById('cfg-openai-url');
+            if(keyEl && keyEl.value.trim())   payload.ai_openai_key   = keyEl.value.trim();
+            if(modelEl && modelEl.value.trim()) payload.ai_openai_model = modelEl.value.trim();
+            if(urlEl && urlEl.value.trim())   payload.ai_openai_url   = urlEl.value.trim();
+        } else if(providerId === 'anthropic') {
+            var keyEl   = document.getElementById('cfg-anthropic-key');
+            var modelEl = document.getElementById('cfg-anthropic-model');
+            if(keyEl && keyEl.value.trim())   payload.ai_anthropic_key   = keyEl.value.trim();
+            if(modelEl && modelEl.value.trim()) payload.ai_anthropic_model = modelEl.value.trim();
+        } else if(providerId === 'minimax') {
+            var keyEl   = document.getElementById('cfg-minimax-key');
+            var modelEl = document.getElementById('cfg-minimax-model');
+            if(keyEl && keyEl.value.trim())   payload.ai_minimax_key   = keyEl.value.trim();
+            if(modelEl && modelEl.value.trim()) payload.ai_minimax_model = modelEl.value.trim();
+            payload.ai_minimax_url = 'https://api.minimaxi.chat/v1';
+        } else if(providerId === 'ollama') {
+            var urlEl   = document.getElementById('cfg-ollama-url');
+            var modelEl = document.getElementById('cfg-ollama-model');
+            if(urlEl && urlEl.value.trim())   payload.ai_ollama_url   = urlEl.value.trim();
+            if(modelEl && modelEl.value.trim()) payload.ai_ollama_model = modelEl.value.trim();
+        }
+        var r = await api('/settings', 'POST', payload);
+        if(r && r.error) { showToast('Failed: ' + r.error, 'error'); return; }
+        showToast('Provider saved', 'success');
+        hideModal();
+        loadSettings();
+    }
+
+    async function startChatGPTOAuth() {
+        var r = await api('/auth/openai/start');
+        if(r && r.auth_url) {
+            window.open(r.auth_url, '_blank');
+            var section = document.getElementById('chatgpt-paste-section');
+            if(section) section.classList.remove('hidden');
+        } else {
+            showToast('Failed to start OAuth flow', 'error');
+        }
+    }
+
+    async function completeChatGPTOAuth() {
+        var inputEl = document.getElementById('chatgpt-callback-url');
+        var pastedUrl = inputEl ? inputEl.value.trim() : '';
+        if(!pastedUrl) { showToast('Please paste the callback URL', 'warning'); return; }
+        try {
+            var url = new URL(pastedUrl);
+            var code  = url.searchParams.get('code');
+            var state = url.searchParams.get('state');
+            if(!code) { showToast('No authorization code found in URL', 'error'); return; }
+            var r = await api('/auth/openai/exchange', 'POST', {code: code, state: state});
+            if(r && r.success) {
+                showToast('ChatGPT account connected!', 'success');
+                hideModal();
+                loadSettings();
+            } else {
+                showToast('Connection failed: ' + ((r && r.error) || 'Unknown error'), 'error');
+            }
+        } catch(e) {
+            showToast('Invalid URL', 'error');
+        }
     }
 
     async function disconnectChatGPT() {
         try {
             await fetch('/auth/openai/disconnect', {method:'POST', credentials:'same-origin'});
             showToast('ChatGPT account disconnected', 'info');
-            checkChatGPTStatus();
+            loadSettings();
         } catch(_) {
             showToast('Failed to disconnect', 'error');
         }
-    }
-
-    async function testAiConnection() {
-        const provider = $('#ai-provider-select').value;
-        const config = {provider: provider};
-        if(provider === 'openai') {
-            config.api_key = $('#ai-openai-key').value;
-            config.base_url = 'https://api.openai.com/v1';
-        } else if(provider === 'anthropic') {
-            config.api_key = $('#ai-anthropic-key').value;
-        } else if(provider === 'minimax') {
-            config.api_key = $('#ai-minimax-key').value;
-            config.base_url = 'https://api.minimaxi.chat/v1';
-        } else if(provider === 'ollama') {
-            config.base_url = $('#ai-ollama-url').value;
-        }
-
-        const statusEl = $('#ai-test-status');
-        if(statusEl) statusEl.innerHTML = '<span style="color:#eab308;">Testing...</span>';
-
-        const r = await api('/ai/test', 'POST', config);
-        if(r && r.valid) {
-            if(statusEl) statusEl.innerHTML = '<span style="color:#22c55e;">Connected!</span>';
-            await fetchAiModels(provider, config);
-        } else {
-            const errMsg = (r && r.error) ? r.error : 'Connection error';
-            if(statusEl) statusEl.innerHTML = '<span style="color:#ef4444;">Failed: ' + errMsg + '</span>';
-        }
-    }
-
-    async function fetchAiModels(provider, config) {
-        const params = 'provider=' + encodeURIComponent(provider) +
-            '&api_key=' + encodeURIComponent(config.api_key || '') +
-            '&base_url=' + encodeURIComponent(config.base_url || '');
-        const r = await api('/ai/models?' + params);
-        if(r && r.models && r.models.length) {
-            const wrap = $('#ai-openai-model-wrap');
-            const fallback = $('#ai-openai-model-fallback');
-            const select = $('#ai-model-select');
-            if(select) {
-                select.innerHTML = r.models.map(function(m) {
-                    var isRec = m === r.recommended;
-                    return '<option value="' + m + '"' + (isRec ? ' selected' : '') + '>' + m + (isRec ? ' (recommended)' : '') + '</option>';
-                }).join('');
-            }
-            // Show recommendation note below the model select
-            var existingNote = document.getElementById('ai-model-rec-note');
-            if(existingNote) existingNote.remove();
-            if(r.recommended_reason && wrap) {
-                var note = document.createElement('p');
-                note.id = 'ai-model-rec-note';
-                note.style.cssText = 'font-size:0.75rem;color:#5c5c6b;margin-top:0.375rem;';
-                note.textContent = r.recommended_reason;
-                wrap.appendChild(note);
-            }
-            if(wrap) wrap.style.display = '';
-            if(fallback) fallback.style.display = 'none';
-        }
-    }
-
-    async function saveAiProvider() {
-        const provider = $('#ai-provider-select').value;
-        const payload = {ai_provider: provider};
-        if(provider === 'ollama') {
-            payload.ai_ollama_url   = $('#ai-ollama-url').value.trim() || 'http://localhost:11434';
-            payload.ai_ollama_model = $('#ai-ollama-model').value.trim() || 'llama3';
-        } else if(provider === 'openai') {
-            payload.ai_openai_key   = $('#ai-openai-key').value.trim();
-            const modelSelect = $('#ai-model-select');
-            const modelFallback = $('#ai-openai-model');
-            const modelWrap = $('#ai-openai-model-wrap');
-            if(modelWrap && modelWrap.style.display !== 'none' && modelSelect) {
-                payload.ai_openai_model = modelSelect.value.trim();
-            } else if(modelFallback) {
-                payload.ai_openai_model = modelFallback.value.trim();
-            }
-            payload.ai_openai_url = 'https://api.openai.com/v1';
-        } else if(provider === 'anthropic') {
-            payload.ai_anthropic_key   = $('#ai-anthropic-key').value.trim();
-            payload.ai_anthropic_model = $('#ai-anthropic-model').value.trim() || 'claude-sonnet-4-20250514';
-        } else if(provider === 'minimax') {
-            payload.ai_minimax_key   = $('#ai-minimax-key').value.trim();
-            payload.ai_minimax_model = $('#ai-minimax-model').value.trim() || 'MiniMax-M2';
-            payload.ai_openai_url    = 'https://api.minimaxi.chat/v1';
-        }
-        const r = await api('/settings', 'POST', payload);
-        if(r && r.error) showToast('Failed: ' + r.error, 'error');
-        else showToast('AI settings saved', 'success');
-        loadSettings();
     }
 
     // ── OpenClaw helpers ─────────────────────────────────────────

@@ -3,12 +3,14 @@ from flask import Blueprint, jsonify, request
 
 from .decorators import login_required
 from src.infrastructure.ai import get_ai_provider
+from src.infrastructure.ai.factory import _get_setting, _make_provider
 from src.infrastructure.database import get_connection
 from src.infrastructure.database.repositories import (
     HabitRepository, CheckinRepository, StatsRepository
 )
 from src.infrastructure.config import load_config
 from datetime import date
+import os
 
 ai_bp = Blueprint('ai', __name__, url_prefix='/api/ai')
 
@@ -16,6 +18,23 @@ habit_repo = HabitRepository()
 checkin_repo = CheckinRepository()
 stats_repo = StatsRepository()
 config = load_config()
+
+# Known provider names and the settings keys that indicate they are configured.
+_PROVIDER_CREDENTIAL_KEYS = {
+    'openai': 'ai_openai_key',
+    'anthropic': 'ai_anthropic_key',
+    'minimax': 'ai_minimax_key',
+    'ollama': 'ai_ollama_url',
+    'chatgpt_oauth': 'openai_oauth_token',
+}
+
+# Per-task setting keys (must match factory.py resolution order).
+_TASK_SETTING_KEYS = {
+    'food': 'ai_provider_food',
+    'insights': 'ai_provider_insights',
+    'reports': 'ai_provider_reports',
+    'default': 'ai_provider_default',
+}
 
 
 @ai_bp.route('/usage')
@@ -82,13 +101,68 @@ def ai_usage():
 @login_required
 def ai_status():
     """Check if AI provider is configured and available."""
-    import os
     provider_name = os.environ.get('LIFEHACK_AI_PROVIDER', 'none')
     provider = get_ai_provider()
     return jsonify({
         'provider': provider_name,
         'available': provider.is_available(),
         'provider_class': type(provider).__name__
+    })
+
+
+@ai_bp.route('/providers')
+@login_required
+def ai_providers():
+    """Return all configured providers and their per-task assignments.
+
+    Response shape:
+    {
+        "providers": {
+            "<name>": {"configured": bool, "available": bool},
+            ...
+        },
+        "assignments": {
+            "food": "<name>",
+            "insights": "<name>",
+            "reports": "<name>",
+            "default": "<name>"
+        }
+    }
+    """
+    providers_info = {}
+    for provider_name, cred_key in _PROVIDER_CREDENTIAL_KEYS.items():
+        configured = bool(_get_setting(cred_key))
+        if configured:
+            try:
+                instance = _make_provider(provider_name)
+                available = instance.is_available()
+            except Exception:
+                available = False
+            providers_info[provider_name] = {'configured': True, 'available': available}
+        else:
+            providers_info[provider_name] = {'configured': False}
+
+    # Build task assignments by replicating the factory resolution order.
+    env_fallback = os.environ.get('LIFEHACK_AI_PROVIDER', 'none')
+    default_provider = (
+        _get_setting('ai_provider_default')
+        or _get_setting('ai_provider')
+        or env_fallback
+    ).lower()
+
+    assignments = {}
+    for task, setting_key in _TASK_SETTING_KEYS.items():
+        if task == 'default':
+            assignments[task] = default_provider
+        else:
+            assignments[task] = (
+                _get_setting(setting_key)
+                or default_provider
+            ).lower()
+
+    return jsonify({
+        'providers': providers_info,
+        'assignments': assignments,
     })
 
 
@@ -102,7 +176,7 @@ def analyze_food():
     if not description:
         return jsonify({'error': 'Description required'}), 400
 
-    provider = get_ai_provider()
+    provider = get_ai_provider('food')
     if not provider.is_available():
         return jsonify({'error': 'AI not configured', 'estimated': False}), 200
 
@@ -129,7 +203,7 @@ def analyze_food():
 @login_required
 def generate_insight():
     """Generate a personalized AI insight based on current user state."""
-    provider = get_ai_provider()
+    provider = get_ai_provider('insights')
     if not provider.is_available():
         return jsonify({'error': 'AI not configured'}), 200
 

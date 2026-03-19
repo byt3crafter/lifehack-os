@@ -186,7 +186,7 @@ def upload_food_photo():
 
     try:
         from src.infrastructure.ai.factory import get_ai_provider
-        provider = get_ai_provider()
+        provider = get_ai_provider('food')
         if not provider.is_available():
             ai_error = 'AI provider not configured'
         else:
