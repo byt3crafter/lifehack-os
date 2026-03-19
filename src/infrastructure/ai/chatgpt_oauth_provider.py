@@ -184,7 +184,7 @@ class ChatGPTOAuthProvider(AIProvider):
         food_ref = description if description else "the food in the image"
         user_msg = (
             f'Estimate the nutritional content of: {food_ref}\n\n'
-            f'Return: {{"calories": number, "protein_g": number, "carbs_g": number, "fat_g": number, "description": "brief description"}}'
+            f'Return: {{"calories": number, "protein_g": number, "carbs_g": number, "fat_g": number, "description": "just the food name, e.g. Avocado toast with fried egg"}}'
         )
         # If only image provided with no description, ask user to describe
         response = self._call_codex(instructions, user_msg, action='food_analysis', image_base64=image_base64)
