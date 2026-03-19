@@ -4841,7 +4841,7 @@
         if(!_editPhaseData[phaseIdx]) return;
         _editPhaseData[phaseIdx].tasks.push({ id: null, name: '', verification_type: 'manual' });
         var ti = _editPhaseData[phaseIdx].tasks.length - 1;
-        var container = document.getElementById('eh-phase-tasks-' + phaseIdx);
+        var container = document.getElementById('eh-phase-tasks-' + phaseIdx) || document.getElementById('eh-simple-tasks');
         if(container) {
             var row = document.createElement('div');
             row.id = 'eh-task-' + phaseIdx + '-' + ti;
