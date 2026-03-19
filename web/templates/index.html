@@ -2147,27 +2147,25 @@
         return resp.json();
     }
 
+    let _pendingFoodImage = null; // Tracks uploaded image path between analyze and save
+
     async function saveFoodLog() {
         const desc = $('#nf-desc').value.trim();
         const fileInput = document.getElementById('food-photo');
         const hasPhoto = fileInput && fileInput.files && fileInput.files.length > 0;
 
-        // If photo selected, upload it first and auto-fill from AI response
-        let imagePath = null;
-        if(hasPhoto) {
+        // If photo selected AND not already uploaded, upload + analyze first
+        if(hasPhoto && !_pendingFoodImage) {
             const analyzingEl = document.getElementById('food-photo-analyzing');
             if(analyzingEl) analyzingEl.classList.remove('hidden');
             try {
                 const uploadResult = await uploadFoodPhoto();
                 if(analyzingEl) analyzingEl.classList.add('hidden');
                 if(uploadResult) {
-                    imagePath = uploadResult.image_path || null;
-                    // Show AI error if analysis failed but photo still uploaded
+                    _pendingFoodImage = uploadResult.image_path || null;
                     if(uploadResult.ai_error) {
-                        showToast('AI failed: ' + uploadResult.ai_error, 'error');
-                        // Still continue so user can fill in manually with photo attached
+                        showToast('AI failed: ' + uploadResult.ai_error + ' — fill in manually', 'error');
                     } else if(uploadResult.analysis) {
-                        // Auto-fill nutrition fields from AI analysis
                         const a = uploadResult.analysis;
                         if(a.calories   != null) { const el = $('#nf-cal');     if(el) el.value = Math.round(a.calories); }
                         if(a.protein_g  != null) { const el = $('#nf-protein'); if(el) el.value = Math.round(a.protein_g); }
@@ -2175,8 +2173,8 @@
                         if(a.fat_g      != null) { const el = $('#nf-fat');     if(el) el.value = Math.round(a.fat_g); }
                         if(a.description && !desc) { const el = $('#nf-desc'); if(el) el.value = a.description; }
                         var pName = uploadResult.provider ? (uploadResult.provider.name + (uploadResult.provider.model ? ' · ' + uploadResult.provider.model : '')) : 'AI';
-                        showToast('Analyzed by ' + pName + ' — review and confirm', 'info');
-                        return; // Let user review the auto-filled values before submitting
+                        showToast('Analyzed by ' + pName + ' — review and click Log meal again', 'info');
+                        return; // Let user review, second click will save
                     }
                 }
             } catch(e) {
@@ -2185,6 +2183,7 @@
             }
         }
 
+        // Second click (or no photo) — actually save
         const finalDesc = $('#nf-desc').value.trim();
         if(!finalDesc) return showToast('Describe what you ate','error');
 
@@ -2196,9 +2195,10 @@
             carbs_g:    +$('#nf-carbs').value   || null,
             fat_g:      +$('#nf-fat').value     || null
         };
-        if(imagePath) data.image_path = imagePath;
+        if(_pendingFoodImage) data.image_path = _pendingFoodImage;
 
         const r = await api('/food', 'POST', data);
+        _pendingFoodImage = null; // Reset for next use
         hideModal();
         if(r) showToast('Meal logged!', 'success');
         loadFood();
