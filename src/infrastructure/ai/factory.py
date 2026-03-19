@@ -27,7 +27,7 @@ def get_ai_provider() -> AIProvider:
     1. ``ai_provider`` row in app_settings (configurable from the UI).
     2. ``LIFEHACK_AI_PROVIDER`` environment variable (legacy / Docker fallback).
 
-    Options: none (default), ollama, openai, anthropic
+    Options: none (default), ollama, openai, anthropic, chatgpt_oauth, minimax
     """
     provider = (
         _get_setting('ai_provider')
@@ -43,5 +43,11 @@ def get_ai_provider() -> AIProvider:
     elif provider == 'anthropic':
         from .anthropic_provider import AnthropicProvider
         return AnthropicProvider()
+    elif provider == 'chatgpt_oauth':
+        from .chatgpt_oauth_provider import ChatGPTOAuthProvider
+        return ChatGPTOAuthProvider()
+    elif provider == 'minimax':
+        from .minimax_provider import MiniMaxProvider
+        return MiniMaxProvider()
     else:
         return NullAIProvider()
