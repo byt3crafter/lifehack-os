@@ -1,5 +1,5 @@
 """Habits routes — supports simple habits, strength meter, phases, miss tracking,
-habit stacks, and template-based habit creation."""
+habit stacks, template-based habit creation, and smart micro-task verification."""
 import json
 from datetime import date, datetime, timedelta
 from flask import Blueprint, jsonify, request
@@ -10,6 +10,8 @@ from src.domain.services import (
     calculate_strength_change,
     get_strength_label,
     should_unlock_next_phase,
+    verify_phase_tasks,
+    are_all_tasks_complete,
 )
 from src.infrastructure.database import get_connection
 from src.infrastructure.database.repositories import HabitRepository, StatsRepository
@@ -150,11 +152,22 @@ def _get_phases_with_tasks(conn, habit_id: int) -> list:
                     "name": t["name"],
                     "description": t["description"],
                     "sort_order": t["sort_order"],
+                    "verification_rule": _safe_parse_rule(t.get("verification_rule")),
                 }
                 for t in task_rows
             ],
         })
     return phases
+
+
+def _safe_parse_rule(raw) -> dict:
+    """Safely parse a verification_rule JSON string into a dict."""
+    if isinstance(raw, dict):
+        return raw
+    try:
+        return json.loads(raw or '{"type": "manual"}')
+    except (json.JSONDecodeError, TypeError):
+        return {"type": "manual"}
 
 
 def _apply_daily_decay(conn) -> None:
@@ -217,14 +230,10 @@ def get_habits():
             (h.id,),
         ).fetchone()
 
-        # Micro-tasks for the current phase
+        # Micro-tasks for the current phase with live verification status
         micro_tasks = []
         if current_phase:
-            task_rows = conn.execute(
-                "SELECT name FROM habit_micro_tasks WHERE phase_id = ? ORDER BY sort_order",
-                (current_phase['id'],)
-            ).fetchall()
-            micro_tasks = [{'name': t['name'], 'completed': False} for t in task_rows]
+            micro_tasks = verify_phase_tasks(current_phase['id'], conn)
 
         total_phases = phase_counts['total'] or 0
         done_phases = phase_counts['done'] or 0
@@ -277,12 +286,32 @@ def create_habit():
 @habits_bp.route('/<int:habit_id>/complete', methods=['POST'])
 @login_required
 def complete_habit(habit_id):
-    """Complete a habit, update strength, and check phase unlock."""
+    """Complete a habit, update strength, and check phase unlock.
+
+    If the habit has an active phase with micro-tasks, all tasks must be
+    verified before the habit can be marked complete.
+    """
     habit = habit_repo.get_by_id(habit_id)
     if not habit:
         return jsonify({'error': 'Not found'}), 404
 
     conn = get_connection()
+
+    # Gate completion behind micro-task verification when phases exist
+    current_phase = _get_current_phase(conn, habit_id)
+    if current_phase:
+        phase_id = current_phase['id']
+        task_count = conn.execute(
+            "SELECT COUNT(*) FROM habit_micro_tasks WHERE phase_id = ?", (phase_id,)
+        ).fetchone()[0]
+        if task_count > 0 and not are_all_tasks_complete(phase_id, conn):
+            tasks = verify_phase_tasks(phase_id, conn)
+            pending = [t['name'] for t in tasks if not t['verified']]
+            return jsonify({
+                'error': 'Not all micro-tasks are complete',
+                'pending_tasks': pending,
+            }), 400
+
     streak = habit_repo.get_streak(habit_id)
     points = habit.calculate_points(
         streak,
@@ -541,17 +570,24 @@ def add_habit_phase(habit_id):
     )
     phase_id = cursor.lastrowid
 
-    # Insert micro-tasks if provided
+    # Insert micro-tasks if provided (accepts both plain strings and dicts)
     micro_tasks = data.get('micro_tasks', [])
-    for i, task_name in enumerate(micro_tasks):
-        if isinstance(task_name, str):
-            task_name = task_name.strip()
-            if task_name:
-                conn.execute(
-                    """INSERT INTO habit_micro_tasks (phase_id, name, sort_order)
-                       VALUES (?, ?, ?)""",
-                    (phase_id, task_name, i),
-                )
+    for i, task_def in enumerate(micro_tasks):
+        if isinstance(task_def, str):
+            task_name = task_def.strip()
+            verification_rule = json.dumps({"type": "manual"})
+        elif isinstance(task_def, dict):
+            task_name = (task_def.get('name') or '').strip()
+            vr = task_def.get('verification_rule', {"type": "manual"})
+            verification_rule = json.dumps(vr) if isinstance(vr, dict) else vr
+        else:
+            continue
+        if task_name:
+            conn.execute(
+                """INSERT INTO habit_micro_tasks (phase_id, name, sort_order, verification_rule)
+                   VALUES (?, ?, ?, ?)""",
+                (phase_id, task_name, i, verification_rule),
+            )
 
     conn.commit()
     return jsonify({'success': True, 'phase_id': phase_id, 'phase_number': next_num}), 201
@@ -642,12 +678,21 @@ def start_from_template(template_id):
         )
         phase_id = cursor.lastrowid
 
-        for j, task_name in enumerate(phase_def.get('micro_tasks', [])):
-            if task_name and task_name.strip():
+        for j, task_def in enumerate(phase_def.get('micro_tasks', [])):
+            if isinstance(task_def, str):
+                task_name = task_def.strip()
+                verification_rule = json.dumps({"type": "manual"})
+            elif isinstance(task_def, dict):
+                task_name = (task_def.get('name') or '').strip()
+                vr = task_def.get('verification_rule', {"type": "manual"})
+                verification_rule = json.dumps(vr) if isinstance(vr, dict) else vr
+            else:
+                continue
+            if task_name:
                 conn.execute(
-                    """INSERT INTO habit_micro_tasks (phase_id, name, sort_order)
-                       VALUES (?, ?, ?)""",
-                    (phase_id, task_name.strip(), j),
+                    """INSERT INTO habit_micro_tasks (phase_id, name, sort_order, verification_rule)
+                       VALUES (?, ?, ?, ?)""",
+                    (phase_id, task_name, j, verification_rule),
                 )
 
     conn.commit()
@@ -776,6 +821,215 @@ def get_strength_history(habit_id):
         'strength_label': get_strength_label(current_strength),
         'history': history,
     })
+
+
+@habits_bp.route('/<int:habit_id>/verify-tasks')
+@login_required
+def verify_tasks(habit_id):
+    """Return current-phase micro-tasks with live verification status for today."""
+    habit = habit_repo.get_by_id(habit_id)
+    if not habit:
+        return jsonify({'error': 'Not found'}), 404
+
+    conn = get_connection()
+    current_phase = _get_current_phase(conn, habit_id)
+    if not current_phase:
+        return jsonify({
+            'habit_id': habit_id,
+            'has_phases': False,
+            'tasks': [],
+            'all_complete': True,
+        })
+
+    phase_id = current_phase['id']
+    target_date = request.args.get('date', date.today().isoformat())
+    tasks = verify_phase_tasks(phase_id, conn, target_date)
+    all_complete = all(t['verified'] for t in tasks) if tasks else True
+
+    return jsonify({
+        'habit_id': habit_id,
+        'has_phases': True,
+        'phase_id': phase_id,
+        'phase_name': current_phase['name'],
+        'phase_number': current_phase['phase_number'],
+        'target_date': target_date,
+        'tasks': tasks,
+        'all_complete': all_complete,
+    })
+
+
+@habits_bp.route('/micro-tasks/<int:task_id>/toggle', methods=['POST'])
+@login_required
+def toggle_micro_task(task_id):
+    """Toggle manual completion for a micro-task for today.
+
+    Auto-verified tasks are rejected with 400 — they cannot be manually toggled.
+    """
+    conn = get_connection()
+    task_row = conn.execute(
+        "SELECT id, name, verification_rule FROM habit_micro_tasks WHERE id = ?",
+        (task_id,),
+    ).fetchone()
+    if not task_row:
+        return jsonify({'error': 'Micro-task not found'}), 404
+
+    rule = _safe_parse_rule(task_row['verification_rule'])
+    if rule.get('type') == 'auto':
+        return jsonify({
+            'error': 'Auto-verified tasks cannot be manually toggled',
+            'check': rule.get('check'),
+        }), 400
+
+    data = request.get_json(silent=True) or {}
+    target_date = data.get('date', date.today().isoformat())
+
+    # Check current state
+    existing = conn.execute(
+        "SELECT id FROM micro_task_completions WHERE micro_task_id = ? AND date = ?",
+        (task_id, target_date),
+    ).fetchone()
+
+    if existing:
+        # Un-tick: remove the completion
+        conn.execute(
+            "DELETE FROM micro_task_completions WHERE micro_task_id = ? AND date = ?",
+            (task_id, target_date),
+        )
+        conn.commit()
+        return jsonify({'success': True, 'verified': False, 'task_id': task_id, 'date': target_date})
+    else:
+        # Tick: insert completion
+        conn.execute(
+            """INSERT OR IGNORE INTO micro_task_completions
+               (micro_task_id, date, verified_by, verified_at)
+               VALUES (?, ?, 'manual', ?)""",
+            (task_id, target_date, datetime.now().isoformat()),
+        )
+        conn.commit()
+        return jsonify({'success': True, 'verified': True, 'task_id': task_id, 'date': target_date})
+
+
+@habits_bp.route('/generate', methods=['POST'])
+@login_required
+def generate_habit_plan():
+    """Use AI to generate a habit plan from a natural-language goal description."""
+    data = request.get_json(silent=True) or {}
+    goal = (data.get('goal') or '').strip()
+    if not goal:
+        return jsonify({'error': 'goal is required'}), 400
+
+    from src.infrastructure.ai import get_ai_provider
+    provider = get_ai_provider('default')
+
+    if not provider.is_available():
+        return jsonify({'error': 'No AI provider configured'}), 503
+
+    plan = provider.generate_habit_plan(goal)
+    if not plan:
+        return jsonify({'error': 'AI failed to generate a habit plan'}), 502
+
+    # Serialise the dataclass to a plain dict for the response
+    return jsonify({
+        'success': True,
+        'plan': {
+            'name': plan.name,
+            'description': plan.description,
+            'category': plan.category,
+            'difficulty': plan.difficulty,
+            'duration_weeks': plan.duration_weeks,
+            'phases': [
+                {
+                    'phase': p.phase,
+                    'name': p.name,
+                    'description': p.description,
+                    'days': p.days,
+                    'micro_tasks': p.micro_tasks,
+                }
+                for p in plan.phases
+            ],
+        },
+    })
+
+
+@habits_bp.route('/create-from-plan', methods=['POST'])
+@login_required
+def create_from_plan():
+    """Create a habit with phases and micro-tasks from an AI-generated (or edited) plan."""
+    data = request.get_json(silent=True) or {}
+    plan = data.get('plan', {})
+
+    habit_name = (plan.get('name') or data.get('name') or '').strip()
+    if not habit_name:
+        return jsonify({'error': 'plan.name is required'}), 400
+
+    phases_data = plan.get('phases', [])
+    if not isinstance(phases_data, list):
+        return jsonify({'error': 'plan.phases must be an array'}), 400
+
+    conn = get_connection()
+
+    # Create the habit
+    habit = Habit(
+        name=habit_name,
+        category=plan.get('category', 'health'),
+        frequency=Frequency.DAILY,
+        difficulty=1,
+        points=config.scoring.base_habit_points,
+    )
+    habit = habit_repo.create(habit)
+
+    # Seed strength row
+    conn.execute(
+        "INSERT OR IGNORE INTO habit_strength (habit_id) VALUES (?)", (habit.id,)
+    )
+
+    # Create phases and micro-tasks
+    for i, phase_def in enumerate(phases_data):
+        if not isinstance(phase_def, dict):
+            continue
+        is_current = 1 if i == 0 else 0
+        cursor = conn.execute(
+            """INSERT INTO habit_phases
+                   (habit_id, phase_number, name, description,
+                    unlock_after_days, is_current)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (
+                habit.id,
+                phase_def.get('phase', i + 1),
+                (phase_def.get('name') or f'Phase {i + 1}').strip(),
+                (phase_def.get('description') or '').strip(),
+                int(phase_def.get('days', 14) or 14),
+                is_current,
+            ),
+        )
+        phase_id = cursor.lastrowid
+
+        for j, task_def in enumerate(phase_def.get('micro_tasks', [])):
+            if isinstance(task_def, str):
+                task_name = task_def.strip()
+                verification_rule = json.dumps({"type": "manual"})
+            elif isinstance(task_def, dict):
+                task_name = (task_def.get('name') or '').strip()
+                vr = task_def.get('verification_rule', {"type": "manual"})
+                verification_rule = json.dumps(vr) if isinstance(vr, dict) else (vr or '{"type":"manual"}')
+            else:
+                continue
+            if task_name:
+                conn.execute(
+                    """INSERT INTO habit_micro_tasks
+                           (phase_id, name, sort_order, verification_rule)
+                       VALUES (?, ?, ?, ?)""",
+                    (phase_id, task_name, j, verification_rule),
+                )
+
+    conn.commit()
+
+    return jsonify({
+        'success': True,
+        'habit_id': habit.id,
+        'name': habit.name,
+        'phases_created': len(phases_data),
+    }), 201
 
 
 @habits_bp.route('/daily-decay', methods=['POST'])

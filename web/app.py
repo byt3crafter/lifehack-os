@@ -18,7 +18,7 @@ load_dotenv(Path(__file__).parent.parent / '.env')
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.infrastructure.database import init_database, get_connection, seed_habit_templates
+from src.infrastructure.database import init_database, get_connection, seed_habit_templates, reseed_habit_templates
 from src.infrastructure.config import load_config
 from src.infrastructure.database.repositories import ReplacementRepository
 from src.infrastructure.plugins import register_builtin_plugins
@@ -46,8 +46,10 @@ def create_app():
     init_database()
     config = load_config()
 
-    # Seed built-in habit templates if the table is empty
+    # Seed built-in habit templates if the table is empty, then update
+    # existing system templates with new verification rules
     seed_habit_templates()
+    reseed_habit_templates()
 
     # Register built-in plugins into the singleton registry
     register_builtin_plugins()

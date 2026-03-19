@@ -7,7 +7,10 @@ from typing import Optional
 
 import requests
 
-from .base import AIProvider, FoodAnalysis, FoodIdentification, Insight, log_ai_usage
+from .base import (
+    AIProvider, FoodAnalysis, FoodIdentification, Insight, HabitPlan,
+    AVAILABLE_AUTO_CHECKS, parse_habit_plan, log_ai_usage,
+)
 
 
 class OllamaProvider(AIProvider):
@@ -183,6 +186,50 @@ Mood trend: {weekly_data.get('mood_trend', 'stable')}
 Be encouraging but honest. No fluff."""
 
         return self._generate(prompt, action='weekly_report').strip()
+
+    def generate_habit_plan(self, goal: str) -> Optional[HabitPlan]:
+        """Generate a structured habit plan from a natural-language goal."""
+        import json as _json
+        checks_summary = _json.dumps(
+            [{'check': c['check'], 'description': c['description']} for c in AVAILABLE_AUTO_CHECKS],
+            indent=2,
+        )
+        prompt = f"""You are a habit design expert. Return ONLY valid JSON, no other text.
+
+Create a structured habit plan for this goal: "{goal}"
+
+Available auto-verification checks (use these in verification_rule when applicable):
+{checks_summary}
+
+Return this exact JSON structure:
+{{
+  "name": "habit name (short)",
+  "description": "brief description",
+  "category": "health|fitness|mindset|learning|sobriety|productivity",
+  "difficulty": "beginner|intermediate|advanced",
+  "duration_weeks": 8,
+  "phases": [
+    {{
+      "phase": 1,
+      "name": "Phase name",
+      "description": "what to do in this phase",
+      "days": 14,
+      "micro_tasks": [
+        {{"name": "task name", "verification_rule": {{"type": "auto", "check": "food_log_count", "operator": ">=", "value": 2}}}},
+        {{"name": "manual task", "verification_rule": {{"type": "manual"}}}}
+      ]
+    }}
+  ]
+}}"""
+
+        response = self._generate(prompt, action='generate_habit_plan')
+        if not response:
+            return None
+        try:
+            raw = self._parse_json(response)
+            return parse_habit_plan(raw)
+        except Exception:
+            return None
 
     def is_available(self) -> bool:
         try:

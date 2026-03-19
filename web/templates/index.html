@@ -550,6 +550,155 @@
         #module-toggles-optional .card {
             margin-bottom: 0;
         }
+
+        /* ── Micro-task verification types ───────────── */
+        .micro-task-auto {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            padding: 0.3125rem 0;
+        }
+        .micro-task-auto-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+        }
+        .micro-task-lock {
+            width: 13px;
+            height: 13px;
+            flex-shrink: 0;
+            opacity: 0.5;
+        }
+        .micro-task-progress-bar {
+            height: 3px;
+            border-radius: 2px;
+            background: #242428;
+            overflow: hidden;
+            margin-top: 0.1875rem;
+            margin-left: 1.5625rem;
+        }
+        .micro-task-progress-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+        }
+        .vtype-badge {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.5625rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            padding: 0.0625rem 0.3125rem;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+        .vtype-auto {
+            background: rgba(79,128,255,0.15);
+            color: #6b96ff;
+        }
+        .vtype-manual {
+            background: rgba(34,197,94,0.12);
+            color: #4ade80;
+        }
+
+        /* ── Complete button gated state ─────────────── */
+        .complete-btn-gated {
+            opacity: 0.45;
+            cursor: not-allowed !important;
+        }
+        .complete-btn-gated:hover {
+            background: inherit !important;
+        }
+
+        /* ── Task summary pill ───────────────────────── */
+        .task-summary-pill {
+            font-size: 0.6875rem;
+            font-weight: 500;
+            color: #9898a6;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid #2a2a2e;
+            border-radius: 100px;
+            padding: 0.125rem 0.5rem;
+            white-space: nowrap;
+        }
+        .task-summary-pill.all-done {
+            color: #4ade80;
+            background: rgba(34,197,94,0.08);
+            border-color: rgba(34,197,94,0.2);
+        }
+
+        /* ── AI Generate modal tabs ──────────────────── */
+        .modal-tab-btn {
+            flex: 1;
+            padding: 0.4375rem 0.875rem;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background 0.12s, color 0.12s, border-color 0.12s;
+            background: transparent;
+            color: #9898a6;
+        }
+        .modal-tab-btn.active {
+            background: rgba(79,128,255,0.15);
+            color: #f0f0f2;
+            border-color: rgba(79,128,255,0.3);
+        }
+        .modal-tab-panel { display: none; }
+        .modal-tab-panel.active { display: block; }
+
+        /* ── AI plan card ────────────────────────────── */
+        .ai-plan-card {
+            background: #141416;
+            border: 1px solid #2a2a2e;
+            border-radius: 10px;
+            padding: 0.75rem;
+        }
+        .ai-plan-card:not(:last-child) {
+            margin-bottom: 0.5rem;
+        }
+
+        /* ── Difficulty chip selector ────────────────── */
+        .diff-chip {
+            flex: 1;
+            padding: 0.375rem 0.5rem;
+            border-radius: 8px;
+            border: 1px solid #2a2a2e;
+            background: #141416;
+            color: #9898a6;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s, color 0.15s;
+            font-family: inherit;
+            text-align: center;
+        }
+        .diff-chip.selected {
+            border-color: rgba(79,128,255,0.5);
+            background: rgba(79,128,255,0.12);
+            color: #f0f0f2;
+        }
+
+        /* ── Phase editor rows ───────────────────────── */
+        .phase-edit-row {
+            padding: 0.625rem;
+            border-radius: 8px;
+            border: 1px solid #2a2a2e;
+            background: #141416;
+        }
+        .phase-edit-row:not(:last-child) {
+            margin-bottom: 0.375rem;
+        }
+        .micro-edit-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0;
+        }
     </style>
 </head>
 <body class="min-h-screen overflow-x-hidden" style="color:#f0f0f2;">
@@ -1801,9 +1950,9 @@
     function _switchView(v) {
         $$('.view').forEach(x => x.classList.add('hidden'));
         $$('.nav-btn').forEach(x => x.classList.remove('active'));
-        const el = $(`#v-${v}`);
+        const el = document.querySelector('#v-' + v);
         if(el) el.classList.remove('hidden');
-        $$(`[data-v="${v}"]`).forEach(x => x.classList.add('active'));
+        document.querySelectorAll('[data-v="' + v + '"]').forEach(x => x.classList.add('active'));
         load(v);
     }
 
@@ -4073,16 +4222,22 @@
         return 'linear-gradient(90deg,#4ade80,#86efac)';
     }
 
+    async function toggleMicroTask(taskId) {
+        var r = await api('/habits/micro-tasks/' + taskId + '/toggle', 'POST', {});
+        if(r) loadHabits();
+    }
+
     async function loadHabits() {
-        const h = await api('/habits');
+        var h = await api('/habits');
         if(!h) return;
+
         // Update subtitle
-        const done = h.filter(x=>x.completed).length;
-        const sub = $('#habits-subtitle');
+        var done = h.filter(function(x) { return x.completed; }).length;
+        var sub = document.querySelector('#habits-subtitle');
         if(sub) sub.textContent = h.length ? (done + ' of ' + h.length + ' completed today') : 'No habits yet';
 
         if(!h.length) {
-            $('#habits-list').innerHTML = '<div class="empty-state"><p>No habits yet. Add your first habit to get started.</p></div>';
+            document.querySelector('#habits-list').innerHTML = '<div class="empty-state"><p>No habits yet. Add your first habit to get started.</p></div>';
             return;
         }
 
@@ -4115,17 +4270,52 @@
                     + '</div>';
             }
 
-            // Micro-tasks
+            // Micro-tasks — smart rendering: auto vs manual
             var microHtml = '';
+            var tasksTotal = 0;
+            var tasksVerified = 0;
             if(x.micro_tasks && x.micro_tasks.length) {
-                microHtml = '<div class="mt-2 space-y-0.5">';
+                tasksTotal = x.micro_tasks.length;
+                microHtml = '<div class="mt-2 space-y-1">';
                 for(var m = 0; m < x.micro_tasks.length; m++) {
                     var mt = x.micro_tasks[m];
-                    var doneClass = mt.completed ? ' done' : '';
-                    microHtml += '<label class="micro-task' + doneClass + '">'
-                        + '<input type="checkbox"' + (mt.completed ? ' checked' : '') + ' onclick="event.stopPropagation();">'
-                        + '<span>' + mt.name + '</span>'
-                        + '</label>';
+                    var isAuto = mt.verification_type === 'auto';
+                    var isVerified = mt.verified || mt.completed;
+                    if(isVerified) tasksVerified++;
+
+                    if(isAuto) {
+                        // Auto-verified task: lock icon + progress text + progress bar
+                        var cur = mt.current_value !== undefined ? mt.current_value : null;
+                        var tgt = mt.target_value !== undefined ? mt.target_value : null;
+                        var msg = mt.message || mt.name;
+                        var autoPct = (cur !== null && tgt && tgt > 0) ? Math.min(100, Math.round((cur / tgt) * 100)) : (isVerified ? 100 : 0);
+                        var autoColor = isVerified ? '#22c55e' : '#9898a6';
+                        var barColor = isVerified ? '#22c55e' : '#4f80ff';
+
+                        microHtml += '<div class="micro-task-auto">'
+                            + '<div class="micro-task-auto-row">'
+                            + '<svg class="micro-task-lock" fill="none" stroke="' + autoColor + '" viewBox="0 0 20 20" stroke-width="1.8"><rect x="5" y="9" width="10" height="8" rx="1.5"/><path stroke-linecap="round" d="M7 9V6.5a3 3 0 016 0V9"/></svg>'
+                            + '<span class="flex-1 text-xs" style="color:' + autoColor + ';">' + msg + '</span>'
+                            + '<span class="vtype-badge vtype-auto">auto</span>'
+                            + '</div>';
+
+                        if(cur !== null && tgt !== null) {
+                            microHtml += '<div class="micro-task-progress-bar">'
+                                + '<div class="micro-task-progress-fill" style="width:' + autoPct + '%;background:' + barColor + ';"></div>'
+                                + '</div>';
+                        }
+                        microHtml += '</div>';
+
+                    } else {
+                        // Manual task: clickable checkbox
+                        var manualColor = isVerified ? '#22c55e' : '#9898a6';
+                        var strikeStyle = isVerified ? 'text-decoration:line-through;' : '';
+                        microHtml += '<label class="micro-task' + (isVerified ? ' done' : '') + '" onclick="event.stopPropagation(); toggleMicroTask(' + mt.id + ');" style="cursor:pointer;">'
+                            + '<input type="checkbox"' + (isVerified ? ' checked' : '') + ' onclick="event.preventDefault();" style="pointer-events:none;">'
+                            + '<span style="color:' + manualColor + ';' + strikeStyle + 'flex:1;">' + mt.name + '</span>'
+                            + '<span class="vtype-badge vtype-manual">manual</span>'
+                            + '</label>';
+                    }
                 }
                 microHtml += '</div>';
             }
@@ -4136,13 +4326,35 @@
                 stackHtml = '<div class="mt-1.5 text-xs" style="color:#5c5c6b;">Stack: ' + x.stack_trigger + '</div>';
             }
 
+            // Task summary + Complete button gating
+            var allTasksDone = (tasksTotal === 0) || (tasksVerified >= tasksTotal);
+            var taskSummaryHtml = '';
+            if(tasksTotal > 0 && !x.completed) {
+                var pillClass = allTasksDone ? 'task-summary-pill all-done' : 'task-summary-pill';
+                taskSummaryHtml = '<span class="' + pillClass + '">' + tasksVerified + ' of ' + tasksTotal + ' done</span>';
+            }
+
+            // Complete button — gated when not all tasks verified
+            var completeBtnGated = !x.completed && !allTasksDone;
+            var completeBtnTitle = completeBtnGated ? ('Complete ' + tasksVerified + ' of ' + tasksTotal + ' tasks to unlock') : (x.completed ? 'Undo completion' : 'Mark complete');
+            var completeBtnClass = 'flex-shrink-0 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-colors'
+                + (completeBtnGated ? ' complete-btn-gated' : '');
+            var completeBtnStyle = 'background:' + (x.completed ? 'rgba(34,197,94,0.1)' : (completeBtnGated ? 'rgba(255,255,255,0.04)' : 'rgba(79,128,255,0.1)'))
+                + ';color:' + (x.completed ? '#22c55e' : (completeBtnGated ? '#5c5c6b' : '#4f80ff'))
+                + ';border:1px solid ' + (x.completed ? 'rgba(34,197,94,0.25)' : (completeBtnGated ? '#2a2a2e' : 'rgba(79,128,255,0.25)'))
+                + ';white-space:nowrap;';
+            var completeBtnClick = completeBtnGated
+                ? 'event.stopPropagation(); showToast("Complete all tasks first","warning");'
+                : 'event.stopPropagation(); toggleH(' + x.id + ',' + (!x.completed) + ');';
+
             // Action buttons row
             var actHtml = '<div class="flex items-center justify-between mt-2.5 pt-2.5" style="border-top:1px solid #2a2a2e;">'
-                + '<div class="flex items-center gap-1">';
+                + '<div class="flex items-center gap-1.5">';
             if(x.streak && x.streak > 0) {
                 actHtml += '<span class="font-mono text-xs font-semibold" style="color:#f97316;">' + x.streak + '\uD83D\uDD25</span>';
             }
-            actHtml += '<span class="font-mono text-xs font-semibold ml-1" style="color:#eab308;">+' + x.points + ' XP</span>';
+            actHtml += '<span class="font-mono text-xs font-semibold" style="color:#eab308;">+' + x.points + ' XP</span>';
+            if(taskSummaryHtml) actHtml += taskSummaryHtml;
             actHtml += '</div>';
             actHtml += '<div class="flex items-center gap-0.5">';
             if(!x.completed) {
@@ -4159,17 +4371,22 @@
             var cardBg = x.completed ? 'rgba(34,197,94,0.05)' : '#1c1c20';
             var cardBorder = x.completed ? 'rgba(34,197,94,0.18)' : '#2a2a2e';
 
+            // Left check button (small, quick-tap)
+            var checkBtnStyle = 'border:2px solid ' + (x.completed ? '#22c55e' : '#444449') + ';background:' + (x.completed ? '#22c55e' : 'transparent') + ';';
+            var checkBtnClick = x.completed
+                ? 'event.stopPropagation(); toggleH(' + x.id + ', false);'
+                : (completeBtnGated ? 'event.stopPropagation(); showToast("Complete all tasks first","warning");' : 'event.stopPropagation(); toggleH(' + x.id + ', true);');
+
             html += '<div class="rounded-xl p-3 habit-row" data-id="' + x.id + '" style="background:' + cardBg + ';border:1px solid ' + cardBorder + ';">'
-                // Top row: color bar + check + name + complete btn
                 + '<div class="flex items-start gap-2.5">'
                 + '<div class="w-1 rounded-full flex-shrink-0 mt-0.5" style="background:' + catColor + ';height:1.25rem;"></div>'
-                // check button
-                + '<button onclick="toggleH(' + x.id + ',' + (!x.completed) + ')" title="' + (x.completed ? 'Undo' : 'Complete') + '"'
-                + ' class="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 transition-all mt-0.5 cursor-pointer"'
-                + ' style="border:2px solid ' + (x.completed ? '#22c55e' : '#444449') + ';background:' + (x.completed ? '#22c55e' : 'transparent') + ';">'
+                // small check button
+                + '<button onclick="' + checkBtnClick + '" title="' + (x.completed ? 'Undo' : 'Complete') + '"'
+                + ' class="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 transition-all mt-0.5"'
+                + ' style="' + checkBtnStyle + (completeBtnGated && !x.completed ? 'cursor:not-allowed;opacity:0.4;' : 'cursor:pointer;') + '">'
                 + (x.completed ? '<svg class="w-3 h-3" fill="none" stroke="white" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' : '')
                 + '</button>'
-                // name + category
+                // name + meta
                 + '<div class="flex-1 min-w-0">'
                 + '<button onclick="openHabitDetail(' + x.id + ')" class="text-sm font-medium text-left w-full truncate hover:underline" style="color:' + (x.completed ? '#5c5c6b' : '#f0f0f2') + ';text-decoration:' + (x.completed ? 'line-through' : 'none') + ';background:none;border:none;cursor:pointer;font-family:inherit;">' + x.name + '</button>'
                 + '<span class="text-xs" style="color:' + catColor + ';">' + x.category_name + '</span>'
@@ -4178,85 +4395,201 @@
                 + microHtml
                 + stackHtml
                 + '</div>'
-                // complete button (right)
-                + '<button onclick="toggleH(' + x.id + ',' + (!x.completed) + ')" class="flex-shrink-0 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-colors" style="background:' + (x.completed ? 'rgba(34,197,94,0.1)' : 'rgba(79,128,255,0.1)') + ';color:' + (x.completed ? '#22c55e' : '#4f80ff') + ';border:1px solid ' + (x.completed ? 'rgba(34,197,94,0.25)' : 'rgba(79,128,255,0.25)') + ';white-space:nowrap;">'
+                // complete button (right, gated)
+                + '<button onclick="' + completeBtnClick + '" class="' + completeBtnClass + '" style="' + completeBtnStyle + '" title="' + completeBtnTitle + '">'
                 + (x.completed ? '\u2713 Done' : '\u2713 Complete')
                 + '</button>'
                 + '</div>'
-                // actions row
                 + actHtml
                 + '</div>';
         }
 
-        $('#habits-list').innerHTML = html;
+        document.querySelector('#habits-list').innerHTML = html;
     }
     
-    function editHabitModal(id, name, category, difficulty) {
-        showModal('Edit Habit', `
-            <div class="space-y-3">
-                <div>
-                    <label class="field-label">Habit name</label>
-                    <input id="eh-name" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="${name}">
-                </div>
-                <div>
-                    <label class="field-label">Category</label>
-                    <select id="eh-cat" class="w-full px-3 py-2.5 rounded-lg border text-sm">
-                        <option value="health" ${category==='health'?'selected':''}>Health</option>
-                        <option value="productivity" ${category==='productivity'?'selected':''}>Productivity</option>
-                        <option value="mindset" ${category==='mindset'?'selected':''}>Mindset</option>
-                        <option value="sobriety" ${category==='sobriety'?'selected':''}>Sobriety</option>
-                    </select>
-                </div>
-                <div>
-                    <div class="flex items-center justify-between mb-2">
-                        <label class="field-label" style="margin:0;">Difficulty</label>
-                        <span id="eh-diff-v" class="font-mono text-sm font-semibold" style="color:#4f80ff;">${difficulty}</span>
-                    </div>
-                    <input type="range" id="eh-diff" min="1" max="5" value="${difficulty}" oninput="$('#eh-diff-v').textContent=this.value">
-                </div>
-                <div class="flex gap-2 pt-1">
-                    <button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>
-                    <button onclick="saveHabitEdit(${id})" class="btn-primary flex-1 py-2.5">Save changes</button>
-                </div>
-            </div>
-        `);
+    // Track editable micro-tasks per phase for the edit modal
+    var _editPhaseData = [];
+
+    async function editHabitModal(id, name, category, difficulty) {
+        // Fetch full detail to get phases + micro-tasks
+        var detail = await api('/habits/' + id + '/detail');
+        _editPhaseData = [];
+
+        // Build category options
+        var catKeys = Object.keys(cats && Object.keys(cats).length ? cats : {health:'', productivity:'', mindset:'', sobriety:''});
+        var catOpts = '';
+        var catList = ['health', 'productivity', 'mindset', 'sobriety'];
+        for(var ci = 0; ci < catList.length; ci++) {
+            var c = catList[ci];
+            catOpts += '<option value="' + c + '"' + (category === c ? ' selected' : '') + '>' + c.charAt(0).toUpperCase() + c.slice(1) + '</option>';
+        }
+
+        // Build phase editor if habit has phases
+        var phaseEditorHtml = '';
+        if(detail && detail.phases && detail.phases.length) {
+            // Seed _editPhaseData with current phase+task info
+            for(var pi = 0; pi < detail.phases.length; pi++) {
+                var ph = detail.phases[pi];
+                var phaseTasks = [];
+                if(ph.micro_tasks) {
+                    for(var ti = 0; ti < ph.micro_tasks.length; ti++) {
+                        phaseTasks.push({
+                            id: ph.micro_tasks[ti].id,
+                            name: ph.micro_tasks[ti].name,
+                            verification_type: ph.micro_tasks[ti].verification_type || 'manual'
+                        });
+                    }
+                }
+                _editPhaseData.push({ id: ph.id, name: ph.name, description: ph.description || '', tasks: phaseTasks });
+            }
+
+            phaseEditorHtml = '<div class="mt-4">'
+                + '<div class="text-xs font-semibold mb-2" style="color:#5c5c6b;letter-spacing:0.06em;text-transform:uppercase;">Phases</div>'
+                + '<div id="eh-phases" class="space-y-2">';
+
+            for(var pi2 = 0; pi2 < _editPhaseData.length; pi2++) {
+                phaseEditorHtml += buildPhaseEditCard(pi2);
+            }
+            phaseEditorHtml += '</div></div>';
+        }
+
+        var bodyHtml = '<div class="space-y-3">'
+            + '<div>'
+            + '<label class="field-label">Habit name</label>'
+            + '<input id="eh-name" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="' + name.replace(/"/g, '&quot;') + '">'
+            + '</div>'
+            + '<div>'
+            + '<label class="field-label">Category</label>'
+            + '<select id="eh-cat" class="w-full px-3 py-2.5 rounded-lg border text-sm">' + catOpts + '</select>'
+            + '</div>'
+            + '<div>'
+            + '<div class="flex items-center justify-between mb-2">'
+            + '<label class="field-label" style="margin:0;">Difficulty</label>'
+            + '<span id="eh-diff-v" class="font-mono text-sm font-semibold" style="color:#4f80ff;">' + difficulty + '</span>'
+            + '</div>'
+            + '<input type="range" id="eh-diff" min="1" max="5" value="' + difficulty + '" oninput="document.getElementById(\'eh-diff-v\').textContent=this.value;">'
+            + '</div>'
+            + phaseEditorHtml
+            + '<div class="flex gap-2 pt-1">'
+            + '<button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>'
+            + '<button onclick="saveHabitEdit(' + id + ')" class="btn-primary flex-1 py-2.5">Save changes</button>'
+            + '</div>'
+            + '</div>';
+
+        showModal('Edit Habit', bodyHtml);
     }
-    
+
+    function buildPhaseEditCard(phaseIdx) {
+        var ph = _editPhaseData[phaseIdx];
+        var tasksHtml = '';
+        for(var ti = 0; ti < ph.tasks.length; ti++) {
+            var t = ph.tasks[ti];
+            var vtSel = '<select onchange="updateEditTaskType(' + phaseIdx + ',' + ti + ',this.value)" class="px-1.5 py-0.5 rounded text-xs border" style="font-size:0.6875rem;min-width:70px;">'
+                + '<option value="manual"' + (t.verification_type === 'manual' ? ' selected' : '') + '>manual</option>'
+                + '<option value="auto"' + (t.verification_type === 'auto' ? ' selected' : '') + '>auto</option>'
+                + '</select>';
+            tasksHtml += '<div class="micro-edit-row" id="eh-task-' + phaseIdx + '-' + ti + '">'
+                + '<input type="text" value="' + t.name.replace(/"/g, '&quot;') + '" class="flex-1 px-2 py-1 rounded border text-xs" oninput="updateEditTaskName(' + phaseIdx + ',' + ti + ',this.value)">'
+                + vtSel
+                + '<button onclick="removeEditTask(' + phaseIdx + ',' + ti + ')" class="action-link-danger flex-shrink-0" style="padding:0.125rem 0.25rem;" title="Remove task">'
+                + '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5l10 10M15 5L5 15"/></svg>'
+                + '</button>'
+                + '</div>';
+        }
+        return '<div class="phase-edit-row" id="eh-phase-' + phaseIdx + '">'
+            + '<div class="flex items-center gap-2 mb-2">'
+            + '<input type="text" value="' + ph.name.replace(/"/g, '&quot;') + '" class="flex-1 px-2 py-1 rounded border text-xs font-semibold" oninput="updateEditPhaseName(' + phaseIdx + ',this.value)">'
+            + '</div>'
+            + (ph.description ? '<input type="text" value="' + ph.description.replace(/"/g, '&quot;') + '" class="w-full px-2 py-1 rounded border text-xs mb-2" style="color:#9898a6;" oninput="updateEditPhaseDesc(' + phaseIdx + ',this.value)" placeholder="Phase description">' : '')
+            + '<div class="space-y-1" id="eh-phase-tasks-' + phaseIdx + '">' + tasksHtml + '</div>'
+            + '<button onclick="addEditTask(' + phaseIdx + ')" class="mt-1.5 text-xs flex items-center gap-1" style="color:#4f80ff;background:none;border:none;cursor:pointer;font-family:inherit;">'
+            + '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 4v12M4 10h12"/></svg>'
+            + 'Add task'
+            + '</button>'
+            + '</div>';
+    }
+
+    function updateEditPhaseName(phaseIdx, val) { if(_editPhaseData[phaseIdx]) _editPhaseData[phaseIdx].name = val; }
+    function updateEditPhaseDesc(phaseIdx, val) { if(_editPhaseData[phaseIdx]) _editPhaseData[phaseIdx].description = val; }
+    function updateEditTaskName(phaseIdx, taskIdx, val) { if(_editPhaseData[phaseIdx] && _editPhaseData[phaseIdx].tasks[taskIdx]) _editPhaseData[phaseIdx].tasks[taskIdx].name = val; }
+    function updateEditTaskType(phaseIdx, taskIdx, val) { if(_editPhaseData[phaseIdx] && _editPhaseData[phaseIdx].tasks[taskIdx]) _editPhaseData[phaseIdx].tasks[taskIdx].verification_type = val; }
+
+    function addEditTask(phaseIdx) {
+        if(!_editPhaseData[phaseIdx]) return;
+        _editPhaseData[phaseIdx].tasks.push({ id: null, name: '', verification_type: 'manual' });
+        var ti = _editPhaseData[phaseIdx].tasks.length - 1;
+        var container = document.getElementById('eh-phase-tasks-' + phaseIdx);
+        if(container) {
+            var row = document.createElement('div');
+            row.id = 'eh-task-' + phaseIdx + '-' + ti;
+            row.className = 'micro-edit-row';
+            var t = _editPhaseData[phaseIdx].tasks[ti];
+            var vtSel = '<select onchange="updateEditTaskType(' + phaseIdx + ',' + ti + ',this.value)" class="px-1.5 py-0.5 rounded text-xs border" style="font-size:0.6875rem;min-width:70px;">'
+                + '<option value="manual" selected>manual</option>'
+                + '<option value="auto">auto</option>'
+                + '</select>';
+            row.innerHTML = '<input type="text" value="" class="flex-1 px-2 py-1 rounded border text-xs" oninput="updateEditTaskName(' + phaseIdx + ',' + ti + ',this.value)" placeholder="Task name">'
+                + vtSel
+                + '<button onclick="removeEditTask(' + phaseIdx + ',' + ti + ')" class="action-link-danger flex-shrink-0" style="padding:0.125rem 0.25rem;" title="Remove task">'
+                + '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5l10 10M15 5L5 15"/></svg>'
+                + '</button>';
+            container.appendChild(row);
+            row.querySelector('input').focus();
+        }
+    }
+
+    function removeEditTask(phaseIdx, taskIdx) {
+        if(!_editPhaseData[phaseIdx]) return;
+        _editPhaseData[phaseIdx].tasks.splice(taskIdx, 1);
+        // Re-render the phase card
+        var phaseEl = document.getElementById('eh-phase-' + phaseIdx);
+        if(phaseEl) {
+            var parent = phaseEl.parentNode;
+            var newCard = document.createElement('div');
+            newCard.innerHTML = buildPhaseEditCard(phaseIdx);
+            parent.replaceChild(newCard.firstChild, phaseEl);
+        }
+    }
+
     async function saveHabitEdit(id) {
-        const data = {
-            name: $('#eh-name').value.trim(),
-            category: $('#eh-cat').value,
-            difficulty: +$('#eh-diff').value
+        var nameEl = document.getElementById('eh-name');
+        var catEl = document.getElementById('eh-cat');
+        var diffEl = document.getElementById('eh-diff');
+        var data = {
+            name: nameEl ? nameEl.value.trim() : '',
+            category: catEl ? catEl.value : 'health',
+            difficulty: diffEl ? +diffEl.value : 1
         };
-        await api(`/habits/${id}`, 'PUT', data);
+        if(_editPhaseData.length) {
+            data.phases = _editPhaseData;
+        }
+        await api('/habits/' + id, 'PUT', data);
         hideModal();
         showToast('Habit updated', 'success');
         loadHabits();
     }
-    
+
     async function deleteHabit(id, name) {
-        if(!window._hconfirm) { showToast('Click again to confirm delete','warning'); window._hconfirm=setTimeout(()=>window._hconfirm=null,3000); return; } clearTimeout(window._hconfirm); window._hconfirm=null;
-        await api(`/habits/${id}`, 'DELETE');
+        if(!window._hconfirm) { showToast('Click again to confirm delete','warning'); window._hconfirm=setTimeout(function(){window._hconfirm=null;},3000); return; }
+        clearTimeout(window._hconfirm); window._hconfirm=null;
+        await api('/habits/' + id, 'DELETE');
         showToast('Habit removed', 'info');
         loadHabits();
         loadDash();
     }
 
     async function toggleH(id, done) {
-        // Find the element and show loading state
-        const row = document.querySelector(`[data-id="${id}"]`);
+        var row = document.querySelector('[data-id="' + id + '"]');
         if(row) row.style.opacity = '0.5';
-        
+
         try {
             if(done) {
-                const r = await api(`/habits/${id}/complete`, 'POST');
-                if(r && r.points) showToast(`+${r.points} XP`, 'success');
+                var r = await api('/habits/' + id + '/complete', 'POST');
+                if(r && r.points) showToast('+' + r.points + ' XP', 'success');
             } else {
-                // Undo completion
-                const r = await api(`/habits/${id}/uncomplete`, 'POST');
+                var r = await api('/habits/' + id + '/uncomplete', 'POST');
                 if(r && r.undone) showToast('Undone', 'info');
             }
-            // Refresh all displays
             await Promise.all([loadStats(), loadDash(), loadHabits()]);
         } catch(e) {
             showToast('Failed to update', 'error');
@@ -4691,43 +5024,196 @@
         loadStats(); loadReplace();
     }
 
+    // ── AI plan state ──────────────────────────────────────────────
+    var _aiGeneratedPlan = null;
+
     async function addHabitModal() {
         cats = await api('/categories') || {};
-        const opts = Object.entries(cats).map(([k,v]) => `<option value="${k}">${v.icon} ${v.name}</option>`).join('');
-        showModal('New Habit', `
-            <div class="space-y-3">
-                <div>
-                    <label class="field-label">Habit name</label>
-                    <input id="nh-name" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="e.g. Morning meditation">
-                </div>
-                <div>
-                    <label class="field-label">Category</label>
-                    <select id="nh-cat" class="w-full px-3 py-2.5 rounded-lg border text-sm">${opts}</select>
-                </div>
-                <div>
-                    <div class="flex items-center justify-between mb-2">
-                        <label class="field-label" style="margin:0;">Difficulty</label>
-                        <span id="nh-diff-v" class="font-mono text-sm font-semibold" style="color:#4f80ff;">1</span>
-                    </div>
-                    <input type="range" id="nh-diff" min="1" max="5" value="1" oninput="$('#nh-diff-v').textContent=this.value">
-                    <div class="flex justify-between mt-1.5">
-                        <span class="text-xs" style="color:#5c5c6b;">Easy</span>
-                        <span class="text-xs" style="color:#5c5c6b;">Hard</span>
-                    </div>
-                </div>
-                <div class="flex gap-2 pt-1">
-                    <button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>
-                    <button onclick="createHabit()" class="btn-primary flex-1 py-2.5">Add habit</button>
-                </div>
-            </div>
-        `);
+        var opts = '';
+        var catKeys = Object.keys(cats);
+        for(var ci = 0; ci < catKeys.length; ci++) {
+            var ck = catKeys[ci];
+            var cv = cats[ck];
+            opts += '<option value="' + ck + '">' + (cv.icon || '') + ' ' + cv.name + '</option>';
+        }
+
+        var quickAddHtml = '<div class="space-y-3">'
+            + '<div>'
+            + '<label class="field-label">Habit name</label>'
+            + '<input id="nh-name" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="e.g. Morning meditation">'
+            + '</div>'
+            + '<div>'
+            + '<label class="field-label">Category</label>'
+            + '<select id="nh-cat" class="w-full px-3 py-2.5 rounded-lg border text-sm">' + opts + '</select>'
+            + '</div>'
+            + '<div>'
+            + '<div class="flex items-center justify-between mb-2">'
+            + '<label class="field-label" style="margin:0;">Difficulty</label>'
+            + '<span id="nh-diff-v" class="font-mono text-sm font-semibold" style="color:#4f80ff;">1</span>'
+            + '</div>'
+            + '<input type="range" id="nh-diff" min="1" max="5" value="1" oninput="document.getElementById(\'nh-diff-v\').textContent=this.value;">'
+            + '<div class="flex justify-between mt-1.5">'
+            + '<span class="text-xs" style="color:#5c5c6b;">Easy</span>'
+            + '<span class="text-xs" style="color:#5c5c6b;">Hard</span>'
+            + '</div>'
+            + '</div>'
+            + '<div class="flex gap-2 pt-1">'
+            + '<button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>'
+            + '<button onclick="createHabit()" class="btn-primary flex-1 py-2.5">Add habit</button>'
+            + '</div>'
+            + '</div>';
+
+        var aiGenerateHtml = '<div class="space-y-3">'
+            + '<div>'
+            + '<label class="field-label">Describe your goal</label>'
+            + '<textarea id="ai-goal-text" class="w-full px-3 py-2.5 rounded-lg border text-sm" rows="3" placeholder="e.g. I want to exercise more and build a consistent morning routine"></textarea>'
+            + '</div>'
+            + '<div>'
+            + '<label class="field-label">Difficulty level</label>'
+            + '<div class="flex gap-2 mt-1">'
+            + '<button class="diff-chip selected" id="diff-chip-beginner" onclick="selectDiffChip(\'beginner\')">Beginner</button>'
+            + '<button class="diff-chip" id="diff-chip-intermediate" onclick="selectDiffChip(\'intermediate\')">Intermediate</button>'
+            + '<button class="diff-chip" id="diff-chip-advanced" onclick="selectDiffChip(\'advanced\')">Advanced</button>'
+            + '</div>'
+            + '</div>'
+            + '<button onclick="generateHabitPlan()" class="w-full py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2" style="background:rgba(139,92,246,0.15);color:#c4b5fd;border:1px solid rgba(139,92,246,0.3);">'
+            + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><circle cx="10" cy="10" r="7"/><path stroke-linecap="round" stroke-linejoin="round" d="M10 7v3l2 2"/></svg>'
+            + 'Generate Plan'
+            + '</button>'
+            + '<div id="ai-plan-result" style="display:none;">'
+            + '<div style="height:1px;background:#2a2a2e;margin:4px 0 12px;"></div>'
+            + '<div id="ai-plan-cards" class="space-y-2 max-h-64 overflow-y-auto"></div>'
+            + '<div class="flex gap-2 mt-3">'
+            + '<button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>'
+            + '<button onclick="startFromPlan()" class="btn-primary flex-1 py-2.5">Start This Habit</button>'
+            + '</div>'
+            + '</div>'
+            + '</div>';
+
+        var bodyHtml = '<div class="flex gap-1 mb-4 p-1 rounded-xl" style="background:#141416;">'
+            + '<button class="modal-tab-btn active" id="htab-quick" onclick="switchHabitTab(\'quick\')">Quick Add</button>'
+            + '<button class="modal-tab-btn" id="htab-ai" onclick="switchHabitTab(\'ai\')">AI Generate</button>'
+            + '</div>'
+            + '<div class="modal-tab-panel active" id="hpanel-quick">' + quickAddHtml + '</div>'
+            + '<div class="modal-tab-panel" id="hpanel-ai">' + aiGenerateHtml + '</div>';
+
+        showModal('Add Habit', bodyHtml);
+        window._aiDiffLevel = 'beginner';
+    }
+
+    function switchHabitTab(tab) {
+        var tabs = ['quick', 'ai'];
+        for(var ti = 0; ti < tabs.length; ti++) {
+            var t = tabs[ti];
+            var btn = document.getElementById('htab-' + t);
+            var panel = document.getElementById('hpanel-' + t);
+            if(t === tab) {
+                if(btn) btn.classList.add('active');
+                if(panel) panel.classList.add('active');
+                if(panel) panel.style.display = 'block';
+            } else {
+                if(btn) btn.classList.remove('active');
+                if(panel) panel.classList.remove('active');
+                if(panel) panel.style.display = 'none';
+            }
+        }
+    }
+
+    function selectDiffChip(level) {
+        window._aiDiffLevel = level;
+        var chips = ['beginner', 'intermediate', 'advanced'];
+        for(var ci = 0; ci < chips.length; ci++) {
+            var el = document.getElementById('diff-chip-' + chips[ci]);
+            if(el) {
+                if(chips[ci] === level) el.classList.add('selected');
+                else el.classList.remove('selected');
+            }
+        }
+    }
+
+    async function generateHabitPlan() {
+        var goalEl = document.getElementById('ai-goal-text');
+        if(!goalEl || !goalEl.value.trim()) {
+            showToast('Describe your goal first', 'warning');
+            return;
+        }
+        var resultArea = document.getElementById('ai-plan-result');
+        var cardsArea = document.getElementById('ai-plan-cards');
+        if(cardsArea) cardsArea.innerHTML = '<div class="text-sm text-center py-3" style="color:#c4b5fd;">Generating your plan...</div>';
+        if(resultArea) resultArea.style.display = 'block';
+
+        var r = await api('/habits/generate', 'POST', {
+            goal: goalEl.value.trim(),
+            difficulty: window._aiDiffLevel || 'beginner'
+        });
+
+        if(!r || r.error) {
+            if(cardsArea) cardsArea.innerHTML = '<div class="text-sm" style="color:#f87171;">' + ((r && r.error) ? r.error : 'Generation failed. Check your AI provider settings.') + '</div>';
+            return;
+        }
+
+        _aiGeneratedPlan = r;
+        var phases = r.phases || [];
+        var phaseCards = '';
+        for(var pi = 0; pi < phases.length; pi++) {
+            var ph = phases[pi];
+            var phaseTasks = ph.micro_tasks || [];
+            var tasksHtml = '';
+            for(var ti = 0; ti < phaseTasks.length; ti++) {
+                var pt = phaseTasks[ti];
+                var vtBadge = pt.verification_type === 'auto'
+                    ? '<span class="vtype-badge vtype-auto">auto</span>'
+                    : '<span class="vtype-badge vtype-manual">manual</span>';
+                tasksHtml += '<div class="micro-edit-row">'
+                    + '<svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="#5c5c6b" viewBox="0 0 20 20" stroke-width="1.8"><circle cx="10" cy="10" r="1.5"/></svg>'
+                    + '<span class="flex-1 text-xs" style="color:#9898a6;">' + pt.name + '</span>'
+                    + vtBadge
+                    + '</div>';
+            }
+            phaseCards += '<div class="ai-plan-card">'
+                + '<div class="flex items-start justify-between gap-2 mb-1">'
+                + '<div class="text-sm font-semibold" style="color:#f0f0f2;">' + ph.name + '</div>'
+                + (ph.duration ? '<span class="text-xs flex-shrink-0 font-mono" style="color:#5c5c6b;">' + ph.duration + '</span>' : '')
+                + '</div>'
+                + (ph.description ? '<div class="text-xs mb-2" style="color:#9898a6;">' + ph.description + '</div>' : '')
+                + (tasksHtml ? '<div class="space-y-0.5">' + tasksHtml + '</div>' : '')
+                + '</div>';
+        }
+
+        if(!phaseCards) {
+            phaseCards = '<div class="text-sm" style="color:#9898a6;">No phases returned. Try a different goal.</div>';
+        }
+
+        if(cardsArea) cardsArea.innerHTML = phaseCards;
+    }
+
+    async function startFromPlan() {
+        if(!_aiGeneratedPlan) return showToast('Generate a plan first', 'warning');
+        var r = await api('/habits/create-from-plan', 'POST', _aiGeneratedPlan);
+        if(r) {
+            hideModal();
+            showToast('Habit plan started!', 'success');
+            _aiGeneratedPlan = null;
+            await Promise.all([loadHabits(), loadDash()]);
+        } else {
+            showToast('Failed to create habit from plan', 'error');
+        }
     }
 
     async function createHabit() {
-        const name = $('#nh-name').value.trim();
+        var nameEl = document.getElementById('nh-name');
+        if(!nameEl) return;
+        var name = nameEl.value.trim();
         if(!name) return;
-        await api('/habits', 'POST', {name, category:$('#nh-cat').value, difficulty:+$('#nh-diff').value});
-        hideModal(); loadHabits();
+        var catEl = document.getElementById('nh-cat');
+        var diffEl = document.getElementById('nh-diff');
+        await api('/habits', 'POST', {
+            name: name,
+            category: catEl ? catEl.value : 'health',
+            difficulty: diffEl ? +diffEl.value : 1
+        });
+        hideModal();
+        loadHabits();
     }
 
     function addProjectModal() {

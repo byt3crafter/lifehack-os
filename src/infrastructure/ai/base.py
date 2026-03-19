@@ -1,7 +1,7 @@
 """Abstract AI provider interface."""
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
 
 @dataclass
@@ -30,6 +30,41 @@ class Insight:
     content: str = ""
     insight_type: str = "advice"  # advice, warning, celebration, tip
     priority: int = 0
+
+
+@dataclass
+class HabitPlanPhase:
+    """A single phase within an AI-generated habit plan."""
+    phase: int = 1
+    name: str = ""
+    description: str = ""
+    days: int = 14
+    micro_tasks: List[Dict[str, Any]] = field(default_factory=list)
+
+
+@dataclass
+class HabitPlan:
+    """AI-generated habit plan from a user goal description."""
+    name: str = ""
+    description: str = ""
+    category: str = "health"
+    difficulty: str = "beginner"
+    duration_weeks: int = 8
+    phases: List[HabitPlanPhase] = field(default_factory=list)
+
+
+# Available auto-verification checks the AI can reference when building plans.
+AVAILABLE_AUTO_CHECKS = [
+    {"check": "food_log_count", "description": "Count of food log entries today", "example": {"type": "auto", "check": "food_log_count", "operator": ">=", "value": 2}},
+    {"check": "walk_count", "description": "Count of walk/exercise sessions today", "example": {"type": "auto", "check": "walk_count", "operator": ">=", "value": 1}},
+    {"check": "walk_km", "description": "Total distance walked today in km", "example": {"type": "auto", "check": "walk_km", "operator": ">=", "value": 3}},
+    {"check": "checkin_done", "description": "Daily check-in submitted today", "example": {"type": "auto", "check": "checkin_done"}},
+    {"check": "deep_work_minutes", "description": "Total deep work session minutes today", "example": {"type": "auto", "check": "deep_work_minutes", "operator": ">=", "value": 60}},
+    {"check": "calories_under_goal", "description": "Total calories logged is under daily goal", "example": {"type": "auto", "check": "calories_under_goal"}},
+    {"check": "no_alcohol", "description": "Avoided alcohol flag set in today's check-in", "example": {"type": "auto", "check": "no_alcohol"}},
+    {"check": "replacement_count", "description": "Count of replacement actions logged today", "example": {"type": "auto", "check": "replacement_count", "operator": ">=", "value": 1}},
+    {"check": "fasting_hours", "description": "Completed fasting duration in hours today", "example": {"type": "auto", "check": "fasting_hours", "operator": ">=", "value": 16}},
+]
 
 
 def estimate_cost(provider: str, model: str, input_tokens: int, output_tokens: int) -> float:
@@ -95,6 +130,86 @@ def log_ai_usage(
         pass
 
 
+def parse_habit_plan(data: dict) -> Optional['HabitPlan']:
+    """Parse a raw dict from an AI response into a HabitPlan.
+
+    The dict should look like::
+
+        {
+            "name": "Sobriety Journey",
+            "description": "...",
+            "category": "health",
+            "difficulty": "beginner",
+            "duration_weeks": 8,
+            "phases": [
+                {
+                    "phase": 1,
+                    "name": "Phase 1",
+                    "description": "...",
+                    "days": 14,
+                    "micro_tasks": [
+                        {"name": "Log every meal", "verification_rule": {"type": "auto", "check": "food_log_count", "operator": ">=", "value": 2}},
+                        {"name": "Do something manually", "verification_rule": {"type": "manual"}}
+                    ]
+                }
+            ]
+        }
+
+    Returns None if the data is too malformed to use.
+    """
+    if not isinstance(data, dict):
+        return None
+    name = (data.get('name') or '').strip()
+    if not name:
+        return None
+
+    raw_phases = data.get('phases', [])
+    if not isinstance(raw_phases, list) or not raw_phases:
+        return None
+
+    phases: List[HabitPlanPhase] = []
+    for i, p in enumerate(raw_phases):
+        if not isinstance(p, dict):
+            continue
+        raw_tasks = p.get('micro_tasks', [])
+        parsed_tasks: List[Dict[str, Any]] = []
+        for t in raw_tasks:
+            if isinstance(t, str):
+                # Backwards-compat: plain string task name — manual verification
+                parsed_tasks.append({
+                    'name': t.strip(),
+                    'verification_rule': {'type': 'manual'},
+                })
+            elif isinstance(t, dict):
+                task_name = (t.get('name') or '').strip()
+                if not task_name:
+                    continue
+                vr = t.get('verification_rule', {'type': 'manual'})
+                if not isinstance(vr, dict):
+                    vr = {'type': 'manual'}
+                parsed_tasks.append({'name': task_name, 'verification_rule': vr})
+
+        phases.append(HabitPlanPhase(
+            phase=p.get('phase', i + 1),
+            name=(p.get('name') or f'Phase {i + 1}').strip(),
+            description=(p.get('description') or '').strip(),
+            days=int(p.get('days', 14) or 14),
+            micro_tasks=parsed_tasks,
+        ))
+
+    if not phases:
+        return None
+
+    return HabitPlan(
+        name=name,
+        description=(data.get('description') or '').strip(),
+        category=(data.get('category') or 'health').strip(),
+        difficulty=(data.get('difficulty') or 'beginner').strip(),
+        duration_weeks=int(data.get('duration_weeks', 8) or 8),
+        phases=phases,
+    )
+
+
 class AIProvider(ABC):
     """Abstract base class for AI providers."""
 
@@ -132,6 +247,19 @@ class AIProvider(ABC):
     @abstractmethod
     def generate_weekly_report(self, weekly_data: dict) -> str:
         """Generate a narrative weekly summary."""
+        ...
+
+    @abstractmethod
+    def generate_habit_plan(self, goal: str) -> Optional['HabitPlan']:
+        """Generate a structured habit plan from a user goal description.
+
+        Args:
+            goal: Natural-language description of the habit goal, e.g.
+                  "I want to stop drinking alcohol and build healthy habits".
+
+        Returns:
+            A HabitPlan dataclass or None if generation failed.
+        """
         ...
 
     @abstractmethod

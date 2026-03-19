@@ -308,7 +308,20 @@ def init_database() -> None:
             name TEXT NOT NULL,
             description TEXT DEFAULT '',
             sort_order INTEGER DEFAULT 0,
+            verification_rule TEXT DEFAULT '{"type": "manual"}',
             FOREIGN KEY (phase_id) REFERENCES habit_phases(id) ON DELETE CASCADE
+        );
+
+        -- Micro task completions (tracks manual ticks and auto-verification records)
+        CREATE TABLE IF NOT EXISTS micro_task_completions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            micro_task_id INTEGER NOT NULL,
+            date TEXT NOT NULL,
+            verified_by TEXT NOT NULL DEFAULT 'manual',
+            verified_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            current_value REAL,
+            FOREIGN KEY (micro_task_id) REFERENCES habit_micro_tasks(id) ON DELETE CASCADE,
+            UNIQUE(micro_task_id, date)
         );
 
         -- Habit strength (replaces simple streak with continuous 0-100 score)
@@ -370,6 +383,8 @@ def init_database() -> None:
         CREATE INDEX IF NOT EXISTS idx_habit_micro_tasks_phase ON habit_micro_tasks(phase_id);
         CREATE INDEX IF NOT EXISTS idx_habit_miss_log_habit ON habit_miss_log(habit_id);
         CREATE INDEX IF NOT EXISTS idx_habit_stacks_habit ON habit_stacks(habit_id);
+        CREATE INDEX IF NOT EXISTS idx_micro_task_completions_task ON micro_task_completions(micro_task_id);
+        CREATE INDEX IF NOT EXISTS idx_micro_task_completions_date ON micro_task_completions(date);
     """)
 
     conn.commit()

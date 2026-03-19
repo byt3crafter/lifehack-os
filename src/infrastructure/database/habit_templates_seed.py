@@ -2,6 +2,21 @@
 import json
 from .connection import get_connection
 
+# Shorthand helpers for verification rules
+_MANUAL = {"type": "manual"}
+_FOOD_LOG = {"type": "auto", "check": "food_log_count", "operator": ">=", "value": 2}
+_CHECKIN = {"type": "auto", "check": "checkin_done"}
+_NO_ALCOHOL = {"type": "auto", "check": "no_alcohol"}
+_WALK = {"type": "auto", "check": "walk_count", "operator": ">=", "value": 1}
+_CALORIES = {"type": "auto", "check": "calories_under_goal"}
+_REPLACEMENT = {"type": "auto", "check": "replacement_count", "operator": ">=", "value": 1}
+
+
+def _task(name: str, rule: dict = None) -> dict:
+    """Build a micro-task dict with a verification rule."""
+    return {"name": name, "verification_rule": rule or _MANUAL}
+
+
 BUILTIN_TEMPLATES = [
     {
         "name": "Morning Exercise Routine",
@@ -18,8 +33,8 @@ BUILTIN_TEMPLATES = [
                 "description": "Put on gym clothes every morning",
                 "days": 14,
                 "micro_tasks": [
-                    "Set clothes out night before",
-                    "Put them on within 5 min of waking",
+                    _task("Set clothes out night before"),
+                    _task("Put them on within 5 min of waking"),
                 ],
             },
             {
@@ -28,8 +43,9 @@ BUILTIN_TEMPLATES = [
                 "description": "5 min stretching in gym clothes",
                 "days": 14,
                 "micro_tasks": [
-                    "5 basic stretches",
-                    "Hold each for 30 seconds",
+                    _task("5 basic stretches"),
+                    _task("Hold each for 30 seconds"),
+                    _task("Log a walk or exercise", _WALK),
                 ],
             },
             {
@@ -38,10 +54,10 @@ BUILTIN_TEMPLATES = [
                 "description": "15 min workout",
                 "days": 28,
                 "micro_tasks": [
-                    "10 pushups",
-                    "10 squats",
-                    "1 min plank",
-                    "5 min cardio",
+                    _task("10 pushups"),
+                    _task("10 squats"),
+                    _task("1 min plank"),
+                    _task("Log exercise session", _WALK),
                 ],
             },
             {
@@ -50,9 +66,10 @@ BUILTIN_TEMPLATES = [
                 "description": "30+ min exercise session",
                 "days": 0,
                 "micro_tasks": [
-                    "Warm up 5 min",
-                    "Main workout 20 min",
-                    "Cool down 5 min",
+                    _task("Warm up 5 min"),
+                    _task("Main workout 20 min"),
+                    _task("Cool down 5 min"),
+                    _task("Log a walk or exercise", _WALK),
                 ],
             },
         ],
@@ -71,14 +88,22 @@ BUILTIN_TEMPLATES = [
                 "name": "One Page",
                 "description": "Read just 1 page before bed",
                 "days": 14,
-                "micro_tasks": ["Put book on pillow", "Read 1 page"],
+                "micro_tasks": [
+                    _task("Put book on pillow"),
+                    _task("Read 1 page"),
+                    _task("Complete daily check-in", _CHECKIN),
+                ],
             },
             {
                 "phase": 2,
                 "name": "5 Minutes",
                 "description": "Read for 5 minutes",
                 "days": 14,
-                "micro_tasks": ["Set 5 min timer", "Read until timer ends"],
+                "micro_tasks": [
+                    _task("Set 5 min timer"),
+                    _task("Read until timer ends"),
+                    _task("Complete daily check-in", _CHECKIN),
+                ],
             },
             {
                 "phase": 3,
@@ -86,9 +111,10 @@ BUILTIN_TEMPLATES = [
                 "description": "Read 15 minutes daily",
                 "days": 14,
                 "micro_tasks": [
-                    "Find quiet spot",
-                    "Read 15 min",
-                    "Note one takeaway",
+                    _task("Find quiet spot"),
+                    _task("Read 15 min"),
+                    _task("Note one takeaway"),
+                    _task("Complete daily check-in", _CHECKIN),
                 ],
             },
             {
@@ -97,8 +123,9 @@ BUILTIN_TEMPLATES = [
                 "description": "Full reading session",
                 "days": 0,
                 "micro_tasks": [
-                    "30 min focused reading",
-                    "Write 1 sentence summary",
+                    _task("30 min focused reading"),
+                    _task("Write 1 sentence summary"),
+                    _task("Complete daily check-in", _CHECKIN),
                 ],
             },
         ],
@@ -118,9 +145,10 @@ BUILTIN_TEMPLATES = [
                 "description": "Track urges without judgment",
                 "days": 14,
                 "micro_tasks": [
-                    "Log every urge",
-                    "Rate urge 1-5",
-                    "Note what triggered it",
+                    _task("Log every urge"),
+                    _task("Rate urge 1-5"),
+                    _task("Note what triggered it"),
+                    _task("Avoided alcohol today", _NO_ALCOHOL),
                 ],
             },
             {
@@ -129,9 +157,9 @@ BUILTIN_TEMPLATES = [
                 "description": "Replace each urge with an action",
                 "days": 21,
                 "micro_tasks": [
-                    "Walk when urge hits",
-                    "Call someone",
-                    "Drink water instead",
+                    _task("Use a replacement action", _REPLACEMENT),
+                    _task("Log a walk or exercise", _WALK),
+                    _task("Avoided alcohol today", _NO_ALCOHOL),
                 ],
             },
             {
@@ -140,9 +168,10 @@ BUILTIN_TEMPLATES = [
                 "description": "Build alcohol-free routines",
                 "days": 28,
                 "micro_tasks": [
-                    "Sober social activity weekly",
-                    "Evening routine without alcohol",
-                    "Celebrate milestones",
+                    _task("Sober social activity weekly"),
+                    _task("Evening routine without alcohol"),
+                    _task("Avoided alcohol today", _NO_ALCOHOL),
+                    _task("Use a replacement action", _REPLACEMENT),
                 ],
             },
             {
@@ -151,9 +180,10 @@ BUILTIN_TEMPLATES = [
                 "description": "Sustain and protect your sobriety",
                 "days": 0,
                 "micro_tasks": [
-                    "Daily check-in",
-                    "Weekly reflection",
-                    "Help someone else",
+                    _task("Complete daily check-in", _CHECKIN),
+                    _task("Avoided alcohol today", _NO_ALCOHOL),
+                    _task("Weekly reflection"),
+                    _task("Help someone else"),
                 ],
             },
         ],
@@ -173,9 +203,10 @@ BUILTIN_TEMPLATES = [
                 "description": "Sit quietly for 1 minute",
                 "days": 14,
                 "micro_tasks": [
-                    "Find a quiet spot",
-                    "Set 1 min timer",
-                    "Close eyes and breathe",
+                    _task("Find a quiet spot"),
+                    _task("Set 1 min timer"),
+                    _task("Close eyes and breathe"),
+                    _task("Complete daily check-in", _CHECKIN),
                 ],
             },
             {
@@ -184,9 +215,10 @@ BUILTIN_TEMPLATES = [
                 "description": "5 minute guided meditation",
                 "days": 14,
                 "micro_tasks": [
-                    "Use a meditation app or timer",
-                    "Focus on breath",
-                    "Note distractions without judgment",
+                    _task("Use a meditation app or timer"),
+                    _task("Focus on breath"),
+                    _task("Note distractions without judgment"),
+                    _task("Complete daily check-in", _CHECKIN),
                 ],
             },
             {
@@ -195,9 +227,10 @@ BUILTIN_TEMPLATES = [
                 "description": "10 min daily meditation",
                 "days": 21,
                 "micro_tasks": [
-                    "Morning meditation before phone",
-                    "Body scan technique",
-                    "Gratitude reflection",
+                    _task("Morning meditation before phone"),
+                    _task("Body scan technique"),
+                    _task("Gratitude reflection"),
+                    _task("Complete daily check-in", _CHECKIN),
                 ],
             },
             {
@@ -206,8 +239,9 @@ BUILTIN_TEMPLATES = [
                 "description": "Full meditation session",
                 "days": 0,
                 "micro_tasks": [
-                    "20 min unguided meditation",
-                    "Mindfulness throughout day",
+                    _task("20 min unguided meditation"),
+                    _task("Mindfulness throughout day"),
+                    _task("Complete daily check-in", _CHECKIN),
                 ],
             },
         ],
@@ -226,14 +260,23 @@ BUILTIN_TEMPLATES = [
                 "name": "Track Everything",
                 "description": "Just log what you eat, no changes",
                 "days": 14,
-                "micro_tasks": ["Log every meal", "No judgment, just awareness"],
+                "micro_tasks": [
+                    _task("Log every meal", _FOOD_LOG),
+                    _task("No judgment, just awareness"),
+                    _task("Complete daily check-in", _CHECKIN),
+                ],
             },
             {
                 "phase": 2,
                 "name": "Add Vegetables",
                 "description": "Add one serving of vegetables to each meal",
                 "days": 14,
-                "micro_tasks": ["Vegetables at lunch", "Vegetables at dinner"],
+                "micro_tasks": [
+                    _task("Log every meal", _FOOD_LOG),
+                    _task("Vegetables at lunch"),
+                    _task("Vegetables at dinner"),
+                    _task("Stay under calorie goal", _CALORIES),
+                ],
             },
             {
                 "phase": 3,
@@ -241,9 +284,10 @@ BUILTIN_TEMPLATES = [
                 "description": "Replace one junk food per day with a whole food",
                 "days": 21,
                 "micro_tasks": [
-                    "Swap one snack",
-                    "Drink water instead of soda",
-                    "Cook one meal at home",
+                    _task("Log every meal", _FOOD_LOG),
+                    _task("Swap one snack"),
+                    _task("Drink water instead of soda"),
+                    _task("Stay under calorie goal", _CALORIES),
                 ],
             },
             {
@@ -252,9 +296,10 @@ BUILTIN_TEMPLATES = [
                 "description": "80% whole foods diet",
                 "days": 0,
                 "micro_tasks": [
-                    "Meal prep weekly",
-                    "Read nutrition labels",
-                    "Mindful eating",
+                    _task("Log every meal", _FOOD_LOG),
+                    _task("Stay under calorie goal", _CALORIES),
+                    _task("Meal prep weekly"),
+                    _task("Read nutrition labels"),
                 ],
             },
         ],
@@ -273,14 +318,22 @@ BUILTIN_TEMPLATES = [
                 "name": "Track Sleep",
                 "description": "Log when you go to bed and wake up",
                 "days": 7,
-                "micro_tasks": ["Note bedtime", "Note wake time"],
+                "micro_tasks": [
+                    _task("Note bedtime"),
+                    _task("Note wake time"),
+                    _task("Complete daily check-in", _CHECKIN),
+                ],
             },
             {
                 "phase": 2,
                 "name": "Set Alarm",
                 "description": "Same wake time every day",
                 "days": 14,
-                "micro_tasks": ["Wake at same time daily", "No snooze button"],
+                "micro_tasks": [
+                    _task("Wake at same time daily"),
+                    _task("No snooze button"),
+                    _task("Complete daily check-in", _CHECKIN),
+                ],
             },
             {
                 "phase": 3,
@@ -288,9 +341,10 @@ BUILTIN_TEMPLATES = [
                 "description": "30 min screen-free time before bed",
                 "days": 14,
                 "micro_tasks": [
-                    "Screens off 30 min before bed",
-                    "Read or stretch",
-                    "Dim lights",
+                    _task("Screens off 30 min before bed"),
+                    _task("Read or stretch"),
+                    _task("Dim lights"),
+                    _task("Complete daily check-in", _CHECKIN),
                 ],
             },
             {
@@ -299,9 +353,10 @@ BUILTIN_TEMPLATES = [
                 "description": "Complete sleep hygiene",
                 "days": 0,
                 "micro_tasks": [
-                    "Same bedtime +/-30 min",
-                    "Cool dark room",
-                    "No caffeine after 2pm",
+                    _task("Same bedtime +/-30 min"),
+                    _task("Cool dark room"),
+                    _task("No caffeine after 2pm"),
+                    _task("Complete daily check-in", _CHECKIN),
                 ],
             },
         ],
@@ -339,3 +394,32 @@ def seed_habit_templates() -> None:
 
     conn.commit()
     print(f"  Seeded {len(BUILTIN_TEMPLATES)} built-in habit templates.")
+
+
+def reseed_habit_templates() -> None:
+    """Re-seed all built-in templates, updating existing rows by name.
+
+    This is useful after verification_rule data has been added to the seed
+    definitions. It updates phases_json for existing system templates without
+    removing user-created ones.
+    """
+    conn = get_connection()
+    updated = 0
+    for tpl in BUILTIN_TEMPLATES:
+        phases = tpl.get("phases", [])
+        conn.execute(
+            """UPDATE habit_templates
+               SET phases_json = ?, description = ?, duration_weeks = ?
+               WHERE name = ? AND created_by = 'system'""",
+            (
+                json.dumps(phases),
+                tpl["description"],
+                tpl["duration_weeks"],
+                tpl["name"],
+            ),
+        )
+        if conn.execute("SELECT changes()").fetchone()[0] > 0:
+            updated += 1
+    conn.commit()
+    if updated:
+        print(f"  Updated {updated} built-in habit templates with verification rules.")
