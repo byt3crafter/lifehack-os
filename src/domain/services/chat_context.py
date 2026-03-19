@@ -69,10 +69,21 @@ def assemble_context(conn) -> dict:
             "SELECT value FROM app_settings WHERE key = 'daily_calorie_goal'"
         ).fetchone()
         calorie_goal = int(goal_row['value']) if goal_row else 2000
+        # Get actual meal descriptions
+        meals = conn.execute(
+            "SELECT meal_type, description, calories, protein_g, carbs_g, fat_g FROM food_logs WHERE date(logged_at) = ? ORDER BY logged_at",
+            (today,),
+        ).fetchall()
+        meal_list = [
+            {'type': m['meal_type'], 'description': m['description'],
+             'calories': m['calories'], 'protein': m['protein_g'], 'carbs': m['carbs_g'], 'fat': m['fat_g']}
+            for m in meals
+        ]
         context['food'] = {
             'meals_today': food['count'],
             'calories_today': food['cals'],
             'calorie_goal': calorie_goal,
+            'meals': meal_list,
         }
     except Exception:
         context['food'] = {'meals_today': 0, 'calories_today': 0, 'calorie_goal': 2000}

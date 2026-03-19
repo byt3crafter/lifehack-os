@@ -84,6 +84,10 @@ def send_message():
     if not ai_response:
         return jsonify({"error": "AI returned an empty response. Check provider settings."}), 502
 
+    # Strip <think>...</think> reasoning tags (MiniMax includes these)
+    import re
+    ai_response = re.sub(r'<think>.*?</think>', '', ai_response, flags=re.DOTALL).strip()
+
     # Resolve provider/model metadata for storage
     provider_name = type(provider).__name__.replace("Provider", "").lower()
     model_name = getattr(provider, "model", "")
