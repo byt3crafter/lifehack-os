@@ -43,7 +43,7 @@ def assemble_context(conn) -> dict:
 
     # Today's habit completions
     context['habit_completions_today'] = _safe_query(conn,
-        "SELECT hc.habit_id, h.name FROM habit_completions hc JOIN habits h ON h.id = hc.habit_id WHERE date(hc.completed_at) = ?",
+        "SELECT hc.habit_id, h.name FROM habit_completions hc JOIN habits h ON h.id = hc.habit_id WHERE date(hc.completed_at) = ? AND h.active = 1",
         (today,))
 
     # Food today (full details)
