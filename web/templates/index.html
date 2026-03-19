@@ -324,44 +324,66 @@
         /* ── Session bar ─────────────────────────────── */
         .session-bar { transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
 
-        /* ── Deep Work project chip ───────────────────── */
-        .dw-chip {
-            flex-shrink: 0;
+        /* ── Deep Work searchable dropdown ───────────────── */
+        .dw-select-wrapper {
+            position: relative;
+        }
+        .dw-select-input {
+            width: 100%;
             display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 0.25rem;
-            padding: 0.375rem 0.875rem;
-            border-radius: 100px;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
             border: 1px solid #2a2a2e;
             background: #141416;
-            color: #9898a6;
-            font-size: 0.8125rem;
-            font-weight: 500;
             cursor: pointer;
-            transition: border-color 0.15s, background 0.15s, color 0.15s;
-            white-space: nowrap;
-            font-family: inherit;
+            transition: border-color 0.15s;
+            user-select: none;
         }
-        .dw-chip:hover { border-color: #444449; color: #f0f0f2; }
-        .dw-chip.selected {
-            border-color: var(--chip-color, #8b5cf6);
-            background: color-mix(in srgb, var(--chip-color, #8b5cf6) 12%, transparent);
-            color: #f0f0f2;
+        .dw-select-input:hover { border-color: #333338; }
+        .dw-select-input.open { border-color: #4f80ff; box-shadow: 0 0 0 3px rgba(79,128,255,0.15); }
+        .dw-select-input input {
+            flex: 1;
+            background: transparent !important;
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+            color: #f0f0f2 !important;
+            font-size: 0.875rem;
+            cursor: pointer;
+            padding: 0 !important;
+            min-width: 0;
         }
-        .dw-chip .chip-hours {
-            font-size: 0.625rem;
-            font-weight: 600;
-            font-family: 'DM Mono', monospace;
-            color: #5c5c6b;
+        .dw-select-input input::placeholder { color: #5c5c6b !important; }
+        .dw-dropdown {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background: #1c1c20;
+            border: 1px solid #333338;
+            border-radius: 10px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            z-index: 200;
+            max-height: 260px;
+            overflow-y: auto;
         }
-        .dw-chip.selected .chip-hours { color: var(--chip-color, #8b5cf6); opacity: 0.8; }
+        .dw-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            border-bottom: 1px solid #2a2a2e;
+            transition: background 0.1s;
+        }
+        .dw-dropdown-item:last-child { border-bottom: none; }
+        .dw-dropdown-item:hover { background: #242428; }
+        .dw-dropdown-item.active { background: rgba(79,128,255,0.08); }
 
         /* ── DW report bar ─────────────────────────────── */
         .dw-report-bar-fill { transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
-
-        /* ── Projects bar hide scrollbar ───────────────── */
-        #dw-projects-bar::-webkit-scrollbar { display: none; }
 
         /* ── Wishlist card ───────────────────────────── */
         .wish-card { transition: border-color 0.15s, transform 0.15s; }
@@ -1635,17 +1657,37 @@
                     </div>
                 </div>
 
-                <!-- Projects bar -->
+                <!-- Project selector -->
                 <div class="mb-5">
-                    <div class="flex items-center gap-2 overflow-x-auto pb-2" id="dw-projects-bar" style="-webkit-overflow-scrolling:touch;scrollbar-width:none;">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-xs font-semibold" style="color:#5c5c6b;letter-spacing:0.06em;text-transform:uppercase;flex-shrink:0;">Project</span>
+                        <div class="dw-select-wrapper flex-1" id="dw-select-wrapper">
+                            <div class="dw-select-input" id="dw-select-input" onclick="toggleDWDropdown(event)">
+                                <span id="dw-select-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#8b5cf6;flex-shrink:0;"></span>
+                                <input type="text" id="dw-search-input" placeholder="Search or select project..."
+                                       oninput="filterDWProjects(this.value)"
+                                       onclick="event.stopPropagation(); openDWDropdown()"
+                                       autocomplete="off" spellcheck="false" />
+                                <svg id="dw-select-chevron" style="flex-shrink:0;color:#5c5c6b;transition:transform 0.15s;" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8l5 5 5-5"/></svg>
+                            </div>
+                            <div id="dw-project-dropdown" class="dw-dropdown" style="display:none;">
+                                <div id="dw-dropdown-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
                         <button onclick="createDWProject()"
-                                class="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all"
-                                style="background:#141416;border-color:#333338;color:#9898a6;">
+                                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all"
+                                style="background:#141416;border-color:#333338;color:#9898a6;font-family:inherit;">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 4v12M4 10h12"/></svg>
-                            New
+                            New Project
                         </button>
-                        <!-- Project chips rendered by JS into #dw-project-chips -->
-                        <div id="dw-project-chips" class="flex items-center gap-2"></div>
+                        <button onclick="manageDWProjects()"
+                                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all"
+                                style="background:#141416;border-color:#333338;color:#9898a6;font-family:inherit;">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 6h14M3 10h14M3 14h14"/></svg>
+                            Manage Projects
+                        </button>
                     </div>
                 </div>
 
@@ -2385,6 +2427,9 @@
     window._dwProjects = [];
     window._dwSelectedProject = null;  // {id, name, color, source}
     window._dwPendingDeleteId = null;
+    window._dwAllProjects = [];
+    window._dwFilteredProjects = [];
+    window._dwDropdownOpen = false;
 
     // Default project colors palette
     var DW_COLORS = ['#8b5cf6','#4f80ff','#22c55e','#f59e0b','#ef4444','#14b8a6','#f97316','#ec4899'];
@@ -2407,32 +2452,101 @@
         return (minutes / 60).toFixed(1) + 'h';
     }
 
-    function renderDWProjectChips() {
-        var chips = '';
-        var projects = window._dwProjects || [];
-        var selId = window._dwSelectedProject ? window._dwSelectedProject.id : null;
+    // ── Dropdown helpers ──────────────────────────────────────────
 
-        // "General Focus" chip (id = null)
-        var genSel = selId === null || selId === undefined;
-        chips += '<button onclick="selectDWProject(null)" class="dw-chip' + (genSel ? ' selected' : '') + '" style="--chip-color:#8b5cf6;">';
-        chips += '<span>General Focus</span>';
-        chips += '</button>';
+    function openDWDropdown() {
+        window._dwDropdownOpen = true;
+        var dd = document.getElementById('dw-project-dropdown');
+        var inp = document.getElementById('dw-select-input');
+        var chv = document.getElementById('dw-select-chevron');
+        if(dd) dd.style.display = 'block';
+        if(inp) inp.classList.add('open');
+        if(chv) chv.style.transform = 'rotate(180deg)';
+        var searchEl = document.getElementById('dw-search-input');
+        if(searchEl) { searchEl.value = ''; searchEl.focus(); }
+        window._dwFilteredProjects = window._dwAllProjects;
+        renderDWDropdownList();
+    }
+
+    function closeDWDropdown() {
+        window._dwDropdownOpen = false;
+        var dd = document.getElementById('dw-project-dropdown');
+        var inp = document.getElementById('dw-select-input');
+        var chv = document.getElementById('dw-select-chevron');
+        if(dd) dd.style.display = 'none';
+        if(inp) inp.classList.remove('open');
+        if(chv) chv.style.transform = '';
+        // Restore display label
+        var sel = window._dwSelectedProject;
+        var searchEl = document.getElementById('dw-search-input');
+        if(searchEl) searchEl.value = sel ? (sel.name || sel.title || 'Unnamed') : 'General Focus';
+    }
+
+    function toggleDWDropdown(e) {
+        if(e) e.stopPropagation();
+        if(window._dwDropdownOpen) { closeDWDropdown(); } else { openDWDropdown(); }
+    }
+
+    function filterDWProjects(query) {
+        var q = (query || '').toLowerCase().trim();
+        if(!q) {
+            window._dwFilteredProjects = window._dwAllProjects;
+        } else {
+            window._dwFilteredProjects = window._dwAllProjects.filter(function(p) {
+                return (p.name || p.title || '').toLowerCase().indexOf(q) >= 0;
+            });
+        }
+        renderDWDropdownList();
+    }
+
+    function renderDWDropdownList() {
+        var container = document.getElementById('dw-dropdown-list');
+        if(!container) return;
+        var selId = window._dwSelectedProject ? window._dwSelectedProject.id : null;
+        var projects = window._dwFilteredProjects || [];
+        var html = '';
+
+        // General Focus entry
+        var genActive = (selId === null || selId === undefined) ? ' active' : '';
+        html += '<div onclick="selectDWProject(null)" class="dw-dropdown-item' + genActive + '">'
+            + '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#8b5cf6;flex-shrink:0;"></span>'
+            + '<span style="flex:1;color:#f0f0f2;font-size:0.875rem;">General Focus</span>'
+            + '</div>';
 
         for(var i = 0; i < projects.length; i++) {
             var p = projects[i];
-            var isSel = selId === p.id;
+            var isActive = (p.id === selId) ? ' active' : '';
             var color = dwProjectColor(p);
-            var vikunjaBadge = (p.source === 'vikunja') ? '<span style="font-size:0.5rem;font-weight:700;letter-spacing:0.04em;background:rgba(79,128,255,0.18);color:#6b96ff;border-radius:3px;padding:0 3px;margin-left:3px;vertical-align:middle;">V</span>' : '';
-            chips += '<button onclick="selectDWProject(' + JSON.stringify(p.id) + ')" class="dw-chip' + (isSel ? ' selected' : '') + '" style="--chip-color:' + color + ';">';
-            chips += '<span>' + (p.name || p.title || 'Unnamed') + vikunjaBadge + '</span>';
-            if(p.total_minutes) {
-                chips += '<span class="chip-hours">' + dwFormatHoursDecimal(p.total_minutes) + '</span>';
-            }
-            chips += '</button>';
+            var badge = (p.source === 'vikunja')
+                ? '<span style="font-size:0.625rem;font-weight:700;background:rgba(79,128,255,0.18);color:#6b96ff;border-radius:3px;padding:0 3px;flex-shrink:0;">V</span>'
+                : '';
+            var hours = p.total_minutes
+                ? '<span style="font-size:0.75rem;font-family:\'DM Mono\',monospace;color:#5c5c6b;flex-shrink:0;">' + dwFormatHoursDecimal(p.total_minutes) + '</span>'
+                : '';
+            html += '<div onclick="selectDWProject(' + JSON.stringify(p.id) + ')" class="dw-dropdown-item' + isActive + '">'
+                + '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + color + ';flex-shrink:0;"></span>'
+                + '<span style="flex:1;color:#f0f0f2;font-size:0.875rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (p.name || p.title || 'Unnamed') + '</span>'
+                + badge + hours
+                + '</div>';
         }
 
-        var el = document.getElementById('dw-project-chips');
-        if(el) el.innerHTML = chips;
+        if(projects.length === 0 && (window._dwFilteredProjects !== window._dwAllProjects || window._dwAllProjects.length === 0)) {
+            html += '<div style="padding:0.625rem 0.75rem;font-size:0.8125rem;color:#5c5c6b;">No projects found</div>';
+        }
+
+        container.innerHTML = html;
+    }
+
+    function renderDWProjectDropdown(projects) {
+        window._dwAllProjects = projects || [];
+        window._dwFilteredProjects = window._dwAllProjects;
+        // Update the input label
+        var sel = window._dwSelectedProject;
+        var searchEl = document.getElementById('dw-search-input');
+        if(searchEl) searchEl.value = sel ? (sel.name || sel.title || 'Unnamed') : 'General Focus';
+        // Update dot color
+        var dot = document.getElementById('dw-select-dot');
+        if(dot) dot.style.background = sel ? dwProjectColor(sel) : '#8b5cf6';
     }
 
     function selectDWProject(id) {
@@ -2446,11 +2560,14 @@
             }
             window._dwSelectedProject = found || {id: id, name: 'Unknown', color: '#8b5cf6'};
         }
-        renderDWProjectChips();
+        closeDWDropdown();
+        // Sync dot color on the selector
+        var sel = window._dwSelectedProject;
+        var dot = document.getElementById('dw-select-dot');
+        if(dot) dot.style.background = sel ? dwProjectColor(sel) : '#8b5cf6';
         updateDWStartCard();
 
         // If Vikunja project: try to load tasks
-        var sel = window._dwSelectedProject;
         if(sel && sel.source === 'vikunja') {
             loadDWVikunjaTasks(sel.id);
         } else {
@@ -2458,6 +2575,13 @@
             if(tv) tv.classList.add('hidden');
         }
     }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if(!window._dwDropdownOpen) return;
+        var wrapper = document.getElementById('dw-select-wrapper');
+        if(wrapper && !wrapper.contains(e.target)) { closeDWDropdown(); }
+    });
 
     function updateDWStartCard() {
         var sel = window._dwSelectedProject;
@@ -2537,6 +2661,69 @@
         }
     }
 
+    function manageDWProjects() {
+        var projects = window._dwProjects || [];
+        var rows = '';
+        // General Focus row (not deletable)
+        rows += '<div style="display:flex;align-items:center;gap:0.625rem;padding:0.625rem 0;border-bottom:1px solid #2a2a2e;">'
+            + '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#8b5cf6;flex-shrink:0;"></span>'
+            + '<span style="flex:1;font-size:0.875rem;color:#f0f0f2;">General Focus</span>'
+            + '<span style="font-size:0.75rem;font-family:\'DM Mono\',monospace;color:#5c5c6b;margin-right:0.5rem;">—</span>'
+            + '<span style="font-size:0.625rem;font-weight:600;background:rgba(255,255,255,0.06);color:#9898a6;border-radius:3px;padding:1px 5px;">local</span>'
+            + '</div>';
+        for(var i = 0; i < projects.length; i++) {
+            var p = projects[i];
+            var color = dwProjectColor(p);
+            var hours = p.total_minutes ? dwFormatHoursDecimal(p.total_minutes) : '0h';
+            var isVikunja = p.source === 'vikunja';
+            var badge = isVikunja
+                ? '<span style="font-size:0.625rem;font-weight:700;background:rgba(79,128,255,0.18);color:#6b96ff;border-radius:3px;padding:1px 5px;">Vikunja</span>'
+                : '<span style="font-size:0.625rem;font-weight:600;background:rgba(255,255,255,0.06);color:#9898a6;border-radius:3px;padding:1px 5px;">local</span>';
+            var deleteBtn = isVikunja
+                ? ''
+                : '<button onclick="deleteDWProjectLocal(' + JSON.stringify(p.id) + ', this)" class="action-link-danger" style="font-size:0.75rem;padding:0.125rem 0.5rem;flex-shrink:0;">Delete</button>';
+            rows += '<div style="display:flex;align-items:center;gap:0.625rem;padding:0.625rem 0;border-bottom:1px solid #2a2a2e;">'
+                + '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + color + ';flex-shrink:0;"></span>'
+                + '<span style="flex:1;font-size:0.875rem;color:#f0f0f2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (p.name || p.title || 'Unnamed') + '</span>'
+                + '<span style="font-size:0.75rem;font-family:\'DM Mono\',monospace;color:#5c5c6b;flex-shrink:0;margin-right:0.25rem;">' + hours + '</span>'
+                + badge
+                + deleteBtn
+                + '</div>';
+        }
+        var note = '<p style="font-size:0.75rem;color:#5c5c6b;margin-top:0.75rem;">Vikunja projects are managed in Vikunja. Only local projects can be deleted here.</p>';
+        var body = '<div style="max-height:360px;overflow-y:auto;">' + rows + '</div>' + note;
+        showModal('Manage Projects', body);
+    }
+
+    async function deleteDWProjectLocal(id, btn) {
+        if(!id) return;
+        if(btn && btn.textContent === 'Delete') {
+            btn.textContent = 'Confirm?';
+            btn.style.color = '#ef4444';
+            btn.style.background = 'rgba(239,68,68,0.08)';
+            setTimeout(function() {
+                if(btn.textContent === 'Confirm?') {
+                    btn.textContent = 'Delete';
+                    btn.style.color = '';
+                    btn.style.background = '';
+                }
+            }, 3000);
+            return;
+        }
+        var result = await api('/deepwork/projects/' + id, 'DELETE');
+        if(result !== null && result !== undefined) {
+            showToast('Project deleted', 'success');
+        } else {
+            showToast('Project deleted', 'success');
+        }
+        // If deleted project was selected, reset to General Focus
+        if(window._dwSelectedProject && window._dwSelectedProject.id === id) {
+            window._dwSelectedProject = null;
+        }
+        hideModal();
+        await loadDeepWork();
+    }
+
     async function deleteDWSession(id, btn) {
         if(window._dwPendingDeleteId === id) {
             // Second click: confirm delete
@@ -2573,7 +2760,7 @@
         }
         window._dwProjects = dwProjectsData || [];
 
-        renderDWProjectChips();
+        renderDWProjectDropdown(window._dwProjects);
         updateDWStartCard();
 
         if(!dw) return;
