@@ -89,7 +89,7 @@ def save_checkin():
 
     if is_new:
         from src.infrastructure.database.repositories import StatsRepository
-        stats_repo = StatsRepository()
+        stats_repo = StatsRepository(uid)
         stats_repo.add_points('checkin', points, "Daily check-in", checkin.id)
 
     return jsonify({'success': True, 'points': points})

@@ -12,8 +12,9 @@ class NativeTaskProvider(TaskProvider):
     
     provider_name = "native"
     
-    def __init__(self):
-        self.repo = ProjectRepository()
+    def __init__(self, user_id: int = None):
+        self._user_id = user_id
+        self.repo = ProjectRepository(user_id or 1)
     
     def test_connection(self) -> bool:
         """Test database connection."""

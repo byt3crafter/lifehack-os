@@ -59,8 +59,11 @@ def create_app():
     from routes.auth import ensure_admin_user
     ensure_admin_user()
 
-    # Seed defaults
-    replacement_repo = ReplacementRepository()
+    # Seed defaults (use admin user for seeded data)
+    conn = get_connection()
+    admin_row = conn.execute("SELECT id FROM users WHERE is_admin = 1 ORDER BY id LIMIT 1").fetchone()
+    admin_uid = admin_row['id'] if admin_row else 1
+    replacement_repo = ReplacementRepository(admin_uid)
     actions = replacement_repo.get_all_actions()
     if not actions:
         from src.domain.entities import ReplacementAction

@@ -87,7 +87,7 @@ def log_walk():
     conn.commit()
 
     from src.infrastructure.database.repositories import StatsRepository
-    stats_repo = StatsRepository()
+    stats_repo = StatsRepository(uid)
     stats_repo.add_points('walk', points, f"Movement: {data.get('location', 'Walk')}", cursor.lastrowid)
     return jsonify({'success': True, 'points': points, 'id': cursor.lastrowid})
 

@@ -41,15 +41,15 @@ class LifeHackApp(ctk.CTk):
         # Show dashboard
         self.show_view('dashboard')
     
-    def _init_repositories(self):
-        """Initialize all repositories."""
-        self.habit_repo = HabitRepository()
-        self.project_repo = ProjectRepository()
-        self.checkin_repo = CheckinRepository()
-        self.walk_repo = WalkRepository()
-        self.replacement_repo = ReplacementRepository()
-        self.stats_repo = StatsRepository()
-        self.deep_work_repo = DeepWorkRepository()
+    def _init_repositories(self, user_id: int = 1):
+        """Initialize all repositories for a given user."""
+        self.habit_repo = HabitRepository(user_id)
+        self.project_repo = ProjectRepository(user_id)
+        self.checkin_repo = CheckinRepository(user_id)
+        self.walk_repo = WalkRepository(user_id)
+        self.replacement_repo = ReplacementRepository(user_id)
+        self.stats_repo = StatsRepository(user_id)
+        self.deep_work_repo = DeepWorkRepository(user_id)
     
     def _seed_defaults(self):
         """Seed default data if empty."""

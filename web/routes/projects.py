@@ -39,7 +39,7 @@ def create_project():
     project_id = cursor.lastrowid
 
     from src.infrastructure.database.repositories import StatsRepository
-    stats_repo = StatsRepository()
+    stats_repo = StatsRepository(uid)
     stats_repo.add_points('project', 10, f"Started: {data['name']}", project_id)
     return jsonify({'id': project_id, 'success': True}), 201
 
@@ -166,7 +166,7 @@ def complete_task(task_id):
     task = provider.complete_task(task_id)
     if task:
         from src.infrastructure.database.repositories import StatsRepository
-        stats_repo = StatsRepository()
+        stats_repo = StatsRepository(uid)
         stats_repo.add_points('task', 10, f"Completed: {task.title}")
         return jsonify({'success': True, 'points': 10})
     return jsonify({'error': 'Task not found'}), 404
@@ -203,6 +203,6 @@ def complete_milestone(milestone_id):
     conn.commit()
 
     from src.infrastructure.database.repositories import StatsRepository
-    stats_repo = StatsRepository()
+    stats_repo = StatsRepository(uid)
     stats_repo.add_points('milestone', 50, "Milestone completed", milestone_id)
     return jsonify({'success': True})

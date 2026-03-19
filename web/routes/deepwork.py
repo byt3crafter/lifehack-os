@@ -283,7 +283,7 @@ def end_session():
     if active["local_project_id"]:
         _update_project_minutes(conn, active["local_project_id"], uid)
 
-    stats_repo = StatsRepository()
+    stats_repo = StatsRepository(uid)
     stats_repo.add_points("deepwork", points, f"Deep Work: {duration} mins")
     conn.commit()
     return jsonify({"success": True, "duration": duration, "points": points})
