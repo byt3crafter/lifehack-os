@@ -167,9 +167,12 @@ def configure_firefly():
         plugin_registry.disable("firefly")
         return jsonify({"success": True, "enabled": False})
 
-    helper_path = data.get("helper_path", "")
-    account_id  = data.get("account_id", "")
-    config = {"helper_path": helper_path, "account_id": account_id}
+    api_url    = data.get("api_url", "")
+    api_token  = data.get("api_token", "")
+    account_id = data.get("default_account_id", data.get("account_id", ""))
+    if not api_token:
+        return jsonify({"error": "API token required"}), 400
+    config = {"api_url": api_url, "api_token": api_token, "default_account_id": account_id}
     ok = plugin_registry.enable("firefly", config)
     if ok:
         return jsonify({"success": True, "enabled": True, "connected": True})
