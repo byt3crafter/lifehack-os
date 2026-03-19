@@ -32,6 +32,13 @@ class MiniMaxProvider(OpenAIProvider):
     def is_available(self) -> bool:
         return bool(self.api_key)
 
+    def identify_food(self, description: str = '', image_base64: str = None) -> 'FoodIdentification':
+        """MiniMax doesn't support images — use text description only."""
+        if not description and image_base64:
+            from .base import FoodIdentification
+            return FoodIdentification(available=False)
+        return super().identify_food(description, image_base64=None)
+
     def analyze_food(self, description: str, image_base64: str = None) -> 'FoodAnalysis':
         """MiniMax doesn't support images — use text description only."""
         if not description and image_base64:

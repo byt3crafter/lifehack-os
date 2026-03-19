@@ -7,7 +7,7 @@ from typing import Optional
 
 import requests
 
-from .base import AIProvider, FoodAnalysis, Insight, log_ai_usage
+from .base import AIProvider, FoodAnalysis, FoodIdentification, Insight, log_ai_usage
 
 
 class OllamaProvider(AIProvider):
@@ -99,6 +99,27 @@ class OllamaProvider(AIProvider):
                 except json.JSONDecodeError:
                     pass
         return {}
+
+    def identify_food(self, description: str = '', image_base64: str = None) -> FoodIdentification:
+        hint = f" The user says: {description}." if description else ""
+        prompt = (
+            f"What food is this?{hint} Describe it briefly in one sentence. "
+            "Return ONLY a JSON object, no other text.\n\n"
+            'JSON format: {"description": "Avocado toast with fried egg", "confidence": "high"}'
+        )
+
+        images = [image_base64] if image_base64 else None
+        response = self._generate(prompt, images=images, action='food_identify')
+        data = self._parse_json(response)
+
+        if not data or not data.get('description'):
+            return FoodIdentification(available=False)
+
+        return FoodIdentification(
+            description=data.get('description', ''),
+            confidence=data.get('confidence', 'medium'),
+            available=True,
+        )
 
     def analyze_food(self, description: str, image_base64: str = None) -> FoodAnalysis:
         food_ref = description if description else "the food shown in the image"

@@ -7,7 +7,7 @@ from typing import Optional
 
 import requests
 
-from .base import AIProvider, FoodAnalysis, Insight, log_ai_usage
+from .base import AIProvider, FoodAnalysis, FoodIdentification, Insight, log_ai_usage
 
 _ANTHROPIC_API_VERSION = "2023-06-01"
 
@@ -118,6 +118,41 @@ class AnthropicProvider(AIProvider):
                 except json.JSONDecodeError:
                     pass
         return {}
+
+    def identify_food(self, description: str = '', image_base64: str = None) -> FoodIdentification:
+        system = "You are a food recognition assistant. Return ONLY valid JSON, no other text."
+        hint = f" The user says: {description}." if description else ""
+        text_prompt = (
+            f"What food is this?{hint} Describe it briefly in one sentence.\n\n"
+            'Return: {"description": "Avocado toast with fried egg", "confidence": "high"}'
+        )
+
+        if image_base64:
+            user_content = [
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/jpeg",
+                        "data": image_base64,
+                    },
+                },
+                {"type": "text", "text": text_prompt},
+            ]
+        else:
+            user_content = text_prompt
+
+        response = self._messages(system, user_content, action='food_identify')
+        data = self._parse_json(response)
+
+        if not data or not data.get('description'):
+            return FoodIdentification(available=False)
+
+        return FoodIdentification(
+            description=data.get('description', ''),
+            confidence=data.get('confidence', 'medium'),
+            available=True,
+        )
 
     def analyze_food(self, description: str, image_base64: str = None) -> FoodAnalysis:
         system = "You are a nutrition analyst. Return ONLY valid JSON, no other text."

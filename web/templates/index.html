@@ -1017,7 +1017,14 @@
                     </div>
                 </div>
 
-                <div class="section-label mb-3">Recent meals</div>
+                <!-- Date navigation bar -->
+                <div class="flex items-center gap-2 mb-4">
+                    <button onclick="foodDateNav(-1)" class="btn-ghost px-2.5 py-1.5 text-sm rounded-lg flex-shrink-0" aria-label="Previous day" style="min-width:2rem;">&#8592;</button>
+                    <input type="date" id="food-date" class="flex-1 px-3 py-1.5 rounded-lg border text-sm" style="min-width:0;" onchange="loadFood(this.value)">
+                    <button onclick="foodDateNav(1)" class="btn-ghost px-2.5 py-1.5 text-sm rounded-lg flex-shrink-0" aria-label="Next day" style="min-width:2rem;">&#8594;</button>
+                    <span id="food-date-label" class="text-xs flex-shrink-0" style="color:#9898a6;min-width:4rem;text-align:right;">Today</span>
+                </div>
+
                 <div id="food-list" class="space-y-2"></div>
             </div>
 
@@ -1978,8 +1985,24 @@
         loadWishlist();
     }
 
-    async function loadFood() {
-        const f = await api('/food');
+    async function loadFood(date) {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const d = date || todayStr;
+
+        // Sync date picker and label
+        const dateInput = document.getElementById('food-date');
+        if(dateInput) dateInput.value = d;
+        const dateLabel = document.getElementById('food-date-label');
+        if(dateLabel) {
+            if(d === todayStr) dateLabel.textContent = 'Today';
+            else {
+                const yest = new Date(); yest.setDate(yest.getDate() - 1);
+                const yestStr = yest.toISOString().split('T')[0];
+                dateLabel.textContent = d === yestStr ? 'Yesterday' : new Date(d + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric'});
+            }
+        }
+
+        const f = await api('/food?date=' + d);
         if(!f) return;
 
         const cals = f.today_calories || 0;
@@ -1991,18 +2014,17 @@
         const pctEl = $('#food-cal-pct');
         if(pctEl) pctEl.textContent = pct + '%';
 
-        // Aggregate macros for today
-        const todayStr = new Date().toISOString().split('T')[0];
-        const todayLogs = f.logs.filter(m => m.logged_at && m.logged_at.startsWith(todayStr));
-        const totalP = todayLogs.reduce((s,m) => s + (m.protein_g||0), 0);
-        const totalC = todayLogs.reduce((s,m) => s + (m.carbs_g||0), 0);
-        const totalFat = todayLogs.reduce((s,m) => s + (m.fat_g||0), 0);
+        // Aggregate macros for selected day
+        const dayLogs = (f.logs || []).filter(m => m.logged_at && m.logged_at.startsWith(d));
+        const totalP   = dayLogs.reduce((s,m) => s + (m.protein_g||0), 0);
+        const totalC   = dayLogs.reduce((s,m) => s + (m.carbs_g||0), 0);
+        const totalFat = dayLogs.reduce((s,m) => s + (m.fat_g||0), 0);
         const pEl = $('#food-total-protein'); if(pEl) pEl.textContent = Math.round(totalP) + 'g';
         const cEl = $('#food-total-carbs');   if(cEl) cEl.textContent = Math.round(totalC) + 'g';
         const fEl = $('#food-total-fat');     if(fEl) fEl.textContent = Math.round(totalFat) + 'g';
 
-        if(!f.logs.length) {
-            $('#food-list').innerHTML = '<div class="empty-state"><p>No meals logged yet. Tap "+ Log meal" to start tracking.</p></div>';
+        if(!f.logs || !f.logs.length) {
+            $('#food-list').innerHTML = '<div class="empty-state"><p>No meals logged for this day. Tap "+ Log meal" to start tracking.</p></div>';
             return;
         }
 
@@ -2013,108 +2035,175 @@
             snack:     {label:'Snack',     color:'#8b5cf6', bg:'rgba(139,92,246,0.12)'},
         };
 
-        $('#food-list').innerHTML = f.logs.map(m => {
-            const time = new Date(m.logged_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            const isToday = m.logged_at && m.logged_at.startsWith(todayStr);
-            const dateStr = isToday ? time : new Date(m.logged_at).toLocaleDateString('en-US', {month:'short',day:'numeric'}) + ' ' + time;
+        // Group logs by date
+        const groups = {};
+        const groupOrder = [];
+        f.logs.forEach(m => {
+            const day = m.logged_at ? m.logged_at.split('T')[0] : d;
+            if(!groups[day]) { groups[day] = []; groupOrder.push(day); }
+            groups[day].push(m);
+        });
+
+        const renderCard = m => {
+            const time = m.logged_at ? new Date(m.logged_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
             const meta = mealMeta[m.meal_type] || mealMeta.snack;
             const hasNutrition = m.protein_g || m.carbs_g || m.fat_g;
             const maxMacro = Math.max(m.protein_g||0, m.carbs_g||0, m.fat_g||0, 1);
-            return `
-            <div class="card rounded-xl p-3" style="border:1px solid #2a2a2e;">
-                <div class="flex items-start gap-3">
-                    <!-- Meal photo or type indicator -->
-                    ${m.image_path ? `<img src="${m.image_path}" alt="" class="w-12 h-12 rounded-lg object-cover flex-shrink-0">` : `<div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-semibold" style="background:${meta.bg};color:${meta.color};">${meta.label.charAt(0)}</div>`}
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-start justify-between gap-2">
-                            <div class="flex-1 min-w-0">
-                                <div class="text-sm font-medium truncate" style="color:#f0f0f2;">${m.description}</div>
-                                <div class="flex items-center gap-2 mt-0.5">
-                                    <span class="text-xs" style="color:${meta.color};">${meta.label}</span>
-                                    <span class="text-xs" style="color:#5c5c6b;">${dateStr}</span>
-                                </div>
-                            </div>
-                            <div class="text-right flex-shrink-0">
-                                ${m.calories ? `<div class="font-mono font-semibold text-sm" style="color:#eab308;">${m.calories}</div><div class="text-xs" style="color:#5c5c6b;">kcal</div>` : ''}
-                            </div>
-                        </div>
-                        ${m.ai_analysis ? `
-                            <div class="mt-2 text-xs flex items-start gap-1.5" style="color:#c4b5fd;">
-                                <svg class="w-3 h-3 flex-shrink-0 mt-0.5" fill="none" stroke="#8b5cf6" viewBox="0 0 20 20" stroke-width="1.8"><circle cx="10" cy="10" r="7"/><path stroke-linecap="round" stroke-linejoin="round" d="M10 7v3l2 2"/></svg>
-                                ${m.ai_analysis}
-                            </div>` : ''}
-                        ${hasNutrition ? `
-                            <div class="mt-2 space-y-1">
-                                ${m.protein_g ? `<div class="flex items-center gap-2"><span class="text-xs w-10" style="color:#5c5c6b;">P</span><div class="flex-1 h-1 rounded-full overflow-hidden" style="background:#242428;"><div class="h-full rounded-full nutrition-bar" style="width:${Math.round((m.protein_g/maxMacro)*100)}%;background:#4f80ff;"></div></div><span class="text-xs font-mono w-8 text-right" style="color:#9898a6;">${m.protein_g}g</span></div>` : ''}
-                                ${m.carbs_g   ? `<div class="flex items-center gap-2"><span class="text-xs w-10" style="color:#5c5c6b;">C</span><div class="flex-1 h-1 rounded-full overflow-hidden" style="background:#242428;"><div class="h-full rounded-full nutrition-bar" style="width:${Math.round((m.carbs_g/maxMacro)*100)}%;background:#f59e0b;"></div></div><span class="text-xs font-mono w-8 text-right" style="color:#9898a6;">${m.carbs_g}g</span></div>` : ''}
-                                ${m.fat_g     ? `<div class="flex items-center gap-2"><span class="text-xs w-10" style="color:#5c5c6b;">F</span><div class="flex-1 h-1 rounded-full overflow-hidden" style="background:#242428;"><div class="h-full rounded-full nutrition-bar" style="width:${Math.round((m.fat_g/maxMacro)*100)}%;background:#ef4444;"></div></div><span class="text-xs font-mono w-8 text-right" style="color:#9898a6;">${m.fat_g}g</span></div>` : ''}
-                            </div>` : ''}
-                    </div>
-                </div>
-                <div class="flex items-center gap-1 mt-2.5 pt-2.5" style="border-top:1px solid #242428;">
-                    <button onclick="editFoodModal(${m.id}, '${m.meal_type}', '${(m.description||'').replace(/'/g, "&#39;")}', ${m.calories || 0}, ${m.protein_g || 0}, ${m.carbs_g || 0}, ${m.fat_g || 0}, '${m.image_path || ''}')" class="action-link">Edit</button>
-                    <button onclick="deleteFood(${m.id})" class="action-link-danger">Delete</button>
-                </div>
-            </div>`;
-        }).join('');
+            const safeDesc = (m.description||'').replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+            const imgSrc = m.image_path || '';
+
+            const thumb = imgSrc
+                ? '<img src="' + imgSrc + '" alt="" class="w-12 h-12 rounded-lg object-cover flex-shrink-0">'
+                : '<div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold" style="background:' + meta.bg + ';color:' + meta.color + ';">' + meta.label.charAt(0) + '</div>';
+
+            const mealBadge = '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium" style="background:' + meta.bg + ';color:' + meta.color + ';">' + meta.label + '</span>';
+
+            const calsHtml = m.calories
+                ? '<div class="text-right flex-shrink-0"><div class="font-mono font-semibold text-sm" style="color:#eab308;">' + m.calories + '</div><div class="text-xs" style="color:#5c5c6b;">kcal</div></div>'
+                : '';
+
+            const aiHtml = m.ai_analysis
+                ? '<div class="mt-2 text-xs flex items-start gap-1.5" style="color:#c4b5fd;"><svg class="w-3 h-3 flex-shrink-0 mt-0.5" fill="none" stroke="#8b5cf6" viewBox="0 0 20 20" stroke-width="1.8"><circle cx="10" cy="10" r="7"/><path stroke-linecap="round" stroke-linejoin="round" d="M10 7v3l2 2"/></svg>' + m.ai_analysis + '</div>'
+                : '';
+
+            let barsHtml = '';
+            if(hasNutrition) {
+                barsHtml = '<div class="mt-2 space-y-1">';
+                if(m.protein_g) barsHtml += '<div class="flex items-center gap-2"><span class="text-xs w-4" style="color:#5c5c6b;">P</span><div class="flex-1 h-1 rounded-full overflow-hidden" style="background:#242428;"><div class="h-full rounded-full" style="width:' + Math.round((m.protein_g/maxMacro)*100) + '%;background:#4f80ff;"></div></div><span class="text-xs font-mono w-8 text-right" style="color:#9898a6;">' + m.protein_g + 'g</span></div>';
+                if(m.carbs_g)   barsHtml += '<div class="flex items-center gap-2"><span class="text-xs w-4" style="color:#5c5c6b;">C</span><div class="flex-1 h-1 rounded-full overflow-hidden" style="background:#242428;"><div class="h-full rounded-full" style="width:' + Math.round((m.carbs_g/maxMacro)*100) + '%;background:#f59e0b;"></div></div><span class="text-xs font-mono w-8 text-right" style="color:#9898a6;">' + m.carbs_g + 'g</span></div>';
+                if(m.fat_g)     barsHtml += '<div class="flex items-center gap-2"><span class="text-xs w-4" style="color:#5c5c6b;">F</span><div class="flex-1 h-1 rounded-full overflow-hidden" style="background:#242428;"><div class="h-full rounded-full" style="width:' + Math.round((m.fat_g/maxMacro)*100) + '%;background:#ef4444;"></div></div><span class="text-xs font-mono w-8 text-right" style="color:#9898a6;">' + m.fat_g + 'g</span></div>';
+                barsHtml += '</div>';
+            }
+
+            return '<div class="card rounded-xl p-3" style="border:1px solid #2a2a2e;">'
+                + '<div class="flex items-start gap-3">'
+                + thumb
+                + '<div class="flex-1 min-w-0">'
+                + '<div class="flex items-start justify-between gap-2">'
+                + '<div class="flex-1 min-w-0">'
+                + '<div class="text-sm font-medium" style="color:#f0f0f2;word-break:break-word;">' + (m.description||'') + '</div>'
+                + '<div class="flex items-center gap-2 mt-1">'
+                + mealBadge
+                + (time ? '<span class="text-xs" style="color:#5c5c6b;">' + time + '</span>' : '')
+                + '</div>'
+                + '</div>'
+                + calsHtml
+                + '</div>'
+                + aiHtml
+                + barsHtml
+                + '</div>'
+                + '</div>'
+                + '<div class="flex items-center gap-1 mt-2.5 pt-2.5" style="border-top:1px solid #242428;">'
+                + '<button onclick="editFoodModal(' + m.id + ', \'' + (m.meal_type||'snack') + '\', \'' + safeDesc + '\', ' + (m.calories||0) + ', ' + (m.protein_g||0) + ', ' + (m.carbs_g||0) + ', ' + (m.fat_g||0) + ', \'' + imgSrc + '\')" class="action-link">Edit</button>'
+                + '<button onclick="deleteFood(' + m.id + ')" class="action-link-danger">Delete</button>'
+                + '</div>'
+                + '</div>';
+        };
+
+        let html = '';
+        groupOrder.forEach(day => {
+            const label = day === todayStr ? 'Today' : (() => {
+                const yest = new Date(); yest.setDate(yest.getDate() - 1);
+                const yestStr = yest.toISOString().split('T')[0];
+                return day === yestStr ? 'Yesterday' : new Date(day + 'T12:00:00').toLocaleDateString('en-US', {month:'long', day:'numeric'});
+            })();
+            html += '<div class="section-label mb-2 mt-4 first:mt-0">' + label + '</div>';
+            html += '<div class="space-y-2">' + groups[day].map(renderCard).join('') + '</div>';
+        });
+
+        $('#food-list').innerHTML = html;
+    }
+
+    function foodDateNav(dir) {
+        const input = document.getElementById('food-date');
+        const todayStr = new Date().toISOString().split('T')[0];
+        const base = input && input.value ? input.value : todayStr;
+        const dt = new Date(base + 'T12:00:00');
+        dt.setDate(dt.getDate() + dir);
+        const next = dt.toISOString().split('T')[0];
+        loadFood(next);
     }
 
     function addFoodModal() {
-        showModal('Log Meal', `
-            <div class="space-y-3">
-                <div>
-                    <label class="field-label">Meal type</label>
-                    <select id="nf-type" class="w-full px-3 py-2.5 rounded-lg border text-sm">
-                        <option value="breakfast">Breakfast</option>
-                        <option value="lunch">Lunch</option>
-                        <option value="dinner">Dinner</option>
-                        <option value="snack">Snack</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="field-label">Photo (optional — AI will analyze nutrition)</label>
-                    <input type="file" id="food-photo" accept="image/*" capture="environment"
-                           class="w-full px-3 py-2 rounded-lg border text-sm"
-                           style="cursor:pointer;"
-                           onchange="previewFoodPhoto(this)">
-                    <div id="food-photo-preview" class="hidden mt-2 relative">
-                        <img id="food-photo-img" src="" alt="Food photo preview"
-                             class="w-full rounded-lg object-cover" style="max-height:180px;">
-                        <div id="food-photo-analyzing" class="hidden absolute inset-0 flex items-center justify-center rounded-lg" style="background:rgba(12,12,14,0.75);">
-                            <span class="text-sm font-medium" style="color:#c4b5fd;">Analyzing...</span>
-                        </div>
-                    </div>
-                </div>
-                <div>
-                    <label class="field-label">What did you eat?</label>
-                    <textarea id="nf-desc" class="w-full px-3 py-2.5 rounded-lg border text-sm" rows="2" placeholder="e.g. Chicken salad with avocado"></textarea>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="field-label">Calories</label>
-                        <input id="nf-cal" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="optional">
-                    </div>
-                    <div>
-                        <label class="field-label">Protein (g)</label>
-                        <input id="nf-protein" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="optional">
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="field-label">Carbs (g)</label>
-                        <input id="nf-carbs" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="optional">
-                    </div>
-                    <div>
-                        <label class="field-label">Fat (g)</label>
-                        <input id="nf-fat" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="optional">
-                    </div>
-                </div>
-                <div class="flex gap-2 pt-1">
-                    <button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>
-                    <button onclick="saveFoodLog()" class="btn-primary flex-1 py-2.5">Log meal</button>
-                </div>
-            </div>
-        `);
+        showModal('Log Meal',
+            '<div class="space-y-3">'
+
+            // Step 1 — Identify
+            + '<div id="food-step-1">'
+            + '<p class="text-xs font-semibold mb-2" style="color:#9898a6;letter-spacing:0.05em;text-transform:uppercase;">Step 1 — Identify</p>'
+
+            // Photo upload
+            + '<div class="relative">'
+            + '<label for="food-photo" class="flex flex-col items-center justify-center gap-2 w-full rounded-xl cursor-pointer py-5" style="background:rgba(255,255,255,0.04);border:2px dashed #2a2a2e;">'
+            + '<svg class="w-8 h-8" fill="none" stroke="#5c5c6b" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z"/></svg>'
+            + '<span class="text-sm" style="color:#9898a6;">Take or upload a photo</span>'
+            + '</label>'
+            + '<input type="file" id="food-photo" accept="image/*" capture="environment" class="sr-only" onchange="previewFoodPhoto(this)">'
+            + '</div>'
+
+            // Photo preview
+            + '<div id="food-photo-preview" class="hidden mt-2 relative rounded-xl overflow-hidden" style="max-height:200px;">'
+            + '<img id="food-photo-img" src="" alt="Food photo preview" class="w-full object-cover" style="max-height:200px;">'
+            + '<div id="food-photo-analyzing" class="hidden absolute inset-0 flex items-center justify-center" style="background:rgba(12,12,14,0.8);">'
+            + '<div class="flex flex-col items-center gap-2">'
+            + '<div class="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin" style="border-color:#8b5cf6;border-top-color:transparent;"></div>'
+            + '<span class="text-sm font-medium" style="color:#c4b5fd;">Identifying...</span>'
+            + '</div>'
+            + '</div>'
+            + '</div>'
+
+            // Description textarea
+            + '<div class="mt-3">'
+            + '<label class="field-label" for="nf-desc">What did you eat?</label>'
+            + '<textarea id="nf-desc" class="w-full px-3 py-2.5 rounded-lg border text-sm" rows="2" placeholder="e.g. Chicken salad with avocado — or skip if you uploaded a photo"></textarea>'
+            + '</div>'
+
+            // Meal type
+            + '<div>'
+            + '<label class="field-label" for="nf-type">Meal type</label>'
+            + '<select id="nf-type" class="w-full px-3 py-2.5 rounded-lg border text-sm">'
+            + '<option value="breakfast">Breakfast</option>'
+            + '<option value="lunch">Lunch</option>'
+            + '<option value="dinner">Dinner</option>'
+            + '<option value="snack">Snack</option>'
+            + '</select>'
+            + '</div>'
+
+            // Step 1 actions
+            + '<div class="flex gap-2 pt-1">'
+            + '<button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>'
+            + '<button onclick="saveFoodLog()" class="btn-primary flex-1 py-2.5">Identify</button>'
+            + '</div>'
+
+            + '</div>'
+
+            // Step 2 — Confirm Nutrition (hidden initially)
+            + '<div id="food-step-2" class="hidden" style="transition:all 0.2s ease;">'
+            + '<div style="height:1px;background:#2a2a2e;" class="mb-3"></div>'
+            + '<p class="text-xs font-semibold mb-2" style="color:#9898a6;letter-spacing:0.05em;text-transform:uppercase;">Step 2 — Confirm Nutrition</p>'
+            + '<div id="food-ai-provider" class="hidden mb-2 text-xs px-2 py-1 rounded" style="background:rgba(139,92,246,0.1);color:#c4b5fd;"></div>'
+            + '<div class="grid grid-cols-2 gap-3">'
+            + '<div><label class="field-label" for="nf-cal">Calories</label><input id="nf-cal" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="kcal"></div>'
+            + '<div><label class="field-label" for="nf-protein">Protein (g)</label><input id="nf-protein" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="g"></div>'
+            + '</div>'
+            + '<div class="grid grid-cols-2 gap-3 mt-3">'
+            + '<div><label class="field-label" for="nf-carbs">Carbs (g)</label><input id="nf-carbs" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="g"></div>'
+            + '<div><label class="field-label" for="nf-fat">Fat (g)</label><input id="nf-fat" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="g"></div>'
+            + '</div>'
+            + '<div class="flex gap-2 pt-3">'
+            + '<button onclick="saveFoodStep1Back()" class="btn-ghost flex-1 py-2.5">Back</button>'
+            + '<button onclick="saveFoodLog()" class="btn-primary flex-1 py-2.5">Log meal</button>'
+            + '</div>'
+            + '</div>'
+
+            + '</div>'
+        );
+    }
+
+    function saveFoodStep1Back() {
+        const step2 = document.getElementById('food-step-2');
+        if(step2) step2.classList.add('hidden');
+        _pendingFoodImage = null;
     }
 
     function previewFoodPhoto(input) {
@@ -2147,121 +2236,179 @@
         return resp.json();
     }
 
-    let _pendingFoodImage = null; // Tracks uploaded image path between analyze and save
+    let _pendingFoodImage = null; // Tracks uploaded image path between identify and log
 
     async function saveFoodLog() {
-        const desc = $('#nf-desc').value.trim();
+        const step2 = document.getElementById('food-step-2');
+        const isStep2Visible = step2 && !step2.classList.contains('hidden');
+
+        // ── Step 2: actually save ────────────────────────────────
+        if(isStep2Visible) {
+            const finalDesc = ($('#nf-desc') || {}).value ? $('#nf-desc').value.trim() : '';
+            if(!finalDesc) return showToast('Describe what you ate', 'error');
+
+            const data = {
+                meal_type:   ($('#nf-type')    || {}).value || 'snack',
+                description: finalDesc,
+                calories:    +($('#nf-cal')     || {}).value || null,
+                protein_g:   +($('#nf-protein') || {}).value || null,
+                carbs_g:     +($('#nf-carbs')   || {}).value || null,
+                fat_g:       +($('#nf-fat')     || {}).value || null
+            };
+            if(_pendingFoodImage) data.image_path = _pendingFoodImage;
+
+            const r = await api('/food', 'POST', data);
+            _pendingFoodImage = null;
+            hideModal();
+            if(r) showToast('Meal logged!', 'success');
+            loadFood();
+            return;
+        }
+
+        // ── Step 1: identify food ─────────────────────────────────
+        const descEl = document.getElementById('nf-desc');
+        const desc = descEl ? descEl.value.trim() : '';
         const fileInput = document.getElementById('food-photo');
         const hasPhoto = fileInput && fileInput.files && fileInput.files.length > 0;
 
-        // If photo selected AND not already uploaded, upload + analyze first
-        if(hasPhoto && !_pendingFoodImage) {
-            const analyzingEl = document.getElementById('food-photo-analyzing');
+        if(!hasPhoto && !desc) return showToast('Upload a photo or describe what you ate', 'error');
+
+        const analyzingEl = document.getElementById('food-photo-analyzing');
+
+        if(hasPhoto) {
+            // Upload photo, get AI description + nutrition
             if(analyzingEl) analyzingEl.classList.remove('hidden');
             try {
                 const uploadResult = await uploadFoodPhoto();
                 if(analyzingEl) analyzingEl.classList.add('hidden');
+
                 if(uploadResult) {
                     _pendingFoodImage = uploadResult.image_path || null;
-                    if(uploadResult.ai_error) {
-                        showToast('AI failed: ' + uploadResult.ai_error + ' — fill in manually', 'error');
-                    } else if(uploadResult.analysis) {
+
+                    if(uploadResult.analysis) {
                         const a = uploadResult.analysis;
-                        if(a.calories   != null) { const el = $('#nf-cal');     if(el) el.value = Math.round(a.calories); }
-                        if(a.protein_g  != null) { const el = $('#nf-protein'); if(el) el.value = Math.round(a.protein_g); }
-                        if(a.carbs_g    != null) { const el = $('#nf-carbs');   if(el) el.value = Math.round(a.carbs_g); }
-                        if(a.fat_g      != null) { const el = $('#nf-fat');     if(el) el.value = Math.round(a.fat_g); }
-                        if(a.description && !desc) { const el = $('#nf-desc'); if(el) el.value = a.description; }
-                        var pName = uploadResult.provider ? (uploadResult.provider.name + (uploadResult.provider.model ? ' · ' + uploadResult.provider.model : '')) : 'AI';
-                        showToast('Analyzed by ' + pName + ' — review and click Log meal again', 'info');
-                        return; // Let user review, second click will save
+                        // Auto-fill description if empty
+                        if(a.description && descEl && !descEl.value.trim()) descEl.value = a.description;
+                        // Pre-fill nutrition fields (step 2)
+                        if(a.calories  != null) { const el = document.getElementById('nf-cal');     if(el) el.value = Math.round(a.calories); }
+                        if(a.protein_g != null) { const el = document.getElementById('nf-protein'); if(el) el.value = Math.round(a.protein_g); }
+                        if(a.carbs_g   != null) { const el = document.getElementById('nf-carbs');   if(el) el.value = Math.round(a.carbs_g); }
+                        if(a.fat_g     != null) { const el = document.getElementById('nf-fat');     if(el) el.value = Math.round(a.fat_g); }
+
+                        const providerEl = document.getElementById('food-ai-provider');
+                        if(providerEl && uploadResult.provider) {
+                            const pName = uploadResult.provider.name + (uploadResult.provider.model ? ' \xb7 ' + uploadResult.provider.model : '');
+                            providerEl.textContent = 'Estimated by ' + pName;
+                            providerEl.classList.remove('hidden');
+                        }
+                    } else if(uploadResult.ai_error) {
+                        showToast('AI analysis failed: ' + uploadResult.ai_error + ' \u2014 fill in nutrition manually', 'warning');
                     }
                 }
             } catch(e) {
                 if(analyzingEl) analyzingEl.classList.add('hidden');
-                showToast('Photo upload failed — fill in manually', 'warning');
+                showToast('Photo upload failed \u2014 fill in manually', 'warning');
             }
+        } else {
+            // Text-only: use description as-is, no nutrition prefill
+            _pendingFoodImage = null;
         }
 
-        // Second click (or no photo) — actually save
-        const finalDesc = $('#nf-desc').value.trim();
-        if(!finalDesc) return showToast('Describe what you ate','error');
-
-        const data = {
-            meal_type: $('#nf-type').value,
-            description: finalDesc,
-            calories:   +$('#nf-cal').value     || null,
-            protein_g:  +$('#nf-protein').value || null,
-            carbs_g:    +$('#nf-carbs').value   || null,
-            fat_g:      +$('#nf-fat').value     || null
-        };
-        if(_pendingFoodImage) data.image_path = _pendingFoodImage;
-
-        const r = await api('/food', 'POST', data);
-        _pendingFoodImage = null; // Reset for next use
-        hideModal();
-        if(r) showToast('Meal logged!', 'success');
-        loadFood();
+        // Reveal step 2
+        if(step2) {
+            step2.classList.remove('hidden');
+            step2.scrollIntoView({behavior:'smooth', block:'nearest'});
+        }
     }
 
     function editFoodModal(id, mealType, desc, cal, protein, carbs, fat, imagePath) {
-        showModal('Edit Meal', `
-            <div class="space-y-3">
-                ${imagePath ? '<div><img src="' + imagePath + '" alt="Food photo" class="w-full h-40 object-cover rounded-lg"></div>' : ''}
-                <div>
-                    <label class="field-label">Meal type</label>
-                    <select id="ef-type" class="w-full px-3 py-2.5 rounded-lg border text-sm">
-                        <option value="breakfast" ${mealType==='breakfast'?'selected':''}>Breakfast</option>
-                        <option value="lunch"     ${mealType==='lunch'    ?'selected':''}>Lunch</option>
-                        <option value="dinner"    ${mealType==='dinner'   ?'selected':''}>Dinner</option>
-                        <option value="snack"     ${mealType==='snack'    ?'selected':''}>Snack</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="field-label">Description</label>
-                    <textarea id="ef-desc" class="w-full px-3 py-2.5 rounded-lg border text-sm" rows="2">${desc}</textarea>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="field-label">Calories</label>
-                        <input id="ef-cal" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="${cal||''}">
-                    </div>
-                    <div>
-                        <label class="field-label">Protein (g)</label>
-                        <input id="ef-protein" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="${protein||''}">
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="field-label">Carbs (g)</label>
-                        <input id="ef-carbs" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="${carbs||''}">
-                    </div>
-                    <div>
-                        <label class="field-label">Fat (g)</label>
-                        <input id="ef-fat" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="${fat||''}">
-                    </div>
-                </div>
-                <div class="flex gap-2 pt-1">
-                    <button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>
-                    <button onclick="updateFood(${id})" class="btn-primary flex-1 py-2.5">Save changes</button>
-                </div>
-            </div>
-        `);
+        const safeDesc = (desc||'').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        let photoBlock = '';
+        if(imagePath) {
+            photoBlock = '<div class="relative rounded-xl overflow-hidden mb-1" style="max-height:160px;">'
+                + '<img id="ef-photo-current" src="' + imagePath + '" alt="Current meal photo" class="w-full object-cover" style="max-height:160px;">'
+                + '</div>';
+        }
+        photoBlock += '<div>'
+            + '<label class="field-label" for="ef-photo">' + (imagePath ? 'Change photo' : 'Add photo') + ' (optional)</label>'
+            + '<input type="file" id="ef-photo" accept="image/*" capture="environment" class="w-full px-3 py-2 rounded-lg border text-sm" style="cursor:pointer;" onchange="previewEditFoodPhoto(this)">'
+            + '<div id="ef-photo-preview" class="hidden mt-2 rounded-xl overflow-hidden" style="max-height:160px;">'
+            + '<img id="ef-photo-preview-img" src="" alt="New photo preview" class="w-full object-cover" style="max-height:160px;">'
+            + '</div>'
+            + '</div>';
+
+        showModal('Edit Meal',
+            '<div class="space-y-3">'
+            + photoBlock
+            + '<div>'
+            + '<label class="field-label" for="ef-type">Meal type</label>'
+            + '<select id="ef-type" class="w-full px-3 py-2.5 rounded-lg border text-sm">'
+            + '<option value="breakfast"' + (mealType==='breakfast'?' selected':'') + '>Breakfast</option>'
+            + '<option value="lunch"'     + (mealType==='lunch'    ?' selected':'') + '>Lunch</option>'
+            + '<option value="dinner"'    + (mealType==='dinner'   ?' selected':'') + '>Dinner</option>'
+            + '<option value="snack"'     + (mealType==='snack'    ?' selected':'') + '>Snack</option>'
+            + '</select>'
+            + '</div>'
+            + '<div>'
+            + '<label class="field-label" for="ef-desc">Description</label>'
+            + '<textarea id="ef-desc" class="w-full px-3 py-2.5 rounded-lg border text-sm" rows="2">' + safeDesc + '</textarea>'
+            + '</div>'
+            + '<div class="grid grid-cols-2 gap-3">'
+            + '<div><label class="field-label" for="ef-cal">Calories</label><input id="ef-cal" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="' + (cal||'') + '"></div>'
+            + '<div><label class="field-label" for="ef-protein">Protein (g)</label><input id="ef-protein" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="' + (protein||'') + '"></div>'
+            + '</div>'
+            + '<div class="grid grid-cols-2 gap-3">'
+            + '<div><label class="field-label" for="ef-carbs">Carbs (g)</label><input id="ef-carbs" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="' + (carbs||'') + '"></div>'
+            + '<div><label class="field-label" for="ef-fat">Fat (g)</label><input id="ef-fat" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="' + (fat||'') + '"></div>'
+            + '</div>'
+            + '<div class="flex gap-2 pt-1">'
+            + '<button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>'
+            + '<button onclick="updateFood(' + id + ')" class="btn-primary flex-1 py-2.5">Save changes</button>'
+            + '</div>'
+            + '</div>'
+        );
+    }
+
+    function previewEditFoodPhoto(input) {
+        const preview = document.getElementById('ef-photo-preview');
+        const img = document.getElementById('ef-photo-preview-img');
+        if(!input.files || !input.files.length) { if(preview) preview.classList.add('hidden'); return; }
+        const url = URL.createObjectURL(input.files[0]);
+        if(img) img.src = url;
+        if(preview) preview.classList.remove('hidden');
     }
 
     async function updateFood(id) {
-        const desc = $('#ef-desc').value.trim();
-        if(!desc) return showToast('Description required','error');
-        
+        const desc = ($('#ef-desc') || {}).value ? $('#ef-desc').value.trim() : '';
+        if(!desc) return showToast('Description required', 'error');
+
         const data = {
-            meal_type: $('#ef-type').value,
+            meal_type:   ($('#ef-type')    || {}).value || 'snack',
             description: desc,
-            calories: +$('#ef-cal').value || null,
-            protein_g: +$('#ef-protein').value || null,
-            carbs_g: +$('#ef-carbs').value || null,
-            fat_g: +$('#ef-fat').value || null
+            calories:    +($('#ef-cal')     || {}).value || null,
+            protein_g:   +($('#ef-protein') || {}).value || null,
+            carbs_g:     +($('#ef-carbs')   || {}).value || null,
+            fat_g:       +($('#ef-fat')     || {}).value || null
         };
-        
+
+        // Upload new photo if selected
+        const photoInput = document.getElementById('ef-photo');
+        if(photoInput && photoInput.files && photoInput.files.length) {
+            try {
+                const formData = new FormData();
+                formData.append('image', photoInput.files[0]);
+                const resp = await fetch('/api/food/' + id + '/upload-image', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin'
+                });
+                const result = await resp.json();
+                if(result && result.image_path) data.image_path = result.image_path;
+            } catch(e) {
+                showToast('Photo upload failed — saving without new photo', 'warning');
+            }
+        }
+
         const r = await api('/food/' + id, 'PUT', data);
         hideModal();
         if(r && r.success) showToast('Meal updated!', 'success');
@@ -2271,7 +2418,8 @@
     async function deleteFood(id) {
         if(!window._confirm) { showToast('Click delete again to confirm','warning'); window._confirm=setTimeout(()=>window._confirm=null,3000); return; } clearTimeout(window._confirm); window._confirm=null;
         await api('/food/' + id, 'DELETE');
-        loadFood();
+        const dateInput = document.getElementById('food-date');
+        loadFood(dateInput && dateInput.value ? dateInput.value : undefined);
     }
 
     function setCalorieGoalModal() {
@@ -2299,7 +2447,7 @@
         const r = await api('/settings', 'POST', {daily_calorie_goal: val});
         hideModal();
         if(r && r.error) showToast('Failed to save goal', 'error');
-        else { showToast('Calorie goal updated', 'success'); loadFood(); }
+        else { showToast('Calorie goal updated', 'success'); const di = document.getElementById('food-date'); loadFood(di && di.value ? di.value : undefined); }
     }
 
     // ============== CHALLENGES ==============

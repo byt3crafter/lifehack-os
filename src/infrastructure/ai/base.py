@@ -16,6 +16,14 @@ class FoodAnalysis:
 
 
 @dataclass
+class FoodIdentification:
+    """Result of AI food identification (description only, no nutrition)."""
+    description: str = ""
+    confidence: str = "low"  # "high", "medium", "low"
+    available: bool = False  # False if AI not configured or identification failed
+
+
+@dataclass
 class Insight:
     """AI-generated insight for the dashboard."""
     title: str = ""
@@ -89,6 +97,20 @@ def log_ai_usage(
 
 class AIProvider(ABC):
     """Abstract base class for AI providers."""
+
+    @abstractmethod
+    def identify_food(self, description: str = '', image_base64: Optional[str] = None) -> FoodIdentification:
+        """Identify what food is present from a description or image.
+
+        Returns a plain-language description without nutrition estimates.
+        This is step 1 of the two-step analysis flow; call analyze_food
+        afterwards with the confirmed description to get calories/macros.
+
+        Args:
+            description: Optional text hint from the user.
+            image_base64: Optional base64-encoded image (JPEG/PNG/WebP).
+        """
+        ...
 
     @abstractmethod
     def analyze_food(self, description: str, image_base64: Optional[str] = None) -> FoodAnalysis:
