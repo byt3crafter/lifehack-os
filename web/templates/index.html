@@ -6739,8 +6739,12 @@
         var el = document.getElementById('discover-grid');
         if(!el) return;
         var tab = _discoverActiveTab || 'want';
-        var statusMap = {want: 'want_to_do', planning: 'planning', done: 'done'};
-        var filtered = _discoverItems.filter(function(x) { return x.status === statusMap[tab]; });
+        var filtered = _discoverItems.filter(function(x) {
+            if(tab === 'want') return x.status === 'want' || x.status === 'want' || !x.status;
+            if(tab === 'planning') return x.status === 'planning';
+            if(tab === 'done') return x.status === 'done' || x.status === 'completed';
+            return true;
+        });
 
         if(!filtered.length) {
             el.innerHTML = '<div class="empty-state" style="grid-column:1/-1;">'
@@ -6815,7 +6819,7 @@
             + '<div>'
             + '<label class="field-label">Status</label>'
             + '<select id="nd-status" class="w-full px-3 py-2.5 rounded-lg border text-sm">'
-            + '<option value="want_to_do">Want to Do</option>'
+            + '<option value="want">Want to Do</option>'
             + '<option value="planning">Planning</option>'
             + '</select>'
             + '</div>'
