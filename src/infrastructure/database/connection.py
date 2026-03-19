@@ -197,7 +197,7 @@ def init_database() -> None:
             notes TEXT DEFAULT ''
         );
 
-        -- Wishlist
+        -- Wishlist / Discover
         CREATE TABLE IF NOT EXISTS wishlist (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
@@ -205,6 +205,41 @@ def init_database() -> None:
             description TEXT DEFAULT '',
             category TEXT DEFAULT 'place',
             completed INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'want',
+            rating INTEGER,
+            completed_at TEXT,
+            photos_json TEXT DEFAULT '[]',
+            notes TEXT DEFAULT '',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
+        -- Finance
+        CREATE TABLE IF NOT EXISTS finance_rules (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            category TEXT NOT NULL,
+            monthly_limit REAL,
+            description TEXT DEFAULT '',
+            active INTEGER DEFAULT 1,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS finance_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TEXT NOT NULL,
+            amount REAL NOT NULL,
+            description TEXT DEFAULT '',
+            category TEXT DEFAULT '',
+            type TEXT DEFAULT 'withdrawal',
+            source TEXT DEFAULT 'firefly',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS finance_advice (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            question TEXT NOT NULL,
+            advice TEXT NOT NULL,
+            amount REAL,
+            category TEXT DEFAULT '',
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
 
@@ -385,6 +420,9 @@ def init_database() -> None:
         CREATE INDEX IF NOT EXISTS idx_habit_stacks_habit ON habit_stacks(habit_id);
         CREATE INDEX IF NOT EXISTS idx_micro_task_completions_task ON micro_task_completions(micro_task_id);
         CREATE INDEX IF NOT EXISTS idx_micro_task_completions_date ON micro_task_completions(date);
+        CREATE INDEX IF NOT EXISTS idx_finance_log_date ON finance_log(date);
+        CREATE INDEX IF NOT EXISTS idx_finance_log_category ON finance_log(category);
+        CREATE INDEX IF NOT EXISTS idx_finance_advice_created ON finance_advice(created_at);
     """)
 
     conn.commit()

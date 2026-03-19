@@ -121,6 +121,40 @@ MIGRATIONS = [
         CREATE INDEX IF NOT EXISTS idx_habit_miss_log_habit ON habit_miss_log(habit_id);
         CREATE INDEX IF NOT EXISTS idx_habit_stacks_habit ON habit_stacks(habit_id);
     '''),
+    (8, "Add finance tables (rules, log, advice) and discover columns on wishlist", '''
+        CREATE TABLE IF NOT EXISTS finance_rules (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            category TEXT NOT NULL,
+            monthly_limit REAL,
+            description TEXT DEFAULT '',
+            active INTEGER DEFAULT 1,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS finance_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TEXT NOT NULL,
+            amount REAL NOT NULL,
+            description TEXT DEFAULT '',
+            category TEXT DEFAULT '',
+            type TEXT DEFAULT 'withdrawal',
+            source TEXT DEFAULT 'firefly',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS finance_advice (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            question TEXT NOT NULL,
+            advice TEXT NOT NULL,
+            amount REAL,
+            category TEXT DEFAULT '',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_finance_log_date ON finance_log(date);
+        CREATE INDEX IF NOT EXISTS idx_finance_log_category ON finance_log(category);
+        CREATE INDEX IF NOT EXISTS idx_finance_advice_created ON finance_advice(created_at);
+    '''),
 ]
 
 
@@ -191,3 +225,21 @@ def run_migrations(conn) -> None:
         )
         conn.commit()
         print("  Migration 7: Add verification_rule + micro_task_completions")
+
+    # Migration 8 (extra): Add Discover columns to wishlist — ALTER TABLE is not
+    # idempotent in SQLite so each column is guarded by a presence check.
+    current = get_current_version(conn)
+    if current < 8:
+        wishlist_cols = [r[1] for r in conn.execute("PRAGMA table_info(wishlist)").fetchall()]
+        discover_cols = [
+            ("status",       "TEXT DEFAULT 'want'"),
+            ("rating",       "INTEGER"),
+            ("completed_at", "TEXT"),
+            ("photos_json",  "TEXT DEFAULT '[]'"),
+            ("notes",        "TEXT DEFAULT ''"),
+        ]
+        for col_name, col_def in discover_cols:
+            if col_name not in wishlist_cols:
+                conn.execute(f"ALTER TABLE wishlist ADD COLUMN {col_name} {col_def}")
+        conn.commit()
+        print("  Migration 8 (wishlist discover columns): applied")

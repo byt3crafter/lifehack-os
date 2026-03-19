@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from .auth import auth_bp
 from .habits import habits_bp
 from .food import food_bp
-from .checkins import checkins_bp
+from .checkins import checkins_bp, mood_bp
 from .walks import walks_bp
 from .patterns import patterns_bp
 from .reports import reports_bp
@@ -25,12 +25,15 @@ from .settings import settings_bp
 from .openai_oauth import openai_oauth_bp
 from .ai_models import ai_models_bp
 from .app_log import app_log_bp
+from .finance import finance_bp
+from .discover import discover_bp
 
 __all__ = [
     'auth_bp',
     'habits_bp',
     'food_bp',
     'checkins_bp',
+    'mood_bp',
     'walks_bp',
     'patterns_bp',
     'reports_bp',
@@ -47,4 +50,6 @@ __all__ = [
     'openai_oauth_bp',
     'ai_models_bp',
     'app_log_bp',
+    'finance_bp',
+    'discover_bp',
 ]

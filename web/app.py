@@ -25,11 +25,12 @@ from src.infrastructure.plugins import register_builtin_plugins
 
 # Import all blueprints
 from routes import (
-    auth_bp, habits_bp, food_bp, checkins_bp, walks_bp,
+    auth_bp, habits_bp, food_bp, checkins_bp, mood_bp, walks_bp,
     patterns_bp, reports_bp, projects_bp, integrations_bp,
     misc_bp, openclaw_bp, challenges_bp, modules_bp, ai_bp,
     api_docs_bp, plugins_bp, settings_bp,
     openai_oauth_bp, ai_models_bp, app_log_bp,
+    finance_bp, discover_bp,
 )
 
 
@@ -88,6 +89,9 @@ def create_app():
     app.register_blueprint(openai_oauth_bp)
     app.register_blueprint(ai_models_bp)
     app.register_blueprint(app_log_bp)
+    app.register_blueprint(finance_bp)
+    app.register_blueprint(discover_bp)
+    app.register_blueprint(mood_bp)
 
     # Flask error handlers — log to app_log table and return safe JSON responses
 

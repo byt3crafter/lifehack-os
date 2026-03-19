@@ -13,7 +13,6 @@ from typing import Optional
 from .base import TaskProvider
 from .native import NativeTaskProvider
 from .vikunja import VikunjaTaskProvider, VikunjaConfig
-from .google_calendar import GoogleCalendarProvider, GoogleCalendarConfig
 from .firefly import FireflyProvider, FireflyConfig
 
 logger = logging.getLogger(__name__)
@@ -99,19 +98,6 @@ def get_integration_status() -> dict:
         except Exception:
             pass
 
-    # Google Calendar
-    gcal_enabled = _is_enabled("google_calendar")
-    gcal_cfg     = _get_plugin_config("google_calendar")
-    gcal_connected = False
-    if gcal_enabled and gcal_cfg:
-        try:
-            provider = GoogleCalendarProvider(
-                GoogleCalendarConfig(enabled=True, account=gcal_cfg.get("account", ""))
-            )
-            gcal_connected = provider.test_connection()
-        except Exception:
-            pass
-
     # Firefly
     firefly_enabled = _is_enabled("firefly")
     firefly_cfg     = _get_plugin_config("firefly")
@@ -135,12 +121,6 @@ def get_integration_status() -> dict:
             "connected":   vikunja_connected,
             "api_url":     vikunja_cfg.get("api_url", ""),
             "description": "Task management via Vikunja",
-        },
-        "google_calendar": {
-            "enabled":     gcal_enabled,
-            "connected":   gcal_connected,
-            "account":     gcal_cfg.get("account", ""),
-            "description": "Events from Google Calendar",
         },
         "firefly": {
             "enabled":     firefly_enabled,
@@ -176,30 +156,6 @@ def get_vikunja_config() -> Optional[VikunjaConfig]:
         api_url=cfg.get("api_url", ""),
         username=cfg.get("username", ""),
         password=cfg.get("password", ""),
-    )
-
-
-# ---------------------------------------------------------------------------
-# Google Calendar — legacy helpers
-# ---------------------------------------------------------------------------
-
-def enable_google_calendar(account: str = "") -> bool:
-    """Enable Google Calendar via the plugin registry."""
-    return _registry().enable("google_calendar", {"account": account})
-
-
-def disable_google_calendar() -> None:
-    """Disable the Google Calendar plugin."""
-    _registry().disable("google_calendar")
-
-
-def get_calendar_provider() -> Optional[GoogleCalendarProvider]:
-    """Return GoogleCalendarProvider if the plugin is enabled, else None."""
-    if not _is_enabled("google_calendar"):
-        return None
-    cfg = _get_plugin_config("google_calendar")
-    return GoogleCalendarProvider(
-        GoogleCalendarConfig(enabled=True, account=cfg.get("account", ""))
     )
 
 

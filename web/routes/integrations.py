@@ -1,4 +1,4 @@
-"""Integration routes (Vikunja, Google Calendar, Firefly).
+"""Integration routes (Vikunja, Firefly).
 
 These endpoints preserve the original API contracts consumed by the existing
 frontend while delegating all state management to the plugin registry.
@@ -7,7 +7,7 @@ Original contract:
     GET  /api/integrations             -> dict of integration statuses
     POST /api/integrations/vikunja     -> enable/disable vikunja
     POST /api/integrations/vikunja/test
-    POST /api/integrations/google_calendar
+    POST /api/integrations/google_calendar  -> returns 410 (removed)
     POST /api/integrations/firefly
 """
 import logging
@@ -69,11 +69,6 @@ def get_integrations():
     vikunja_enabled = _plugin_enabled("vikunja")
     vikunja_connected = _plugin_connected("vikunja") if vikunja_enabled else False
 
-    # Google Calendar
-    gcal_cfg     = _plugin_config("google_calendar")
-    gcal_enabled = _plugin_enabled("google_calendar")
-    gcal_connected = _plugin_connected("google_calendar") if gcal_enabled else False
-
     # Firefly
     firefly_enabled   = _plugin_enabled("firefly")
     firefly_connected = _plugin_connected("firefly") if firefly_enabled else False
@@ -86,10 +81,10 @@ def get_integrations():
             "description": "Task management via Vikunja",
         },
         "google_calendar": {
-            "enabled":     gcal_enabled,
-            "connected":   gcal_connected,
-            "account":     gcal_cfg.get("account", ""),
-            "description": "Events from Google Calendar",
+            "enabled":     False,
+            "connected":   False,
+            "account":     "",
+            "description": "Google Calendar integration removed",
         },
         "firefly": {
             "enabled":     firefly_enabled,
@@ -156,19 +151,8 @@ def test_vikunja():
 @integrations_bp.route("/google_calendar", methods=["POST"])
 @login_required
 def configure_google_calendar():
-    """Enable or disable the Google Calendar integration."""
-    data = request.get_json(silent=True) or {}
-
-    if data.get("enabled") is False:
-        plugin_registry.disable("google_calendar")
-        return jsonify({"success": True, "enabled": False})
-
-    account = data.get("account", "")
-    config  = {"account": account}
-    ok = plugin_registry.enable("google_calendar", config)
-    if ok:
-        return jsonify({"success": True, "enabled": True, "connected": True})
-    return jsonify({"error": "Connection test failed"}), 400
+    """Google Calendar integration has been removed."""
+    return jsonify({"error": "Google Calendar integration is no longer supported"}), 410
 
 
 # ---------------------------------------------------------------------------

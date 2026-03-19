@@ -9,18 +9,14 @@ modules_bp = Blueprint('modules', __name__, url_prefix='/api/modules')
 
 # Module definitions: id -> {name, description, default}
 MODULE_DEFS = {
-    'habits':     {'name': 'Habits',         'description': 'Daily/weekly habit tracking with streaks',   'default': True},
-    'checkin':    {'name': 'Check-in',       'description': 'Daily reflection, mood & energy',            'default': True},
-    'analytics':  {'name': 'Analytics',      'description': 'XP breakdown, point ledger, stats',          'default': True},
-    'projects':   {'name': 'Projects',       'description': 'Project management with milestones',         'default': False},
-    'walks':      {'name': 'Movement',       'description': 'Walk & exercise logging',                    'default': False},
-    'food':       {'name': 'Food',           'description': 'Nutrition & meal tracking',                  'default': False},
-    'fasting':    {'name': 'Fasting',        'description': 'Fasting timer & history',                    'default': False},
-    'deepwork':   {'name': 'Deep Work',      'description': 'Focused work session tracking',              'default': False},
-    'challenges': {'name': 'Challenges',     'description': 'Custom streak challenges',                   'default': False},
-    'replace':    {'name': 'Redirect',       'description': 'Sobriety replacement actions',               'default': False},
-    'wishlist':   {'name': 'Wishlist',       'description': 'Places & things to do',                      'default': False},
-    'openclaw':   {'name': 'AI Agent (OpenClaw)', 'description': 'External AI agent API access',          'default': False},
+    'habits':     {'name': 'Habits',      'description': 'Smart habit tracking with phases and micro-tasks', 'default': True},
+    'food':       {'name': 'Food',        'description': 'Nutrition tracking with AI photo analysis',       'default': True},
+    'fasting':    {'name': 'Fasting',     'description': 'Intermittent fasting lifestyle tracker',           'default': False},
+    'deepwork':   {'name': 'Deep Work',   'description': 'Project-based work logging',                      'default': False},
+    'finance':    {'name': 'Finance',     'description': 'Personal finance with AI budget advice',           'default': False},
+    'challenges': {'name': 'Challenges',  'description': 'Spontaneous one-off commitments',                  'default': False},
+    'discover':   {'name': 'Discover',    'description': 'Bucket list of experiences and places',            'default': False},
+    'openclaw':   {'name': 'AI Agent',    'description': 'External AI agent API access',                     'default': False},
 }
 
 

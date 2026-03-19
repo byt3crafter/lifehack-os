@@ -389,6 +389,29 @@
             line-height: 1;
         }
 
+        /* ── Mood prompt buttons ─────────────────────────────────── */
+        .mood-emoji-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0 2px;
+            font-family: inherit;
+            opacity: 0.35;
+            transition: opacity 0.1s, transform 0.15s;
+        }
+        .mood-emoji-btn:hover { opacity: 0.75; }
+
+        .energy-dot-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0 2px;
+            font-size: 1.25rem;
+            font-family: inherit;
+            color: #2a2a2e;
+            transition: color 0.12s;
+        }
+
         /* ── Category dot ────────────────────────────── */
         .cat-dot {
             width: 8px;
@@ -740,6 +763,12 @@
         <symbol id="icon-settings" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="10" cy="10" r="2.5"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.2 4.2l1.4 1.4M14.4 14.4l1.4 1.4M4.2 15.8l1.4-1.4M14.4 5.6l1.4-1.4"/>
         </symbol>
+        <symbol id="icon-finance" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 3v14M6 7h6a2 2 0 010 4H7a2 2 0 000 4h7"/>
+        </symbol>
+        <symbol id="icon-discover" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="10" cy="10" r="7"/><path d="M13.5 6.5l-2.5 5-5 2.5 2.5-5 5-2.5z"/>
+        </symbol>
     </svg>
 
     <!-- Mobile Header -->
@@ -780,32 +809,23 @@
             <button onclick="nav('habits')" data-v="habits" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Habits">
                 <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-habits"/></svg>Habits
             </button>
-            <button onclick="nav('projects')" data-v="projects" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Projects">
-                <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-projects"/></svg>Projects
-            </button>
-            <button onclick="nav('checkin')" data-v="checkin" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Check-in">
-                <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-checkin"/></svg>Check-in
-            </button>
-            <button onclick="nav('walks')" data-v="walks" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Movement">
-                <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-walks"/></svg>Movement
-            </button>
-            <button onclick="nav('replace')" data-v="replace" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Redirect">
-                <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-redirect"/></svg>Redirect
-            </button>
             <button onclick="nav('food')" data-v="food" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Food">
                 <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-food"/></svg>Food
             </button>
             <button onclick="nav('fasting')" data-v="fasting" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Fasting">
                 <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-fasting"/></svg>Fasting
             </button>
-            <button onclick="nav('wishlist')" data-v="wishlist" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Wishlist">
-                <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-wishlist"/></svg>Wishlist
-            </button>
             <button onclick="nav('deepwork')" data-v="deepwork" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Deep Work">
                 <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-deepwork"/></svg>Deep Work
             </button>
+            <button onclick="nav('finance')" data-v="finance" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Finance">
+                <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-finance"/></svg>Finance
+            </button>
             <button onclick="nav('challenges')" data-v="challenges" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Challenges">
                 <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-challenges"/></svg>Challenges
+            </button>
+            <button onclick="nav('discover')" data-v="discover" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Discover">
+                <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-discover"/></svg>Discover
             </button>
             <button onclick="nav('settings')" data-v="settings" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Settings">
                 <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-settings"/></svg>Settings
@@ -836,32 +856,23 @@
                 <button onclick="desktopNav('habits')" data-v="habits" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Habits">
                     <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-habits"/></svg>Habits
                 </button>
-                <button onclick="desktopNav('projects')" data-v="projects" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Projects">
-                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-projects"/></svg>Projects
-                </button>
-                <button onclick="desktopNav('checkin')" data-v="checkin" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Check-in">
-                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-checkin"/></svg>Check-in
-                </button>
-                <button onclick="desktopNav('walks')" data-v="walks" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Movement">
-                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-walks"/></svg>Movement
-                </button>
-                <button onclick="desktopNav('replace')" data-v="replace" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Redirect">
-                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-redirect"/></svg>Redirect
-                </button>
                 <button onclick="desktopNav('food')" data-v="food" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Food">
                     <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-food"/></svg>Food
                 </button>
                 <button onclick="desktopNav('fasting')" data-v="fasting" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Fasting">
                     <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-fasting"/></svg>Fasting
                 </button>
-                <button onclick="desktopNav('wishlist')" data-v="wishlist" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Wishlist">
-                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-wishlist"/></svg>Wishlist
-                </button>
                 <button onclick="desktopNav('deepwork')" data-v="deepwork" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Deep Work">
                     <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-deepwork"/></svg>Deep Work
                 </button>
+                <button onclick="desktopNav('finance')" data-v="finance" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Finance">
+                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-finance"/></svg>Finance
+                </button>
                 <button onclick="desktopNav('challenges')" data-v="challenges" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Challenges">
                     <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-challenges"/></svg>Challenges
+                </button>
+                <button onclick="desktopNav('discover')" data-v="discover" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Discover">
+                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-discover"/></svg>Discover
                 </button>
                 <button onclick="desktopNav('settings')" data-v="settings" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Settings">
                     <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-settings"/></svg>Settings
@@ -886,6 +897,9 @@
                         <span class="text-xs font-medium px-2 py-1 rounded-lg" style="background:#1c1c20;border:1px solid #2a2a2e;color:#9898a6;">Lv <span id="s-level">1</span></span>
                     </div>
                 </div>
+
+                <!-- Mood / Energy prompt -->
+                <div id="d-mood-section" class="mb-5"></div>
 
                 <!-- Daily Score Card — hero element -->
                 <div class="mb-5 p-4 rounded-2xl" style="background:linear-gradient(135deg,#171728 0%,#141e30 100%);border:1px solid #2a3560;">
@@ -922,7 +936,7 @@
                                     <span id="d-habits-pct" class="text-xs w-8 text-right font-mono" style="color:#9898a6;">0%</span>
                                 </div>
                                 <div class="flex items-center gap-2.5">
-                                    <span class="text-xs w-14 flex-shrink-0" style="color:#5c5c6b;">Check-in</span>
+                                    <span class="text-xs w-14 flex-shrink-0" style="color:#5c5c6b;">Mood</span>
                                     <div class="flex-1 h-1.5 rounded-full overflow-hidden" style="background:#1e2440;">
                                         <div id="d-bar-checkin" class="h-full progress-bar rounded-full" style="width:0%;background:#4f80ff;"></div>
                                     </div>
@@ -1476,6 +1490,116 @@
                 </div>
             </div>
 
+            <!-- FINANCE -->
+            <div id="v-finance" class="view hidden">
+                <div class="view-header">
+                    <div>
+                        <h2 class="view-title">Finance</h2>
+                        <p class="text-xs mt-0.5" style="color:#5c5c6b;">Budget tracking and spending decisions</p>
+                    </div>
+                    <button onclick="addTransactionModal()" class="btn-primary flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 4v12M4 10h12"/></svg>
+                        Log Transaction
+                    </button>
+                </div>
+
+                <!-- Budget Overview Card -->
+                <div class="mb-5 p-4 rounded-2xl" style="background:linear-gradient(135deg,#141a1c 0%,#141e1a 100%);border:1px solid rgba(34,197,94,0.2);">
+                    <div class="text-xs font-semibold mb-3" style="color:#9898a6;letter-spacing:0.06em;text-transform:uppercase;">This Month</div>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <div class="font-mono font-bold" style="color:#ef4444;font-size:1.75rem;line-height:1;" id="fin-spent">$0</div>
+                            <div class="text-xs mt-0.5" style="color:#5c5c6b;">Total spent</div>
+                        </div>
+                        <div>
+                            <div class="font-mono font-bold" style="color:#22c55e;font-size:1.75rem;line-height:1;" id="fin-remaining">$0</div>
+                            <div class="text-xs mt-0.5" style="color:#5c5c6b;">Remaining</div>
+                        </div>
+                    </div>
+                    <div id="fin-category-bars" class="space-y-2.5"></div>
+                </div>
+
+                <!-- Should I Buy This? -->
+                <div class="card p-4 mb-5">
+                    <div class="text-sm font-semibold mb-3" style="color:#f0f0f2;">Should I Buy This?</div>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="field-label">What do you want to buy?</label>
+                            <input id="sib-item" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="e.g. New running shoes">
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="field-label">Amount ($)</label>
+                                <input id="sib-amount" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="0.00">
+                            </div>
+                            <div>
+                                <label class="field-label">Category</label>
+                                <select id="sib-category" class="w-full px-3 py-2.5 rounded-lg border text-sm">
+                                    <option value="food">Food</option>
+                                    <option value="clothing">Clothing</option>
+                                    <option value="electronics">Electronics</option>
+                                    <option value="entertainment">Entertainment</option>
+                                    <option value="health">Health</option>
+                                    <option value="transport">Transport</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button onclick="askShouldBuy()" class="btn-primary w-full py-2.5 flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><circle cx="10" cy="10" r="7"/><path stroke-linecap="round" stroke-linejoin="round" d="M10 7v3l2 2"/></svg>
+                            Ask AI
+                        </button>
+                    </div>
+                    <div id="sib-result" class="hidden mt-3 p-3 rounded-xl" style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.2);">
+                        <div class="flex items-start gap-2">
+                            <svg class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="#8b5cf6" viewBox="0 0 20 20" stroke-width="1.8"><circle cx="10" cy="10" r="7"/><path stroke-linecap="round" stroke-linejoin="round" d="M10 7v3l2 2"/></svg>
+                            <p id="sib-result-text" class="text-sm" style="color:#c4b5fd;"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Budget Rules -->
+                <div class="mb-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="section-label">Budget Rules</span>
+                        <button onclick="addBudgetRuleModal()" class="text-xs font-medium flex items-center gap-1" style="color:#4f80ff;background:none;border:none;cursor:pointer;font-family:inherit;">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 4v12M4 10h12"/></svg>
+                            Add Rule
+                        </button>
+                    </div>
+                    <div id="fin-rules" class="space-y-2"></div>
+                </div>
+
+                <!-- Recent Transactions -->
+                <div>
+                    <div class="section-label mb-3">Recent Transactions</div>
+                    <div id="fin-transactions" class="space-y-2"></div>
+                </div>
+            </div>
+
+            <!-- DISCOVER -->
+            <div id="v-discover" class="view hidden">
+                <div class="view-header">
+                    <div>
+                        <h2 class="view-title">Discover</h2>
+                        <p class="text-xs mt-0.5" style="color:#5c5c6b;">Places, skills, and experiences to explore</p>
+                    </div>
+                    <button onclick="addDiscoveryModal()" class="btn-primary flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 4v12M4 10h12"/></svg>
+                        Add Discovery
+                    </button>
+                </div>
+
+                <!-- Status tabs -->
+                <div class="flex gap-1 mb-5 p-1 rounded-xl" style="background:#141416;">
+                    <button onclick="discoverTab('want')" id="dtab-want" class="flex-1 py-1.5 rounded-lg text-sm font-medium transition-colors" style="background:rgba(79,128,255,0.15);color:#f0f0f2;">Want to Do</button>
+                    <button onclick="discoverTab('planning')" id="dtab-planning" class="flex-1 py-1.5 rounded-lg text-sm font-medium transition-colors" style="background:transparent;color:#9898a6;">Planning</button>
+                    <button onclick="discoverTab('done')" id="dtab-done" class="flex-1 py-1.5 rounded-lg text-sm font-medium transition-colors" style="background:transparent;color:#9898a6;">Done</button>
+                </div>
+
+                <div id="discover-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+            </div>
+
             <!-- SETTINGS -->
             <div id="v-settings" class="view hidden">
                 <!-- Page header -->
@@ -1979,6 +2103,8 @@
         else if(v==='deepwork') await loadDeepWork();
         else if(v==='settings') await loadSettings();
         else if(v==='challenges') await loadChallenges();
+        else if(v==='finance') await loadFinance();
+        else if(v==='discover') await loadDiscover();
     }
 
     // ── Modal ────────────────────────────────────────────────────
@@ -4041,6 +4167,9 @@
     }
 
     async function loadDash() {
+        // Load mood prompt
+        await loadMoodSection();
+
         // Load daily summary first
         const daily = await api('/daily');
         if(daily) {
@@ -4061,8 +4190,10 @@
             $('#d-bar-habits').style.width = daily.today.habits_pct + '%';
             $('#d-habits-pct').textContent = daily.today.habits_pct + '%';
             
-            $('#d-bar-checkin').style.width = daily.today.checkin_done ? '100%' : '0%';
-            $('#d-checkin-status').textContent = daily.today.checkin_done ? '✓' : '—';
+            // Mood bar — updated by loadMoodSection but set from daily score too
+            const moodPct = daily.today.mood ? Math.round((daily.today.mood / 5) * 100) : (daily.today.checkin_done ? 100 : 0);
+            $('#d-bar-checkin').style.width = moodPct + '%';
+            $('#d-checkin-status').textContent = daily.today.mood ? (daily.today.mood + '/5') : (daily.today.checkin_done ? '✓' : '—');
             
             const foodPct = Math.min(100, daily.today.food_logged * 33);
             $('#d-bar-food').style.width = foodPct + '%';
@@ -5345,6 +5476,627 @@
 
         btn.disabled = false;
         btn.style.opacity = '1';
+    }
+
+    // ── Mood Section (Dashboard) ──────────────────────────────────
+    async function loadMoodSection() {
+        var el = document.getElementById('d-mood-section');
+        if(!el) return;
+        var todayMood = null;
+        try { todayMood = await api('/mood/today'); } catch(e) {}
+
+        if(todayMood && todayMood.mood) {
+            // Already logged — show compact bar
+            var moodEmojis = ['', '\u{1F61E}', '\u{1F610}', '\u{1F642}', '\u{1F60A}', '\u{1F929}'];
+            var energyDots = '';
+            for(var ei = 1; ei <= 5; ei++) {
+                energyDots += '<span style="color:' + (ei <= todayMood.energy ? '#f59e0b' : '#2a2a2e') + ';">&#9632;</span>';
+            }
+            el.innerHTML = '<div class="px-4 py-2.5 rounded-xl flex items-center gap-3" style="background:#1c1c20;border:1px solid #2a2a2e;">'
+                + '<span style="font-size:1.25rem;">' + (moodEmojis[todayMood.mood] || '') + '</span>'
+                + '<span class="text-sm font-medium" style="color:#f0f0f2;">Mood: ' + todayMood.mood + '/5</span>'
+                + '<span class="text-xs" style="color:#5c5c6b;">|</span>'
+                + '<span class="text-sm font-mono" style="color:#f59e0b;">Energy: ' + energyDots + '</span>'
+                + (todayMood.note ? '<span class="text-xs flex-1 truncate" style="color:#9898a6;">' + todayMood.note + '</span>' : '')
+                + '<button onclick="resetMoodPrompt()" class="text-xs flex-shrink-0" style="color:#5c5c6b;background:none;border:none;cursor:pointer;font-family:inherit;">Edit</button>'
+                + '</div>';
+        } else {
+            // Not logged — show prompt
+            el.innerHTML = '<div class="card p-4" style="border-color:#2a2a2e;">'
+                + '<div class="text-sm font-semibold mb-3" style="color:#f0f0f2;">How are you feeling?</div>'
+                + '<div class="flex items-center justify-between gap-4 flex-wrap">'
+                + '<div>'
+                + '<div class="text-xs mb-2" style="color:#5c5c6b;">Mood</div>'
+                + '<div class="flex gap-2" id="mood-emoji-row">'
+                + '<button onclick="selectMoodEmoji(1)" data-mood="1" class="mood-emoji-btn text-2xl transition-transform" title="Bad" aria-label="Mood 1">&#128542;</button>'
+                + '<button onclick="selectMoodEmoji(2)" data-mood="2" class="mood-emoji-btn text-2xl transition-transform" title="Neutral" aria-label="Mood 2">&#128528;</button>'
+                + '<button onclick="selectMoodEmoji(3)" data-mood="3" class="mood-emoji-btn text-2xl transition-transform" title="Okay" aria-label="Mood 3">&#128578;</button>'
+                + '<button onclick="selectMoodEmoji(4)" data-mood="4" class="mood-emoji-btn text-2xl transition-transform" title="Good" aria-label="Mood 4">&#128522;</button>'
+                + '<button onclick="selectMoodEmoji(5)" data-mood="5" class="mood-emoji-btn text-2xl transition-transform" title="Amazing" aria-label="Mood 5">&#129321;</button>'
+                + '</div>'
+                + '</div>'
+                + '<div>'
+                + '<div class="text-xs mb-2" style="color:#5c5c6b;">Energy</div>'
+                + '<div class="flex gap-1.5" id="energy-dot-row">'
+                + '<button onclick="selectEnergy(1)" data-e="1" class="energy-dot-btn" aria-label="Energy 1">&#9632;</button>'
+                + '<button onclick="selectEnergy(2)" data-e="2" class="energy-dot-btn" aria-label="Energy 2">&#9632;</button>'
+                + '<button onclick="selectEnergy(3)" data-e="3" class="energy-dot-btn" aria-label="Energy 3">&#9632;</button>'
+                + '<button onclick="selectEnergy(4)" data-e="4" class="energy-dot-btn" aria-label="Energy 4">&#9632;</button>'
+                + '<button onclick="selectEnergy(5)" data-e="5" class="energy-dot-btn" aria-label="Energy 5">&#9632;</button>'
+                + '</div>'
+                + '</div>'
+                + '</div>'
+                + '<div class="flex gap-2 mt-3">'
+                + '<input id="mood-note" class="flex-1 px-3 py-2 rounded-lg border text-sm" placeholder="Optional note...">'
+                + '<button onclick="saveMood()" class="btn-primary flex-shrink-0 px-4 py-2">Save</button>'
+                + '</div>'
+                + '</div>';
+            window._moodVal = 3;
+            window._energyVal = 3;
+            // Set defaults
+            setTimeout(function() {
+                selectMoodEmoji(3);
+                selectEnergy(3);
+            }, 0);
+        }
+    }
+
+    function selectMoodEmoji(v) {
+        window._moodVal = v;
+        var btns = document.querySelectorAll('.mood-emoji-btn');
+        for(var i = 0; i < btns.length; i++) {
+            var b = btns[i];
+            var bv = parseInt(b.getAttribute('data-mood'));
+            b.style.opacity = bv === v ? '1' : '0.35';
+            b.style.transform = bv === v ? 'scale(1.2)' : 'scale(1)';
+        }
+    }
+
+    function selectEnergy(v) {
+        window._energyVal = v;
+        var btns = document.querySelectorAll('.energy-dot-btn');
+        for(var i = 0; i < btns.length; i++) {
+            var b = btns[i];
+            var bv = parseInt(b.getAttribute('data-e'));
+            b.style.color = bv <= v ? '#f59e0b' : '#2a2a2e';
+            b.style.fontSize = '1.25rem';
+            b.style.background = 'none';
+            b.style.border = 'none';
+            b.style.cursor = 'pointer';
+            b.style.padding = '0 2px';
+            b.style.fontFamily = 'inherit';
+        }
+    }
+
+    async function saveMood() {
+        var note = document.getElementById('mood-note');
+        var noteVal = note ? note.value.trim() : '';
+        var r = await api('/mood', 'POST', {
+            mood: window._moodVal || 3,
+            energy: window._energyVal || 3,
+            note: noteVal
+        });
+        if(r && !r.error) {
+            showToast('Mood saved!', 'success');
+            await loadMoodSection();
+            // Update mood bar in score card
+            var moodPct = Math.round(((window._moodVal || 3) / 5) * 100);
+            var barEl = document.getElementById('d-bar-checkin');
+            var statusEl = document.getElementById('d-checkin-status');
+            if(barEl) barEl.style.width = moodPct + '%';
+            if(statusEl) statusEl.textContent = (window._moodVal || 3) + '/5';
+        } else {
+            showToast('Could not save mood', 'error');
+        }
+    }
+
+    function resetMoodPrompt() {
+        // Force re-show of prompt by clearing today mood in UI
+        var el = document.getElementById('d-mood-section');
+        if(el) el.innerHTML = '';
+        // Re-render without today's mood
+        var el2 = document.getElementById('d-mood-section');
+        if(!el2) return;
+        window._moodVal = 3;
+        window._energyVal = 3;
+        // Re-use same render path but bypass cache
+        el2.innerHTML = '<div class="card p-4" style="border-color:#2a2a2e;">'
+            + '<div class="text-sm font-semibold mb-3" style="color:#f0f0f2;">Update your mood</div>'
+            + '<div class="flex items-center justify-between gap-4 flex-wrap">'
+            + '<div>'
+            + '<div class="text-xs mb-2" style="color:#5c5c6b;">Mood</div>'
+            + '<div class="flex gap-2" id="mood-emoji-row">'
+            + '<button onclick="selectMoodEmoji(1)" data-mood="1" class="mood-emoji-btn text-2xl transition-transform" title="Bad" aria-label="Mood 1">&#128542;</button>'
+            + '<button onclick="selectMoodEmoji(2)" data-mood="2" class="mood-emoji-btn text-2xl transition-transform" title="Neutral" aria-label="Mood 2">&#128528;</button>'
+            + '<button onclick="selectMoodEmoji(3)" data-mood="3" class="mood-emoji-btn text-2xl transition-transform" title="Okay" aria-label="Mood 3">&#128578;</button>'
+            + '<button onclick="selectMoodEmoji(4)" data-mood="4" class="mood-emoji-btn text-2xl transition-transform" title="Good" aria-label="Mood 4">&#128522;</button>'
+            + '<button onclick="selectMoodEmoji(5)" data-mood="5" class="mood-emoji-btn text-2xl transition-transform" title="Amazing" aria-label="Mood 5">&#129321;</button>'
+            + '</div>'
+            + '</div>'
+            + '<div>'
+            + '<div class="text-xs mb-2" style="color:#5c5c6b;">Energy</div>'
+            + '<div class="flex gap-1.5" id="energy-dot-row">'
+            + '<button onclick="selectEnergy(1)" data-e="1" class="energy-dot-btn" aria-label="Energy 1">&#9632;</button>'
+            + '<button onclick="selectEnergy(2)" data-e="2" class="energy-dot-btn" aria-label="Energy 2">&#9632;</button>'
+            + '<button onclick="selectEnergy(3)" data-e="3" class="energy-dot-btn" aria-label="Energy 3">&#9632;</button>'
+            + '<button onclick="selectEnergy(4)" data-e="4" class="energy-dot-btn" aria-label="Energy 4">&#9632;</button>'
+            + '<button onclick="selectEnergy(5)" data-e="5" class="energy-dot-btn" aria-label="Energy 5">&#9632;</button>'
+            + '</div>'
+            + '</div>'
+            + '</div>'
+            + '<div class="flex gap-2 mt-3">'
+            + '<input id="mood-note" class="flex-1 px-3 py-2 rounded-lg border text-sm" placeholder="Optional note...">'
+            + '<button onclick="saveMood()" class="btn-primary flex-shrink-0 px-4 py-2">Save</button>'
+            + '</div>'
+            + '</div>';
+        setTimeout(function() { selectMoodEmoji(3); selectEnergy(3); }, 0);
+    }
+
+    // ── Finance ───────────────────────────────────────────────────
+    async function loadFinance() {
+        var data = null;
+        try { data = await api('/finance'); } catch(e) {}
+
+        // Budget overview
+        var spent = (data && data.month_spent) || 0;
+        var budget = (data && data.month_budget) || 0;
+        var remaining = budget - spent;
+        var spentEl = document.getElementById('fin-spent');
+        var remEl = document.getElementById('fin-remaining');
+        if(spentEl) spentEl.textContent = '$' + spent.toLocaleString();
+        if(remEl) {
+            remEl.textContent = '$' + Math.abs(remaining).toLocaleString() + (remaining < 0 ? ' over' : '');
+            remEl.style.color = remaining < 0 ? '#ef4444' : '#22c55e';
+        }
+
+        // Category bars
+        var catBarsEl = document.getElementById('fin-category-bars');
+        if(catBarsEl) {
+            var cats2 = (data && data.categories) || [];
+            if(!cats2.length) {
+                catBarsEl.innerHTML = '<p class="text-xs" style="color:#5c5c6b;">No category data yet.</p>';
+            } else {
+                catBarsEl.innerHTML = cats2.map(function(c) {
+                    var pct = c.budget > 0 ? Math.min(100, Math.round((c.spent / c.budget) * 100)) : 0;
+                    var barColor = pct >= 90 ? '#ef4444' : (pct >= 70 ? '#f59e0b' : '#22c55e');
+                    return '<div>'
+                        + '<div class="flex justify-between mb-1">'
+                        + '<span class="text-xs" style="color:#9898a6;">' + c.name + '</span>'
+                        + '<span class="text-xs font-mono" style="color:' + barColor + ';">$' + c.spent + ' / $' + c.budget + '</span>'
+                        + '</div>'
+                        + '<div class="h-1.5 rounded-full overflow-hidden" style="background:rgba(255,255,255,0.06);">'
+                        + '<div class="h-full rounded-full" style="width:' + pct + '%;background:' + barColor + ';transition:width 0.6s;"></div>'
+                        + '</div>'
+                        + '</div>';
+                }).join('');
+            }
+        }
+
+        // Budget rules
+        var rulesEl = document.getElementById('fin-rules');
+        if(rulesEl) {
+            var rules = (data && data.rules) || [];
+            if(!rules.length) {
+                rulesEl.innerHTML = '<div class="empty-state"><p>No budget rules yet. Add one to set spending limits.</p></div>';
+            } else {
+                rulesEl.innerHTML = rules.map(function(r) {
+                    return '<div class="card p-3 flex items-center gap-3" style="border:1px solid #2a2a2e;">'
+                        + '<div class="flex-1 min-w-0">'
+                        + '<div class="text-sm font-medium" style="color:#f0f0f2;">' + r.description + '</div>'
+                        + '<div class="text-xs mt-0.5" style="color:#5c5c6b;">' + r.category + '</div>'
+                        + '</div>'
+                        + '<button onclick="deleteBudgetRule(' + r.id + ')" class="action-link-danger flex-shrink-0">Delete</button>'
+                        + '</div>';
+                }).join('');
+            }
+        }
+
+        // Recent transactions
+        var txEl = document.getElementById('fin-transactions');
+        if(txEl) {
+            var txs = (data && data.transactions) || [];
+            if(!txs.length) {
+                txEl.innerHTML = '<div class="empty-state"><p>No transactions yet. Log your first transaction.</p></div>';
+            } else {
+                var txColors = {food:'#f59e0b',clothing:'#4f80ff',electronics:'#8b5cf6',entertainment:'#ef4444',health:'#22c55e',transport:'#14b8a6',other:'#9898a6'};
+                txEl.innerHTML = txs.slice(0,20).map(function(t) {
+                    var c = txColors[t.category] || '#9898a6';
+                    var dateStr = t.date ? new Date(t.date + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '';
+                    return '<div class="card p-3 flex items-center gap-3" style="border:1px solid #2a2a2e;">'
+                        + '<div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:' + c + '1a;">'
+                        + '<div class="w-2 h-2 rounded-full" style="background:' + c + ';"></div>'
+                        + '</div>'
+                        + '<div class="flex-1 min-w-0">'
+                        + '<div class="text-sm font-medium truncate" style="color:#f0f0f2;">' + (t.description || t.name || 'Transaction') + '</div>'
+                        + '<div class="text-xs mt-0.5" style="color:#5c5c6b;">' + (t.category || '') + (dateStr ? ' · ' + dateStr : '') + '</div>'
+                        + '</div>'
+                        + '<div class="font-mono font-semibold text-sm flex-shrink-0" style="color:#ef4444;">-$' + parseFloat(t.amount || 0).toFixed(2) + '</div>'
+                        + '</div>';
+                }).join('');
+            }
+        }
+    }
+
+    function addTransactionModal() {
+        showModal('Log Transaction',
+            '<div class="space-y-3">'
+            + '<div>'
+            + '<label class="field-label">Description</label>'
+            + '<input id="nt-desc" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="e.g. Grocery shopping">'
+            + '</div>'
+            + '<div class="grid grid-cols-2 gap-3">'
+            + '<div>'
+            + '<label class="field-label">Amount ($)</label>'
+            + '<input id="nt-amount" type="number" step="0.01" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="0.00">'
+            + '</div>'
+            + '<div>'
+            + '<label class="field-label">Category</label>'
+            + '<select id="nt-category" class="w-full px-3 py-2.5 rounded-lg border text-sm">'
+            + '<option value="food">Food</option>'
+            + '<option value="clothing">Clothing</option>'
+            + '<option value="electronics">Electronics</option>'
+            + '<option value="entertainment">Entertainment</option>'
+            + '<option value="health">Health</option>'
+            + '<option value="transport">Transport</option>'
+            + '<option value="other">Other</option>'
+            + '</select>'
+            + '</div>'
+            + '</div>'
+            + '<div>'
+            + '<label class="field-label">Date</label>'
+            + '<input id="nt-date" type="date" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="' + new Date().toISOString().split('T')[0] + '">'
+            + '</div>'
+            + '<div class="flex gap-2 pt-1">'
+            + '<button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>'
+            + '<button onclick="saveTransaction()" class="btn-primary flex-1 py-2.5">Log</button>'
+            + '</div>'
+            + '</div>'
+        );
+    }
+
+    async function saveTransaction() {
+        var desc = (document.getElementById('nt-desc') || {}).value || '';
+        var amount = parseFloat((document.getElementById('nt-amount') || {}).value) || 0;
+        var category = (document.getElementById('nt-category') || {}).value || 'other';
+        var date = (document.getElementById('nt-date') || {}).value || '';
+        if(!desc.trim()) return showToast('Enter a description', 'error');
+        if(!amount) return showToast('Enter an amount', 'error');
+        var r = await api('/finance/transactions', 'POST', {description: desc, amount: amount, category: category, date: date});
+        hideModal();
+        if(r && !r.error) showToast('Transaction logged', 'success');
+        loadFinance();
+    }
+
+    async function askShouldBuy() {
+        var item = (document.getElementById('sib-item') || {}).value || '';
+        var amount = parseFloat((document.getElementById('sib-amount') || {}).value) || 0;
+        var category = (document.getElementById('sib-category') || {}).value || 'other';
+        if(!item.trim()) return showToast('Describe what you want to buy', 'warning');
+        var resultEl = document.getElementById('sib-result');
+        var resultText = document.getElementById('sib-result-text');
+        if(resultEl) resultEl.classList.remove('hidden');
+        if(resultText) resultText.textContent = 'Thinking...';
+        var r = await api('/finance/should-buy', 'POST', {item: item, amount: amount, category: category});
+        if(r && r.recommendation) {
+            if(resultText) resultText.textContent = r.recommendation;
+        } else if(r && r.error) {
+            if(resultText) { resultText.textContent = r.error; resultText.style.color = '#f87171'; }
+        } else {
+            if(resultText) resultText.textContent = 'No AI provider configured. Go to Settings to add one.';
+        }
+    }
+
+    function addBudgetRuleModal() {
+        showModal('Add Budget Rule',
+            '<div class="space-y-3">'
+            + '<div>'
+            + '<label class="field-label">Rule description</label>'
+            + '<input id="nr-desc" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="e.g. Max $200/month on Eating Out">'
+            + '</div>'
+            + '<div class="grid grid-cols-2 gap-3">'
+            + '<div>'
+            + '<label class="field-label">Category</label>'
+            + '<select id="nr-cat" class="w-full px-3 py-2.5 rounded-lg border text-sm">'
+            + '<option value="food">Food</option>'
+            + '<option value="clothing">Clothing</option>'
+            + '<option value="electronics">Electronics</option>'
+            + '<option value="entertainment">Entertainment</option>'
+            + '<option value="health">Health</option>'
+            + '<option value="transport">Transport</option>'
+            + '<option value="other">Other</option>'
+            + '</select>'
+            + '</div>'
+            + '<div>'
+            + '<label class="field-label">Monthly limit ($)</label>'
+            + '<input id="nr-limit" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="200">'
+            + '</div>'
+            + '</div>'
+            + '<div class="flex gap-2 pt-1">'
+            + '<button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>'
+            + '<button onclick="saveBudgetRule()" class="btn-primary flex-1 py-2.5">Add Rule</button>'
+            + '</div>'
+            + '</div>'
+        );
+    }
+
+    async function saveBudgetRule() {
+        var desc = (document.getElementById('nr-desc') || {}).value || '';
+        var cat = (document.getElementById('nr-cat') || {}).value || 'other';
+        var limit = parseFloat((document.getElementById('nr-limit') || {}).value) || 0;
+        if(!desc.trim()) return showToast('Enter a rule description', 'error');
+        var r = await api('/finance/rules', 'POST', {description: desc, category: cat, monthly_limit: limit});
+        hideModal();
+        if(r && !r.error) showToast('Rule added', 'success');
+        loadFinance();
+    }
+
+    async function deleteBudgetRule(id) {
+        if(!window._frconfirm) { showToast('Click again to confirm','warning'); window._frconfirm=setTimeout(function(){window._frconfirm=null;},3000); return; }
+        clearTimeout(window._frconfirm); window._frconfirm=null;
+        await api('/finance/rules/' + id, 'DELETE');
+        showToast('Rule deleted', 'info');
+        loadFinance();
+    }
+
+    // ── Discover ──────────────────────────────────────────────────
+    var _discoverActiveTab = 'want';
+    var _discoverItems = [];
+
+    function discoverTab(tab) {
+        _discoverActiveTab = tab;
+        var tabs = ['want', 'planning', 'done'];
+        tabs.forEach(function(t) {
+            var btn = document.getElementById('dtab-' + t);
+            if(!btn) return;
+            if(t === tab) {
+                btn.style.background = 'rgba(79,128,255,0.15)';
+                btn.style.color = '#f0f0f2';
+            } else {
+                btn.style.background = 'transparent';
+                btn.style.color = '#9898a6';
+            }
+        });
+        renderDiscoverGrid();
+    }
+
+    async function loadDiscover() {
+        var data = null;
+        try { data = await api('/discover'); } catch(e) {}
+        _discoverItems = (data && Array.isArray(data)) ? data : ((data && data.items) ? data.items : []);
+        renderDiscoverGrid();
+    }
+
+    function renderDiscoverGrid() {
+        var el = document.getElementById('discover-grid');
+        if(!el) return;
+        var tab = _discoverActiveTab || 'want';
+        var statusMap = {want: 'want_to_do', planning: 'planning', done: 'done'};
+        var filtered = _discoverItems.filter(function(x) { return x.status === statusMap[tab]; });
+
+        if(!filtered.length) {
+            el.innerHTML = '<div class="empty-state" style="grid-column:1/-1;">'
+                + '<p>Nothing here yet. Add a discovery to get started!</p>'
+                + '</div>';
+            return;
+        }
+
+        var catIcons = {Places: '&#128205;', Skills: '&#127979;', Experiences: '&#127881;', Food: '&#127859;', Creative: '&#127912;'};
+
+        el.innerHTML = filtered.map(function(x) {
+            var icon = catIcons[x.category] || '&#127775;';
+            if(x.status === 'done') {
+                // Completed card with photo
+                var stars = '';
+                for(var si = 1; si <= 5; si++) {
+                    stars += '<span style="color:' + (si <= (x.rating || 0) ? '#eab308' : '#2a2a2e') + ';">&#9733;</span>';
+                }
+                var dateStr = x.completed_date ? new Date(x.completed_date + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '';
+                return '<div class="card rounded-xl overflow-hidden" style="border:1px solid #2a2a2e;">'
+                    + (x.photo_url ? '<img src="' + x.photo_url + '" alt="" class="w-full object-cover" style="height:140px;">' : '<div class="w-full flex items-center justify-center" style="height:100px;background:#141416;font-size:2.5rem;">' + icon + '</div>')
+                    + '<div class="p-3">'
+                    + '<div class="flex items-center gap-1 mb-0.5">' + stars + '</div>'
+                    + '<div class="text-sm font-semibold" style="color:#f0f0f2;">' + x.title + '</div>'
+                    + (x.notes ? '<p class="text-xs mt-1 leading-relaxed" style="color:#9898a6;">"' + x.notes + '"</p>' : '')
+                    + '<div class="text-xs mt-2" style="color:#5c5c6b;">Done' + (dateStr ? ' · ' + dateStr : '') + '</div>'
+                    + '<div class="flex items-center gap-1 mt-2 pt-2" style="border-top:1px solid #242428;">'
+                    + '<button onclick="deleteDiscovery(' + x.id + ')" class="action-link-danger">Delete</button>'
+                    + '</div>'
+                    + '</div>'
+                    + '</div>';
+            } else {
+                // Want to do / Planning card
+                return '<div class="card rounded-xl p-4" style="border:1px solid #2a2a2e;">'
+                    + '<div class="flex items-start gap-3 mb-3">'
+                    + '<div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl" style="background:#242428;">' + icon + '</div>'
+                    + '<div class="flex-1 min-w-0">'
+                    + '<div class="text-sm font-semibold" style="color:#f0f0f2;">' + x.title + '</div>'
+                    + '<div class="text-xs mt-0.5" style="color:#9898a6;">' + (x.category || 'Discover') + (x.location ? ' · ' + x.location : '') + '</div>'
+                    + '<div class="text-xs mt-0.5" style="color:#5c5c6b;">' + (x.status === 'planning' ? 'Planning' : 'Want to do') + '</div>'
+                    + '</div>'
+                    + '</div>'
+                    + (x.description ? '<p class="text-xs leading-relaxed mb-3" style="color:#9898a6;">' + x.description + '</p>' : '')
+                    + '<div class="flex items-center gap-1 pt-2" style="border-top:1px solid #242428;">'
+                    + '<button onclick="completeDiscoveryModal(' + x.id + ', \'' + x.title.replace(/'/g, "\\'") + '\')" class="action-link-success">Mark Done</button>'
+                    + '<button onclick="startDiscoveryAs(' + x.id + ', \'habit\', \'' + x.title.replace(/'/g, "\\'") + '\')" class="action-link">Start as Habit</button>'
+                    + '<button onclick="startDiscoveryAs(' + x.id + ', \'challenge\', \'' + x.title.replace(/'/g, "\\'") + '\')" class="action-link">Challenge</button>'
+                    + '<button onclick="deleteDiscovery(' + x.id + ')" class="action-link-danger">Delete</button>'
+                    + '</div>'
+                    + '</div>';
+            }
+        }).join('');
+    }
+
+    function addDiscoveryModal() {
+        showModal('Add Discovery',
+            '<div class="space-y-3">'
+            + '<div>'
+            + '<label class="field-label">Title</label>'
+            + '<input id="nd-title" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="e.g. Chamarel Falls">'
+            + '</div>'
+            + '<div>'
+            + '<label class="field-label">Category</label>'
+            + '<select id="nd-category" class="w-full px-3 py-2.5 rounded-lg border text-sm">'
+            + '<option value="Places">Places</option>'
+            + '<option value="Skills">Skills</option>'
+            + '<option value="Experiences">Experiences</option>'
+            + '<option value="Food">Food</option>'
+            + '<option value="Creative">Creative</option>'
+            + '</select>'
+            + '</div>'
+            + '<div>'
+            + '<label class="field-label">Status</label>'
+            + '<select id="nd-status" class="w-full px-3 py-2.5 rounded-lg border text-sm">'
+            + '<option value="want_to_do">Want to Do</option>'
+            + '<option value="planning">Planning</option>'
+            + '</select>'
+            + '</div>'
+            + '<div>'
+            + '<label class="field-label">Location (optional)</label>'
+            + '<input id="nd-location" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="City, Country">'
+            + '</div>'
+            + '<div>'
+            + '<label class="field-label">Description (optional)</label>'
+            + '<textarea id="nd-desc" class="w-full px-3 py-2.5 rounded-lg border text-sm" rows="2" placeholder="Why do you want to do this?"></textarea>'
+            + '</div>'
+            + '<div class="flex gap-2 pt-1">'
+            + '<button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>'
+            + '<button onclick="saveDiscovery()" class="btn-primary flex-1 py-2.5">Add</button>'
+            + '</div>'
+            + '</div>'
+        );
+    }
+
+    async function saveDiscovery() {
+        var title = (document.getElementById('nd-title') || {}).value || '';
+        if(!title.trim()) return showToast('Enter a title', 'error');
+        var r = await api('/discover', 'POST', {
+            title: title,
+            category: (document.getElementById('nd-category') || {}).value || 'Places',
+            status: (document.getElementById('nd-status') || {}).value || 'want_to_do',
+            location: (document.getElementById('nd-location') || {}).value || '',
+            description: (document.getElementById('nd-desc') || {}).value || ''
+        });
+        hideModal();
+        if(r && !r.error) showToast('Discovery added', 'success');
+        loadDiscover();
+    }
+
+    function completeDiscoveryModal(id, name) {
+        showModal('Complete: ' + name,
+            '<div class="space-y-3">'
+            + '<div>'
+            + '<label class="field-label">Rating (1-5)</label>'
+            + '<div class="flex gap-2">'
+            + '<button onclick="selectDiscoverRating(1,this)" class="discover-rating-btn text-2xl" aria-label="1 star">&#9733;</button>'
+            + '<button onclick="selectDiscoverRating(2,this)" class="discover-rating-btn text-2xl" aria-label="2 stars">&#9733;</button>'
+            + '<button onclick="selectDiscoverRating(3,this)" class="discover-rating-btn text-2xl" aria-label="3 stars">&#9733;</button>'
+            + '<button onclick="selectDiscoverRating(4,this)" class="discover-rating-btn text-2xl" aria-label="4 stars">&#9733;</button>'
+            + '<button onclick="selectDiscoverRating(5,this)" class="discover-rating-btn text-2xl" aria-label="5 stars">&#9733;</button>'
+            + '</div>'
+            + '</div>'
+            + '<div>'
+            + '<label class="field-label">Notes</label>'
+            + '<textarea id="dc-notes" class="w-full px-3 py-2.5 rounded-lg border text-sm" rows="2" placeholder="How was it?"></textarea>'
+            + '</div>'
+            + '<div>'
+            + '<label class="field-label">Date completed</label>'
+            + '<input id="dc-date" type="date" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="' + new Date().toISOString().split('T')[0] + '">'
+            + '</div>'
+            + '<div>'
+            + '<label class="field-label">Photo (optional)</label>'
+            + '<input type="file" id="dc-photo" accept="image/*" class="w-full px-3 py-2 rounded-lg border text-sm" style="cursor:pointer;">'
+            + '</div>'
+            + '<div class="flex gap-2 pt-1">'
+            + '<button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>'
+            + '<button onclick="submitCompleteDiscovery(' + id + ')" class="btn-primary flex-1 py-2.5">Mark Done</button>'
+            + '</div>'
+            + '</div>'
+        );
+        window._discoverRating = 0;
+    }
+
+    function selectDiscoverRating(val, btn) {
+        window._discoverRating = val;
+        var btns = document.querySelectorAll('.discover-rating-btn');
+        for(var i = 0; i < btns.length; i++) {
+            btns[i].style.color = (i + 1) <= val ? '#eab308' : '#2a2a2e';
+            btns[i].style.background = 'none';
+            btns[i].style.border = 'none';
+            btns[i].style.cursor = 'pointer';
+            btns[i].style.padding = '0 2px';
+            btns[i].style.fontFamily = 'inherit';
+        }
+    }
+
+    async function submitCompleteDiscovery(id) {
+        var notes = (document.getElementById('dc-notes') || {}).value || '';
+        var date = (document.getElementById('dc-date') || {}).value || new Date().toISOString().split('T')[0];
+        var payload = {status: 'done', rating: window._discoverRating || 0, notes: notes, completed_date: date};
+
+        // Upload photo if selected
+        var photoInput = document.getElementById('dc-photo');
+        if(photoInput && photoInput.files && photoInput.files.length) {
+            try {
+                var formData = new FormData();
+                formData.append('image', photoInput.files[0]);
+                var resp = await fetch('/api/discover/' + id + '/photo', {method:'POST', body: formData, credentials:'same-origin'});
+                var result = await resp.json();
+                if(result && result.photo_url) payload.photo_url = result.photo_url;
+            } catch(e) {}
+        }
+
+        var r = await api('/discover/' + id, 'PUT', payload);
+        hideModal();
+        if(r && !r.error) showToast('Discovery completed!', 'success');
+        loadDiscover();
+    }
+
+    async function deleteDiscovery(id) {
+        if(!window._dconfirm) { showToast('Click again to confirm','warning'); window._dconfirm=setTimeout(function(){window._dconfirm=null;},3000); return; }
+        clearTimeout(window._dconfirm); window._dconfirm=null;
+        await api('/discover/' + id, 'DELETE');
+        showToast('Removed', 'info');
+        loadDiscover();
+    }
+
+    async function startDiscoveryAs(id, type, name) {
+        if(type === 'habit') {
+            // Pre-fill add habit modal with the discovery name
+            await addHabitModal();
+            var nameEl = document.getElementById('nh-name');
+            if(nameEl) { nameEl.value = name; nameEl.focus(); }
+        } else if(type === 'challenge') {
+            var todayStr = new Date().toISOString().split('T')[0];
+            showModal('Start Challenge: ' + name,
+                '<div class="space-y-3">'
+                + '<p class="text-sm" style="color:#9898a6;">Turn "' + name + '" into a streak challenge.</p>'
+                + '<div>'
+                + '<label class="field-label">Target days</label>'
+                + '<input id="sc-days" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="30">'
+                + '</div>'
+                + '<div class="flex gap-2 pt-1">'
+                + '<button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>'
+                + '<button onclick="createDiscoveryChallenge(' + id + ', \'' + name.replace(/'/g, "\\'") + '\')" class="btn-primary flex-1 py-2.5">Start</button>'
+                + '</div>'
+                + '</div>'
+            );
+        }
+    }
+
+    async function createDiscoveryChallenge(discId, name) {
+        var days = parseInt((document.getElementById('sc-days') || {}).value) || null;
+        var r = await api('/challenges', 'POST', {
+            name: name,
+            category: 'general',
+            target_days: days,
+            check_in_frequency: 'daily',
+            start_date: new Date().toISOString().split('T')[0]
+        });
+        hideModal();
+        if(r && r.success) {
+            showToast('Challenge started!', 'success');
+            loadChallenges();
+        }
     }
 
     // Events

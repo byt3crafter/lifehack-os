@@ -7,7 +7,6 @@ Public API::
         PluginRegistry,
         plugin_registry,        # module-level singleton
         VikunjaPlugin,
-        GoogleCalendarPlugin,
         FireflyPlugin,
         register_builtin_plugins,
     )
@@ -18,7 +17,6 @@ first-party plugins into the singleton registry.
 from .base import Plugin
 from .registry import PluginRegistry, plugin_registry
 from .vikunja_plugin import VikunjaPlugin
-from .google_calendar_plugin import GoogleCalendarPlugin
 from .firefly_plugin import FireflyPlugin
 
 
@@ -28,7 +26,7 @@ def register_builtin_plugins() -> None:
     Safe to call multiple times — subsequent calls are no-ops if the
     plugins are already registered.
     """
-    for plugin in (VikunjaPlugin(), GoogleCalendarPlugin(), FireflyPlugin()):
+    for plugin in (VikunjaPlugin(), FireflyPlugin()):
         if not plugin_registry.has(plugin.id):
             plugin_registry.register(plugin)
 
@@ -38,7 +36,6 @@ __all__ = [
     "PluginRegistry",
     "plugin_registry",
     "VikunjaPlugin",
-    "GoogleCalendarPlugin",
     "FireflyPlugin",
     "register_builtin_plugins",
 ]

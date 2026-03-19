@@ -9,7 +9,7 @@ from src.infrastructure.database.repositories import (
     HabitRepository, CheckinRepository, ReplacementRepository, StatsRepository
 )
 from src.infrastructure.config import load_config
-from src.infrastructure.providers import get_calendar_provider, get_firefly_provider
+from src.infrastructure.providers import get_firefly_provider
 
 misc_bp = Blueprint('misc', __name__, url_prefix='/api')
 
@@ -413,24 +413,8 @@ def end_deepwork():
 @misc_bp.route('/calendar/events')
 @login_required
 def get_calendar_events():
-    provider = get_calendar_provider()
-    if not provider:
-        return jsonify({'enabled': False, 'events': []})
-    
-    days = int(request.args.get('days', 7))
-    events = provider.get_events(days_ahead=days)
-    
-    return jsonify({
-        'enabled': True,
-        'events': [{
-            'id': e.id,
-            'title': e.title,
-            'start': e.start.isoformat(),
-            'end': e.end.isoformat(),
-            'location': e.location,
-            'all_day': e.all_day
-        } for e in events]
-    })
+    # Google Calendar integration has been removed.
+    return jsonify({'enabled': False, 'events': []})
 
 
 # ============== FINANCE ==============
