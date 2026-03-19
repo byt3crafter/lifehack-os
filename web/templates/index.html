@@ -3371,10 +3371,9 @@
             document.getElementById('fast-active-card').classList.remove('hidden');
             document.getElementById('fast-start-card').classList.add('hidden');
             document.getElementById('fast-target-hours').textContent = f.active.target_hours;
-            document.getElementById('fast-start-time').textContent = new Date(f.active.start_at).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
-
             var fastStartStr = (f.active.start_at || '').replace(' ', 'T');
             if (!fastStartStr.endsWith('Z') && !fastStartStr.includes('+')) fastStartStr += 'Z';
+            document.getElementById('fast-start-time').textContent = new Date(fastStartStr).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
             const start = new Date(fastStartStr).getTime();
             const targetHours = f.active.target_hours;
             const target = targetHours * 3600000;
@@ -3405,12 +3404,14 @@
         var rows = '';
         for (var i = 0; i < entries.length; i++) {
             var h = entries[i];
-            var startMs = new Date(h.start_at).getTime();
-            var endMs = h.end_at ? new Date(h.end_at).getTime() : Date.now();
+            var hStartStr = (h.start_at||'').replace(' ','T'); if(!hStartStr.endsWith('Z')&&!hStartStr.includes('+')) hStartStr+='Z';
+            var hEndStr = h.end_at ? (h.end_at||'').replace(' ','T') : ''; if(hEndStr&&!hEndStr.endsWith('Z')&&!hEndStr.includes('+')) hEndStr+='Z';
+            var startMs = new Date(hStartStr).getTime();
+            var endMs = hEndStr ? new Date(hEndStr).getTime() : Date.now();
             var dur = Math.round((endMs - startMs) / 3600000 * 10) / 10;
             var completed = h.status === 'completed' && dur >= (h.target_hours * 0.9);
             var pts = Math.floor((endMs - startMs) / 360000);
-            var dateStr = new Date(h.end_at || h.start_at).toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
+            var dateStr = new Date(hEndStr || hStartStr).toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
             var iconSvg = completed
                 ? '<path stroke-linecap="round" stroke-linejoin="round" d="M4 10l4 4 8-8"/>'
                 : '<circle cx="10" cy="10" r="7"/><path stroke-linecap="round" stroke-linejoin="round" d="M10 6v4l2.5 2.5"/>';
