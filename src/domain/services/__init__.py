@@ -10,6 +10,8 @@ from .micro_task_verification import (
     verify_phase_tasks,
     are_all_tasks_complete,
 )
+from .chat_tools import TOOL_DEFINITIONS
+from .chat_tool_executor import execute_tool
 
 __all__ = [
     'calculate_strength_change',
@@ -19,4 +21,6 @@ __all__ = [
     'verify_micro_task',
     'verify_phase_tasks',
     'are_all_tasks_complete',
+    'TOOL_DEFINITIONS',
+    'execute_tool',
 ]

@@ -161,8 +161,36 @@ def assemble_context(conn) -> dict:
     return context
 
 
-def build_system_prompt(context: dict) -> str:
-    """Build the AI system prompt with full module data."""
+def build_system_prompt(context: dict, tools: list | None = None) -> str:
+    """Build the AI system prompt with full module data and optional tool list."""
+
+    tools_section = ""
+    if tools:
+        tool_lines = []
+        for t in tools:
+            param_keys = ", ".join(t.get("parameters", {}).keys())
+            tool_lines.append(f"- {t['name']}({param_keys}) — {t['description']}")
+        tools_text = "\n".join(tool_lines)
+        tools_section = f"""
+
+## Tools You Can Use
+When the user asks you to DO something (create, log, start, add, delete, set), respond with
+a tool call on its own line using this exact format:
+
+[TOOL: tool_name] {{"param": "value"}}
+
+Available tools:
+{tools_text}
+
+Rules for tool use:
+- Only call a tool when the user explicitly asks you to take an action.
+- For questions, advice, or analysis — just answer; do NOT call tools.
+- You may call multiple tools in one response — put each on its own line.
+- After the tool results are fed back to you, summarise what happened in 1-2 sentences.
+- Never invent habit_id or challenge_id values. Look them up in the context data above.
+- If a required parameter is missing, ask the user before calling the tool.
+"""
+
     return f"""You are the user's personal life advisor inside LifeHack OS. You have FULL access to ALL their data.
 
 ## Your Personality
@@ -184,4 +212,4 @@ def build_system_prompt(context: dict) -> str:
 - If data is empty for a module, say "I don't see any data for that yet."
 - Use the user's actual currency from Firefly (look at the accounts).
 - Be a strict but caring advisor — like a friend who won't let you waste money or skip workouts.
-"""
+{tools_section}"""

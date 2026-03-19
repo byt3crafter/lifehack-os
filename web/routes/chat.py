@@ -4,7 +4,9 @@ POST   /api/chat              — send a message, receive an AI response
 GET    /api/chat/history      — retrieve conversation history (?limit=N, default 50)
 DELETE /api/chat/history      — clear conversation history
 """
+import json
 import logging
+import re
 from datetime import datetime
 from flask import Blueprint, jsonify, request
 
@@ -12,10 +14,55 @@ from .decorators import login_required
 from src.infrastructure.database import get_connection
 from src.infrastructure.ai import get_ai_provider
 from src.domain.services.chat_context import assemble_context, build_system_prompt
+from src.domain.services.chat_tools import TOOL_DEFINITIONS
+from src.domain.services.chat_tool_executor import execute_tool
 
 logger = logging.getLogger(__name__)
 
 chat_bp = Blueprint("chat", __name__, url_prefix="/api/chat")
+
+# Matches: [TOOL: tool_name] {"key": "value", ...}
+# The JSON block may span multiple lines, so re.DOTALL is required.
+_TOOL_PATTERN = re.compile(r'\[TOOL:\s*(\w+)\]\s*(\{.*?\})', re.DOTALL)
+_THINK_PATTERN = re.compile(r'<think>.*?</think>', re.DOTALL)
+
+
+# ---------------------------------------------------------------------------
+# Internal helpers
+# ---------------------------------------------------------------------------
+
+def _strip_think_tags(text: str) -> str:
+    """Remove <think>...</think> reasoning blocks (e.g. MiniMax)."""
+    return _THINK_PATTERN.sub('', text).strip()
+
+
+def _parse_and_execute_tools(ai_response: str, conn) -> tuple[str, list]:
+    """Find [TOOL: ...] calls in *ai_response*, execute them, return results.
+
+    Returns:
+        clean_response  — the AI text with tool-call lines removed
+        tool_results    — list of {tool, args, result} dicts
+    """
+    matches = _TOOL_PATTERN.findall(ai_response)
+    if not matches:
+        return ai_response, []
+
+    results = []
+    for tool_name, args_json in matches:
+        try:
+            args = json.loads(args_json)
+        except json.JSONDecodeError:
+            logger.warning("Could not parse tool args JSON for '%s': %s", tool_name, args_json)
+            args = {}
+
+        result = execute_tool(tool_name, args, conn)
+        logger.info("Tool '%s' executed — result: %s", tool_name, result)
+        results.append({"tool": tool_name, "args": args, "result": result})
+
+    # Strip tool-call lines from the visible response
+    clean_response = _TOOL_PATTERN.sub('', ai_response).strip()
+
+    return clean_response, results
 
 
 # ---------------------------------------------------------------------------
@@ -46,7 +93,7 @@ def send_message():
         logger.error("Context assembly failed: %s", exc, exc_info=True)
         context = {}
 
-    system_prompt = build_system_prompt(context)
+    system_prompt = build_system_prompt(context, tools=TOOL_DEFINITIONS)
 
     # Load last 10 messages for conversation continuity
     history_rows = conn.execute(
@@ -68,7 +115,7 @@ def send_message():
     )
     conn.commit()
 
-    # Call AI
+    # ── First AI call ────────────────────────────────────────────────────────
     try:
         ai_response = provider.chat_with_context(system_prompt, conversation)
     except Exception as exc:
@@ -84,27 +131,62 @@ def send_message():
     if not ai_response:
         return jsonify({"error": "AI returned an empty response. Check provider settings."}), 502
 
-    # Strip <think>...</think> reasoning tags (MiniMax includes these)
-    import re
-    ai_response = re.sub(r'<think>.*?</think>', '', ai_response, flags=re.DOTALL).strip()
+    # Strip <think> tags before processing
+    ai_response = _strip_think_tags(ai_response)
 
-    # Resolve provider/model metadata for storage
+    # ── Tool execution ───────────────────────────────────────────────────────
+    clean_response, tool_results = _parse_and_execute_tools(ai_response, conn)
+
+    if tool_results:
+        # Feed tool results back to the AI for a concise user-facing summary
+        tool_summary = json.dumps(tool_results, default=str)
+        followup_messages = conversation + [
+            {"role": "assistant", "content": ai_response},
+            {
+                "role": "user",
+                "content": (
+                    f"[TOOL RESULTS] {tool_summary}\n\n"
+                    "Summarise what just happened in 1-2 friendly sentences for the user. "
+                    "Do NOT repeat the raw JSON. Do NOT call any more tools."
+                ),
+            },
+        ]
+
+        try:
+            final_response = provider.chat_with_context(system_prompt, followup_messages)
+            final_response = _strip_think_tags(final_response)
+            # Make sure the follow-up didn't inject new tool calls
+            final_response = _TOOL_PATTERN.sub('', final_response).strip()
+            if final_response:
+                clean_response = final_response
+        except Exception as exc:
+            logger.warning("Follow-up AI call after tool execution failed: %s", exc)
+            # Fall back to the cleaned first response (tool calls stripped)
+
+        if not clean_response:
+            clean_response = "Done!"
+
+    # ── Resolve provider/model metadata for storage ──────────────────────────
     provider_name = type(provider).__name__.replace("Provider", "").lower()
     model_name = getattr(provider, "model", "")
 
-    # Persist the assistant response
+    # Persist the assistant response (cleaned — no [TOOL: ...] lines)
     conn.execute(
         """INSERT INTO chat_messages (role, content, provider, model)
            VALUES (?, ?, ?, ?)""",
-        ("assistant", ai_response, provider_name, model_name),
+        ("assistant", clean_response, provider_name, model_name),
     )
     conn.commit()
 
-    return jsonify({
-        "response": ai_response,
+    response_payload = {
+        "response": clean_response,
         "provider": provider_name,
         "model": model_name,
-    })
+    }
+    if tool_results:
+        response_payload["tools_used"] = [r["tool"] for r in tool_results]
+
+    return jsonify(response_payload)
 
 
 # ---------------------------------------------------------------------------
