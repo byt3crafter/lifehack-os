@@ -2953,7 +2953,7 @@
                 if(callsEl) callsEl.textContent = (t.total_calls != null) ? t.total_calls : '0';
                 if(tokensEl) tokensEl.textContent = (t.total_tokens != null) ? t.total_tokens.toLocaleString() : '0';
                 if(costEl) costEl.textContent = (t.total_cost_usd != null) ? '$' + t.total_cost_usd.toFixed(4) : '$0.0000';
-                if(rateEl) rateEl.textContent = (t.success_rate != null) ? (t.success_rate * 100).toFixed(0) + '%' : '—';
+                if(rateEl) rateEl.textContent = (t.success_rate != null) ? t.success_rate.toFixed(0) + '%' : '—';
 
                 // Populate entries list
                 const logEl = $('#ai-usage-log');
@@ -3156,7 +3156,7 @@
         if(id === 'anthropic')     return s.ai_anthropic_model || 'claude-sonnet-4-20250514';
         if(id === 'minimax')       return s.ai_minimax_model  || 'MiniMax-M2';
         if(id === 'ollama')        return s.ai_ollama_url     || 'http://localhost:11434';
-        if(id === 'chatgpt_oauth') return 'OAuth connected';
+        if(id === 'chatgpt_oauth') return 'OAuth · ' + (s.ai_openai_model || 'gpt-4o');
         return '';
     }
 
@@ -3288,20 +3288,53 @@
                 + '</div></div>'
             );
         } else if(providerId === 'chatgpt_oauth') {
-            showModal('Connect ChatGPT Account',
-                '<div class="space-y-4">'
-                + '<p class="text-sm" style="color:#9898a6;">Click Connect to open OpenAI login. After signing in, you\'ll be redirected to localhost:1455 which won\'t load. Copy the full URL from your browser\'s address bar and paste it below.</p>'
-                + '<button onclick="startChatGPTOAuth()" class="btn-primary w-full py-2.5 flex items-center justify-center gap-2">'
-                + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 10h12M11 6l5 4-5 4"/></svg>'
-                + 'Connect</button>'
-                + '<div id="chatgpt-paste-section" class="hidden space-y-3">'
-                + '<div><label class="field-label">Paste callback URL here</label>'
-                + '<input id="chatgpt-callback-url" type="text" class="w-full px-3 py-2.5 rounded-lg border text-sm mt-1" placeholder="http://localhost:1455/?code=...&state=..."></div>'
-                + '<button onclick="completeChatGPTOAuth()" class="btn-primary w-full py-2.5">Complete Connection</button>'
-                + '</div>'
-                + '<div id="chatgpt-oauth-status" class="text-sm"></div>'
-                + '</div>'
-            );
+            // Check if already connected
+            var connected = false;
+            try {
+                var statusResp = await fetch('/auth/openai/status', {credentials:'same-origin'});
+                var statusData = await statusResp.json();
+                connected = !!(statusData && statusData.connected);
+            } catch(e) {}
+
+            if(connected) {
+                // Already connected — show model picker + test + disconnect
+                showModal('ChatGPT Account',
+                    '<div class="space-y-4">'
+                    + '<div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 rounded-full" style="background:#22c55e;"></div><span class="text-sm font-medium" style="color:#22c55e;">Connected via OAuth</span></div>'
+                    + '<div><label class="field-label">Model</label>'
+                    + '<select id="cfg-chatgpt-model" class="w-full px-3 py-2.5 rounded-lg border text-sm mt-1">'
+                    + '<option value="gpt-4o">gpt-4o (vision)</option>'
+                    + '<option value="gpt-4o-mini" selected>gpt-4o-mini (vision, cheaper)</option>'
+                    + '<option value="o1">o1 (reasoning)</option>'
+                    + '<option value="o1-mini">o1-mini</option>'
+                    + '<option value="o3-mini">o3-mini</option>'
+                    + '</select></div>'
+                    + '<div id="cfg-test-status" class="text-sm"></div>'
+                    + '<div class="flex gap-2">'
+                    + '<button onclick="testChatGPTOAuth()" class="btn-ghost flex-1 py-2.5 text-sm">Test</button>'
+                    + '<button onclick="saveChatGPTModel()" class="btn-primary flex-1 py-2.5 text-sm">Save Model</button>'
+                    + '</div>'
+                    + '<div style="border-top:1px solid #2a2a2e;padding-top:0.75rem;margin-top:0.5rem;">'
+                    + '<button onclick="disconnectChatGPT();hideModal();" class="text-xs" style="color:#ef4444;">Disconnect ChatGPT Account</button>'
+                    + '</div></div>'
+                );
+            } else {
+                // Not connected — show OAuth flow
+                showModal('Connect ChatGPT Account',
+                    '<div class="space-y-4">'
+                    + '<p class="text-sm" style="color:#9898a6;">Click Connect to open OpenAI login. After signing in, you\'ll be redirected to localhost:1455 which won\'t load. Copy the full URL from your browser\'s address bar and paste it below.</p>'
+                    + '<button onclick="startChatGPTOAuth()" class="btn-primary w-full py-2.5 flex items-center justify-center gap-2">'
+                    + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 10h12M11 6l5 4-5 4"/></svg>'
+                    + 'Connect</button>'
+                    + '<div id="chatgpt-paste-section" class="hidden space-y-3">'
+                    + '<div><label class="field-label">Paste callback URL here</label>'
+                    + '<input id="chatgpt-callback-url" type="text" class="w-full px-3 py-2.5 rounded-lg border text-sm mt-1" placeholder="http://localhost:1455/auth/callback?code=...&state=..."></div>'
+                    + '<button onclick="completeChatGPTOAuth()" class="btn-primary w-full py-2.5">Complete Connection</button>'
+                    + '</div>'
+                    + '<div id="chatgpt-oauth-status" class="text-sm"></div>'
+                    + '</div>'
+                );
+            }
         }
     }
 
@@ -3366,6 +3399,29 @@
         showToast('Provider saved', 'success');
         hideModal();
         loadSettings();
+    }
+
+    async function testChatGPTOAuth() {
+        var statusEl = document.getElementById('cfg-test-status');
+        if(statusEl) statusEl.innerHTML = '<span style="color:#eab308;">Testing...</span>';
+        var r = await api('/ai/test', 'POST', {provider: 'chatgpt_oauth'});
+        if(r && r.valid) {
+            if(statusEl) statusEl.innerHTML = '<span style="color:#22c55e;">Connected and working!</span>';
+        } else {
+            if(statusEl) statusEl.innerHTML = '<span style="color:#ef4444;">Failed: ' + (r && r.error ? r.error : 'Unknown') + '</span>';
+        }
+    }
+
+    async function saveChatGPTModel() {
+        var modelEl = document.getElementById('cfg-chatgpt-model');
+        if(!modelEl) return;
+        // Save model as the openai model (ChatGPT OAuth uses OpenAI API format)
+        var r = await api('/settings', 'POST', {ai_openai_model: modelEl.value});
+        if(r && !r.error) {
+            showToast('Model saved: ' + modelEl.value, 'success');
+            hideModal();
+            loadSettings();
+        }
     }
 
     async function startChatGPTOAuth() {
