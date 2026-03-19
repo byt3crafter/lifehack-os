@@ -110,7 +110,14 @@ class OpenAIProvider(AIProvider):
             return ""
 
     def _parse_json(self, text: str) -> dict:
-        """Try to extract JSON from response."""
+        """Try to extract JSON from response, handling think tags and markdown."""
+        import re
+        # Strip <think>...</think> tags (MiniMax wraps responses in these)
+        text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL).strip()
+        # Strip markdown code blocks
+        md_match = re.search(r'```(?:json)?\s*\n?(.*?)```', text, flags=re.DOTALL)
+        if md_match:
+            text = md_match.group(1).strip()
         try:
             return json.loads(text)
         except json.JSONDecodeError:

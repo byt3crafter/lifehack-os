@@ -926,7 +926,7 @@ def generate_habit_plan():
 
     plan = provider.generate_habit_plan(goal)
     if not plan:
-        return jsonify({'error': 'AI failed to generate a habit plan'}), 502
+        return jsonify({'error': 'AI could not generate a plan. Try rephrasing your goal.'}), 422
 
     # Serialise the dataclass to a plain dict for the response
     return jsonify({
