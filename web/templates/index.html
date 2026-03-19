@@ -3362,7 +3362,8 @@
     }
 
     async function startChatGPTOAuth() {
-        var r = await api('/auth/openai/start');
+        var resp = await fetch('/auth/openai/start', {credentials:'same-origin'});
+        var r = await resp.json();
         if(r && r.auth_url) {
             window.open(r.auth_url, '_blank');
             var section = document.getElementById('chatgpt-paste-section');
@@ -3381,7 +3382,8 @@
             var code  = url.searchParams.get('code');
             var state = url.searchParams.get('state');
             if(!code) { showToast('No authorization code found in URL', 'error'); return; }
-            var r = await api('/auth/openai/exchange', 'POST', {code: code, state: state});
+            var exResp = await fetch('/auth/openai/exchange', {method:'POST', headers:{'Content-Type':'application/json'}, credentials:'same-origin', body:JSON.stringify({code:code, state:state})});
+            var r = await exResp.json();
             if(r && r.success) {
                 showToast('ChatGPT account connected!', 'success');
                 hideModal();
