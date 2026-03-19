@@ -4,7 +4,7 @@ import json
 from datetime import date, datetime, timedelta
 from flask import Blueprint, jsonify, request
 
-from .decorators import login_required
+from .decorators import login_required, current_user_id
 from src.domain.entities import Habit, HabitCompletion, CompletionStatus, Frequency
 from src.domain.services import (
     calculate_strength_change,
@@ -19,8 +19,6 @@ from src.infrastructure.config import load_config
 
 habits_bp = Blueprint('habits', __name__, url_prefix='/api/habits')
 
-habit_repo = HabitRepository()
-stats_repo = StatsRepository()
 config = load_config()
 
 
@@ -28,25 +26,25 @@ config = load_config()
 # Internal helpers
 # ---------------------------------------------------------------------------
 
-def _get_or_create_strength(conn, habit_id: int) -> dict:
+def _get_or_create_strength(conn, habit_id: int, uid: int) -> dict:
     """Return the habit_strength row for a habit, creating it if absent."""
     row = conn.execute(
-        "SELECT * FROM habit_strength WHERE habit_id = ?", (habit_id,)
+        "SELECT * FROM habit_strength WHERE habit_id = ? AND user_id = ?", (habit_id, uid)
     ).fetchone()
     if row is None:
         conn.execute(
-            "INSERT INTO habit_strength (habit_id) VALUES (?)", (habit_id,)
+            "INSERT INTO habit_strength (habit_id, user_id) VALUES (?, ?)", (habit_id, uid)
         )
         conn.commit()
         row = conn.execute(
-            "SELECT * FROM habit_strength WHERE habit_id = ?", (habit_id,)
+            "SELECT * FROM habit_strength WHERE habit_id = ? AND user_id = ?", (habit_id, uid)
         ).fetchone()
     return dict(row)
 
 
-def _update_strength(conn, habit_id: int, completed: bool) -> dict:
+def _update_strength(conn, habit_id: int, completed: bool, uid: int) -> dict:
     """Apply strength change and return updated strength data."""
-    s = _get_or_create_strength(conn, habit_id)
+    s = _get_or_create_strength(conn, habit_id, uid)
     new_strength = calculate_strength_change(s["strength"], completed)
     peak = max(s["peak_strength"], new_strength)
     now_iso = datetime.now().isoformat()
@@ -56,16 +54,16 @@ def _update_strength(conn, habit_id: int, completed: bool) -> dict:
             """UPDATE habit_strength
                SET strength = ?, peak_strength = ?,
                    last_completed = ?, total_completions = total_completions + 1
-               WHERE habit_id = ?""",
-            (new_strength, peak, now_iso, habit_id),
+               WHERE habit_id = ? AND user_id = ?""",
+            (new_strength, peak, now_iso, habit_id, uid),
         )
     else:
         conn.execute(
             """UPDATE habit_strength
                SET strength = ?, last_missed = ?,
                    total_misses = total_misses + 1
-               WHERE habit_id = ?""",
-            (new_strength, now_iso, habit_id),
+               WHERE habit_id = ? AND user_id = ?""",
+            (new_strength, now_iso, habit_id, uid),
         )
     conn.commit()
     return {
@@ -170,25 +168,26 @@ def _safe_parse_rule(raw) -> dict:
         return {"type": "manual"}
 
 
-def _apply_daily_decay(conn) -> None:
+def _apply_daily_decay(conn, uid: int) -> None:
     """Apply -1% strength decay for each active habit not completed today.
 
     Called from the daily summary endpoint so it runs at most once per day.
     """
     today = date.today().isoformat()
-    # Find habits that have a strength row but were NOT completed today
+    # Find habits for this user that have a strength row but were NOT completed today
     rows = conn.execute(
         """SELECT hs.habit_id, hs.strength, hs.peak_strength
            FROM habit_strength hs
-           WHERE (hs.last_completed IS NULL OR date(hs.last_completed) < ?)""",
-        (today,),
+           WHERE hs.user_id = ?
+             AND (hs.last_completed IS NULL OR date(hs.last_completed) < ?)""",
+        (uid, today),
     ).fetchall()
 
     for row in rows:
         new_strength = max(0.0, row["strength"] - 1.0)
         conn.execute(
-            "UPDATE habit_strength SET strength = ? WHERE habit_id = ?",
-            (new_strength, row["habit_id"]),
+            "UPDATE habit_strength SET strength = ? WHERE habit_id = ? AND user_id = ?",
+            (new_strength, row["habit_id"], uid),
         )
     conn.commit()
 
@@ -205,6 +204,8 @@ def get_habits():
     Query params:
         include_inactive=true — also return inactive (soft-deleted) habits
     """
+    uid = current_user_id()
+    habit_repo = HabitRepository(uid)
     conn = get_connection()
     include_inactive = request.args.get('include_inactive', '').lower() == 'true'
     habits = habit_repo.get_all(active_only=not include_inactive)
@@ -218,7 +219,7 @@ def get_habits():
 
         # Strength data
         s_row = conn.execute(
-            "SELECT * FROM habit_strength WHERE habit_id = ?", (h.id,)
+            "SELECT * FROM habit_strength WHERE habit_id = ? AND user_id = ?", (h.id, uid)
         ).fetchone()
         strength = round(s_row["strength"], 2) if s_row else 0.0
         strength_label = get_strength_label(strength)
@@ -269,6 +270,8 @@ def get_habits():
 @login_required
 def create_habit():
     """Create a simple habit (phases are optional)."""
+    uid = current_user_id()
+    habit_repo = HabitRepository(uid)
     data = request.json
     habit = Habit(
         name=data['name'],
@@ -282,7 +285,7 @@ def create_habit():
     # Initialise strength row immediately so queries never miss
     conn = get_connection()
     conn.execute(
-        "INSERT OR IGNORE INTO habit_strength (habit_id) VALUES (?)", (habit.id,)
+        "INSERT OR IGNORE INTO habit_strength (habit_id, user_id) VALUES (?, ?)", (habit.id, uid)
     )
     conn.commit()
 
@@ -297,6 +300,9 @@ def complete_habit(habit_id):
     If the habit has an active phase with micro-tasks, all tasks must be
     verified before the habit can be marked complete.
     """
+    uid = current_user_id()
+    habit_repo = HabitRepository(uid)
+    stats_repo = StatsRepository(uid)
     habit = habit_repo.get_by_id(habit_id)
     if not habit:
         return jsonify({'error': 'Not found'}), 404
@@ -333,7 +339,7 @@ def complete_habit(habit_id):
     stats_repo.add_points('habit', points, f"Completed: {habit.name}", habit_id)
 
     # Strength update
-    strength_data = _update_strength(conn, habit_id, completed=True)
+    strength_data = _update_strength(conn, habit_id, completed=True, uid=uid)
 
     # Phase advance check
     unlocked_phase = _check_and_advance_phase(
@@ -357,6 +363,9 @@ def complete_habit(habit_id):
 @login_required
 def uncomplete_habit(habit_id):
     """Remove today's completion and decay strength slightly."""
+    uid = current_user_id()
+    habit_repo = HabitRepository(uid)
+    stats_repo = StatsRepository(uid)
     habit = habit_repo.get_by_id(habit_id)
     if not habit:
         return jsonify({'error': 'Not found'}), 404
@@ -364,14 +373,14 @@ def uncomplete_habit(habit_id):
     conn = get_connection()
     result = conn.execute(
         """DELETE FROM habit_completions
-           WHERE habit_id = ? AND date(completed_at) = date('now')""",
-        (habit_id,),
+           WHERE habit_id = ? AND user_id = ? AND date(completed_at) = date('now')""",
+        (habit_id, uid),
     )
     conn.commit()
 
     if result.rowcount > 0:
         stats_repo.add_points('habit', -10, f"Undone: {habit.name}", habit_id)
-        strength_data = _update_strength(conn, habit_id, completed=False)
+        strength_data = _update_strength(conn, habit_id, completed=False, uid=uid)
         return jsonify({'success': True, 'undone': True, **strength_data})
 
     return jsonify({'success': False, 'message': 'No completion found for today'})
@@ -380,6 +389,8 @@ def uncomplete_habit(habit_id):
 @habits_bp.route('/<int:habit_id>/skip', methods=['POST'])
 @login_required
 def skip_habit(habit_id):
+    uid = current_user_id()
+    habit_repo = HabitRepository(uid)
     habit = habit_repo.get_by_id(habit_id)
     if not habit:
         return jsonify({'error': 'Not found'}), 404
@@ -396,6 +407,8 @@ def skip_habit(habit_id):
 @habits_bp.route('/<int:habit_id>', methods=['PUT'])
 @login_required
 def update_habit(habit_id):
+    uid = current_user_id()
+    habit_repo = HabitRepository(uid)
     habit = habit_repo.get_by_id(habit_id)
     if not habit:
         return jsonify({'error': 'Not found'}), 404
@@ -439,7 +452,7 @@ def update_habit(habit_id):
                     (phase_id, task_name, vr, j)
                 )
             continue
-        # Update phase name/description
+        # Update phase name/description — only for phases that belong to this habit
         conn.execute(
             "UPDATE habit_phases SET name = ?, description = ? WHERE id = ? AND habit_id = ?",
             (phase_data.get('name', ''), phase_data.get('description', ''), phase_id, habit_id)
@@ -487,6 +500,8 @@ def update_habit(habit_id):
 @habits_bp.route('/<int:habit_id>', methods=['DELETE'])
 @login_required
 def delete_habit(habit_id):
+    uid = current_user_id()
+    habit_repo = HabitRepository(uid)
     habit = habit_repo.get_by_id(habit_id)
     if not habit:
         return jsonify({'error': 'Not found'}), 404
@@ -500,11 +515,16 @@ def delete_habit(habit_id):
 @login_required
 def reactivate_habit(habit_id):
     """Reactivate a soft-deleted habit."""
+    uid = current_user_id()
     conn = get_connection()
-    row = conn.execute("SELECT id FROM habits WHERE id = ?", (habit_id,)).fetchone()
+    row = conn.execute(
+        "SELECT id FROM habits WHERE id = ? AND user_id = ?", (habit_id, uid)
+    ).fetchone()
     if not row:
         return jsonify({'error': 'Not found'}), 404
-    conn.execute("UPDATE habits SET active = 1 WHERE id = ?", (habit_id,))
+    conn.execute(
+        "UPDATE habits SET active = 1 WHERE id = ? AND user_id = ?", (habit_id, uid)
+    )
     conn.commit()
     return jsonify({'success': True})
 
@@ -513,21 +533,37 @@ def reactivate_habit(habit_id):
 @login_required
 def permanent_delete_habit(habit_id):
     """Permanently delete a habit and all associated data."""
+    uid = current_user_id()
     conn = get_connection()
-    row = conn.execute("SELECT id FROM habits WHERE id = ?", (habit_id,)).fetchone()
+    row = conn.execute(
+        "SELECT id FROM habits WHERE id = ? AND user_id = ?", (habit_id, uid)
+    ).fetchone()
     if not row:
         return jsonify({'error': 'Not found'}), 404
     # Delete all related data
-    phases = conn.execute("SELECT id FROM habit_phases WHERE habit_id = ?", (habit_id,)).fetchall()
+    phases = conn.execute(
+        "SELECT id FROM habit_phases WHERE habit_id = ?", (habit_id,)
+    ).fetchall()
     for p in phases:
-        conn.execute("DELETE FROM micro_task_completions WHERE micro_task_id IN (SELECT id FROM habit_micro_tasks WHERE phase_id = ?)", (p['id'],))
+        conn.execute(
+            "DELETE FROM micro_task_completions WHERE micro_task_id IN (SELECT id FROM habit_micro_tasks WHERE phase_id = ?)",
+            (p['id'],)
+        )
         conn.execute("DELETE FROM habit_micro_tasks WHERE phase_id = ?", (p['id'],))
     conn.execute("DELETE FROM habit_phases WHERE habit_id = ?", (habit_id,))
-    conn.execute("DELETE FROM habit_strength WHERE habit_id = ?", (habit_id,))
+    conn.execute(
+        "DELETE FROM habit_strength WHERE habit_id = ? AND user_id = ?", (habit_id, uid)
+    )
     conn.execute("DELETE FROM habit_stacks WHERE habit_id = ?", (habit_id,))
-    conn.execute("DELETE FROM habit_miss_log WHERE habit_id = ?", (habit_id,))
-    conn.execute("DELETE FROM habit_completions WHERE habit_id = ?", (habit_id,))
-    conn.execute("DELETE FROM habits WHERE id = ?", (habit_id,))
+    conn.execute(
+        "DELETE FROM habit_miss_log WHERE habit_id = ? AND user_id = ?", (habit_id, uid)
+    )
+    conn.execute(
+        "DELETE FROM habit_completions WHERE habit_id = ? AND user_id = ?", (habit_id, uid)
+    )
+    conn.execute(
+        "DELETE FROM habits WHERE id = ? AND user_id = ?", (habit_id, uid)
+    )
     conn.commit()
     return jsonify({'success': True})
 
@@ -540,6 +576,8 @@ def permanent_delete_habit(habit_id):
 @login_required
 def get_habit_detail(habit_id):
     """Full habit detail: phases, micro-tasks, strength, stacks, miss log."""
+    uid = current_user_id()
+    habit_repo = HabitRepository(uid)
     habit = habit_repo.get_by_id(habit_id)
     if not habit:
         return jsonify({'error': 'Not found'}), 404
@@ -548,7 +586,7 @@ def get_habit_detail(habit_id):
     streak = habit_repo.get_streak(habit_id)
 
     s_row = conn.execute(
-        "SELECT * FROM habit_strength WHERE habit_id = ?", (habit_id,)
+        "SELECT * FROM habit_strength WHERE habit_id = ? AND user_id = ?", (habit_id, uid)
     ).fetchone()
     strength_data = dict(s_row) if s_row else {
         "strength": 0.0, "peak_strength": 0.0,
@@ -564,9 +602,9 @@ def get_habit_detail(habit_id):
     ).fetchall()
 
     miss_logs = conn.execute(
-        """SELECT * FROM habit_miss_log WHERE habit_id = ?
+        """SELECT * FROM habit_miss_log WHERE habit_id = ? AND user_id = ?
            ORDER BY date DESC LIMIT 20""",
-        (habit_id,),
+        (habit_id, uid),
     ).fetchall()
 
     cat_info = config.categories.get(habit.category, None)
@@ -582,12 +620,12 @@ def get_habit_detail(habit_id):
     for i in range(14):
         d = (date.today() - timedelta(days=13 - i)).isoformat()
         completed = conn.execute(
-            "SELECT COUNT(*) FROM habit_completions WHERE habit_id = ? AND date(completed_at) = ?",
-            (habit_id, d),
+            "SELECT COUNT(*) FROM habit_completions WHERE habit_id = ? AND user_id = ? AND date(completed_at) = ?",
+            (habit_id, uid, d),
         ).fetchone()[0]
         missed = conn.execute(
-            "SELECT COUNT(*) FROM habit_miss_log WHERE habit_id = ? AND date = ?",
-            (habit_id, d),
+            "SELECT COUNT(*) FROM habit_miss_log WHERE habit_id = ? AND user_id = ? AND date = ?",
+            (habit_id, uid, d),
         ).fetchone()[0]
         history.append({'date': d, 'completed': completed > 0, 'missed': missed > 0})
 
@@ -635,6 +673,8 @@ def get_habit_detail(habit_id):
 @login_required
 def log_habit_miss(habit_id):
     """Log a missed day with optional reason and blocker text."""
+    uid = current_user_id()
+    habit_repo = HabitRepository(uid)
     habit = habit_repo.get_by_id(habit_id)
     if not habit:
         return jsonify({'error': 'Not found'}), 404
@@ -648,21 +688,21 @@ def log_habit_miss(habit_id):
 
     # Prevent duplicate miss log for the same date
     existing = conn.execute(
-        "SELECT id FROM habit_miss_log WHERE habit_id = ? AND date = ?",
-        (habit_id, miss_date),
+        "SELECT id FROM habit_miss_log WHERE habit_id = ? AND user_id = ? AND date = ?",
+        (habit_id, uid, miss_date),
     ).fetchone()
     if existing:
         return jsonify({'error': 'Miss already logged for this date'}), 409
 
     conn.execute(
-        """INSERT INTO habit_miss_log (habit_id, date, reason, blocker)
-           VALUES (?, ?, ?, ?)""",
-        (habit_id, miss_date, reason, blocker),
+        """INSERT INTO habit_miss_log (habit_id, user_id, date, reason, blocker)
+           VALUES (?, ?, ?, ?, ?)""",
+        (habit_id, uid, miss_date, reason, blocker),
     )
     conn.commit()
 
     # Apply strength decay for the miss
-    strength_data = _update_strength(conn, habit_id, completed=False)
+    strength_data = _update_strength(conn, habit_id, completed=False, uid=uid)
 
     return jsonify({'success': True, **strength_data}), 201
 
@@ -671,6 +711,8 @@ def log_habit_miss(habit_id):
 @login_required
 def add_habit_phase(habit_id):
     """Add a custom phase (with optional micro-tasks) to an existing habit."""
+    uid = current_user_id()
+    habit_repo = HabitRepository(uid)
     habit = habit_repo.get_by_id(habit_id)
     if not habit:
         return jsonify({'error': 'Not found'}), 404
@@ -763,6 +805,8 @@ def get_templates():
 @login_required
 def start_from_template(template_id):
     """Create a habit (with all phases and micro-tasks) from a template."""
+    uid = current_user_id()
+    habit_repo = HabitRepository(uid)
     conn = get_connection()
     tpl_row = conn.execute(
         "SELECT * FROM habit_templates WHERE id = ?", (template_id,)
@@ -786,7 +830,7 @@ def start_from_template(template_id):
 
     # Seed strength row
     conn.execute(
-        "INSERT OR IGNORE INTO habit_strength (habit_id) VALUES (?)", (habit.id,)
+        "INSERT OR IGNORE INTO habit_strength (habit_id, user_id) VALUES (?, ?)", (habit.id, uid)
     )
 
     # Create phases and micro-tasks from template JSON
@@ -844,6 +888,8 @@ def start_from_template(template_id):
 @login_required
 def add_habit_stack(habit_id):
     """Add a cue/trigger to stack this habit after an existing behaviour."""
+    uid = current_user_id()
+    habit_repo = HabitRepository(uid)
     habit = habit_repo.get_by_id(habit_id)
     if not habit:
         return jsonify({'error': 'Not found'}), 404
@@ -866,6 +912,8 @@ def add_habit_stack(habit_id):
 @login_required
 def get_strength_history(habit_id):
     """Return strength changes over the last N days, derived from completions and miss log."""
+    uid = current_user_id()
+    habit_repo = HabitRepository(uid)
     habit = habit_repo.get_by_id(habit_id)
     if not habit:
         return jsonify({'error': 'Not found'}), 404
@@ -880,27 +928,22 @@ def get_strength_history(habit_id):
         row['d']
         for row in conn.execute(
             """SELECT DISTINCT date(completed_at) as d FROM habit_completions
-               WHERE habit_id = ? AND status = 'complete'
+               WHERE habit_id = ? AND user_id = ? AND status = 'complete'
                  AND date(completed_at) >= ?""",
-            (habit_id, start_date.isoformat()),
+            (habit_id, uid, start_date.isoformat()),
         ).fetchall()
     }
 
     miss_dates = {
         row['date']
         for row in conn.execute(
-            "SELECT date FROM habit_miss_log WHERE habit_id = ? AND date >= ?",
-            (habit_id, start_date.isoformat()),
+            "SELECT date FROM habit_miss_log WHERE habit_id = ? AND user_id = ? AND date >= ?",
+            (habit_id, uid, start_date.isoformat()),
         ).fetchall()
     }
 
-    # Replay strength from the beginning to reconstruct history
-    # Start from what we know as the current strength and work backwards is
-    # inaccurate, so we replay forward from habit creation with a simplified model.
-    # We use the existing habit_strength row as ground truth for "current" and
-    # only reconstruct relative daily changes for the requested window.
     s_row = conn.execute(
-        "SELECT strength FROM habit_strength WHERE habit_id = ?", (habit_id,)
+        "SELECT strength FROM habit_strength WHERE habit_id = ? AND user_id = ?", (habit_id, uid)
     ).fetchone()
     current_strength = float(s_row['strength']) if s_row else 0.0
 
@@ -962,6 +1005,8 @@ def get_strength_history(habit_id):
 @login_required
 def verify_tasks(habit_id):
     """Return current-phase micro-tasks with live verification status for today."""
+    uid = current_user_id()
+    habit_repo = HabitRepository(uid)
     habit = habit_repo.get_by_id(habit_id)
     if not habit:
         return jsonify({'error': 'Not found'}), 404
@@ -1119,6 +1164,8 @@ def generate_habit_plan():
 @login_required
 def create_from_plan():
     """Create a habit with phases and micro-tasks from an AI-generated (or edited) plan."""
+    uid = current_user_id()
+    habit_repo = HabitRepository(uid)
     data = request.get_json(silent=True) or {}
     # Accept both {plan: {...}} and direct {...} format
     plan = data.get('plan') or data
@@ -1145,7 +1192,7 @@ def create_from_plan():
 
     # Seed strength row
     conn.execute(
-        "INSERT OR IGNORE INTO habit_strength (habit_id) VALUES (?)", (habit.id,)
+        "INSERT OR IGNORE INTO habit_strength (habit_id, user_id) VALUES (?, ?)", (habit.id, uid)
     )
 
     # Create phases and micro-tasks
@@ -1205,6 +1252,7 @@ def trigger_daily_decay():
     This is called by the daily summary endpoint so it runs at most once
     per day. It replaces the old 'streak reset to 0' model.
     """
+    uid = current_user_id()
     conn = get_connection()
-    _apply_daily_decay(conn)
+    _apply_daily_decay(conn, uid)
     return jsonify({'success': True, 'message': 'Daily decay applied'})

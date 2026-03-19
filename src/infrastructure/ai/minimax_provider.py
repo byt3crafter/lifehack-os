@@ -18,7 +18,8 @@ class MiniMaxProvider(OpenAIProvider):
     Images are ignored — only text descriptions are analyzed.
     """
 
-    def __init__(self):
+    def __init__(self, user_id: int = None):
+        self._user_id = user_id
         self.api_key = (
             self._get_setting('ai_minimax_key')
             or os.environ.get('MINIMAX_API_KEY', '')

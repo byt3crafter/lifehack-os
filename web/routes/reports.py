@@ -2,58 +2,65 @@
 from flask import Blueprint, jsonify, request
 from datetime import date, timedelta
 
-from .decorators import login_required
+from .decorators import login_required, current_user_id
 from src.infrastructure.database import get_connection
-from src.infrastructure.database.repositories import HabitRepository, CheckinRepository
 
 reports_bp = Blueprint('reports', __name__, url_prefix='/api/reports')
-
-habit_repo = HabitRepository()
-checkin_repo = CheckinRepository()
 
 
 @reports_bp.route('/weekly')
 @login_required
 def weekly_report():
     """Get weekly summary report."""
+    uid = current_user_id()
     conn = get_connection()
-    
+
     # Calculate date range
     today = date.today()
     week_start = today - timedelta(days=today.weekday())
     week_end = week_start + timedelta(days=6)
-    
+
     # Habits completed this week
     habits_completed = conn.execute(
-        """SELECT COUNT(*) as count FROM habit_completions 
-           WHERE date(completed_at) >= ? AND date(completed_at) <= ?""",
-        (week_start.isoformat(), week_end.isoformat())
+        """SELECT COUNT(*) as count FROM habit_completions
+           WHERE user_id = ? AND date(completed_at) >= ? AND date(completed_at) <= ?""",
+        (uid, week_start.isoformat(), week_end.isoformat())
     ).fetchone()['count']
-    
+
     # Check-ins done this week
     checkins_done = conn.execute(
-        """SELECT COUNT(*) as count FROM daily_checkins 
-           WHERE date >= ? AND date <= ?""",
-        (week_start.isoformat(), week_end.isoformat())
+        """SELECT COUNT(*) as count FROM daily_checkins
+           WHERE user_id = ? AND date >= ? AND date <= ?""",
+        (uid, week_start.isoformat(), week_end.isoformat())
     ).fetchone()['count']
-    
+
     # Points earned this week
     points_earned = conn.execute(
-        """SELECT SUM(points) as total FROM point_ledger 
-           WHERE date(timestamp) >= ? AND date(timestamp) <= ?""",
-        (week_start.isoformat(), week_end.isoformat())
+        """SELECT SUM(points) as total FROM point_ledger
+           WHERE user_id = ? AND date(timestamp) >= ? AND date(timestamp) <= ?""",
+        (uid, week_start.isoformat(), week_end.isoformat())
     ).fetchone()['total'] or 0
-    
-    # Sobriety days
-    sobriety = checkin_repo.get_sobriety_streak()
-    
+
+    # Sobriety streak scoped to this user
+    checkin_rows = conn.execute(
+        """SELECT date, avoided_alcohol FROM daily_checkins
+           WHERE user_id = ? ORDER BY date DESC LIMIT 365""",
+        (uid,)
+    ).fetchall()
+    sobriety = 0
+    for r in checkin_rows:
+        if r['avoided_alcohol']:
+            sobriety += 1
+        else:
+            break
+
     # Walks this week
     walks = conn.execute(
-        """SELECT COUNT(*) as count, SUM(distance_km) as km FROM walk_logs 
-           WHERE date(logged_at) >= ? AND date(logged_at) <= ?""",
-        (week_start.isoformat(), week_end.isoformat())
+        """SELECT COUNT(*) as count, SUM(distance_km) as km FROM walk_logs
+           WHERE user_id = ? AND date(logged_at) >= ? AND date(logged_at) <= ?""",
+        (uid, week_start.isoformat(), week_end.isoformat())
     ).fetchone()
-    
+
     return jsonify({
         'period': {
             'start': week_start.isoformat(),
@@ -72,22 +79,45 @@ def weekly_report():
 @login_required
 def get_streaks():
     """Get current streaks for all habits."""
-    habits = habit_repo.get_all()
+    uid = current_user_id()
+    conn = get_connection()
+
+    habit_rows = conn.execute(
+        "SELECT id, name, category FROM habits WHERE user_id = ? AND active = 1 ORDER BY category, name",
+        (uid,)
+    ).fetchall()
+
     streaks = []
-    
-    for h in habits:
-        streak = habit_repo.get_streak(h.id)
+    for h in habit_rows:
+        # Calculate streak for this user's habit
+        rows = conn.execute(
+            """SELECT DISTINCT date(completed_at) as d FROM habit_completions
+               WHERE user_id = ? AND habit_id = ? AND status = 'complete'
+               ORDER BY d DESC LIMIT 365""",
+            (uid, h['id'])
+        ).fetchall()
+
+        streak = 0
+        expected = date.today()
+        for row in rows:
+            completion_date = date.fromisoformat(row['d'])
+            if completion_date == expected:
+                streak += 1
+                expected = date.fromordinal(expected.toordinal() - 1)
+            elif completion_date < expected:
+                break
+
         if streak > 0:
             streaks.append({
-                'habit_id': h.id,
-                'habit_name': h.name,
-                'category': h.category,
+                'habit_id': h['id'],
+                'habit_name': h['name'],
+                'category': h['category'],
                 'streak': streak
             })
-    
+
     # Sort by streak descending
     streaks.sort(key=lambda x: x['streak'], reverse=True)
-    
+
     return jsonify(streaks)
 
 
@@ -95,18 +125,19 @@ def get_streaks():
 @login_required
 def points_history():
     """Get points history."""
+    uid = current_user_id()
     days = int(request.args.get('days', 30))
-    
+
     conn = get_connection()
     rows = conn.execute(
         """SELECT date(timestamp) as date, SUM(points) as total, category
-           FROM point_ledger 
-           WHERE date(timestamp) >= date('now', ?)
+           FROM point_ledger
+           WHERE user_id = ? AND date(timestamp) >= date('now', ?)
            GROUP BY date(timestamp), category
            ORDER BY date(timestamp) DESC""",
-        (f'-{days} days',)
+        (uid, f'-{days} days')
     ).fetchall()
-    
+
     return jsonify([{
         'date': r['date'],
         'points': r['total'],

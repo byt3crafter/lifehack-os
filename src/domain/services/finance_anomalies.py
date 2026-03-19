@@ -9,12 +9,13 @@ from collections import defaultdict
 logger = logging.getLogger(__name__)
 
 
-def detect_anomalies(transactions: list, conn, lookback_days: int = 7) -> list:
+def detect_anomalies(transactions: list, conn, user_id: int, lookback_days: int = 7) -> list:
     """Detect anomalous transactions from recent history.
 
     Args:
         transactions: All transactions (90+ days) for computing baselines.
         conn: Database connection for storing alerts.
+        user_id: The user whose data is being analysed.
         lookback_days: Only flag transactions within this many recent days.
 
     Returns:
@@ -51,9 +52,10 @@ def detect_anomalies(transactions: list, conn, lookback_days: int = 7) -> list:
     anomalies = []
     seen_ids = set()
 
-    # Check which transaction IDs are already stored
+    # Check which transaction IDs are already stored for this user
     existing = conn.execute(
-        "SELECT transaction_id FROM finance_anomalies WHERE transaction_id IS NOT NULL"
+        "SELECT transaction_id FROM finance_anomalies WHERE user_id = ? AND transaction_id IS NOT NULL",
+        (user_id,),
     ).fetchall()
     already_flagged = {r['transaction_id'] for r in existing}
 
@@ -99,11 +101,11 @@ def detect_anomalies(transactions: list, conn, lookback_days: int = 7) -> list:
         conn.execute(
             """INSERT INTO finance_anomalies
                (transaction_id, description, amount, category,
-                category_average, deviation_factor, alert_type)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                category_average, deviation_factor, alert_type, user_id)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
             (a['transaction_id'], a['description'], a['amount'],
              a['category'], a['category_average'], a['deviation_factor'],
-             a['alert_type']),
+             a['alert_type'], user_id),
         )
     conn.commit()
 

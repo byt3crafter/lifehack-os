@@ -1,10 +1,14 @@
 """Firefly III data-fetching service.
 
 Wraps the Firefly III REST API with:
-- Connection-check guard (returns empty data if plugin is not enabled)
-- 5-minute in-process cache per endpoint + params
+- Per-user credential lookup from user_integrations table
+- 5-minute in-process cache per (user_id, endpoint, params)
 - Graceful error handling — never raises, always returns a safe default
+
+All public methods accept an optional ``user_id`` parameter so each user
+can connect to their own Firefly III instance.
 """
+import json
 import logging
 import time
 from datetime import date, timedelta
@@ -21,18 +25,41 @@ class FireflyService:
     """Stateless-style service that fetches from the Firefly III REST API."""
 
     def __init__(self) -> None:
-        # Keys are (endpoint, frozenset(params.items())), values are (expires_at, data)
+        # Keys are (user_id, endpoint, frozenset(params)), values are (expires_at, data)
         self._cache: dict[tuple, tuple[float, Any]] = {}
 
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _get_config(self) -> tuple[Optional[str], Optional[str]]:
-        """Return (base_url, token) from the plugin registry, or (None, None)."""
+    def _get_config(self, user_id: Optional[int] = None) -> tuple[Optional[str], Optional[str]]:
+        """Return (base_url, token) for the given user, or (None, None).
+
+        Looks up user_integrations first (per-user). Falls back to the
+        legacy plugin_registry path for backward compatibility.
+        """
         try:
+            from src.infrastructure.database import get_connection
+            conn = get_connection()
+
+            # --- Per-user integration (new path) ---
+            if user_id is not None:
+                row = conn.execute(
+                    "SELECT enabled, config_json FROM user_integrations "
+                    "WHERE user_id = ? AND integration_name = 'firefly'",
+                    (user_id,),
+                ).fetchone()
+                if row and row['enabled']:
+                    config = json.loads(row['config_json'] or '{}')
+                    from src.infrastructure.plugins.firefly_plugin import FireflyPlugin
+                    base_url = FireflyPlugin._base_url(config.get('api_url', ''))
+                    token = config.get('api_token', '')
+                    if base_url and token:
+                        return base_url, token
+
+            # --- Legacy fallback (plugin_registry / app_settings) ---
             from src.infrastructure.plugins import plugin_registry
-            stored = plugin_registry.get_config('firefly')
+            stored = plugin_registry.get_config('firefly', user_id=user_id)
             if not stored.get('enabled'):
                 return None, None
             config = stored.get('config', {})
@@ -46,9 +73,9 @@ class FireflyService:
             logger.debug("Failed to load Firefly config", exc_info=True)
             return None, None
 
-    def _cache_key(self, endpoint: str, params: Optional[dict]) -> tuple:
+    def _cache_key(self, endpoint: str, params: Optional[dict], user_id: Optional[int] = None) -> tuple:
         frozen_params = frozenset((params or {}).items())
-        return (endpoint, frozen_params)
+        return (user_id, endpoint, frozen_params)
 
     def _cache_get(self, key: tuple) -> Any:
         entry = self._cache.get(key)
@@ -63,18 +90,19 @@ class FireflyService:
     def _cache_set(self, key: tuple, data: Any) -> None:
         self._cache[key] = (time.monotonic() + _CACHE_TTL, data)
 
-    def _api_get(self, endpoint: str, params: Optional[dict] = None) -> Optional[dict]:
+    def _api_get(self, endpoint: str, params: Optional[dict] = None,
+                 user_id: Optional[int] = None) -> Optional[dict]:
         """Make a GET request to the Firefly III API.
 
         Returns the parsed JSON body on HTTP 200, or None on any error.
         Results are cached for _CACHE_TTL seconds.
         """
-        key = self._cache_key(endpoint, params)
+        key = self._cache_key(endpoint, params, user_id)
         cached = self._cache_get(key)
         if cached is not None:
             return cached
 
-        base_url, token = self._get_config()
+        base_url, token = self._get_config(user_id)
         if not base_url or not token:
             return None
 
@@ -101,36 +129,29 @@ class FireflyService:
             logger.warning("Firefly API request failed for %s", endpoint, exc_info=True)
             return None
 
-    def is_connected(self) -> bool:
+    def is_connected(self, user_id: Optional[int] = None) -> bool:
         """Return True if the Firefly plugin is enabled and credentials are present."""
-        base_url, token = self._get_config()
+        base_url, token = self._get_config(user_id)
         return bool(base_url and token)
 
-    def invalidate_cache(self) -> None:
-        """Clear the entire in-process cache (useful after writes)."""
-        self._cache.clear()
+    def invalidate_cache(self, user_id: Optional[int] = None) -> None:
+        """Clear cache entries. If user_id given, only that user's entries."""
+        if user_id is None:
+            self._cache.clear()
+        else:
+            keys_to_delete = [k for k in self._cache if k[0] == user_id]
+            for k in keys_to_delete:
+                del self._cache[k]
 
     # ------------------------------------------------------------------
     # Public API methods
     # ------------------------------------------------------------------
 
-    def get_accounts(self) -> list:
-        """Return all asset and liability accounts with balances.
-
-        Each entry::
-
-            {
-                "id": "1",
-                "name": "Checking",
-                "type": "asset" | "liability",
-                "balance": 1234.56,
-                "currency_code": "USD",
-                "currency_symbol": "$",
-            }
-        """
+    def get_accounts(self, user_id: Optional[int] = None) -> list:
+        """Return all asset and liability accounts with balances."""
         accounts: list[dict] = []
 
-        asset_data = self._api_get('/accounts', {'type': 'asset'})
+        asset_data = self._api_get('/accounts', {'type': 'asset'}, user_id)
         if asset_data:
             for a in asset_data.get('data', []):
                 attrs = a.get('attributes', {})
@@ -143,12 +164,11 @@ class FireflyService:
                     'currency_symbol': attrs.get('currency_symbol', '$'),
                 })
 
-        liability_data = self._api_get('/accounts', {'type': 'liabilities'})
+        liability_data = self._api_get('/accounts', {'type': 'liabilities'}, user_id)
         if liability_data:
             for a in liability_data.get('data', []):
                 attrs = a.get('attributes', {})
                 bal = abs(float(attrs.get('current_balance', 0)))
-                # Skip zero-balance liabilities to avoid clutter
                 if bal == 0:
                     continue
                 accounts.append({
@@ -162,33 +182,15 @@ class FireflyService:
 
         return accounts
 
-    def get_transactions(self, days: int = 30, limit: int = 50) -> list:
-        """Return recent transactions in descending date order.
-
-        Args:
-            days:  How many days back to look.
-            limit: Maximum number of transactions to return.
-
-        Each entry::
-
-            {
-                "id": "42",
-                "date": "2026-03-15",
-                "description": "Grocery run",
-                "amount": 87.40,
-                "type": "withdrawal",
-                "category": "Food",
-                "source": "Checking",
-                "destination": "SuperMart",
-                "currency_code": "USD",
-                "currency_symbol": "$",
-            }
-        """
+    def get_transactions(self, days: int = 30, limit: int = 50,
+                         user_id: Optional[int] = None) -> list:
+        """Return recent transactions in descending date order."""
         start = (date.today() - timedelta(days=days)).isoformat()
         end = date.today().isoformat()
         data = self._api_get(
             '/transactions',
             {'start': start, 'end': end, 'limit': limit},
+            user_id,
         )
         if not data:
             return []
@@ -211,17 +213,8 @@ class FireflyService:
             })
         return txns
 
-    def get_monthly_spending(self) -> dict:
-        """Return spending by category for the current calendar month.
-
-        Returns::
-
-            {
-                "categories": {"Food": 487.00, "Transport": 120.50, ...},
-                "total": 2237.50,
-                "currency": "USD",
-            }
-        """
+    def get_monthly_spending(self, user_id: Optional[int] = None) -> dict:
+        """Return spending by category for the current calendar month."""
         today = date.today()
         start = today.replace(day=1).isoformat()
         end = today.isoformat()
@@ -229,6 +222,7 @@ class FireflyService:
         data = self._api_get(
             '/transactions',
             {'start': start, 'end': end, 'limit': 500, 'type': 'withdrawal'},
+            user_id,
         )
         if not data:
             return {'categories': {}, 'total': 0.0, 'currency': 'USD'}
@@ -251,23 +245,13 @@ class FireflyService:
             'currency': currency,
         }
 
-    def get_budgets(self) -> list:
-        """Return Firefly budgets that have a limit set for the current month.
-
-        Each entry::
-
-            {
-                "id": "3",
-                "name": "Food",
-                "limit": 600.00,
-                "spent": 487.00,
-            }
-        """
+    def get_budgets(self, user_id: Optional[int] = None) -> list:
+        """Return Firefly budgets that have a limit set for the current month."""
         today = date.today()
         start = today.replace(day=1).isoformat()
         end = today.isoformat()
 
-        data = self._api_get('/budgets')
+        data = self._api_get('/budgets', user_id=user_id)
         if not data:
             return []
 
@@ -279,6 +263,7 @@ class FireflyService:
             limits = self._api_get(
                 f'/budgets/{budget_id}/limits',
                 {'start': start, 'end': end},
+                user_id,
             )
             limit_amount = 0.0
             spent = 0.0
@@ -298,13 +283,9 @@ class FireflyService:
 
         return budgets
 
-    def get_default_currency(self) -> dict:
-        """Return the user's default currency as {"code": "USD", "symbol": "$"}.
-
-        Falls back to the first account's currency if the /about endpoint does
-        not expose it (older Firefly III versions).
-        """
-        about = self._api_get('/about')
+    def get_default_currency(self, user_id: Optional[int] = None) -> dict:
+        """Return the user's default currency as {"code": "USD", "symbol": "$"}."""
+        about = self._api_get('/about', user_id=user_id)
         if about:
             raw = about.get('data', {})
             if isinstance(raw, dict):
@@ -313,7 +294,7 @@ class FireflyService:
                 if code:
                     return {'code': code, 'symbol': ''}
 
-        accounts = self.get_accounts()
+        accounts = self.get_accounts(user_id)
         if accounts:
             return {
                 'code': accounts[0]['currency_code'],

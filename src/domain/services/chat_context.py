@@ -2,6 +2,8 @@
 import json
 from datetime import date, datetime, timedelta
 
+from src.infrastructure.database.user_scope import get_user_setting
+
 
 def _rows_to_dicts(rows) -> list:
     """Convert sqlite3.Row objects to plain dicts."""
@@ -16,7 +18,7 @@ def _safe_query(conn, sql, params=()) -> list:
         return []
 
 
-def assemble_context(conn) -> dict:
+def assemble_context(conn, user_id: int) -> dict:
     """Dump relevant data from ALL modules so the AI can reason about anything."""
 
     today = date.today().isoformat()
@@ -25,10 +27,16 @@ def assemble_context(conn) -> dict:
     context = {}
 
     # User stats
-    context['user_stats'] = _safe_query(conn, "SELECT * FROM user_stats WHERE id = 1")
+    context['user_stats'] = _safe_query(
+        conn, "SELECT * FROM user_stats WHERE user_id = ?", (user_id,)
+    )
 
     # Today's mood/energy
-    context['mood_today'] = _safe_query(conn, "SELECT mood, energy, improvement_note FROM daily_checkins WHERE date = ?", (today,))
+    context['mood_today'] = _safe_query(
+        conn,
+        "SELECT mood, energy, improvement_note FROM daily_checkins WHERE user_id = ? AND date = ?",
+        (user_id, today),
+    )
 
     # Habits (ALL — active and inactive, AI needs full history)
     context['habits'] = _safe_query(conn, """
@@ -38,74 +46,130 @@ def assemble_context(conn) -> dict:
         FROM habits h
         LEFT JOIN habit_strength hs ON hs.habit_id = h.id
         LEFT JOIN habit_phases hp ON hp.habit_id = h.id AND hp.is_current = 1
+        WHERE h.user_id = ?
         ORDER BY h.active DESC, h.name
-    """)
+    """, (user_id,))
 
     # Today's habit completions
-    context['habit_completions_today'] = _safe_query(conn,
-        "SELECT hc.habit_id, h.name, h.active FROM habit_completions hc JOIN habits h ON h.id = hc.habit_id WHERE date(hc.completed_at) = ?",
-        (today,))
+    context['habit_completions_today'] = _safe_query(
+        conn,
+        """SELECT hc.habit_id, h.name, h.active
+           FROM habit_completions hc
+           JOIN habits h ON h.id = hc.habit_id
+           WHERE hc.user_id = ? AND date(hc.completed_at) = ?""",
+        (user_id, today),
+    )
 
     # Food today (full details)
-    context['food_today'] = _safe_query(conn,
-        "SELECT meal_type, description, calories, protein_g, carbs_g, fat_g, notes, rating, mood_after, logged_at FROM food_logs WHERE date(logged_at) = ? ORDER BY logged_at",
-        (today,))
+    context['food_today'] = _safe_query(
+        conn,
+        """SELECT meal_type, description, calories, protein_g, carbs_g, fat_g,
+                  notes, rating, mood_after, logged_at
+           FROM food_logs
+           WHERE user_id = ? AND date(logged_at) = ?
+           ORDER BY logged_at""",
+        (user_id, today),
+    )
 
-    # Calorie goal
-    goal = _safe_query(conn, "SELECT value FROM app_settings WHERE key = 'daily_calorie_goal'")
-    context['calorie_goal'] = int(goal[0]['value']) if goal else 2000
+    # Calorie goal — user_settings first, then app_settings fallback
+    context['calorie_goal'] = int(get_user_setting(conn, user_id, 'daily_calorie_goal', '2000'))
 
     # Fasting
-    context['active_fast'] = _safe_query(conn,
-        "SELECT start_at, target_hours, status FROM fasting_logs WHERE status = 'active' ORDER BY start_at DESC LIMIT 1")
+    context['active_fast'] = _safe_query(
+        conn,
+        "SELECT start_at, target_hours, status FROM fasting_logs WHERE user_id = ? AND status = 'active' ORDER BY start_at DESC LIMIT 1",
+        (user_id,),
+    )
 
     # Recent fasting history
-    context['fasting_history'] = _safe_query(conn,
-        "SELECT start_at, end_at, target_hours, status FROM fasting_logs WHERE status = 'completed' ORDER BY end_at DESC LIMIT 5")
+    context['fasting_history'] = _safe_query(
+        conn,
+        "SELECT start_at, end_at, target_hours, status FROM fasting_logs WHERE user_id = ? AND status = 'completed' ORDER BY end_at DESC LIMIT 5",
+        (user_id,),
+    )
 
     # Challenges
-    context['active_challenges'] = _safe_query(conn,
-        "SELECT name, category, target_days, start_date, check_in_frequency FROM challenges WHERE status = 'active'")
+    context['active_challenges'] = _safe_query(
+        conn,
+        "SELECT name, category, target_days, start_date, check_in_frequency FROM challenges WHERE user_id = ? AND status = 'active'",
+        (user_id,),
+    )
 
     # Deep work today
-    context['deep_work_today'] = _safe_query(conn,
-        "SELECT dw.duration_minutes, dw.notes, p.name as project FROM deep_work_sessions dw LEFT JOIN projects p ON p.id = dw.project_id WHERE date(dw.started_at) = ?",
-        (today,))
+    context['deep_work_today'] = _safe_query(
+        conn,
+        """SELECT dw.duration_minutes, dw.notes, p.name as project
+           FROM deep_work_sessions dw
+           LEFT JOIN projects p ON p.id = dw.project_id
+           WHERE dw.user_id = ? AND date(dw.started_at) = ?""",
+        (user_id, today),
+    )
 
     # Finance — budget rules
-    context['budget_rules'] = _safe_query(conn,
-        "SELECT category, monthly_limit, description FROM finance_rules WHERE active = 1")
+    context['budget_rules'] = _safe_query(
+        conn,
+        "SELECT category, monthly_limit, description FROM finance_rules WHERE user_id = ? AND active = 1",
+        (user_id,),
+    )
 
     # Finance — this month's spending (local log)
-    context['spending_this_month'] = _safe_query(conn,
-        "SELECT category, SUM(amount) as total FROM finance_log WHERE strftime('%Y-%m', date) = strftime('%Y-%m', 'now') GROUP BY category")
+    context['spending_this_month'] = _safe_query(
+        conn,
+        """SELECT category, SUM(amount) as total
+           FROM finance_log
+           WHERE user_id = ? AND strftime('%Y-%m', date) = strftime('%Y-%m', 'now')
+           GROUP BY category""",
+        (user_id,),
+    )
 
     # Finance — recent transactions (local log)
-    context['recent_transactions'] = _safe_query(conn,
-        "SELECT date, amount, description, category, type FROM finance_log ORDER BY date DESC LIMIT 15")
+    context['recent_transactions'] = _safe_query(
+        conn,
+        """SELECT date, amount, description, category, type
+           FROM finance_log
+           WHERE user_id = ?
+           ORDER BY date DESC LIMIT 15""",
+        (user_id,),
+    )
 
     # Discover items
-    context['discover_items'] = _safe_query(conn,
-        "SELECT title, category, status, location, rating, completed_at FROM wishlist ORDER BY created_at DESC LIMIT 10")
+    context['discover_items'] = _safe_query(
+        conn,
+        "SELECT title, category, status, location, rating, completed_at FROM wishlist WHERE user_id = ? ORDER BY created_at DESC LIMIT 10",
+        (user_id,),
+    )
 
     # Recent AI insights
-    context['ai_insights'] = _safe_query(conn,
-        "SELECT title, content, insight_type FROM ai_insights WHERE dismissed = 0 ORDER BY created_at DESC LIMIT 3")
+    context['ai_insights'] = _safe_query(
+        conn,
+        "SELECT title, content, insight_type FROM ai_insights WHERE user_id = ? AND dismissed = 0 ORDER BY created_at DESC LIMIT 3",
+        (user_id,),
+    )
 
     # Walk/movement this week
-    context['walks_this_week'] = _safe_query(conn,
-        "SELECT logged_at, distance_km, duration_minutes, mood_before, mood_after FROM walk_logs WHERE date(logged_at) >= ? ORDER BY logged_at DESC",
-        (week_ago,))
+    context['walks_this_week'] = _safe_query(
+        conn,
+        """SELECT logged_at, distance_km, duration_minutes, mood_before, mood_after
+           FROM walk_logs
+           WHERE user_id = ? AND date(logged_at) >= ?
+           ORDER BY logged_at DESC""",
+        (user_id, week_ago),
+    )
 
     # Replacement/redirect actions (sobriety)
-    context['replacement_actions_today'] = _safe_query(conn,
-        "SELECT ra.name, rl.urge_level, rl.notes FROM replacement_logs rl JOIN replacement_actions ra ON ra.id = rl.action_id WHERE date(rl.logged_at) = ?",
-        (today,))
+    context['replacement_actions_today'] = _safe_query(
+        conn,
+        """SELECT ra.name, rl.urge_level, rl.notes
+           FROM replacement_logs rl
+           JOIN replacement_actions ra ON ra.id = rl.action_id
+           WHERE rl.user_id = ? AND date(rl.logged_at) = ?""",
+        (user_id, today),
+    )
 
     # Firefly III data (if connected)
     try:
         from src.infrastructure.plugins import plugin_registry
-        ff_stored = plugin_registry.get_config('firefly')
+        ff_stored = plugin_registry.get_config('firefly', user_id)
         if ff_stored.get('enabled'):
             ff_config = ff_stored.get('config', {})
             ff_plugin = plugin_registry.get('firefly')

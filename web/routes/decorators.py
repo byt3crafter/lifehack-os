@@ -1,7 +1,24 @@
-"""Route decorators for authentication."""
+"""Route decorators for authentication and user scoping.
+
+Every authenticated route should call ``current_user_id()`` to obtain the
+logged-in user's ID and pass it to all database queries so that user data
+is fully isolated.
+"""
 import os
 from functools import wraps
 from flask import session, request, redirect, url_for, jsonify
+
+
+def current_user_id() -> int:
+    """Return the authenticated user's database ID.
+
+    Must only be called inside a ``@login_required`` route.  Raises if
+    the session is missing (should never happen behind the decorator).
+    """
+    uid = session.get('user_id')
+    if uid is None:
+        raise RuntimeError('current_user_id() called outside authenticated context')
+    return int(uid)
 
 
 def _get_api_key() -> str:

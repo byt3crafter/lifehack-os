@@ -2,8 +2,9 @@
 import json
 from flask import Blueprint, jsonify, request
 
-from .decorators import login_required
+from .decorators import login_required, current_user_id
 from src.infrastructure.database import get_connection
+from src.infrastructure.database.user_scope import get_user_setting, set_user_setting
 
 modules_bp = Blueprint('modules', __name__, url_prefix='/api/modules')
 
@@ -19,17 +20,29 @@ MODULE_DEFS = {
     'openclaw':   {'name': 'AI Agent',    'description': 'External AI agent API access',                     'default': False},
 }
 
+_SETTING_KEY = 'enabled_modules'
 
-def get_enabled_modules() -> dict:
-    """Get module enabled/disabled state. Returns {module_id: bool}."""
+
+def get_enabled_modules(uid: int = None) -> dict:
+    """Get module enabled/disabled state for a user. Returns {module_id: bool}.
+
+    Falls back to app_settings for backwards compatibility when uid is None.
+    """
     conn = get_connection()
-    row = conn.execute(
-        "SELECT value FROM app_settings WHERE key = 'enabled_modules'"
-    ).fetchone()
 
-    if row:
-        saved = json.loads(row['value'])
-        # Merge with defaults for any new modules
+    if uid is not None:
+        raw = get_user_setting(conn, uid, _SETTING_KEY, '')
+    else:
+        row = conn.execute(
+            "SELECT value FROM app_settings WHERE key = ?", (_SETTING_KEY,)
+        ).fetchone()
+        raw = row['value'] if row else ''
+
+    if raw:
+        try:
+            saved = json.loads(raw)
+        except (json.JSONDecodeError, TypeError):
+            saved = {}
         result = {}
         for mod_id, mod_def in MODULE_DEFS.items():
             result[mod_id] = saved.get(mod_id, mod_def['default'])
@@ -43,7 +56,8 @@ def get_enabled_modules() -> dict:
 @login_required
 def list_modules():
     """List all modules with their enabled state."""
-    enabled = get_enabled_modules()
+    uid = current_user_id()
+    enabled = get_enabled_modules(uid)
     modules = []
     for mod_id, mod_def in MODULE_DEFS.items():
         modules.append({
@@ -59,20 +73,15 @@ def list_modules():
 @modules_bp.route('', methods=['POST'])
 @login_required
 def update_modules():
-    """Update module enabled/disabled state."""
+    """Update module enabled/disabled state for the current user."""
+    uid = current_user_id()
     data = request.json  # {module_id: bool, ...}
-    current = get_enabled_modules()
+    current = get_enabled_modules(uid)
 
     for mod_id, enabled in data.items():
         if mod_id in MODULE_DEFS:
             current[mod_id] = bool(enabled)
 
     conn = get_connection()
-    conn.execute(
-        """INSERT INTO app_settings (key, value, updated_at)
-           VALUES ('enabled_modules', ?, CURRENT_TIMESTAMP)
-           ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at""",
-        (json.dumps(current),)
-    )
-    conn.commit()
+    set_user_setting(conn, uid, _SETTING_KEY, json.dumps(current))
     return jsonify({'success': True, 'modules': current})

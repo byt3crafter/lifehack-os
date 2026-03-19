@@ -2,42 +2,52 @@
 from flask import Blueprint, jsonify, request
 from datetime import date
 
-from .decorators import login_required
+from .decorators import login_required, current_user_id
 from src.domain.entities import DailyCheckin
-from src.infrastructure.database.repositories import CheckinRepository, StatsRepository
 from src.infrastructure.database import get_connection
 from src.infrastructure.config import load_config
 
 checkins_bp = Blueprint('checkins', __name__, url_prefix='/api/checkin')
 
-checkin_repo = CheckinRepository()
-stats_repo = StatsRepository()
 config = load_config()
 
 
 @checkins_bp.route('')
 @login_required
 def get_checkin():
-    checkin = checkin_repo.get_for_date(date.today())
-    if not checkin:
+    uid = current_user_id()
+    conn = get_connection()
+    today = date.today().isoformat()
+    row = conn.execute(
+        "SELECT * FROM daily_checkins WHERE date = ? AND user_id = ?",
+        (today, uid),
+    ).fetchone()
+    if not row:
         return jsonify(None)
     return jsonify({
-        'completed_today': checkin.completed_today,
-        'avoided_alcohol': checkin.avoided_alcohol,
-        'worked_on_future': checkin.worked_on_future,
-        'mood': checkin.mood,
-        'energy': checkin.energy,
-        'improvement_note': checkin.improvement_note
+        'completed_today': row['completed_today'],
+        'avoided_alcohol': bool(row['avoided_alcohol']),
+        'worked_on_future': bool(row['worked_on_future']),
+        'mood': row['mood'],
+        'energy': row['energy'],
+        'improvement_note': row['improvement_note'],
     })
 
 
 @checkins_bp.route('', methods=['POST'])
 @login_required
 def save_checkin():
+    uid = current_user_id()
     data = request.json
-    existing = checkin_repo.get_for_date(date.today())
+    conn = get_connection()
+    today = date.today().isoformat()
+
+    existing = conn.execute(
+        "SELECT id FROM daily_checkins WHERE date = ? AND user_id = ?",
+        (today, uid),
+    ).fetchone()
     is_new = existing is None
-    
+
     checkin = DailyCheckin(
         date=date.today(),
         completed_today=data.get('completed_today', ''),
@@ -53,10 +63,35 @@ def save_checkin():
         config.checkin.future_work_bonus
     )
     checkin.points_earned = points
-    checkin_repo.save(checkin)
-    
+
     if is_new:
+        cursor = conn.execute(
+            """INSERT INTO daily_checkins
+               (date, user_id, completed_today, avoided_alcohol, worked_on_future,
+                mood, energy, improvement_note, points_earned)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (today, uid, checkin.completed_today, checkin.avoided_alcohol,
+             checkin.worked_on_future, checkin.mood, checkin.energy,
+             checkin.improvement_note, points),
+        )
+        checkin.id = cursor.lastrowid
+    else:
+        conn.execute(
+            """UPDATE daily_checkins
+               SET completed_today = ?, avoided_alcohol = ?, worked_on_future = ?,
+                   mood = ?, energy = ?, improvement_note = ?, points_earned = ?
+               WHERE date = ? AND user_id = ?""",
+            (checkin.completed_today, checkin.avoided_alcohol, checkin.worked_on_future,
+             checkin.mood, checkin.energy, checkin.improvement_note, points,
+             today, uid),
+        )
+    conn.commit()
+
+    if is_new:
+        from src.infrastructure.database.repositories import StatsRepository
+        stats_repo = StatsRepository()
         stats_repo.add_points('checkin', points, "Daily check-in", checkin.id)
+
     return jsonify({'success': True, 'points': points})
 
 
@@ -79,6 +114,7 @@ def log_mood():
     a POST /api/mood never clobbers a full check-in submitted through the
     normal flow.
     """
+    uid = current_user_id()
     data = request.json or {}
     mood = data.get('mood', 3)
     energy = data.get('energy', 3)
@@ -97,21 +133,22 @@ def log_mood():
     today = date.today().isoformat()
 
     existing = conn.execute(
-        "SELECT id FROM daily_checkins WHERE date = ?", (today,)
+        "SELECT id FROM daily_checkins WHERE date = ? AND user_id = ?",
+        (today, uid),
     ).fetchone()
 
     if existing:
         conn.execute(
             """UPDATE daily_checkins
                SET mood = ?, energy = ?, improvement_note = CASE WHEN ? != '' THEN ? ELSE improvement_note END
-               WHERE date = ?""",
-            (mood, energy, note, note, today),
+               WHERE date = ? AND user_id = ?""",
+            (mood, energy, note, note, today, uid),
         )
     else:
         conn.execute(
-            """INSERT INTO daily_checkins (date, mood, energy, improvement_note)
-               VALUES (?, ?, ?, ?)""",
-            (today, mood, energy, note),
+            """INSERT INTO daily_checkins (date, user_id, mood, energy, improvement_note)
+               VALUES (?, ?, ?, ?, ?)""",
+            (today, uid, mood, energy, note),
         )
 
     conn.commit()
@@ -122,11 +159,12 @@ def log_mood():
 @login_required
 def get_mood_today():
     """Return today's mood and energy, or null if not logged yet."""
+    uid = current_user_id()
     conn = get_connection()
     today = date.today().isoformat()
     row = conn.execute(
-        "SELECT mood, energy, improvement_note FROM daily_checkins WHERE date = ?",
-        (today,),
+        "SELECT mood, energy, improvement_note FROM daily_checkins WHERE date = ? AND user_id = ?",
+        (today, uid),
     ).fetchone()
 
     if not row:

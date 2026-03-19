@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 
 from flask import Blueprint, jsonify, request
 
-from .decorators import login_required
+from .decorators import login_required, current_user_id
 from src.infrastructure.database import get_connection
 from src.infrastructure.database.repositories import StatsRepository
 from src.infrastructure.plugins import plugin_registry
@@ -12,8 +12,6 @@ from src.infrastructure.plugins import plugin_registry
 logger = logging.getLogger(__name__)
 
 deepwork_bp = Blueprint("deepwork", __name__, url_prefix="/api/deepwork")
-
-stats_repo = StatsRepository()
 
 
 # ---------------------------------------------------------------------------
@@ -58,18 +56,18 @@ def _session_row_to_dict(row) -> dict:
     return d
 
 
-def _update_project_minutes(conn, local_project_id: int) -> None:
+def _update_project_minutes(conn, local_project_id: int, uid: int) -> None:
     """Recompute and store total_minutes for a local project."""
     if not local_project_id:
         return
     row = conn.execute(
         "SELECT COALESCE(SUM(duration_minutes), 0) as total FROM deep_work_sessions "
-        "WHERE local_project_id = ? AND ended_at IS NOT NULL",
-        (local_project_id,),
+        "WHERE local_project_id = ? AND ended_at IS NOT NULL AND user_id = ?",
+        (local_project_id, uid),
     ).fetchone()
     conn.execute(
-        "UPDATE deep_work_projects SET total_minutes = ? WHERE id = ?",
-        (row["total"], local_project_id),
+        "UPDATE deep_work_projects SET total_minutes = ? WHERE id = ? AND user_id = ?",
+        (row["total"], local_project_id, uid),
     )
 
 
@@ -81,9 +79,11 @@ def _update_project_minutes(conn, local_project_id: int) -> None:
 @login_required
 def list_projects():
     """List local projects merged with Vikunja projects (if connected)."""
+    uid = current_user_id()
     conn = get_connection()
     rows = conn.execute(
-        "SELECT * FROM deep_work_projects WHERE active = 1 ORDER BY name"
+        "SELECT * FROM deep_work_projects WHERE active = 1 AND user_id = ? ORDER BY name",
+        (uid,),
     ).fetchall()
     projects = [_project_row_to_dict(r) for r in rows]
 
@@ -114,6 +114,7 @@ def list_projects():
 @login_required
 def create_project():
     """Create a new local deep-work project."""
+    uid = current_user_id()
     data = request.json or {}
     name = (data.get("name") or "").strip()
     if not name:
@@ -124,8 +125,8 @@ def create_project():
 
     conn = get_connection()
     cursor = conn.execute(
-        "INSERT INTO deep_work_projects (name, description, color) VALUES (?, ?, ?)",
-        (name, description, color),
+        "INSERT INTO deep_work_projects (user_id, name, description, color) VALUES (?, ?, ?, ?)",
+        (uid, name, description, color),
     )
     conn.commit()
     row = conn.execute(
@@ -138,20 +139,23 @@ def create_project():
 @login_required
 def delete_project(project_id):
     """Soft-delete a local project (sets active = 0)."""
+    uid = current_user_id()
     conn = get_connection()
     row = conn.execute(
-        "SELECT id FROM deep_work_projects WHERE id = ?", (project_id,)
+        "SELECT id FROM deep_work_projects WHERE id = ? AND user_id = ?", (project_id, uid)
     ).fetchone()
     if not row:
         return jsonify({"error": "Not found"}), 404
 
     # Disassociate sessions so they are not orphaned under a deleted project
     conn.execute(
-        "UPDATE deep_work_sessions SET local_project_id = NULL WHERE local_project_id = ?",
-        (project_id,),
+        "UPDATE deep_work_sessions SET local_project_id = NULL "
+        "WHERE local_project_id = ? AND user_id = ?",
+        (project_id, uid),
     )
     conn.execute(
-        "UPDATE deep_work_projects SET active = 0 WHERE id = ?", (project_id,)
+        "UPDATE deep_work_projects SET active = 0 WHERE id = ? AND user_id = ?",
+        (project_id, uid),
     )
     conn.commit()
     return jsonify({"success": True})
@@ -165,6 +169,7 @@ def delete_project(project_id):
 @login_required
 def get_status():
     """Return the active session (if any) and recent history."""
+    uid = current_user_id()
     conn = get_connection()
 
     active = conn.execute(
@@ -173,9 +178,10 @@ def get_status():
            FROM   deep_work_sessions dw
            LEFT JOIN deep_work_projects dwp ON dw.local_project_id = dwp.id
            LEFT JOIN projects          p   ON dw.project_id = p.id
-           WHERE  dw.ended_at IS NULL
+           WHERE  dw.ended_at IS NULL AND dw.user_id = ?
            ORDER  BY dw.started_at DESC
-           LIMIT  1"""
+           LIMIT  1""",
+        (uid,),
     ).fetchone()
 
     history = conn.execute(
@@ -184,9 +190,10 @@ def get_status():
            FROM   deep_work_sessions dw
            LEFT JOIN deep_work_projects dwp ON dw.local_project_id = dwp.id
            LEFT JOIN projects          p   ON dw.project_id = p.id
-           WHERE  dw.ended_at IS NOT NULL
+           WHERE  dw.ended_at IS NOT NULL AND dw.user_id = ?
            ORDER  BY dw.ended_at DESC
-           LIMIT  10"""
+           LIMIT  10""",
+        (uid,),
     ).fetchall()
 
     return jsonify({
@@ -211,12 +218,15 @@ def start_session():
         vikunja_task_id str   — Vikunja task to associate
         description     str   — session description
     """
+    uid = current_user_id()
     data = request.json or {}
     conn = get_connection()
 
-    # Auto-close any open session
+    # Auto-close any open session for this user
     conn.execute(
-        "UPDATE deep_work_sessions SET ended_at = CURRENT_TIMESTAMP WHERE ended_at IS NULL"
+        "UPDATE deep_work_sessions SET ended_at = CURRENT_TIMESTAMP "
+        "WHERE ended_at IS NULL AND user_id = ?",
+        (uid,),
     )
 
     local_project_id = data.get("project_id")
@@ -229,15 +239,15 @@ def start_session():
         pname = data["project_name"].strip()
         if pname:
             cursor = conn.execute(
-                "INSERT INTO deep_work_projects (name) VALUES (?)", (pname,)
+                "INSERT INTO deep_work_projects (user_id, name) VALUES (?, ?)", (uid, pname)
             )
             local_project_id = cursor.lastrowid
 
     cursor = conn.execute(
         """INSERT INTO deep_work_sessions
-               (local_project_id, vikunja_task_id, notes, description)
-           VALUES (?, ?, ?, ?)""",
-        (local_project_id, vikunja_task_id, notes, description),
+               (user_id, local_project_id, vikunja_task_id, notes, description)
+           VALUES (?, ?, ?, ?, ?)""",
+        (uid, local_project_id, vikunja_task_id, notes, description),
     )
     conn.commit()
     return jsonify({"success": True, "id": cursor.lastrowid}), 201
@@ -247,9 +257,12 @@ def start_session():
 @login_required
 def end_session():
     """End the currently active deep-work session."""
+    uid = current_user_id()
     conn = get_connection()
     active = conn.execute(
-        "SELECT id, started_at, local_project_id FROM deep_work_sessions WHERE ended_at IS NULL"
+        "SELECT id, started_at, local_project_id FROM deep_work_sessions "
+        "WHERE ended_at IS NULL AND user_id = ?",
+        (uid,),
     ).fetchone()
     if not active:
         return jsonify({"error": "No active session"}), 400
@@ -262,14 +275,15 @@ def end_session():
     conn.execute(
         """UPDATE deep_work_sessions
            SET ended_at = ?, duration_minutes = ?, points_earned = ?
-           WHERE id = ?""",
-        (end_at.isoformat(), duration, points, active["id"]),
+           WHERE id = ? AND user_id = ?""",
+        (end_at.isoformat(), duration, points, active["id"], uid),
     )
 
     # Keep project total_minutes in sync
     if active["local_project_id"]:
-        _update_project_minutes(conn, active["local_project_id"])
+        _update_project_minutes(conn, active["local_project_id"], uid)
 
+    stats_repo = StatsRepository()
     stats_repo.add_points("deepwork", points, f"Deep Work: {duration} mins")
     conn.commit()
     return jsonify({"success": True, "duration": duration, "points": points})
@@ -283,19 +297,22 @@ def end_session():
 @login_required
 def delete_session(session_id):
     """Delete a completed session and recompute the project total."""
+    uid = current_user_id()
     conn = get_connection()
     row = conn.execute(
-        "SELECT id, local_project_id FROM deep_work_sessions WHERE id = ?",
-        (session_id,),
+        "SELECT id, local_project_id FROM deep_work_sessions WHERE id = ? AND user_id = ?",
+        (session_id, uid),
     ).fetchone()
     if not row:
         return jsonify({"error": "Not found"}), 404
 
     local_project_id = row["local_project_id"]
-    conn.execute("DELETE FROM deep_work_sessions WHERE id = ?", (session_id,))
+    conn.execute(
+        "DELETE FROM deep_work_sessions WHERE id = ? AND user_id = ?", (session_id, uid)
+    )
 
     if local_project_id:
-        _update_project_minutes(conn, local_project_id)
+        _update_project_minutes(conn, local_project_id, uid)
 
     conn.commit()
     return jsonify({"success": True})
@@ -309,6 +326,7 @@ def delete_session(session_id):
 @login_required
 def get_report():
     """Return weekly and monthly aggregated deep-work stats."""
+    uid = current_user_id()
     conn = get_connection()
 
     now       = datetime.now()
@@ -328,9 +346,10 @@ def get_report():
                LEFT JOIN projects          p   ON dw.project_id = p.id
                WHERE  dw.ended_at IS NOT NULL
                  AND  dw.started_at >= ?
+                 AND  dw.user_id = ?
                GROUP  BY project_name
                ORDER  BY total_minutes DESC""",
-            (since.isoformat(),),
+            (since.isoformat(), uid),
         ).fetchall()
         return [
             {
@@ -350,8 +369,9 @@ def get_report():
                       COALESCE(AVG(duration_minutes), 0) AS avg_minutes
                FROM   deep_work_sessions
                WHERE  ended_at IS NOT NULL
-                 AND  started_at >= ?""",
-            (since.isoformat(),),
+                 AND  started_at >= ?
+                 AND  user_id = ?""",
+            (since.isoformat(), uid),
         ).fetchone()
         return {
             "sessions":      row["sessions"],

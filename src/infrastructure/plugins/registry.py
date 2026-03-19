@@ -1,14 +1,11 @@
 """Plugin registry — discovers, stores, and manages all available plugins."""
-import json
 import logging
 from typing import Optional
 
 from .base import Plugin
+from src.infrastructure.database.user_scope import get_user_integration, set_user_integration
 
 logger = logging.getLogger(__name__)
-
-# app_settings key template
-_SETTINGS_KEY = "plugin_config_{plugin_id}"
 
 
 class PluginRegistry:
@@ -21,11 +18,11 @@ class PluginRegistry:
         # At application startup
         plugin_registry.register(VikunjaPlugin())
 
-        # In route handlers
+        # In route handlers (user_id is required for all config operations)
         plugins = plugin_registry.get_all()
         plugin  = plugin_registry.get("vikunja")
-        config  = plugin_registry.get_config("vikunja")
-        ok      = plugin_registry.enable("vikunja", {"api_url": "...", ...})
+        config  = plugin_registry.get_config("vikunja", user_id)
+        ok      = plugin_registry.enable("vikunja", {"api_url": "...", ...}, user_id)
     """
 
     def __init__(self) -> None:
@@ -61,15 +58,11 @@ class PluginRegistry:
         return plugin_id in self._plugins
 
     # ------------------------------------------------------------------
-    # Persistence helpers (app_settings table)
+    # Persistence helpers (user_integrations table)
     # ------------------------------------------------------------------
 
-    @staticmethod
-    def _settings_key(plugin_id: str) -> str:
-        return _SETTINGS_KEY.format(plugin_id=plugin_id)
-
-    def get_config(self, plugin_id: str) -> dict:
-        """Load plugin config from the app_settings table.
+    def get_config(self, plugin_id: str, user_id: int) -> dict:
+        """Load plugin config from the user_integrations table.
 
         Returns ``{}`` if nothing has been saved yet.
         The returned dict has the shape::
@@ -80,18 +73,15 @@ class PluginRegistry:
 
         try:
             conn = get_connection()
-            row = conn.execute(
-                "SELECT value FROM app_settings WHERE key = ?",
-                (self._settings_key(plugin_id),),
-            ).fetchone()
-            if row:
-                return json.loads(row["value"])
+            result = get_user_integration(conn, user_id, plugin_id)
+            if result is not None:
+                return result
         except Exception:
             logger.exception("Failed to load config for plugin '%s'", plugin_id)
         return {}
 
-    def save_config(self, plugin_id: str, data: dict) -> None:
-        """Persist plugin config to the app_settings table.
+    def save_config(self, plugin_id: str, data: dict, user_id: int) -> None:
+        """Persist plugin config to the user_integrations table.
 
         ``data`` must be a dict with shape ``{"enabled": bool, "config": {...}}``.
         """
@@ -99,15 +89,9 @@ class PluginRegistry:
 
         try:
             conn = get_connection()
-            conn.execute(
-                """INSERT INTO app_settings (key, value, updated_at)
-                   VALUES (?, ?, CURRENT_TIMESTAMP)
-                   ON CONFLICT(key) DO UPDATE
-                   SET value = excluded.value,
-                       updated_at = excluded.updated_at""",
-                (self._settings_key(plugin_id), json.dumps(data)),
-            )
-            conn.commit()
+            enabled = bool(data.get('enabled', False))
+            config = data.get('config', {})
+            set_user_integration(conn, user_id, plugin_id, enabled, config)
         except Exception:
             logger.exception("Failed to save config for plugin '%s'", plugin_id)
             raise
@@ -116,17 +100,18 @@ class PluginRegistry:
     # Enable / disable
     # ------------------------------------------------------------------
 
-    def is_enabled(self, plugin_id: str) -> bool:
-        """Return True if the plugin is enabled in the database."""
-        stored = self.get_config(plugin_id)
+    def is_enabled(self, plugin_id: str, user_id: int) -> bool:
+        """Return True if the plugin is enabled for this user."""
+        stored = self.get_config(plugin_id, user_id)
         return bool(stored.get("enabled", False))
 
-    def enable(self, plugin_id: str, config: dict) -> bool:
+    def enable(self, plugin_id: str, config: dict, user_id: int) -> bool:
         """Enable a plugin after a successful connection test.
 
         Args:
             plugin_id: The plugin's unique id.
             config:    Dict mapping field ids to their values.
+            user_id:   The user enabling the plugin.
 
         Returns:
             True if the connection test passed and the plugin was persisted as
@@ -143,26 +128,26 @@ class PluginRegistry:
         if not connected:
             return False
 
-        stored = self.get_config(plugin_id)
+        stored = self.get_config(plugin_id, user_id)
         stored["enabled"] = True
         stored["config"] = config
-        self.save_config(plugin_id, stored)
+        self.save_config(plugin_id, stored, user_id)
         return True
 
-    def disable(self, plugin_id: str) -> None:
+    def disable(self, plugin_id: str, user_id: int) -> None:
         """Disable a plugin (keeps its config so re-enabling is frictionless)."""
-        stored = self.get_config(plugin_id)
+        stored = self.get_config(plugin_id, user_id)
         stored["enabled"] = False
-        self.save_config(plugin_id, stored)
+        self.save_config(plugin_id, stored, user_id)
 
     # ------------------------------------------------------------------
     # Convenience: scrub sensitive fields before sending to the client
     # ------------------------------------------------------------------
 
-    def safe_config(self, plugin_id: str) -> dict:
+    def safe_config(self, plugin_id: str, user_id: int) -> dict:
         """Return the stored config dict with password fields masked."""
         plugin = self.get(plugin_id)
-        stored = self.get_config(plugin_id)
+        stored = self.get_config(plugin_id, user_id)
         raw_config: dict = stored.get("config", {})
 
         password_fields = {

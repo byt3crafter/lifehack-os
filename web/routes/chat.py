@@ -10,7 +10,7 @@ import re
 from datetime import datetime
 from flask import Blueprint, jsonify, request
 
-from .decorators import login_required
+from .decorators import login_required, current_user_id
 from src.infrastructure.database import get_connection
 from src.infrastructure.ai import get_ai_provider
 from src.domain.services.chat_context import assemble_context, build_system_prompt
@@ -73,6 +73,7 @@ def _parse_and_execute_tools(ai_response: str, conn) -> tuple[str, list]:
 @login_required
 def send_message():
     """Send a user message, assemble full context, call AI, persist both turns."""
+    uid = current_user_id()
     data = request.get_json(silent=True) or {}
     user_message = (data.get("message") or "").strip()
     image_base64 = (data.get("image_base64") or "").strip()
@@ -111,11 +112,13 @@ def send_message():
             "If it's not a receipt, describe what you see and respond normally."
         )
 
-    # Load last 10 messages for conversation continuity
+    # Load last 10 messages for this user for conversation continuity
     history_rows = conn.execute(
         """SELECT role, content FROM chat_messages
+           WHERE user_id = ?
            ORDER BY created_at DESC, id DESC
-           LIMIT 10"""
+           LIMIT 10""",
+        (uid,)
     ).fetchall()
     # Rows come back newest-first; reverse to chronological order
     prior_messages = [{"role": r["role"], "content": r["content"]} for r in reversed(history_rows)]
@@ -140,9 +143,9 @@ def send_message():
 
     # Persist the user message first (so it's stored even if AI fails)
     conn.execute(
-        """INSERT INTO chat_messages (role, content, provider, model)
-           VALUES (?, ?, ?, ?)""",
-        ("user", user_message, "", ""),
+        """INSERT INTO chat_messages (user_id, role, content, provider, model)
+           VALUES (?, ?, ?, ?, ?)""",
+        (uid, "user", user_message, "", ""),
     )
     conn.commit()
 
@@ -203,9 +206,9 @@ def send_message():
 
     # Persist the assistant response (cleaned — no [TOOL: ...] lines)
     conn.execute(
-        """INSERT INTO chat_messages (role, content, provider, model)
-           VALUES (?, ?, ?, ?)""",
-        ("assistant", clean_response, provider_name, model_name),
+        """INSERT INTO chat_messages (user_id, role, content, provider, model)
+           VALUES (?, ?, ?, ?, ?)""",
+        (uid, "assistant", clean_response, provider_name, model_name),
     )
     conn.commit()
 
@@ -228,6 +231,7 @@ def send_message():
 @login_required
 def get_history():
     """Return conversation history, newest messages last."""
+    uid = current_user_id()
     try:
         limit = max(1, min(int(request.args.get("limit", 50)), 500))
     except (TypeError, ValueError):
@@ -237,9 +241,10 @@ def get_history():
     rows = conn.execute(
         """SELECT id, role, content, provider, model, created_at
            FROM chat_messages
+           WHERE user_id = ?
            ORDER BY created_at ASC, id ASC
            LIMIT ?""",
-        (limit,),
+        (uid, limit),
     ).fetchall()
 
     return jsonify({
@@ -264,8 +269,9 @@ def get_history():
 @chat_bp.route("/history", methods=["DELETE"])
 @login_required
 def clear_history():
-    """Delete all chat messages."""
+    """Delete all chat messages for the current user."""
+    uid = current_user_id()
     conn = get_connection()
-    conn.execute("DELETE FROM chat_messages")
+    conn.execute("DELETE FROM chat_messages WHERE user_id = ?", (uid,))
     conn.commit()
     return "", 204

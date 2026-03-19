@@ -10,13 +10,14 @@ from datetime import date, timedelta
 logger = logging.getLogger(__name__)
 
 
-def generate_digest(transactions: list, budgets: list, conn, ai_provider=None) -> dict:
+def generate_digest(transactions: list, budgets: list, conn, user_id: int, ai_provider=None) -> dict:
     """Generate a weekly financial digest for the most recent complete week.
 
     Args:
         transactions: All transactions covering at least the past 2 weeks.
         budgets: Current budget data from the dashboard.
         conn: Database connection for storing the digest.
+        user_id: The user whose digest is being generated.
         ai_provider: Optional AI provider for generating a narrative summary.
 
     Returns:
@@ -31,9 +32,10 @@ def generate_digest(transactions: list, budgets: list, conn, ai_provider=None) -
     week_start = last_monday.isoformat()
     week_end = last_sunday.isoformat()
 
-    # Check if digest already exists
+    # Check if digest already exists for this user and week
     existing = conn.execute(
-        "SELECT * FROM finance_digests WHERE week_start = ?", (week_start,)
+        "SELECT * FROM finance_digests WHERE user_id = ? AND week_start = ?",
+        (user_id, week_start),
     ).fetchone()
     if existing:
         return {
@@ -88,16 +90,17 @@ def generate_digest(transactions: list, budgets: list, conn, ai_provider=None) -
         for t in notable
     ]
 
-    # Recurring total from DB
+    # Recurring total from DB for this user
     recurring_row = conn.execute(
-        "SELECT COALESCE(SUM(estimated_amount), 0) AS total FROM finance_recurring WHERE active = 1 AND dismissed = 0"
+        "SELECT COALESCE(SUM(estimated_amount), 0) AS total FROM finance_recurring WHERE user_id = ? AND active = 1 AND dismissed = 0",
+        (user_id,),
     ).fetchone()
     recurring_total = round(recurring_row['total'], 2) if recurring_row else 0
 
-    # Anomaly count from that week
+    # Anomaly count from that week for this user
     anomaly_count = conn.execute(
-        "SELECT COUNT(*) AS cnt FROM finance_anomalies WHERE created_at >= ? AND created_at <= ?",
-        (week_start, week_end + 'T23:59:59'),
+        "SELECT COUNT(*) AS cnt FROM finance_anomalies WHERE user_id = ? AND created_at >= ? AND created_at <= ?",
+        (user_id, week_start, week_end + 'T23:59:59'),
     ).fetchone()['cnt']
 
     # AI summary (optional)
@@ -126,11 +129,12 @@ def generate_digest(transactions: list, budgets: list, conn, ai_provider=None) -
         """INSERT OR REPLACE INTO finance_digests
            (week_start, week_end, total_spent, top_categories_json,
             budget_status_json, notable_transactions_json,
-            recurring_total, anomaly_count, ai_summary)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            recurring_total, anomaly_count, ai_summary, user_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (week_start, week_end, total_spent,
          json.dumps(top_categories), json.dumps(budget_status),
-         json.dumps(notable_txns), recurring_total, anomaly_count, ai_summary),
+         json.dumps(notable_txns), recurring_total, anomaly_count, ai_summary,
+         user_id),
     )
     conn.commit()
 

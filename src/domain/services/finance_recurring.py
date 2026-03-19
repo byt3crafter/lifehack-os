@@ -20,12 +20,13 @@ def _normalize_description(desc: str) -> str:
     return text
 
 
-def detect_recurring(transactions: list, conn) -> list:
+def detect_recurring(transactions: list, conn, user_id: int) -> list:
     """Detect recurring expenses from a list of transactions.
 
     Args:
         transactions: List of transaction dicts with date, description, amount, type, category
         conn: Database connection for storing results
+        user_id: The user whose data is being analysed
 
     Returns:
         List of detected recurring expense dicts
@@ -106,18 +107,19 @@ def detect_recurring(transactions: list, conn) -> list:
         })
 
     # Store results in DB
-    _store_recurring(recurring, conn)
+    _store_recurring(recurring, conn, user_id)
 
     return recurring
 
 
-def _store_recurring(recurring: list, conn) -> None:
+def _store_recurring(recurring: list, conn, user_id: int) -> None:
     """Upsert detected recurring expenses into the database."""
     for r in recurring:
         norm_desc = _normalize_description(r['description'])
         existing = conn.execute(
-            "SELECT id, dismissed FROM finance_recurring WHERE description = ? OR description = ?",
-            (r['description'], norm_desc),
+            """SELECT id, dismissed FROM finance_recurring
+               WHERE user_id = ? AND (description = ? OR description = ?)""",
+            (user_id, r['description'], norm_desc),
         ).fetchone()
 
         if existing:
@@ -128,20 +130,20 @@ def _store_recurring(recurring: list, conn) -> None:
                    SET estimated_amount = ?, frequency = ?, confidence = ?,
                        last_seen_date = ?, transaction_count = ?, category = ?,
                        updated_at = CURRENT_TIMESTAMP
-                   WHERE id = ?""",
+                   WHERE id = ? AND user_id = ?""",
                 (r['estimated_amount'], r['frequency'], r['confidence'],
                  r['last_seen_date'], r['transaction_count'], r['category'],
-                 existing['id']),
+                 existing['id'], user_id),
             )
         else:
             conn.execute(
                 """INSERT INTO finance_recurring
                    (description, category, estimated_amount, frequency, confidence,
-                    last_seen_date, transaction_count)
-                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                    last_seen_date, transaction_count, user_id)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
                 (r['description'], r['category'], r['estimated_amount'],
                  r['frequency'], r['confidence'], r['last_seen_date'],
-                 r['transaction_count']),
+                 r['transaction_count'], user_id),
             )
 
     conn.commit()

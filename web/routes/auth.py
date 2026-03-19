@@ -38,11 +38,15 @@ def ensure_admin_user() -> None:
         username = os.environ.get('LIFEHACK_USERNAME', 'admin').strip().lower()
         password = os.environ.get('LIFEHACK_PASSWORD', 'changeme')
         display_name = username.capitalize()
-        conn.execute(
+        cursor = conn.execute(
             """INSERT INTO users (username, password_hash, display_name, is_admin)
                VALUES (?, ?, ?, 1)""",
             (username, _hash_password(password), display_name),
         )
+        conn.commit()
+        # Initialise user_stats row for the admin user
+        admin_id = cursor.lastrowid
+        conn.execute("INSERT OR IGNORE INTO user_stats (user_id) VALUES (?)", (admin_id,))
         conn.commit()
         print(f"  Created admin user: {username}")
 
@@ -131,6 +135,11 @@ def create_user():
     )
     conn.commit()
     new_id = cursor.lastrowid
+
+    # Initialise per-user tables for the new user
+    conn.execute("INSERT OR IGNORE INTO user_stats (user_id) VALUES (?)", (new_id,))
+    conn.commit()
+
     row = conn.execute(
         "SELECT id, username, display_name, is_admin, created_at FROM users WHERE id = ?",
         (new_id,),

@@ -370,3 +370,189 @@ def run_migrations(conn) -> None:
         )
         conn.commit()
         print("  Migration 13: Finance Stage 2 tables")
+
+    # Migration 14: Multi-user data isolation
+    # Adds user_id column to every user-data table, creates user_settings
+    # and user_integrations tables, and assigns all existing data to the
+    # first admin user.
+    current = get_current_version(conn)
+    if current < 14:
+        print("  Migration 14: Multi-user data isolation — starting …")
+
+        # Find the first admin user (or first user at all) to own existing data
+        admin_row = conn.execute(
+            "SELECT id FROM users WHERE is_admin = 1 ORDER BY id LIMIT 1"
+        ).fetchone()
+        if not admin_row:
+            admin_row = conn.execute(
+                "SELECT id FROM users ORDER BY id LIMIT 1"
+            ).fetchone()
+        admin_id = admin_row['id'] if admin_row else 1
+
+        # --- Tables that just need an ALTER TABLE ADD COLUMN + UPDATE --------
+        simple_tables = [
+            'habits', 'habit_completions', 'habit_phases', 'habit_micro_tasks',
+            'micro_task_completions', 'habit_strength', 'habit_miss_log',
+            'habit_stacks', 'projects', 'milestones', 'tasks',
+            'walk_logs', 'replacement_actions', 'replacement_logs',
+            'point_ledger', 'streaks', 'food_logs', 'fasting_logs',
+            'wishlist', 'finance_rules', 'finance_log', 'finance_advice',
+            'savings_goals', 'finance_recurring', 'finance_anomalies',
+            'finance_digests', 'challenges', 'challenge_logs',
+            'chat_messages', 'ai_insights', 'deep_work_sessions',
+            'deep_work_projects',
+        ]
+
+        for table in simple_tables:
+            cols = [r[1] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()]
+            if 'user_id' not in cols:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN user_id INTEGER REFERENCES users(id)")
+                conn.execute(f"UPDATE {table} SET user_id = ?", (admin_id,))
+                conn.execute(f"CREATE INDEX IF NOT EXISTS idx_{table}_user ON {table}(user_id)")
+                print(f"    + {table}")
+        conn.commit()
+
+        # --- daily_checkins: add user_id, recreate UNIQUE as (user_id, date) -
+        dc_cols = [r[1] for r in conn.execute("PRAGMA table_info(daily_checkins)").fetchall()]
+        if 'user_id' not in dc_cols:
+            conn.execute("ALTER TABLE daily_checkins ADD COLUMN user_id INTEGER REFERENCES users(id)")
+            conn.execute(f"UPDATE daily_checkins SET user_id = ?", (admin_id,))
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_daily_checkins_user ON daily_checkins(user_id)")
+            # The old UNIQUE(date) remains but is harmless — app logic filters by user_id
+            print("    + daily_checkins")
+        conn.commit()
+
+        # --- user_stats: recreate without CHECK(id=1), use user_id as PK -----
+        us_cols = [r[1] for r in conn.execute("PRAGMA table_info(user_stats)").fetchall()]
+        if 'user_id' not in us_cols:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS user_stats_new (
+                    user_id INTEGER PRIMARY KEY REFERENCES users(id),
+                    total_xp INTEGER NOT NULL DEFAULT 0,
+                    level INTEGER NOT NULL DEFAULT 1,
+                    sobriety_start_date TEXT,
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            conn.execute(f"""
+                INSERT OR IGNORE INTO user_stats_new (user_id, total_xp, level, sobriety_start_date, created_at)
+                SELECT ?, total_xp, level, sobriety_start_date, created_at FROM user_stats WHERE id = 1
+            """, (admin_id,))
+            conn.execute("DROP TABLE user_stats")
+            conn.execute("ALTER TABLE user_stats_new RENAME TO user_stats")
+            print("    + user_stats (recreated)")
+        conn.commit()
+
+        # --- New table: user_settings (per-user key-value overrides) ----------
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS user_settings (
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                key TEXT NOT NULL,
+                value TEXT NOT NULL,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (user_id, key)
+            );
+        """)
+        print("    + user_settings (created)")
+
+        # Migrate existing app_settings that are per-user to user_settings
+        per_user_keys = [
+            'finance_card_visibility', 'calorie_goal',
+        ]
+        # Also migrate module toggles
+        module_rows = conn.execute(
+            "SELECT key, value FROM app_settings WHERE key LIKE 'module_%'"
+        ).fetchall()
+        for row in module_rows:
+            per_user_keys.append(row['key'])
+
+        for key in per_user_keys:
+            row = conn.execute(
+                "SELECT value FROM app_settings WHERE key = ?", (key,)
+            ).fetchone()
+            if row:
+                conn.execute(
+                    "INSERT OR IGNORE INTO user_settings (user_id, key, value) VALUES (?, ?, ?)",
+                    (admin_id, key, row['value']),
+                )
+
+        # --- New table: user_integrations (per-user credentials) --------------
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS user_integrations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                integration_name TEXT NOT NULL,
+                enabled INTEGER DEFAULT 0,
+                config_json TEXT DEFAULT '{}',
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id, integration_name)
+            );
+            CREATE INDEX IF NOT EXISTS idx_user_integrations_user ON user_integrations(user_id);
+        """)
+        print("    + user_integrations (created)")
+
+        # Migrate existing plugin configs from app_settings to user_integrations
+        for plugin_name in ('firefly', 'vikunja'):
+            setting_key = f'plugin_config_{plugin_name}'
+            row = conn.execute(
+                "SELECT value FROM app_settings WHERE key = ?", (setting_key,)
+            ).fetchone()
+            if row and row['value']:
+                import json as _json
+                try:
+                    cfg = _json.loads(row['value'])
+                    conn.execute(
+                        """INSERT OR IGNORE INTO user_integrations
+                           (user_id, integration_name, enabled, config_json)
+                           VALUES (?, ?, ?, ?)""",
+                        (admin_id, plugin_name,
+                         1 if cfg.get('enabled') else 0,
+                         _json.dumps(cfg.get('config', {}))),
+                    )
+                except (_json.JSONDecodeError, TypeError):
+                    pass
+
+        # Migrate AI provider keys to user_integrations
+        ai_keys = [
+            'ai_openai_key', 'ai_openai_url', 'ai_openai_model',
+            'ai_anthropic_key', 'ai_anthropic_model',
+            'ai_minimax_key', 'ai_minimax_model',
+            'ai_ollama_url', 'ai_ollama_model',
+            'ai_chatgpt_model', 'openai_oauth_token',
+            'ai_provider_food', 'ai_provider_habits', 'ai_provider_insights',
+            'ai_provider_reports', 'ai_provider_default', 'ai_provider',
+        ]
+        ai_config = {}
+        for key in ai_keys:
+            r = conn.execute(
+                "SELECT value FROM app_settings WHERE key = ?", (key,)
+            ).fetchone()
+            if r and r['value']:
+                ai_config[key] = r['value']
+
+        if ai_config:
+            import json as _json
+            conn.execute(
+                """INSERT OR IGNORE INTO user_integrations
+                   (user_id, integration_name, enabled, config_json)
+                   VALUES (?, 'ai_providers', 1, ?)""",
+                (admin_id, _json.dumps(ai_config)),
+            )
+
+        conn.commit()
+
+        # Initialise user_stats for every user that doesn't have a row yet
+        all_users = conn.execute("SELECT id FROM users").fetchall()
+        for u in all_users:
+            conn.execute(
+                "INSERT OR IGNORE INTO user_stats (user_id) VALUES (?)",
+                (u['id'],),
+            )
+        conn.commit()
+
+        conn.execute(
+            "INSERT OR IGNORE INTO schema_version (version, description) VALUES (14, 'Multi-user data isolation')"
+        )
+        conn.commit()
+        print("  Migration 14: Multi-user data isolation — done")

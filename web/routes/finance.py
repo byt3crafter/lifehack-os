@@ -8,8 +8,9 @@ from collections import defaultdict
 from datetime import date, datetime, timedelta
 from flask import Blueprint, jsonify, request
 
-from .decorators import login_required
+from .decorators import login_required, current_user_id
 from src.infrastructure.database import get_connection
+from src.infrastructure.database.user_scope import get_user_setting, set_user_setting
 from src.infrastructure.services.firefly_service import firefly_service
 
 logger = logging.getLogger(__name__)
@@ -112,6 +113,7 @@ def get_dashboard():
     (Firefly + local rules), recent transactions, and savings goals.
     """
     try:
+        uid = current_user_id()
         conn = get_connection()
         today = date.today()
         days_in_month = calendar.monthrange(today.year, today.month)[1]
@@ -149,14 +151,15 @@ def get_dashboard():
         # Local rules act as budgets when Firefly has no matching budget
         start, end = _current_month_range()
         local_rules = conn.execute(
-            "SELECT * FROM finance_rules WHERE active = 1"
+            "SELECT * FROM finance_rules WHERE active = 1 AND user_id = ?",
+            (uid,),
         ).fetchall()
         local_spending_rows = conn.execute(
             """SELECT category, SUM(amount) AS total
                FROM finance_log
-               WHERE date >= ? AND date < ? AND type = 'withdrawal'
+               WHERE date >= ? AND date < ? AND type = 'withdrawal' AND user_id = ?
                GROUP BY category""",
-            (start, end),
+            (start, end, uid),
         ).fetchall()
         local_spent_by_cat = {r['category']: r['total'] for r in local_spending_rows}
 
@@ -188,13 +191,15 @@ def get_dashboard():
             recent_txns = firefly_service.get_transactions(days=30, limit=10)
         else:
             rows = conn.execute(
-                "SELECT * FROM finance_log ORDER BY date DESC, id DESC LIMIT 10"
+                "SELECT * FROM finance_log WHERE user_id = ? ORDER BY date DESC, id DESC LIMIT 10",
+                (uid,),
             ).fetchall()
             recent_txns = [_serialize_log(r) for r in rows]
 
         # -- Savings goals ---------------------------------------------------
         goal_rows = conn.execute(
-            "SELECT * FROM savings_goals ORDER BY created_at DESC"
+            "SELECT * FROM savings_goals WHERE user_id = ? ORDER BY created_at DESC",
+            (uid,),
         ).fetchall()
 
         goals_payload = []
@@ -247,6 +252,7 @@ def get_transactions():
     except (TypeError, ValueError):
         return jsonify({'error': 'Invalid query parameters'}), 400
 
+    uid = current_user_id()
     connected = firefly_service.is_connected()
 
     if connected:
@@ -257,10 +263,10 @@ def get_transactions():
         start = (date.today() - timedelta(days=days)).isoformat()
         rows = get_connection().execute(
             """SELECT * FROM finance_log
-               WHERE date >= ?
+               WHERE date >= ? AND user_id = ?
                ORDER BY date DESC, id DESC
                LIMIT ?""",
-            (start, limit),
+            (start, uid, limit),
         ).fetchall()
         txns = [_serialize_log(r) for r in rows]
 
@@ -285,9 +291,11 @@ def get_transactions():
 @login_required
 def list_goals():
     """List all savings goals."""
+    uid = current_user_id()
     conn = get_connection()
     rows = conn.execute(
-        "SELECT * FROM savings_goals ORDER BY created_at DESC"
+        "SELECT * FROM savings_goals WHERE user_id = ? ORDER BY created_at DESC",
+        (uid,),
     ).fetchall()
 
     connected = firefly_service.is_connected()
@@ -313,6 +321,7 @@ def create_goal():
 
     Body: {name, target_amount, icon?, current_amount?, firefly_account_id?}
     """
+    uid = current_user_id()
     data = request.json or {}
     name = (data.get('name') or '').strip()
     icon = (data.get('icon') or '🎯').strip()
@@ -334,14 +343,14 @@ def create_goal():
 
     conn = get_connection()
     cursor = conn.execute(
-        """INSERT INTO savings_goals (name, icon, target_amount, current_amount, firefly_account_id)
-           VALUES (?, ?, ?, ?, ?)""",
-        (name, icon, target_amount, current_amount, firefly_account_id),
+        """INSERT INTO savings_goals (user_id, name, icon, target_amount, current_amount, firefly_account_id)
+           VALUES (?, ?, ?, ?, ?, ?)""",
+        (uid, name, icon, target_amount, current_amount, firefly_account_id),
     )
     conn.commit()
 
     row = conn.execute(
-        "SELECT * FROM savings_goals WHERE id = ?", (cursor.lastrowid,)
+        "SELECT * FROM savings_goals WHERE id = ? AND user_id = ?", (cursor.lastrowid, uid)
     ).fetchone()
     return jsonify(_serialize_goal(row)), 201
 
@@ -353,9 +362,10 @@ def update_goal(goal_id: int):
 
     Body: any subset of {name, icon, target_amount, current_amount, firefly_account_id}
     """
+    uid = current_user_id()
     conn = get_connection()
     row = conn.execute(
-        "SELECT * FROM savings_goals WHERE id = ?", (goal_id,)
+        "SELECT * FROM savings_goals WHERE id = ? AND user_id = ?", (goal_id, uid)
     ).fetchone()
     if not row:
         return jsonify({'error': 'Goal not found'}), 404
@@ -381,13 +391,13 @@ def update_goal(goal_id: int):
         """UPDATE savings_goals
            SET name = ?, icon = ?, target_amount = ?, current_amount = ?,
                firefly_account_id = ?
-           WHERE id = ?""",
-        (name, icon, target_amount, current_amount, firefly_account_id, goal_id),
+           WHERE id = ? AND user_id = ?""",
+        (name, icon, target_amount, current_amount, firefly_account_id, goal_id, uid),
     )
     conn.commit()
 
     updated = conn.execute(
-        "SELECT * FROM savings_goals WHERE id = ?", (goal_id,)
+        "SELECT * FROM savings_goals WHERE id = ? AND user_id = ?", (goal_id, uid)
     ).fetchone()
     return jsonify(_serialize_goal(updated))
 
@@ -396,14 +406,15 @@ def update_goal(goal_id: int):
 @login_required
 def delete_goal(goal_id: int):
     """Delete a savings goal."""
+    uid = current_user_id()
     conn = get_connection()
     row = conn.execute(
-        "SELECT id FROM savings_goals WHERE id = ?", (goal_id,)
+        "SELECT id FROM savings_goals WHERE id = ? AND user_id = ?", (goal_id, uid)
     ).fetchone()
     if not row:
         return jsonify({'error': 'Goal not found'}), 404
 
-    conn.execute("DELETE FROM savings_goals WHERE id = ?", (goal_id,))
+    conn.execute("DELETE FROM savings_goals WHERE id = ? AND user_id = ?", (goal_id, uid))
     conn.commit()
     return '', 204
 
@@ -419,22 +430,24 @@ def get_summary():
 
     Retained for backward compatibility. New code should use /dashboard.
     """
+    uid = current_user_id()
     conn = get_connection()
     start, end = _current_month_range()
 
     rows = conn.execute(
         """SELECT category, SUM(amount) AS total
            FROM finance_log
-           WHERE date >= ? AND date < ? AND type = 'withdrawal'
+           WHERE date >= ? AND date < ? AND type = 'withdrawal' AND user_id = ?
            GROUP BY category""",
-        (start, end),
+        (start, end, uid),
     ).fetchall()
 
     spent_by_category = {r['category']: r['total'] for r in rows}
     total_spent = sum(spent_by_category.values()) if spent_by_category else 0.0
 
     rules = conn.execute(
-        "SELECT * FROM finance_rules WHERE active = 1"
+        "SELECT * FROM finance_rules WHERE active = 1 AND user_id = ?",
+        (uid,),
     ).fetchall()
 
     categories = []
@@ -461,7 +474,8 @@ def get_summary():
                 warnings.append({'category': cat, 'message': f'Approaching limit ({pct}% used)', 'level': 'warning'})
 
     recent = conn.execute(
-        "SELECT * FROM finance_log ORDER BY date DESC, id DESC LIMIT 10"
+        "SELECT * FROM finance_log WHERE user_id = ? ORDER BY date DESC, id DESC LIMIT 10",
+        (uid,),
     ).fetchall()
 
     return jsonify({
@@ -481,6 +495,7 @@ def get_summary():
 @login_required
 def ask_finance():
     """AI advice: should I buy this? Accepts {question, amount, category}."""
+    uid = current_user_id()
     data = request.json or {}
     question = (data.get('question') or '').strip()
     amount = data.get('amount')
@@ -495,15 +510,16 @@ def ask_finance():
     rows = conn.execute(
         """SELECT category, SUM(amount) AS total
            FROM finance_log
-           WHERE date >= ? AND date < ? AND type = 'withdrawal'
+           WHERE date >= ? AND date < ? AND type = 'withdrawal' AND user_id = ?
            GROUP BY category""",
-        (start, end),
+        (start, end, uid),
     ).fetchall()
     spent_by_category = {r['category']: r['total'] for r in rows}
     total_spent = sum(spent_by_category.values()) if spent_by_category else 0.0
 
     rules = conn.execute(
-        "SELECT * FROM finance_rules WHERE active = 1"
+        "SELECT * FROM finance_rules WHERE active = 1 AND user_id = ?",
+        (uid,),
     ).fetchall()
     rules_summary = ', '.join(
         f"{r['category']}: ${r['monthly_limit']:.0f}/mo" for r in rules if r['monthly_limit']
@@ -551,9 +567,9 @@ def ask_finance():
             recommendation = 'caution'
 
         conn.execute(
-            """INSERT INTO finance_advice (question, advice, amount, category)
-               VALUES (?, ?, ?, ?)""",
-            (question, advice_text, amount, category),
+            """INSERT INTO finance_advice (user_id, question, advice, amount, category)
+               VALUES (?, ?, ?, ?, ?)""",
+            (uid, question, advice_text, amount, category),
         )
         conn.commit()
 
@@ -580,9 +596,11 @@ def ask_finance():
 @login_required
 def list_rules():
     """List all budget rules."""
+    uid = current_user_id()
     conn = get_connection()
     rows = conn.execute(
-        "SELECT * FROM finance_rules ORDER BY category"
+        "SELECT * FROM finance_rules WHERE user_id = ? ORDER BY category",
+        (uid,),
     ).fetchall()
     return jsonify([_serialize_rule(r) for r in rows])
 
@@ -591,6 +609,7 @@ def list_rules():
 @login_required
 def create_or_update_rule():
     """Create a new budget rule or update the limit for an existing category."""
+    uid = current_user_id()
     data = request.json or {}
     category = (data.get('category') or '').strip()
     monthly_limit = data.get('monthly_limit')
@@ -601,27 +620,27 @@ def create_or_update_rule():
 
     conn = get_connection()
     existing = conn.execute(
-        "SELECT id FROM finance_rules WHERE category = ?", (category,)
+        "SELECT id FROM finance_rules WHERE category = ? AND user_id = ?", (category, uid)
     ).fetchone()
 
     if existing:
         conn.execute(
             """UPDATE finance_rules
                SET monthly_limit = ?, description = ?, active = 1
-               WHERE category = ?""",
-            (monthly_limit, description, category),
+               WHERE category = ? AND user_id = ?""",
+            (monthly_limit, description, category, uid),
         )
     else:
         conn.execute(
-            """INSERT INTO finance_rules (category, monthly_limit, description)
-               VALUES (?, ?, ?)""",
-            (category, monthly_limit, description),
+            """INSERT INTO finance_rules (user_id, category, monthly_limit, description)
+               VALUES (?, ?, ?, ?)""",
+            (uid, category, monthly_limit, description),
         )
 
     conn.commit()
 
     row = conn.execute(
-        "SELECT * FROM finance_rules WHERE category = ?", (category,)
+        "SELECT * FROM finance_rules WHERE category = ? AND user_id = ?", (category, uid)
     ).fetchone()
     return jsonify(_serialize_rule(row)), 201 if not existing else 200
 
@@ -630,14 +649,15 @@ def create_or_update_rule():
 @login_required
 def delete_rule(rule_id: int):
     """Delete a budget rule."""
+    uid = current_user_id()
     conn = get_connection()
     row = conn.execute(
-        "SELECT id FROM finance_rules WHERE id = ?", (rule_id,)
+        "SELECT id FROM finance_rules WHERE id = ? AND user_id = ?", (rule_id, uid)
     ).fetchone()
     if not row:
         return jsonify({'error': 'Rule not found'}), 404
 
-    conn.execute("DELETE FROM finance_rules WHERE id = ?", (rule_id,))
+    conn.execute("DELETE FROM finance_rules WHERE id = ? AND user_id = ?", (rule_id, uid))
     conn.commit()
     return '', 204
 
@@ -650,6 +670,7 @@ def delete_rule(rule_id: int):
 @login_required
 def log_transaction():
     """Manually log a spending transaction."""
+    uid = current_user_id()
     data = request.json or {}
     tx_date = (data.get('date') or date.today().isoformat()).strip()
     amount = data.get('amount')
@@ -669,14 +690,14 @@ def log_transaction():
 
     conn = get_connection()
     cursor = conn.execute(
-        """INSERT INTO finance_log (date, amount, description, category, type, source)
-           VALUES (?, ?, ?, ?, ?, ?)""",
-        (tx_date, amount, description, category, tx_type, source),
+        """INSERT INTO finance_log (user_id, date, amount, description, category, type, source)
+           VALUES (?, ?, ?, ?, ?, ?, ?)""",
+        (uid, tx_date, amount, description, category, tx_type, source),
     )
     conn.commit()
 
     row = conn.execute(
-        "SELECT * FROM finance_log WHERE id = ?", (cursor.lastrowid,)
+        "SELECT * FROM finance_log WHERE id = ? AND user_id = ?", (cursor.lastrowid, uid)
     ).fetchone()
     return jsonify(_serialize_log(row)), 201
 
@@ -689,6 +710,7 @@ def log_transaction():
 @login_required
 def get_report():
     """Monthly spending breakdown with comparison to budget rules."""
+    uid = current_user_id()
     month = request.args.get('month')
     if month:
         try:
@@ -706,14 +728,15 @@ def get_report():
     rows = conn.execute(
         """SELECT category, type, SUM(amount) AS total, COUNT(*) AS count
            FROM finance_log
-           WHERE date >= ? AND date < ?
+           WHERE date >= ? AND date < ? AND user_id = ?
            GROUP BY category, type
            ORDER BY total DESC""",
-        (start, end),
+        (start, end, uid),
     ).fetchall()
 
     rules = conn.execute(
-        "SELECT * FROM finance_rules WHERE active = 1"
+        "SELECT * FROM finance_rules WHERE active = 1 AND user_id = ?",
+        (uid,),
     ).fetchall()
     rule_map = {r['category']: r['monthly_limit'] for r in rules}
 
@@ -763,45 +786,33 @@ _DEFAULT_CARD_VISIBILITY = {
 @login_required
 def get_card_settings():
     """Return card visibility preferences."""
+    uid = current_user_id()
     conn = get_connection()
-    row = conn.execute(
-        "SELECT value FROM app_settings WHERE key = 'finance_card_visibility'"
-    ).fetchone()
-    if row and row['value']:
-        try:
-            saved = json.loads(row['value'])
-            merged = {**_DEFAULT_CARD_VISIBILITY, **saved}
-            return jsonify(merged)
-        except (json.JSONDecodeError, TypeError):
-            pass
-    return jsonify(_DEFAULT_CARD_VISIBILITY)
+    raw = get_user_setting(conn, uid, 'finance_card_visibility', '{}')
+    try:
+        saved = json.loads(raw)
+        merged = {**_DEFAULT_CARD_VISIBILITY, **saved}
+        return jsonify(merged)
+    except (json.JSONDecodeError, TypeError):
+        return jsonify(_DEFAULT_CARD_VISIBILITY)
 
 
 @finance_bp.route('/card-settings', methods=['PUT'])
 @login_required
 def update_card_settings():
     """Update card visibility preferences."""
+    uid = current_user_id()
     data = request.json or {}
     conn = get_connection()
     # Merge with existing
-    row = conn.execute(
-        "SELECT value FROM app_settings WHERE key = 'finance_card_visibility'"
-    ).fetchone()
+    raw = get_user_setting(conn, uid, 'finance_card_visibility', '{}')
     current = {}
-    if row and row['value']:
-        try:
-            current = json.loads(row['value'])
-        except (json.JSONDecodeError, TypeError):
-            pass
+    try:
+        current = json.loads(raw)
+    except (json.JSONDecodeError, TypeError):
+        pass
     current.update(data)
-    conn.execute(
-        """INSERT INTO app_settings (key, value, updated_at)
-           VALUES ('finance_card_visibility', ?, CURRENT_TIMESTAMP)
-           ON CONFLICT(key) DO UPDATE SET value = excluded.value,
-                                          updated_at = excluded.updated_at""",
-        (json.dumps(current),),
-    )
-    conn.commit()
+    set_user_setting(conn, uid, 'finance_card_visibility', json.dumps(current))
     merged = {**_DEFAULT_CARD_VISIBILITY, **current}
     return jsonify(merged)
 
@@ -815,6 +826,7 @@ def update_card_settings():
 def get_insights():
     """Spending insights: top categories, month-over-month, daily avg, biggest tx."""
     try:
+        uid = current_user_id()
         connected = firefly_service.is_connected()
         if not connected:
             return jsonify({'error': 'Firefly not connected'}), 503
@@ -910,11 +922,13 @@ def get_insights():
 @login_required
 def list_recurring():
     """List detected recurring expenses."""
+    uid = current_user_id()
     conn = get_connection()
     rows = conn.execute(
         """SELECT * FROM finance_recurring
-           WHERE active = 1 AND dismissed = 0
-           ORDER BY estimated_amount DESC"""
+           WHERE active = 1 AND dismissed = 0 AND user_id = ?
+           ORDER BY estimated_amount DESC""",
+        (uid,),
     ).fetchall()
     return jsonify([{
         'id': r['id'],
@@ -933,6 +947,7 @@ def list_recurring():
 def detect_recurring_expenses():
     """Trigger recurring expense detection from the last 90 days."""
     try:
+        uid = current_user_id()
         connected = firefly_service.is_connected()
         if not connected:
             return jsonify({'error': 'Firefly not connected'}), 503
@@ -956,10 +971,11 @@ def detect_recurring_expenses():
 @login_required
 def dismiss_recurring(rec_id: int):
     """Dismiss a recurring expense detection."""
+    uid = current_user_id()
     conn = get_connection()
     conn.execute(
-        "UPDATE finance_recurring SET dismissed = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-        (rec_id,),
+        "UPDATE finance_recurring SET dismissed = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?",
+        (rec_id, uid),
     )
     conn.commit()
     return '', 204
@@ -973,11 +989,13 @@ def dismiss_recurring(rec_id: int):
 @login_required
 def list_anomalies():
     """List unacknowledged anomaly alerts."""
+    uid = current_user_id()
     conn = get_connection()
     rows = conn.execute(
         """SELECT * FROM finance_anomalies
-           WHERE acknowledged = 0
-           ORDER BY created_at DESC"""
+           WHERE acknowledged = 0 AND user_id = ?
+           ORDER BY created_at DESC""",
+        (uid,),
     ).fetchall()
     return jsonify([{
         'id': r['id'],
@@ -997,6 +1015,7 @@ def list_anomalies():
 def scan_anomalies():
     """Trigger anomaly detection on recent transactions."""
     try:
+        uid = current_user_id()
         connected = firefly_service.is_connected()
         if not connected:
             return jsonify({'error': 'Firefly not connected'}), 503
@@ -1020,10 +1039,11 @@ def scan_anomalies():
 @login_required
 def acknowledge_anomaly(anomaly_id: int):
     """Acknowledge an anomaly alert."""
+    uid = current_user_id()
     conn = get_connection()
     conn.execute(
-        "UPDATE finance_anomalies SET acknowledged = 1 WHERE id = ?",
-        (anomaly_id,),
+        "UPDATE finance_anomalies SET acknowledged = 1 WHERE id = ? AND user_id = ?",
+        (anomaly_id, uid),
     )
     conn.commit()
     return '', 204
@@ -1037,12 +1057,14 @@ def acknowledge_anomaly(anomaly_id: int):
 @login_required
 def get_digest():
     """Get the most recent weekly digest, or history with ?history=true."""
+    uid = current_user_id()
     conn = get_connection()
     show_history = request.args.get('history', '').lower() in ('true', '1')
 
     if show_history:
         rows = conn.execute(
-            "SELECT * FROM finance_digests ORDER BY week_start DESC LIMIT 12"
+            "SELECT * FROM finance_digests WHERE user_id = ? ORDER BY week_start DESC LIMIT 12",
+            (uid,),
         ).fetchall()
         return jsonify([{
             'id': r['id'],
@@ -1058,7 +1080,8 @@ def get_digest():
         } for r in rows])
 
     row = conn.execute(
-        "SELECT * FROM finance_digests ORDER BY week_start DESC LIMIT 1"
+        "SELECT * FROM finance_digests WHERE user_id = ? ORDER BY week_start DESC LIMIT 1",
+        (uid,),
     ).fetchone()
     if not row:
         return jsonify({'message': 'No digests yet. Click Generate to create one.'}), 404
@@ -1082,6 +1105,7 @@ def get_digest():
 def generate_digest():
     """Generate a weekly digest for the most recent complete week."""
     try:
+        uid = current_user_id()
         connected = firefly_service.is_connected()
         if not connected:
             return jsonify({'error': 'Firefly not connected'}), 503

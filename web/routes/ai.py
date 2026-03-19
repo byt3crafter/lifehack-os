@@ -1,22 +1,16 @@
 """AI feature routes — food analysis, insights, reports."""
 from flask import Blueprint, jsonify, request
 
-from .decorators import login_required
+from .decorators import login_required, current_user_id
 from src.infrastructure.ai import get_ai_provider
 from src.infrastructure.ai.factory import _get_setting, _make_provider
 from src.infrastructure.database import get_connection
-from src.infrastructure.database.repositories import (
-    HabitRepository, CheckinRepository, StatsRepository
-)
 from src.infrastructure.config import load_config
 from datetime import date
 import os
 
 ai_bp = Blueprint('ai', __name__, url_prefix='/api/ai')
 
-habit_repo = HabitRepository()
-checkin_repo = CheckinRepository()
-stats_repo = StatsRepository()
 config = load_config()
 
 # Known provider names and the settings keys that indicate they are configured.
@@ -42,6 +36,9 @@ _TASK_SETTING_KEYS = {
 @login_required
 def ai_usage():
     """Return recent AI usage log with aggregate totals.
+
+    ai_usage_log is global (not user-scoped) — it tracks provider-level
+    usage across the whole installation.
 
     Query parameters:
         limit  — number of recent entries to return (default 100)
@@ -205,30 +202,68 @@ def analyze_food():
 @login_required
 def generate_insight():
     """Generate a personalized AI insight based on current user state."""
+    uid = current_user_id()
     provider = get_ai_provider('insights')
     if not provider.is_available():
         return jsonify({'error': 'AI not configured'}), 200
 
-    stats = stats_repo.get_stats()
-    habits = habit_repo.get_all()
-    completions = habit_repo.get_completions_for_date(date.today())
-    checkin = checkin_repo.get_for_date(date.today())
+    conn = get_connection()
 
-    # Find best streak
+    # Fetch user-scoped stats
+    stats_row = conn.execute(
+        "SELECT total_xp, level FROM user_stats WHERE user_id = ?", (uid,)
+    ).fetchone()
+    total_xp = stats_row['total_xp'] if stats_row else 0
+    level = stats_row['level'] if stats_row else 1
+
+    # Fetch user-scoped habits
+    habit_rows = conn.execute(
+        "SELECT id FROM habits WHERE user_id = ? AND active = 1", (uid,)
+    ).fetchall()
+    habit_ids = [r['id'] for r in habit_rows]
+
+    # Completions for today
+    completion_rows = conn.execute(
+        "SELECT habit_id FROM habit_completions WHERE user_id = ? AND date(completed_at) = date('now')",
+        (uid,)
+    ).fetchall()
+    completed_ids = {r['habit_id'] for r in completion_rows}
+
+    # Today's check-in
+    checkin = conn.execute(
+        "SELECT mood, energy FROM daily_checkins WHERE user_id = ? AND date = date('now')", (uid,)
+    ).fetchone()
+
+    # Best streak across all habits
     best_streak = 0
-    for h in habits:
-        s = habit_repo.get_streak(h.id)
-        if s > best_streak:
-            best_streak = s
+    for hid in habit_ids:
+        rows = conn.execute(
+            """SELECT DISTINCT date(completed_at) as d FROM habit_completions
+               WHERE user_id = ? AND habit_id = ? AND status = 'complete'
+               ORDER BY d DESC LIMIT 365""",
+            (uid, hid)
+        ).fetchall()
+        streak = 0
+        from datetime import date as _date
+        expected = _date.today()
+        for row in rows:
+            cd = _date.fromisoformat(row['d'])
+            if cd == expected:
+                streak += 1
+                expected = _date.fromordinal(expected.toordinal() - 1)
+            elif cd < expected:
+                break
+        if streak > best_streak:
+            best_streak = streak
 
     user_state = {
-        'total_xp': stats.total_xp,
-        'level': stats.level,
-        'habits_completed': len(completions),
-        'habits_total': len(habits),
+        'total_xp': total_xp,
+        'level': level,
+        'habits_completed': len(completed_ids),
+        'habits_total': len(habit_ids),
         'best_streak': best_streak,
-        'mood': checkin.mood if checkin else None,
-        'energy': checkin.energy if checkin else None,
+        'mood': checkin['mood'] if checkin else None,
+        'energy': checkin['energy'] if checkin else None,
     }
 
     try:
@@ -239,11 +274,10 @@ def generate_insight():
     if not insight:
         return jsonify({'generated': False, 'ai_error': 'AI returned no insight'})
 
-    # Save to database so it shows on dashboard
-    conn = get_connection()
+    # Save to database scoped to this user
     conn.execute(
-        'INSERT INTO ai_insights (insight_type, title, content, priority) VALUES (?, ?, ?, ?)',
-        (insight.insight_type, insight.title, insight.content, insight.priority)
+        'INSERT INTO ai_insights (user_id, insight_type, title, content, priority) VALUES (?, ?, ?, ?, ?)',
+        (uid, insight.insight_type, insight.title, insight.content, insight.priority)
     )
     conn.commit()
 

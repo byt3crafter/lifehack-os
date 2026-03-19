@@ -6,8 +6,9 @@ from datetime import datetime
 from pathlib import Path
 from flask import Blueprint, jsonify, request
 
-from .decorators import login_required, api_key_required
+from .decorators import login_required, api_key_required, current_user_id
 from src.infrastructure.database import get_connection
+from src.infrastructure.database.user_scope import get_user_setting
 
 food_bp = Blueprint('food', __name__, url_prefix='/api/food')
 
@@ -19,19 +20,6 @@ _ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'webp'}
 
 def _ensure_upload_dir() -> None:
     _UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-
-
-def _get_calorie_goal(conn) -> int:
-    """Return the daily calorie goal from settings (default 2000)."""
-    try:
-        row = conn.execute(
-            "SELECT value FROM app_settings WHERE key = 'daily_calorie_goal'"
-        ).fetchone()
-        if row and row['value']:
-            return int(row['value'])
-    except Exception:
-        pass
-    return 2000
 
 
 def _format_logged_at(raw: str) -> str:
@@ -76,6 +64,7 @@ def get_food_logs():
     Response always includes ``daily_goal`` and ``today_calories`` for the
     requested date (or today when date=all).
     """
+    uid = current_user_id()
     date_param = request.args.get('date', '').strip()
     conn = get_connection()
 
@@ -83,25 +72,27 @@ def get_food_logs():
         # Legacy behaviour: last 7 days.
         rows = conn.execute(
             """SELECT * FROM food_logs
-               WHERE date(logged_at) >= date('now', '-7 days')
-               ORDER BY logged_at DESC"""
+               WHERE date(logged_at) >= date('now', '-7 days') AND user_id = ?
+               ORDER BY logged_at DESC""",
+            (uid,)
         ).fetchall()
         cal_date = 'now'
     elif date_param:
         # Specific date requested.
         rows = conn.execute(
             """SELECT * FROM food_logs
-               WHERE date(logged_at) = date(?)
+               WHERE date(logged_at) = date(?) AND user_id = ?
                ORDER BY logged_at DESC""",
-            (date_param,)
+            (date_param, uid)
         ).fetchall()
         cal_date = date_param
     else:
         # Default: today only.
         rows = conn.execute(
             """SELECT * FROM food_logs
-               WHERE date(logged_at) = date('now')
-               ORDER BY logged_at DESC"""
+               WHERE date(logged_at) = date('now') AND user_id = ?
+               ORDER BY logged_at DESC""",
+            (uid,)
         ).fetchall()
         cal_date = 'now'
 
@@ -109,33 +100,38 @@ def get_food_logs():
     if cal_date == 'now':
         today_cals = conn.execute(
             """SELECT SUM(calories) as total FROM food_logs
-               WHERE date(logged_at) = date('now')"""
+               WHERE date(logged_at) = date('now') AND user_id = ?""",
+            (uid,)
         ).fetchone()
     else:
         today_cals = conn.execute(
             """SELECT SUM(calories) as total FROM food_logs
-               WHERE date(logged_at) = date(?)""",
-            (cal_date,)
+               WHERE date(logged_at) = date(?) AND user_id = ?""",
+            (cal_date, uid)
         ).fetchone()
+
+    goal = get_user_setting(conn, uid, 'calorie_goal', '2000')
 
     return jsonify({
         'logs': [_serialize_log(r) for r in rows],
         'today_calories': today_cals['total'] or 0,
-        'daily_goal': _get_calorie_goal(conn),
+        'daily_goal': int(goal),
     })
 
 
 @food_bp.route('', methods=['POST'])
 @login_required
 def log_food():
+    uid = current_user_id()
     data = request.json
     conn = get_connection()
 
     cursor = conn.execute(
         """INSERT INTO food_logs
-           (meal_type, description, calories, protein_g, carbs_g, fat_g, notes, image_path)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-        (data.get('meal_type', 'meal'),
+           (user_id, meal_type, description, calories, protein_g, carbs_g, fat_g, notes, image_path)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (uid,
+         data.get('meal_type', 'meal'),
          data.get('description', ''),
          data.get('calories'),
          data.get('protein_g'),
@@ -152,8 +148,9 @@ def log_food():
 @food_bp.route('/<int:food_id>', methods=['DELETE'])
 @login_required
 def delete_food(food_id):
+    uid = current_user_id()
     conn = get_connection()
-    conn.execute("DELETE FROM food_logs WHERE id = ?", (food_id,))
+    conn.execute("DELETE FROM food_logs WHERE id = ? AND user_id = ?", (food_id, uid))
     conn.commit()
     return jsonify({'success': True})
 
@@ -162,6 +159,7 @@ def delete_food(food_id):
 @login_required
 def update_food(food_id):
     """Update a food log entry (including optional image_path)."""
+    uid = current_user_id()
     data = request.json
     conn = get_connection()
 
@@ -183,8 +181,11 @@ def update_food(food_id):
         values.append(data['image_path'])
 
     if fields:
-        values.append(food_id)
-        conn.execute(f"UPDATE food_logs SET {', '.join(fields)} WHERE id = ?", values)
+        values.extend([food_id, uid])
+        conn.execute(
+            f"UPDATE food_logs SET {', '.join(fields)} WHERE id = ? AND user_id = ?",
+            values
+        )
         conn.commit()
 
     return jsonify({'success': True})
@@ -201,10 +202,13 @@ def upload_food_image(food_id):
     Returns:
         {"success": true, "image_path": "/uploads/<filename>"}
     """
+    uid = current_user_id()
     _ensure_upload_dir()
 
     conn = get_connection()
-    row = conn.execute("SELECT id FROM food_logs WHERE id = ?", (food_id,)).fetchone()
+    row = conn.execute(
+        "SELECT id FROM food_logs WHERE id = ? AND user_id = ?", (food_id, uid)
+    ).fetchone()
     if not row:
         return jsonify({'success': False, 'error': 'Food entry not found'}), 404
 
@@ -226,8 +230,8 @@ def upload_food_image(food_id):
     image_url = f"/uploads/{filename}"
 
     conn.execute(
-        "UPDATE food_logs SET image_path = ? WHERE id = ?",
-        (image_url, food_id)
+        "UPDATE food_logs SET image_path = ? WHERE id = ? AND user_id = ?",
+        (image_url, food_id, uid)
     )
     conn.commit()
 

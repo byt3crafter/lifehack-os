@@ -29,16 +29,23 @@ class ChatGPTOAuthProvider(AIProvider):
     ENDPOINT = 'https://chatgpt.com/backend-api/codex/responses'
     DEFAULT_MODEL = 'gpt-5.4'
 
-    def __init__(self):
+    def __init__(self, user_id: int = None):
+        self._user_id = user_id
         self.token = self._get_setting('openai_oauth_token') or ''
         self.model = self._get_setting('ai_chatgpt_model') or self.DEFAULT_MODEL
         self.account_id = self._extract_account_id(self.token) if self.token else ''
 
-    @staticmethod
-    def _get_setting(key: str) -> str:
+    def _get_setting(self, key: str) -> str:
         try:
             from src.infrastructure.database import get_connection
             conn = get_connection()
+            if self._user_id is not None:
+                row = conn.execute(
+                    "SELECT value FROM user_settings WHERE user_id = ? AND key = ?",
+                    (self._user_id, key),
+                ).fetchone()
+                if row and row['value']:
+                    return row['value']
             row = conn.execute(
                 "SELECT value FROM app_settings WHERE key = ?", (key,)
             ).fetchone()

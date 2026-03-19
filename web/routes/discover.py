@@ -6,7 +6,7 @@ from datetime import date, datetime
 from pathlib import Path
 from flask import Blueprint, jsonify, request
 
-from .decorators import login_required
+from .decorators import login_required, current_user_id
 from src.infrastructure.database import get_connection
 
 discover_bp = Blueprint('discover', __name__, url_prefix='/api/discover')
@@ -50,12 +50,13 @@ def _serialize(r) -> dict:
 @login_required
 def list_items():
     """List all discover items, optionally filtered by status and category."""
+    uid = current_user_id()
     status = request.args.get('status')
     category = request.args.get('category')
 
     conn = get_connection()
-    query = "SELECT * FROM wishlist WHERE 1=1"
-    params = []
+    query = "SELECT * FROM wishlist WHERE user_id = ?"
+    params = [uid]
 
     if status:
         query += " AND status = ?"
@@ -77,6 +78,7 @@ def list_items():
 @login_required
 def create_item():
     """Add a new discover item."""
+    uid = current_user_id()
     data = request.json or {}
     title = (data.get('title') or '').strip()
     if not title:
@@ -88,9 +90,9 @@ def create_item():
 
     conn = get_connection()
     cursor = conn.execute(
-        """INSERT INTO wishlist (title, description, category, location, status)
-           VALUES (?, ?, ?, ?, 'want')""",
-        (title, description, category, location),
+        """INSERT INTO wishlist (user_id, title, description, category, location, status)
+           VALUES (?, ?, ?, ?, ?, 'want')""",
+        (uid, title, description, category, location),
     )
     conn.commit()
 
@@ -108,8 +110,11 @@ def create_item():
 @login_required
 def update_item(item_id: int):
     """Update a discover item's fields."""
+    uid = current_user_id()
     conn = get_connection()
-    row = conn.execute("SELECT * FROM wishlist WHERE id = ?", (item_id,)).fetchone()
+    row = conn.execute(
+        "SELECT * FROM wishlist WHERE id = ? AND user_id = ?", (item_id, uid)
+    ).fetchone()
     if not row:
         return jsonify({'error': 'Item not found'}), 404
 
@@ -124,8 +129,8 @@ def update_item(item_id: int):
     conn.execute(
         """UPDATE wishlist
            SET title = ?, description = ?, category = ?, location = ?, status = ?, notes = ?
-           WHERE id = ?""",
-        (title, description, category, location, status, notes, item_id),
+           WHERE id = ? AND user_id = ?""",
+        (title, description, category, location, status, notes, item_id, uid),
     )
     conn.commit()
 
@@ -141,12 +146,15 @@ def update_item(item_id: int):
 @login_required
 def delete_item(item_id: int):
     """Delete a discover item."""
+    uid = current_user_id()
     conn = get_connection()
-    row = conn.execute("SELECT id FROM wishlist WHERE id = ?", (item_id,)).fetchone()
+    row = conn.execute(
+        "SELECT id FROM wishlist WHERE id = ? AND user_id = ?", (item_id, uid)
+    ).fetchone()
     if not row:
         return jsonify({'error': 'Item not found'}), 404
 
-    conn.execute("DELETE FROM wishlist WHERE id = ?", (item_id,))
+    conn.execute("DELETE FROM wishlist WHERE id = ? AND user_id = ?", (item_id, uid))
     conn.commit()
     return '', 204
 
@@ -159,8 +167,11 @@ def delete_item(item_id: int):
 @login_required
 def complete_item(item_id: int):
     """Mark a discover item as done. Body: {rating, notes, photos_json}."""
+    uid = current_user_id()
     conn = get_connection()
-    row = conn.execute("SELECT * FROM wishlist WHERE id = ?", (item_id,)).fetchone()
+    row = conn.execute(
+        "SELECT * FROM wishlist WHERE id = ? AND user_id = ?", (item_id, uid)
+    ).fetchone()
     if not row:
         return jsonify({'error': 'Item not found'}), 404
 
@@ -183,8 +194,8 @@ def complete_item(item_id: int):
         """UPDATE wishlist
            SET status = 'done', completed = 1, completed_at = ?,
                rating = ?, notes = ?, photos_json = ?
-           WHERE id = ?""",
-        (date.today().isoformat(), rating, notes, photos_json, item_id),
+           WHERE id = ? AND user_id = ?""",
+        (date.today().isoformat(), rating, notes, photos_json, item_id, uid),
     )
     conn.commit()
 
@@ -200,8 +211,11 @@ def complete_item(item_id: int):
 @login_required
 def upload_photo(item_id: int):
     """Upload a completion photo and append its path to photos_json."""
+    uid = current_user_id()
     conn = get_connection()
-    row = conn.execute("SELECT * FROM wishlist WHERE id = ?", (item_id,)).fetchone()
+    row = conn.execute(
+        "SELECT * FROM wishlist WHERE id = ? AND user_id = ?", (item_id, uid)
+    ).fetchone()
     if not row:
         return jsonify({'error': 'Item not found'}), 404
 
@@ -229,8 +243,8 @@ def upload_photo(item_id: int):
 
     photos.append(photo_url)
     conn.execute(
-        "UPDATE wishlist SET photos_json = ? WHERE id = ?",
-        (json.dumps(photos), item_id),
+        "UPDATE wishlist SET photos_json = ? WHERE id = ? AND user_id = ?",
+        (json.dumps(photos), item_id, uid),
     )
     conn.commit()
 
@@ -245,8 +259,11 @@ def upload_photo(item_id: int):
 @login_required
 def start_habit_from_discover(item_id: int):
     """Use AI to generate a habit plan inspired by this discover item."""
+    uid = current_user_id()
     conn = get_connection()
-    row = conn.execute("SELECT * FROM wishlist WHERE id = ?", (item_id,)).fetchone()
+    row = conn.execute(
+        "SELECT * FROM wishlist WHERE id = ? AND user_id = ?", (item_id, uid)
+    ).fetchone()
     if not row:
         return jsonify({'error': 'Item not found'}), 404
 
@@ -268,9 +285,9 @@ def start_habit_from_discover(item_id: int):
         # Persist the habit using the same logic as the habits blueprint
         habit_conn = get_connection()
         cursor = habit_conn.execute(
-            """INSERT INTO habits (name, category, frequency, difficulty, points)
-               VALUES (?, ?, 'daily', ?, ?)""",
-            (plan.name, plan.category, 1, 10),
+            """INSERT INTO habits (user_id, name, category, frequency, difficulty, points)
+               VALUES (?, ?, ?, 'daily', ?, ?)""",
+            (uid, plan.name, plan.category, 1, 10),
         )
         habit_id = cursor.lastrowid
 
@@ -307,8 +324,11 @@ def start_habit_from_discover(item_id: int):
 @login_required
 def start_challenge_from_discover(item_id: int):
     """Create a challenge directly linked to this discover item."""
+    uid = current_user_id()
     conn = get_connection()
-    row = conn.execute("SELECT * FROM wishlist WHERE id = ?", (item_id,)).fetchone()
+    row = conn.execute(
+        "SELECT * FROM wishlist WHERE id = ? AND user_id = ?", (item_id, uid)
+    ).fetchone()
     if not row:
         return jsonify({'error': 'Item not found'}), 404
 
@@ -326,9 +346,9 @@ def start_challenge_from_discover(item_id: int):
 
     cursor = conn.execute(
         """INSERT INTO challenges
-           (name, category, target_days, start_date, status, notes)
-           VALUES (?, ?, ?, ?, 'active', ?)""",
-        (name, row['category'] or 'general', target_days, start_date, notes),
+           (user_id, name, category, target_days, start_date, status, notes)
+           VALUES (?, ?, ?, ?, ?, 'active', ?)""",
+        (uid, name, row['category'] or 'general', target_days, start_date, notes),
     )
     conn.commit()
 

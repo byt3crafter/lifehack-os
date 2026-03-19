@@ -16,17 +16,24 @@ from .base import (
 class OpenAIProvider(AIProvider):
     """OpenAI-compatible API. Works with any endpoint that speaks the OpenAI format."""
 
-    def __init__(self):
+    def __init__(self, user_id: int = None):
+        self._user_id = user_id
         self.api_key = self._get_setting('ai_openai_key') or os.environ.get('OPENAI_API_KEY', '')
         self.base_url = self._get_setting('ai_openai_url') or os.environ.get('OPENAI_BASE_URL', 'https://api.openai.com/v1')
         self.model = self._get_setting('ai_openai_model') or os.environ.get('OPENAI_MODEL', 'gpt-4o-mini')
 
-    @staticmethod
-    def _get_setting(key: str) -> str:
-        """Read a value from app_settings. Returns '' on any error."""
+    def _get_setting(self, key: str) -> str:
+        """Read a value, checking per-user settings first. Returns '' on any error."""
         try:
             from src.infrastructure.database import get_connection
             conn = get_connection()
+            if self._user_id is not None:
+                row = conn.execute(
+                    "SELECT value FROM user_settings WHERE user_id = ? AND key = ?",
+                    (self._user_id, key),
+                ).fetchone()
+                if row and row['value']:
+                    return row['value']
             row = conn.execute(
                 "SELECT value FROM app_settings WHERE key = ?", (key,)
             ).fetchone()

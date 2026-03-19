@@ -10,6 +10,8 @@ from dataclasses import dataclass, field
 from datetime import date
 from typing import Optional
 
+from src.infrastructure.database.user_scope import get_user_setting
+
 
 # ---------------------------------------------------------------------------
 # Public data structures
@@ -29,11 +31,11 @@ class VerificationResult:
 # Individual check implementations
 # ---------------------------------------------------------------------------
 
-def _check_food_log_count(conn, target_date: str, rule: dict) -> VerificationResult:
+def _check_food_log_count(conn, user_id: int, target_date: str, rule: dict) -> VerificationResult:
     """COUNT rows in food_logs for the given date."""
     row = conn.execute(
-        "SELECT COUNT(*) as cnt FROM food_logs WHERE date(logged_at) = ?",
-        (target_date,),
+        "SELECT COUNT(*) as cnt FROM food_logs WHERE user_id = ? AND date(logged_at) = ?",
+        (user_id, target_date),
     ).fetchone()
     count = float(row['cnt'] or 0)
     threshold = float(rule.get('value', 1))
@@ -48,11 +50,11 @@ def _check_food_log_count(conn, target_date: str, rule: dict) -> VerificationRes
     )
 
 
-def _check_walk_count(conn, target_date: str, rule: dict) -> VerificationResult:
+def _check_walk_count(conn, user_id: int, target_date: str, rule: dict) -> VerificationResult:
     """COUNT walk/exercise entries for the given date."""
     row = conn.execute(
-        "SELECT COUNT(*) as cnt FROM walk_logs WHERE date(logged_at) = ?",
-        (target_date,),
+        "SELECT COUNT(*) as cnt FROM walk_logs WHERE user_id = ? AND date(logged_at) = ?",
+        (user_id, target_date),
     ).fetchone()
     count = float(row['cnt'] or 0)
     threshold = float(rule.get('value', 1))
@@ -67,11 +69,11 @@ def _check_walk_count(conn, target_date: str, rule: dict) -> VerificationResult:
     )
 
 
-def _check_walk_km(conn, target_date: str, rule: dict) -> VerificationResult:
+def _check_walk_km(conn, user_id: int, target_date: str, rule: dict) -> VerificationResult:
     """SUM distance_km from walk_logs for the given date."""
     row = conn.execute(
-        "SELECT COALESCE(SUM(distance_km), 0) as total FROM walk_logs WHERE date(logged_at) = ?",
-        (target_date,),
+        "SELECT COALESCE(SUM(distance_km), 0) as total FROM walk_logs WHERE user_id = ? AND date(logged_at) = ?",
+        (user_id, target_date),
     ).fetchone()
     total_km = float(row['total'] or 0)
     threshold = float(rule.get('value', 1))
@@ -86,11 +88,11 @@ def _check_walk_km(conn, target_date: str, rule: dict) -> VerificationResult:
     )
 
 
-def _check_checkin_done(conn, target_date: str, rule: dict) -> VerificationResult:
+def _check_checkin_done(conn, user_id: int, target_date: str, rule: dict) -> VerificationResult:
     """EXISTS check for a daily_checkins row on the given date."""
     row = conn.execute(
-        "SELECT id FROM daily_checkins WHERE date = ?",
-        (target_date,),
+        "SELECT id FROM daily_checkins WHERE user_id = ? AND date = ?",
+        (user_id, target_date),
     ).fetchone()
     verified = row is not None
     return VerificationResult(
@@ -100,13 +102,13 @@ def _check_checkin_done(conn, target_date: str, rule: dict) -> VerificationResul
     )
 
 
-def _check_deep_work_minutes(conn, target_date: str, rule: dict) -> VerificationResult:
+def _check_deep_work_minutes(conn, user_id: int, target_date: str, rule: dict) -> VerificationResult:
     """SUM duration_minutes from deep_work_sessions for the given date."""
     row = conn.execute(
         """SELECT COALESCE(SUM(duration_minutes), 0) as total
            FROM deep_work_sessions
-           WHERE date(started_at) = ? AND ended_at IS NOT NULL""",
-        (target_date,),
+           WHERE user_id = ? AND date(started_at) = ? AND ended_at IS NOT NULL""",
+        (user_id, target_date),
     ).fetchone()
     total = float(row['total'] or 0)
     threshold = float(rule.get('value', 25))
@@ -121,19 +123,16 @@ def _check_deep_work_minutes(conn, target_date: str, rule: dict) -> Verification
     )
 
 
-def _check_calories_under_goal(conn, target_date: str, rule: dict) -> VerificationResult:
-    """SUM calories from food_logs < daily_calorie_goal from app_settings."""
+def _check_calories_under_goal(conn, user_id: int, target_date: str, rule: dict) -> VerificationResult:
+    """SUM calories from food_logs < daily_calorie_goal from user_settings (with app_settings fallback)."""
     row = conn.execute(
-        "SELECT COALESCE(SUM(calories), 0) as total FROM food_logs WHERE date(logged_at) = ?",
-        (target_date,),
+        "SELECT COALESCE(SUM(calories), 0) as total FROM food_logs WHERE user_id = ? AND date(logged_at) = ?",
+        (user_id, target_date),
     ).fetchone()
     total_cal = float(row['total'] or 0)
 
-    # Read calorie goal from app_settings; fall back to a sensible default
-    goal_row = conn.execute(
-        "SELECT value FROM app_settings WHERE key = 'daily_calorie_goal'",
-    ).fetchone()
-    goal = float(goal_row['value']) if goal_row and goal_row['value'] else 2000.0
+    # Read calorie goal — user_settings first, fall back to app_settings, then hard default
+    goal = float(get_user_setting(conn, user_id, 'daily_calorie_goal', '2000'))
 
     verified = total_cal > 0 and total_cal < goal
     return VerificationResult(
@@ -145,11 +144,11 @@ def _check_calories_under_goal(conn, target_date: str, rule: dict) -> Verificati
     )
 
 
-def _check_no_alcohol(conn, target_date: str, rule: dict) -> VerificationResult:
+def _check_no_alcohol(conn, user_id: int, target_date: str, rule: dict) -> VerificationResult:
     """avoided_alcohol = 1 in daily_checkins for the given date."""
     row = conn.execute(
-        "SELECT avoided_alcohol FROM daily_checkins WHERE date = ?",
-        (target_date,),
+        "SELECT avoided_alcohol FROM daily_checkins WHERE user_id = ? AND date = ?",
+        (user_id, target_date),
     ).fetchone()
     if row is None:
         # No check-in yet — cannot confirm
@@ -166,11 +165,11 @@ def _check_no_alcohol(conn, target_date: str, rule: dict) -> VerificationResult:
     )
 
 
-def _check_replacement_count(conn, target_date: str, rule: dict) -> VerificationResult:
+def _check_replacement_count(conn, user_id: int, target_date: str, rule: dict) -> VerificationResult:
     """COUNT replacement_logs rows for the given date."""
     row = conn.execute(
-        "SELECT COUNT(*) as cnt FROM replacement_logs WHERE date(logged_at) = ?",
-        (target_date,),
+        "SELECT COUNT(*) as cnt FROM replacement_logs WHERE user_id = ? AND date(logged_at) = ?",
+        (user_id, target_date),
     ).fetchone()
     count = float(row['cnt'] or 0)
     threshold = float(rule.get('value', 1))
@@ -185,14 +184,14 @@ def _check_replacement_count(conn, target_date: str, rule: dict) -> Verification
     )
 
 
-def _check_fasting_hours(conn, target_date: str, rule: dict) -> VerificationResult:
+def _check_fasting_hours(conn, user_id: int, target_date: str, rule: dict) -> VerificationResult:
     """Check completed fasting duration for the given date."""
     row = conn.execute(
         """SELECT start_at, end_at, target_hours
            FROM fasting_logs
-           WHERE date(start_at) = ? AND status = 'completed'
+           WHERE user_id = ? AND date(start_at) = ? AND status = 'completed'
            ORDER BY id DESC LIMIT 1""",
-        (target_date,),
+        (user_id, target_date),
     ).fetchone()
     if row is None:
         return VerificationResult(
@@ -276,6 +275,7 @@ def verify_micro_task(
     task_id: int,
     rule: dict,
     conn,
+    user_id: int,
     target_date: str = None,
 ) -> VerificationResult:
     """Verify a single micro-task against the live database.
@@ -284,6 +284,7 @@ def verify_micro_task(
         task_id:     Primary key of the habit_micro_tasks row.
         rule:        Parsed verification_rule JSON dict.
         conn:        Active SQLite connection.
+        user_id:     The user performing the check (for data isolation).
         target_date: ISO date string (defaults to today).
 
     Returns:
@@ -308,10 +309,7 @@ def verify_micro_task(
                 message=f'Unknown check type: {check}',
             )
         try:
-            if check == 'checkin_done' or check == 'no_alcohol':
-                return handler(conn, target_date, rule)
-            else:
-                return handler(conn, target_date, rule)
+            return handler(conn, user_id, target_date, rule)
         except Exception as exc:
             return VerificationResult(
                 verified=False,
@@ -330,6 +328,7 @@ def verify_micro_task(
 def verify_phase_tasks(
     phase_id: int,
     conn,
+    user_id: int,
     target_date: str = None,
 ) -> list[dict]:
     """Return all micro-tasks for a phase with live verification status.
@@ -337,6 +336,7 @@ def verify_phase_tasks(
     Args:
         phase_id:    Primary key of the habit_phases row.
         conn:        Active SQLite connection.
+        user_id:     The user performing the check (for data isolation).
         target_date: ISO date string (defaults to today).
 
     Returns:
@@ -362,7 +362,7 @@ def verify_phase_tasks(
         except (json.JSONDecodeError, TypeError):
             rule = {'type': 'manual'}
 
-        result = verify_micro_task(task_id, rule, conn, target_date)
+        result = verify_micro_task(task_id, rule, conn, user_id, target_date)
 
         results.append({
             'id': task_id,
@@ -382,13 +382,14 @@ def verify_phase_tasks(
 def are_all_tasks_complete(
     phase_id: int,
     conn,
+    user_id: int,
     target_date: str = None,
 ) -> bool:
     """Return True if every micro-task in the phase is verified for the date.
 
     If the phase has no micro-tasks, returns True (nothing to block).
     """
-    tasks = verify_phase_tasks(phase_id, conn, target_date)
+    tasks = verify_phase_tasks(phase_id, conn, user_id, target_date)
     if not tasks:
         return True
     return all(t['verified'] for t in tasks)

@@ -3,6 +3,7 @@
 Each handler receives:
   args: dict  — parsed from the AI's JSON argument block
   conn        — live SQLite connection (already open, row_factory set)
+  user_id     — integer user ID for data isolation
 
 Handlers operate DIRECTLY on the database — no HTTP calls to self.
 Every handler returns a dict with at minimum one of:
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 # Public dispatch entry-point
 # ---------------------------------------------------------------------------
 
-def execute_tool(tool_name: str, args: dict, conn) -> dict:
+def execute_tool(tool_name: str, args: dict, conn, user_id: int) -> dict:
     """Dispatch tool_name to the appropriate handler and return its result.
 
     Never raises — all exceptions are caught and returned as error dicts.
@@ -52,7 +53,7 @@ def execute_tool(tool_name: str, args: dict, conn) -> dict:
         return {"error": f"Unknown tool: {tool_name}"}
 
     try:
-        return handler(args, conn)
+        return handler(args, conn, user_id)
     except Exception as exc:
         logger.error("Tool '%s' raised an exception: %s", tool_name, exc, exc_info=True)
         return {"error": f"Tool execution failed: {exc}"}
@@ -62,7 +63,7 @@ def execute_tool(tool_name: str, args: dict, conn) -> dict:
 # Habits
 # ---------------------------------------------------------------------------
 
-def _create_habit(args: dict, conn) -> dict:
+def _create_habit(args: dict, conn, user_id: int) -> dict:
     name = (args.get("name") or "").strip()
     if not name:
         return {"error": "name is required"}
@@ -76,8 +77,8 @@ def _create_habit(args: dict, conn) -> dict:
         difficulty = 1
 
     cursor = conn.execute(
-        "INSERT INTO habits (name, category, difficulty, points) VALUES (?, ?, ?, 10)",
-        (name, category, difficulty),
+        "INSERT INTO habits (name, category, difficulty, points, user_id) VALUES (?, ?, ?, 10, ?)",
+        (name, category, difficulty, user_id),
     )
     habit_id = cursor.lastrowid
 
@@ -95,7 +96,7 @@ def _create_habit(args: dict, conn) -> dict:
     }
 
 
-def _generate_and_create_habit(args: dict, conn) -> dict:
+def _generate_and_create_habit(args: dict, conn, user_id: int) -> dict:
     goal = (args.get("goal") or "").strip()
     if not goal:
         return {"error": "goal is required"}
@@ -117,8 +118,8 @@ def _generate_and_create_habit(args: dict, conn) -> dict:
 
     # Persist the habit
     cursor = conn.execute(
-        "INSERT INTO habits (name, category, frequency, difficulty, points) VALUES (?, ?, 'daily', ?, 10)",
-        (plan.name, plan.category, 1),
+        "INSERT INTO habits (name, category, frequency, difficulty, points, user_id) VALUES (?, ?, 'daily', ?, 10, ?)",
+        (plan.name, plan.category, 1, user_id),
     )
     habit_id = cursor.lastrowid
 
@@ -172,7 +173,7 @@ def _generate_and_create_habit(args: dict, conn) -> dict:
     }
 
 
-def _complete_habit(args: dict, conn) -> dict:
+def _complete_habit(args: dict, conn, user_id: int) -> dict:
     habit_id = args.get("habit_id")
     if habit_id is None:
         return {"error": "habit_id is required"}
@@ -182,9 +183,10 @@ def _complete_habit(args: dict, conn) -> dict:
     except (TypeError, ValueError):
         return {"error": "habit_id must be an integer"}
 
-    # Verify the habit exists and is active
+    # Verify the habit exists, is active, and belongs to this user
     row = conn.execute(
-        "SELECT id, name FROM habits WHERE id = ? AND active = 1", (habit_id,)
+        "SELECT id, name FROM habits WHERE id = ? AND user_id = ? AND active = 1",
+        (habit_id, user_id),
     ).fetchone()
     if not row:
         return {"error": f"No active habit with id {habit_id}"}
@@ -193,8 +195,8 @@ def _complete_habit(args: dict, conn) -> dict:
 
     # Prevent double-completion on the same day
     already = conn.execute(
-        "SELECT id FROM habit_completions WHERE habit_id = ? AND date(completed_at) = date('now')",
-        (habit_id,),
+        "SELECT id FROM habit_completions WHERE habit_id = ? AND user_id = ? AND date(completed_at) = date('now')",
+        (habit_id, user_id),
     ).fetchone()
     if already:
         return {
@@ -204,8 +206,8 @@ def _complete_habit(args: dict, conn) -> dict:
 
     # Insert completion
     conn.execute(
-        "INSERT INTO habit_completions (habit_id, status, points_earned) VALUES (?, 'complete', 10)",
-        (habit_id,),
+        "INSERT INTO habit_completions (habit_id, status, points_earned, user_id) VALUES (?, 'complete', 10, ?)",
+        (habit_id, user_id),
     )
 
     # Update strength meter
@@ -241,7 +243,7 @@ def _complete_habit(args: dict, conn) -> dict:
     try:
         from src.infrastructure.database.repositories import StatsRepository
 
-        StatsRepository().add_points("habit", 10, f"Completed: {habit_name}", habit_id)
+        StatsRepository(user_id).add_points("habit", 10, f"Completed: {habit_name}", habit_id)
     except Exception as exc:
         logger.warning("Stats points update skipped: %s", exc)
 
@@ -254,7 +256,7 @@ def _complete_habit(args: dict, conn) -> dict:
     }
 
 
-def _delete_habit(args: dict, conn) -> dict:
+def _delete_habit(args: dict, conn, user_id: int) -> dict:
     habit_id = args.get("habit_id")
     if habit_id is None:
         return {"error": "habit_id is required"}
@@ -264,12 +266,14 @@ def _delete_habit(args: dict, conn) -> dict:
     except (TypeError, ValueError):
         return {"error": "habit_id must be an integer"}
 
-    row = conn.execute("SELECT name FROM habits WHERE id = ?", (habit_id,)).fetchone()
+    row = conn.execute(
+        "SELECT name FROM habits WHERE id = ? AND user_id = ?", (habit_id, user_id)
+    ).fetchone()
     if not row:
         return {"error": f"No habit found with id {habit_id}"}
 
     habit_name = row["name"]
-    conn.execute("UPDATE habits SET active = 0 WHERE id = ?", (habit_id,))
+    conn.execute("UPDATE habits SET active = 0 WHERE id = ? AND user_id = ?", (habit_id, user_id))
     conn.commit()
 
     return {
@@ -282,7 +286,7 @@ def _delete_habit(args: dict, conn) -> dict:
 # Food
 # ---------------------------------------------------------------------------
 
-def _log_food(args: dict, conn) -> dict:
+def _log_food(args: dict, conn, user_id: int) -> dict:
     description = (args.get("description") or "").strip()
     if not description:
         return {"error": "description is required"}
@@ -303,9 +307,9 @@ def _log_food(args: dict, conn) -> dict:
             return None
 
     cursor = conn.execute(
-        """INSERT INTO food_logs (meal_type, description, calories, protein_g, carbs_g, fat_g)
-           VALUES (?, ?, ?, ?, ?, ?)""",
-        (meal_type, description, _num(calories), _num(protein_g), _num(carbs_g), _num(fat_g)),
+        """INSERT INTO food_logs (meal_type, description, calories, protein_g, carbs_g, fat_g, user_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?)""",
+        (meal_type, description, _num(calories), _num(protein_g), _num(carbs_g), _num(fat_g), user_id),
     )
     conn.commit()
 
@@ -317,7 +321,7 @@ def _log_food(args: dict, conn) -> dict:
     }
 
 
-def _set_calorie_goal(args: dict, conn) -> dict:
+def _set_calorie_goal(args: dict, conn, user_id: int) -> dict:
     goal = args.get("goal")
     if goal is None:
         return {"error": "goal is required"}
@@ -329,12 +333,8 @@ def _set_calorie_goal(args: dict, conn) -> dict:
     except (TypeError, ValueError):
         return {"error": "goal must be a positive number"}
 
-    conn.execute(
-        """INSERT INTO app_settings (key, value) VALUES ('daily_calorie_goal', ?)
-           ON CONFLICT(key) DO UPDATE SET value = excluded.value""",
-        (str(goal),),
-    )
-    conn.commit()
+    from src.infrastructure.database.user_scope import set_user_setting
+    set_user_setting(conn, user_id, 'daily_calorie_goal', str(goal))
 
     return {
         "success": True,
@@ -346,7 +346,7 @@ def _set_calorie_goal(args: dict, conn) -> dict:
 # Fasting
 # ---------------------------------------------------------------------------
 
-def _start_fast(args: dict, conn) -> dict:
+def _start_fast(args: dict, conn, user_id: int) -> dict:
     try:
         target_hours = int(float(args.get("target_hours", 16)))
     except (TypeError, ValueError):
@@ -358,15 +358,15 @@ def _start_fast(args: dict, conn) -> dict:
     except (TypeError, ValueError):
         mood = 3
 
-    # Cancel any active fast first
+    # Cancel any active fast for this user first
     conn.execute(
-        "UPDATE fasting_logs SET status = 'cancelled', end_at = ? WHERE status = 'active'",
-        (datetime.now().isoformat(),),
+        "UPDATE fasting_logs SET status = 'cancelled', end_at = ? WHERE user_id = ? AND status = 'active'",
+        (datetime.now().isoformat(), user_id),
     )
 
     cursor = conn.execute(
-        "INSERT INTO fasting_logs (start_at, target_hours, mood_start) VALUES (?, ?, ?)",
-        (datetime.now().isoformat(), target_hours, mood),
+        "INSERT INTO fasting_logs (start_at, target_hours, mood_start, user_id) VALUES (?, ?, ?, ?)",
+        (datetime.now().isoformat(), target_hours, mood, user_id),
     )
     conn.commit()
 
@@ -377,9 +377,10 @@ def _start_fast(args: dict, conn) -> dict:
     }
 
 
-def _end_fast(args: dict, conn) -> dict:
+def _end_fast(args: dict, conn, user_id: int) -> dict:
     active = conn.execute(
-        "SELECT id, start_at FROM fasting_logs WHERE status = 'active' ORDER BY start_at DESC LIMIT 1"
+        "SELECT id, start_at FROM fasting_logs WHERE user_id = ? AND status = 'active' ORDER BY start_at DESC LIMIT 1",
+        (user_id,),
     ).fetchone()
 
     if not active:
@@ -402,8 +403,8 @@ def _end_fast(args: dict, conn) -> dict:
     conn.execute(
         """UPDATE fasting_logs
            SET end_at = ?, status = 'completed', mood_end = ?
-           WHERE id = ?""",
-        (end_at.isoformat(), mood, active["id"]),
+           WHERE id = ? AND user_id = ?""",
+        (end_at.isoformat(), mood, active["id"], user_id),
     )
 
     # Award points: 10 pts per hour fasted
@@ -411,7 +412,7 @@ def _end_fast(args: dict, conn) -> dict:
     try:
         from src.infrastructure.database.repositories import StatsRepository
 
-        StatsRepository().add_points(
+        StatsRepository(user_id).add_points(
             "fasting", points, f"Completed {duration_hours:.1f}h fast"
         )
     except Exception as exc:
@@ -431,7 +432,7 @@ def _end_fast(args: dict, conn) -> dict:
 # Finance
 # ---------------------------------------------------------------------------
 
-def _log_transaction(args: dict, conn) -> dict:
+def _log_transaction(args: dict, conn, user_id: int) -> dict:
     amount = args.get("amount")
     description = (args.get("description") or "").strip()
 
@@ -453,9 +454,9 @@ def _log_transaction(args: dict, conn) -> dict:
     tx_date = date.today().isoformat()
 
     cursor = conn.execute(
-        """INSERT INTO finance_log (date, amount, description, category, type, source)
-           VALUES (?, ?, ?, ?, ?, 'chat')""",
-        (tx_date, amount, description, category, tx_type),
+        """INSERT INTO finance_log (date, amount, description, category, type, source, user_id)
+           VALUES (?, ?, ?, ?, ?, 'chat', ?)""",
+        (tx_date, amount, description, category, tx_type, user_id),
     )
     conn.commit()
 
@@ -467,7 +468,7 @@ def _log_transaction(args: dict, conn) -> dict:
     }
 
 
-def _add_budget_rule(args: dict, conn) -> dict:
+def _add_budget_rule(args: dict, conn, user_id: int) -> dict:
     category = (args.get("category") or "").strip()
     monthly_limit = args.get("monthly_limit")
 
@@ -484,19 +485,19 @@ def _add_budget_rule(args: dict, conn) -> dict:
         return {"error": "monthly_limit must be a positive number"}
 
     existing = conn.execute(
-        "SELECT id FROM finance_rules WHERE category = ?", (category,)
+        "SELECT id FROM finance_rules WHERE user_id = ? AND category = ?", (user_id, category)
     ).fetchone()
 
     if existing:
         conn.execute(
-            "UPDATE finance_rules SET monthly_limit = ?, active = 1 WHERE category = ?",
-            (monthly_limit, category),
+            "UPDATE finance_rules SET monthly_limit = ?, active = 1 WHERE user_id = ? AND category = ?",
+            (monthly_limit, user_id, category),
         )
         action = "Updated"
     else:
         conn.execute(
-            "INSERT INTO finance_rules (category, monthly_limit) VALUES (?, ?)",
-            (category, monthly_limit),
+            "INSERT INTO finance_rules (category, monthly_limit, user_id) VALUES (?, ?, ?)",
+            (category, monthly_limit, user_id),
         )
         action = "Created"
 
@@ -512,7 +513,7 @@ def _add_budget_rule(args: dict, conn) -> dict:
 # Challenges
 # ---------------------------------------------------------------------------
 
-def _create_challenge(args: dict, conn) -> dict:
+def _create_challenge(args: dict, conn, user_id: int) -> dict:
     name = (args.get("name") or "").strip()
     if not name:
         return {"error": "name is required"}
@@ -548,6 +549,7 @@ def _create_challenge(args: dict, conn) -> dict:
             check_in_frequency TEXT DEFAULT 'daily',
             last_check_in TEXT,
             notes TEXT,
+            user_id INTEGER,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )"""
     )
@@ -563,9 +565,9 @@ def _create_challenge(args: dict, conn) -> dict:
     )
 
     cursor = conn.execute(
-        """INSERT INTO challenges (name, category, target_days, start_date, check_in_frequency)
-           VALUES (?, ?, ?, ?, 'daily')""",
-        (name, category, target_days, start_date),
+        """INSERT INTO challenges (name, category, target_days, start_date, check_in_frequency, user_id)
+           VALUES (?, ?, ?, ?, 'daily', ?)""",
+        (name, category, target_days, start_date, user_id),
     )
     challenge_id = cursor.lastrowid
 
@@ -587,7 +589,7 @@ def _create_challenge(args: dict, conn) -> dict:
 # Discover / Bucket list
 # ---------------------------------------------------------------------------
 
-def _add_discovery(args: dict, conn) -> dict:
+def _add_discovery(args: dict, conn, user_id: int) -> dict:
     title = (args.get("title") or "").strip()
     if not title:
         return {"error": "title is required"}
@@ -597,9 +599,9 @@ def _add_discovery(args: dict, conn) -> dict:
     location = (args.get("location") or "").strip()
 
     cursor = conn.execute(
-        """INSERT INTO wishlist (title, description, category, location, status)
-           VALUES (?, ?, ?, ?, 'want')""",
-        (title, description, category, location),
+        """INSERT INTO wishlist (title, description, category, location, status, user_id)
+           VALUES (?, ?, ?, ?, 'want', ?)""",
+        (title, description, category, location, user_id),
     )
     conn.commit()
 
@@ -615,32 +617,36 @@ def _add_discovery(args: dict, conn) -> dict:
 # ---------------------------------------------------------------------------
 
 
-def _create_dw_project(args: dict, conn) -> dict:
+def _create_dw_project(args: dict, conn, user_id: int) -> dict:
     name = (args.get("name") or "").strip()
     if not name:
         return {"error": "name is required"}
     color = args.get("color", "#4f80ff")
     desc = args.get("description", "")
     cursor = conn.execute(
-        "INSERT INTO deep_work_projects (name, description, color) VALUES (?, ?, ?)",
-        (name, desc, color),
+        "INSERT INTO deep_work_projects (name, description, color, user_id) VALUES (?, ?, ?, ?)",
+        (name, desc, color, user_id),
     )
     conn.commit()
     return {"success": True, "project_id": cursor.lastrowid, "message": f'Created project "{name}"'}
 
 
-def _delete_dw_project(args: dict, conn) -> dict:
+def _delete_dw_project(args: dict, conn, user_id: int) -> dict:
     pid = args.get("project_id")
     if not pid:
         return {"error": "project_id is required"}
-    conn.execute("UPDATE deep_work_projects SET active = 0 WHERE id = ?", (int(pid),))
+    conn.execute(
+        "UPDATE deep_work_projects SET active = 0 WHERE id = ? AND user_id = ?",
+        (int(pid), user_id),
+    )
     conn.commit()
     return {"success": True, "message": "Project deleted"}
 
 
-def _list_dw_projects(args: dict, conn) -> dict:
+def _list_dw_projects(args: dict, conn, user_id: int) -> dict:
     rows = conn.execute(
-        "SELECT id, name, color, total_minutes FROM deep_work_projects WHERE active = 1 ORDER BY name"
+        "SELECT id, name, color, total_minutes FROM deep_work_projects WHERE user_id = ? AND active = 1 ORDER BY name",
+        (user_id,),
     ).fetchall()
     projects = []
     for r in rows:
@@ -653,7 +659,7 @@ def _list_dw_projects(args: dict, conn) -> dict:
 # Deep Work — Sessions
 # ---------------------------------------------------------------------------
 
-def _start_deep_work(args: dict, conn) -> dict:
+def _start_deep_work(args: dict, conn, user_id: int) -> dict:
     project_id = args.get("project_id")
     notes = (args.get("notes") or "").strip()
 
@@ -663,14 +669,15 @@ def _start_deep_work(args: dict, conn) -> dict:
         except (TypeError, ValueError):
             project_id = None
 
-    # End any active session first
+    # End any active session for this user first
     conn.execute(
-        "UPDATE deep_work_sessions SET ended_at = CURRENT_TIMESTAMP WHERE ended_at IS NULL"
+        "UPDATE deep_work_sessions SET ended_at = CURRENT_TIMESTAMP WHERE user_id = ? AND ended_at IS NULL",
+        (user_id,),
     )
 
     cursor = conn.execute(
-        "INSERT INTO deep_work_sessions (project_id, notes) VALUES (?, ?)",
-        (project_id, notes),
+        "INSERT INTO deep_work_sessions (project_id, notes, user_id) VALUES (?, ?, ?)",
+        (project_id, notes, user_id),
     )
     conn.commit()
 
@@ -682,9 +689,10 @@ def _start_deep_work(args: dict, conn) -> dict:
     }
 
 
-def _end_deep_work(args: dict, conn) -> dict:
+def _end_deep_work(args: dict, conn, user_id: int) -> dict:
     active = conn.execute(
-        "SELECT id, started_at FROM deep_work_sessions WHERE ended_at IS NULL"
+        "SELECT id, started_at FROM deep_work_sessions WHERE user_id = ? AND ended_at IS NULL",
+        (user_id,),
     ).fetchone()
 
     if not active:
@@ -703,14 +711,14 @@ def _end_deep_work(args: dict, conn) -> dict:
     conn.execute(
         """UPDATE deep_work_sessions
            SET ended_at = ?, duration_minutes = ?, points_earned = ?
-           WHERE id = ?""",
-        (end_at.isoformat(), duration_minutes, points, active["id"]),
+           WHERE id = ? AND user_id = ?""",
+        (end_at.isoformat(), duration_minutes, points, active["id"], user_id),
     )
 
     try:
         from src.infrastructure.database.repositories import StatsRepository
 
-        StatsRepository().add_points(
+        StatsRepository(user_id).add_points(
             "deepwork", points, f"Deep Work: {duration_minutes} mins"
         )
     except Exception as exc:
@@ -730,7 +738,7 @@ def _end_deep_work(args: dict, conn) -> dict:
 # Mood / Daily check-in
 # ---------------------------------------------------------------------------
 
-def _log_mood(args: dict, conn) -> dict:
+def _log_mood(args: dict, conn, user_id: int) -> dict:
     mood = args.get("mood")
     energy = args.get("energy")
 
@@ -754,22 +762,22 @@ def _log_mood(args: dict, conn) -> dict:
     note = (args.get("note") or "").strip()
     today = date.today().isoformat()
 
-    # Upsert — only one check-in per day
+    # Upsert — only one check-in per day per user
     existing = conn.execute(
-        "SELECT id FROM daily_checkins WHERE date = ?", (today,)
+        "SELECT id FROM daily_checkins WHERE user_id = ? AND date = ?", (user_id, today)
     ).fetchone()
 
     if existing:
         conn.execute(
-            "UPDATE daily_checkins SET mood = ?, energy = ?, improvement_note = ? WHERE date = ?",
-            (mood, energy, note, today),
+            "UPDATE daily_checkins SET mood = ?, energy = ?, improvement_note = ? WHERE user_id = ? AND date = ?",
+            (mood, energy, note, user_id, today),
         )
         action = "Updated"
     else:
         conn.execute(
-            """INSERT INTO daily_checkins (date, mood, energy, improvement_note)
-               VALUES (?, ?, ?, ?)""",
-            (today, mood, energy, note),
+            """INSERT INTO daily_checkins (date, mood, energy, improvement_note, user_id)
+               VALUES (?, ?, ?, ?, ?)""",
+            (today, mood, energy, note, user_id),
         )
         action = "Logged"
 

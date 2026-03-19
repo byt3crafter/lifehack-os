@@ -16,16 +16,23 @@ from .base import (
 class OllamaProvider(AIProvider):
     """Local LLM via Ollama. Free, runs on your machine."""
 
-    def __init__(self):
+    def __init__(self, user_id: int = None):
+        self._user_id = user_id
         self.base_url = self._get_setting('ai_ollama_url') or os.environ.get('OLLAMA_URL', 'http://localhost:11434')
         self.model = self._get_setting('ai_ollama_model') or os.environ.get('OLLAMA_MODEL', 'llama3')
 
-    @staticmethod
-    def _get_setting(key: str) -> str:
-        """Read a value from app_settings. Returns '' on any error."""
+    def _get_setting(self, key: str) -> str:
+        """Read a value, checking per-user settings first."""
         try:
             from src.infrastructure.database import get_connection
             conn = get_connection()
+            if self._user_id is not None:
+                row = conn.execute(
+                    "SELECT value FROM user_settings WHERE user_id = ? AND key = ?",
+                    (self._user_id, key),
+                ).fetchone()
+                if row and row['value']:
+                    return row['value']
             row = conn.execute(
                 "SELECT value FROM app_settings WHERE key = ?", (key,)
             ).fetchone()
