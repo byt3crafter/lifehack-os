@@ -570,6 +570,96 @@
         /* ── Fasting ring ────────────────────────────── */
         #fast-ring-fill { transition: stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1); }
 
+        /* ── Fasting stages timeline ─────────────────── */
+        .fast-stage {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.625rem 0.75rem;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s, opacity 0.2s;
+            position: relative;
+        }
+        .fast-stage:hover { background: rgba(255,255,255,0.03); }
+        .fast-stage.active {
+            border-color: rgba(79,128,255,0.35);
+            background: rgba(79,128,255,0.06);
+            animation: stage-glow 2.5s ease-in-out infinite;
+        }
+        .fast-stage.completed { opacity: 1; }
+        .fast-stage.locked { opacity: 0.38; pointer-events: none; }
+        @keyframes stage-glow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(79,128,255,0); }
+            50%       { box-shadow: 0 0 12px 2px rgba(79,128,255,0.18); }
+        }
+        .fast-stage-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+        .fast-stage-detail {
+            display: none;
+            font-size: 0.75rem;
+            color: #9898a6;
+            line-height: 1.5;
+            margin-top: 0.25rem;
+        }
+        .fast-stage.expanded .fast-stage-detail { display: block; }
+        .fast-stage-connector {
+            width: 2px;
+            height: 10px;
+            background: #2a2a2e;
+            margin: 0 auto;
+            position: relative;
+            left: 15px;
+        }
+        .fast-stage-connector.completed-line { background: #22c55e; }
+
+        /* ── Hydration card ──────────────────────────── */
+        .fast-hydration {
+            background: rgba(79,128,255,0.05);
+            border: 1px solid rgba(79,128,255,0.18);
+            border-radius: 12px;
+            padding: 0.875rem 1rem;
+        }
+        .fast-hydration-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8125rem;
+            color: #9898a6;
+            padding: 0.125rem 0;
+        }
+
+        /* ── Fast history delete ─────────────────────── */
+        .fast-history-row {
+            transition: opacity 0.25s, transform 0.25s, max-height 0.3s;
+            overflow: hidden;
+        }
+        .fast-history-row.removing {
+            opacity: 0;
+            transform: translateX(16px);
+            max-height: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        /* ── Stage milestone flash ───────────────────── */
+        .fast-milestone {
+            animation: milestone-flash 0.7s ease-out;
+        }
+        @keyframes milestone-flash {
+            0%   { background: rgba(79,128,255,0.25); }
+            100% { background: transparent; }
+        }
+
         /* ── Timer display ───────────────────────────── */
         .timer-display {
             font-family: 'DM Mono', monospace;
@@ -1686,16 +1776,19 @@
                         <h2 class="view-title">Fasting Tracker</h2>
                         <p class="text-xs mt-0.5" style="color:#5c5c6b;">Intermittent fasting timer</p>
                     </div>
+                    <div id="fast-streak-badge" class="hidden flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold" style="background:rgba(249,115,22,0.12);color:#f97316;border:1px solid rgba(249,115,22,0.25);">
+                        <span>&#128293;</span><span id="fast-streak-text">0-day streak</span>
+                    </div>
                 </div>
 
                 <!-- Active fast card -->
-                <div id="fast-active-card" class="hidden mb-5">
-                    <div class="p-6 rounded-2xl text-center" style="background:linear-gradient(135deg,#171728 0%,#141e30 100%);border:1px solid rgba(79,128,255,0.25);">
-                        <div class="text-xs font-semibold mb-4" style="color:#9898a6;letter-spacing:0.08em;text-transform:uppercase;">Active Fast</div>
+                <div id="fast-active-card" class="hidden mb-4">
+                    <div class="p-5 rounded-2xl" style="background:linear-gradient(135deg,#171728 0%,#141e30 100%);border:1px solid rgba(79,128,255,0.25);">
+                        <div class="text-xs font-semibold mb-4 text-center" style="color:#9898a6;letter-spacing:0.08em;text-transform:uppercase;">Active Fast</div>
 
                         <!-- SVG progress ring -->
-                        <div class="relative inline-flex items-center justify-center mb-4" style="width:160px;height:160px;">
-                            <svg width="160" height="160" style="transform:rotate(-90deg);">
+                        <div class="relative inline-flex items-center justify-center mb-2" style="width:160px;height:160px;display:block;margin:0 auto 0.5rem;">
+                            <svg width="160" height="160" style="transform:rotate(-90deg);display:block;margin:0 auto;">
                                 <circle cx="80" cy="80" r="68" stroke="#1e2440" stroke-width="8" fill="none"/>
                                 <circle id="fast-ring-fill" cx="80" cy="80" r="68"
                                     stroke="url(#fastGrad)" stroke-width="8" fill="none"
@@ -1708,26 +1801,48 @@
                                     </linearGradient>
                                 </defs>
                             </svg>
-                            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                            <div style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
                                 <div id="fast-timer" class="timer-display" style="color:#f0f0f2;">00:00:00</div>
                                 <div id="fast-pct-label" class="text-xs mt-1 font-mono" style="color:#5c5c6b;">0%</div>
                             </div>
                         </div>
 
-                        <div class="flex justify-center gap-6 text-sm mb-5">
-                            <div>
+                        <!-- Current stage label + progress info -->
+                        <div class="text-center mt-3 mb-1">
+                            <div id="fast-stage-label" class="text-sm font-semibold mb-0.5" style="color:#f0f0f2;">&#8212;</div>
+                            <div id="fast-progress-label" class="text-xs" style="color:#9898a6;">&#8212;</div>
+                            <div id="fast-next-label" class="text-xs mt-0.5" style="color:#5c5c6b;">&#8212;</div>
+                        </div>
+
+                        <div class="flex justify-center gap-6 text-sm mt-4 mb-5">
+                            <div class="text-center">
                                 <div class="text-xs" style="color:#5c5c6b;">Started</div>
-                                <div id="fast-start-time" class="font-medium mt-0.5" style="color:#f0f0f2;">—</div>
+                                <div id="fast-start-time" class="font-medium mt-0.5" style="color:#f0f0f2;">&#8212;</div>
                             </div>
                             <div style="width:1px;background:#2a2a2e;"></div>
-                            <div>
+                            <div class="text-center">
                                 <div class="text-xs" style="color:#5c5c6b;">Target</div>
-                                <div class="font-mono font-semibold mt-0.5" style="color:#4f80ff;"><span id="fast-target-hours">—</span>h</div>
+                                <div class="font-mono font-semibold mt-0.5" style="color:#4f80ff;"><span id="fast-target-hours">&#8212;</span>h</div>
                             </div>
                         </div>
 
+                        <!-- Body Stages Timeline -->
+                        <div class="mb-4">
+                            <div class="section-label mb-2">Body Stages</div>
+                            <div id="fast-stages-timeline" class="space-y-0.5"></div>
+                        </div>
+
+                        <!-- Hydration Card -->
+                        <div id="fast-hydration-card" class="fast-hydration mb-5">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span style="font-size:1rem;">&#128167;</span>
+                                <span class="text-sm font-semibold" style="color:#f0f0f2;">Hydration</span>
+                            </div>
+                            <div id="fast-hydration-items" class="space-y-1"></div>
+                        </div>
+
                         <button onclick="endFastModal()"
-                                class="px-6 py-2.5 rounded-xl font-semibold text-sm transition-all"
+                                class="w-full px-6 py-2.5 rounded-xl font-semibold text-sm transition-all"
                                 style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);">
                             End Fast
                         </button>
@@ -1758,7 +1873,10 @@
                     </div>
                 </div>
 
-                <div class="section-label mb-3">History</div>
+                <div class="flex items-center justify-between mb-3">
+                    <div class="section-label">History</div>
+                    <button id="fast-clear-all-btn" onclick="clearAllFastHistory()" class="hidden text-xs font-medium px-2.5 py-1 rounded-lg transition-colors" style="color:#9898a6;border:1px solid #2a2a2e;background:none;">Clear All</button>
+                </div>
                 <div id="fast-history" class="space-y-2"></div>
             </div>
 
@@ -3050,81 +3168,301 @@
 
     let fastInterval;
     window._fastHours = 16;
+    var _fastLastStageIdx = -1;
+
+    var FASTING_STAGES = [
+        {start: 0,  end: 4,  name: 'Fed State',          icon: '\uD83C\uDF7D\uFE0F', color: '#f59e0b', desc: 'Blood sugar rises, insulin active, body digesting.'},
+        {start: 4,  end: 8,  name: 'Early Fasting',       icon: '\uD83D\uDD25',       color: '#f97316', desc: 'Blood sugar drops, tapping glycogen stores. Hunger pangs are normal.'},
+        {start: 8,  end: 12, name: 'Glycogen Depletion',  icon: '\u26A1',             color: '#ef4444', desc: 'Liver glycogen running low, transitioning to fat burning.'},
+        {start: 12, end: 14, name: 'Fat Burning',         icon: '\uD83D\uDD25',       color: '#22c55e', desc: 'Ketone production begins! Fat is now the primary fuel source.'},
+        {start: 14, end: 18, name: 'Autophagy Begins',    icon: '\uD83E\uDDEC',       color: '#8b5cf6', desc: 'Cellular cleanup begins — old and damaged proteins are recycled.'},
+        {start: 18, end: 24, name: 'Deep Autophagy',      icon: '\u2728',             color: '#4f80ff', desc: 'HGH levels rise, deep cellular repair. Advanced metabolic zone.'}
+    ];
+
+    var HYDRATION_RULES = [
+        {maxH: 4,  items: [
+            {icon: '\u2705', text: 'Water — drink freely'},
+            {icon: '\u2705', text: 'Black coffee'},
+            {icon: '\u2705', text: 'Plain green or herbal tea'},
+            {icon: '\u2139\uFE0F', text: 'Hunger pangs are normal — they pass'}
+        ]},
+        {maxH: 12, items: [
+            {icon: '\u2705', text: 'Push water intake'},
+            {icon: '\u2705', text: 'Plain tea helps with hunger'},
+            {icon: '\u26A0\uFE0F', text: 'Add a pinch of salt if dizzy'},
+            {icon: '\u26A0\uFE0F', text: 'Electrolytes if exercising'}
+        ]},
+        {maxH: 18, items: [
+            {icon: '\u2705', text: 'Water is essential now'},
+            {icon: '\u2705', text: 'Herbal tea helps calm hunger'},
+            {icon: '\u26A0\uFE0F', text: 'Coffee ok but may cause jitters'},
+            {icon: '\u26A0\uFE0F', text: 'Salt/electrolytes if lightheaded'}
+        ]},
+        {maxH: 999, items: [
+            {icon: '\u2705', text: 'Water with electrolytes — priority'},
+            {icon: '\u2705', text: 'Herbal tea'},
+            {icon: '\u26D4', text: 'Avoid coffee — too stimulating'},
+            {icon: '\u26A0\uFE0F', text: 'Rest and minimal activity advised'}
+        ]}
+    ];
+
+    function getFastStageIdx(elapsedHours) {
+        for (var i = 0; i < FASTING_STAGES.length; i++) {
+            if (elapsedHours < FASTING_STAGES[i].end) return i;
+        }
+        return FASTING_STAGES.length - 1;
+    }
+
+    function renderFastStages(elapsedHours) {
+        var stageIdx = getFastStageIdx(elapsedHours);
+        var html = '';
+        for (var i = 0; i < FASTING_STAGES.length; i++) {
+            var s = FASTING_STAGES[i];
+            var stateClass = (i < stageIdx) ? 'completed' : (i === stageIdx ? 'active' : 'locked');
+            var prefix = '';
+            if (i < stageIdx) {
+                prefix = '<span style="font-size:0.75rem;color:#22c55e;">\u2713</span> ';
+            } else if (i === stageIdx) {
+                prefix = '<span style="font-size:0.75rem;">' + s.icon + '</span> ';
+            } else {
+                prefix = '<span style="font-size:0.75rem;opacity:0.5;">\uD83D\uDD12</span> ';
+            }
+            var iconBg = (i <= stageIdx) ? s.color + '22' : 'rgba(255,255,255,0.04)';
+            var rangeLabel = s.start + '\u2013' + s.end + 'h';
+            var currentLabel = (i === stageIdx) ? ' <span style="font-size:0.625rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:' + s.color + ';background:' + s.color + '22;padding:1px 5px;border-radius:3px;">NOW</span>' : '';
+            if (i > 0) {
+                html += '<div class="fast-stage-connector' + (i <= stageIdx ? ' completed-line' : '') + '"></div>';
+            }
+            html += '<div class="fast-stage ' + stateClass + '" id="fast-stage-' + i + '" onclick="toggleFastStage(' + i + ')">';
+            html += '<div class="fast-stage-icon" style="background:' + iconBg + ';">' + s.icon + '</div>';
+            html += '<div class="flex-1 min-w-0">';
+            html += '<div class="flex items-center gap-1.5 flex-wrap">';
+            html += '<span class="text-sm font-medium" style="color:' + (i <= stageIdx ? '#f0f0f2' : '#5c5c6b') + ';">' + s.name + '</span>';
+            html += currentLabel;
+            html += '<span class="text-xs font-mono" style="color:#5c5c6b;">' + rangeLabel + '</span>';
+            html += '</div>';
+            html += '<div class="fast-stage-detail">' + s.desc + '</div>';
+            html += '</div>';
+            html += '</div>';
+        }
+        var el = document.getElementById('fast-stages-timeline');
+        if (el) el.innerHTML = html;
+    }
+
+    function toggleFastStage(idx) {
+        var el = document.getElementById('fast-stage-' + idx);
+        if (!el) return;
+        el.classList.toggle('expanded');
+    }
+
+    function renderHydration(elapsedHours) {
+        var rule = HYDRATION_RULES[HYDRATION_RULES.length - 1];
+        for (var i = 0; i < HYDRATION_RULES.length; i++) {
+            if (elapsedHours < HYDRATION_RULES[i].maxH) { rule = HYDRATION_RULES[i]; break; }
+        }
+        var html = '';
+        for (var j = 0; j < rule.items.length; j++) {
+            html += '<div class="fast-hydration-item"><span>' + rule.items[j].icon + '</span><span>' + rule.items[j].text + '</span></div>';
+        }
+        var el = document.getElementById('fast-hydration-items');
+        if (el) el.innerHTML = html;
+    }
+
+    function updateFastTimerUI(elapsed, target, targetHours) {
+        var hours = Math.floor(elapsed / 3600000);
+        var mins  = Math.floor((elapsed % 3600000) / 60000);
+        var secs  = Math.floor((elapsed % 60000) / 1000);
+        var timerEl = document.getElementById('fast-timer');
+        if (timerEl) timerEl.textContent = pad2(hours) + ':' + pad2(mins) + ':' + pad2(secs);
+
+        var pct = Math.min(100, (elapsed / target) * 100);
+        var CIRC = 427.3;
+        var ring = document.getElementById('fast-ring-fill');
+        if (ring) ring.style.strokeDashoffset = CIRC - (CIRC * pct / 100);
+        var pctLbl = document.getElementById('fast-pct-label');
+        if (pctLbl) pctLbl.textContent = Math.round(pct) + '%';
+        if (pct >= 100 && timerEl) timerEl.style.color = '#22c55e';
+
+        var elapsedHours = elapsed / 3600000;
+        var stageIdx = getFastStageIdx(elapsedHours);
+        var stage = FASTING_STAGES[stageIdx];
+
+        var stageLbl = document.getElementById('fast-stage-label');
+        if (stageLbl) stageLbl.textContent = stage.icon + '  ' + stage.name;
+
+        var progressLbl = document.getElementById('fast-progress-label');
+        if (progressLbl) progressLbl.textContent = "You're " + Math.round(pct) + '% through your ' + targetHours + 'h fast';
+
+        var nextLbl = document.getElementById('fast-next-label');
+        if (nextLbl) {
+            if (stageIdx < FASTING_STAGES.length - 1) {
+                var nextStage = FASTING_STAGES[stageIdx + 1];
+                var msToNext = (nextStage.start * 3600000) - elapsed;
+                if (msToNext > 0) {
+                    var nH = Math.floor(msToNext / 3600000);
+                    var nM = Math.floor((msToNext % 3600000) / 60000);
+                    nextLbl.textContent = nextStage.icon + ' ' + nextStage.name + ' in ' + (nH > 0 ? nH + 'h ' : '') + nM + 'm';
+                } else {
+                    nextLbl.textContent = '';
+                }
+            } else {
+                nextLbl.textContent = '\u2728 Maximum fast zone reached!';
+            }
+        }
+
+        if (stageIdx !== _fastLastStageIdx && _fastLastStageIdx !== -1) {
+            showToast(stage.icon + ' ' + stage.name + ' zone reached!', 'info');
+            var el = document.getElementById('fast-stage-' + stageIdx);
+            if (el) { el.classList.add('fast-milestone'); setTimeout(function() { el.classList.remove('fast-milestone'); }, 800); }
+        }
+        _fastLastStageIdx = stageIdx;
+
+        renderFastStages(elapsedHours);
+        renderHydration(elapsedHours);
+    }
+
+    function pad2(n) { return String(n).padStart(2, '0'); }
+
+    function calcFastingStreak(history) {
+        if (!history || !history.length) return 0;
+        var completed = history.filter(function(h) {
+            return h.status === 'completed' && h.end_at;
+        });
+        if (!completed.length) return 0;
+        completed.sort(function(a, b) { return new Date(b.end_at) - new Date(a.end_at); });
+        var streak = 1;
+        var prevDate = new Date(completed[0].end_at);
+        for (var i = 1; i < completed.length; i++) {
+            var thisDate = new Date(completed[i].end_at);
+            var dayDiff = Math.floor((prevDate - thisDate) / 86400000);
+            if (dayDiff <= 1) { streak++; prevDate = thisDate; }
+            else break;
+        }
+        return streak;
+    }
+
     function selectFastDuration(hours) {
         window._fastHours = hours;
-        document.querySelectorAll('.fast-btn').forEach(b => {
+        document.querySelectorAll('.fast-btn').forEach(function(b) {
             b.classList.toggle('active', +b.dataset.h === hours);
         });
-        const btn = $('#fast-start-btn');
-        if(btn) btn.textContent = `Start ${hours}h Fast`;
+        var btn = document.getElementById('fast-start-btn');
+        if (btn) btn.textContent = 'Start ' + hours + 'h Fast';
     }
 
     async function loadFasting() {
         const f = await api('/fasting/status');
-        if(!f) return;
+        if (!f) return;
 
         clearInterval(fastInterval);
-        if(f.active) {
-            $('#fast-active-card').classList.remove('hidden');
-            $('#fast-start-card').classList.add('hidden');
-            $('#fast-target-hours').textContent = f.active.target_hours;
-            $('#fast-start-time').textContent = new Date(f.active.start_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        _fastLastStageIdx = -1;
+
+        var streakCount = calcFastingStreak(f.history);
+        var streakBadge = document.getElementById('fast-streak-badge');
+        var streakText = document.getElementById('fast-streak-text');
+        if (streakBadge && streakCount >= 2) {
+            streakText.textContent = streakCount + '-day streak';
+            streakBadge.classList.remove('hidden');
+        } else if (streakBadge) {
+            streakBadge.classList.add('hidden');
+        }
+
+        if (f.active) {
+            document.getElementById('fast-active-card').classList.remove('hidden');
+            document.getElementById('fast-start-card').classList.add('hidden');
+            document.getElementById('fast-target-hours').textContent = f.active.target_hours;
+            document.getElementById('fast-start-time').textContent = new Date(f.active.start_at).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
 
             var fastStartStr = (f.active.start_at || '').replace(' ', 'T');
-            if(!fastStartStr.endsWith('Z') && !fastStartStr.includes('+')) fastStartStr += 'Z';
+            if (!fastStartStr.endsWith('Z') && !fastStartStr.includes('+')) fastStartStr += 'Z';
             const start = new Date(fastStartStr).getTime();
-            const target = f.active.target_hours * 3600000;
-            // Ring circumference for r=68: 2*PI*68 ≈ 427.3
-            const CIRC = 427.3;
+            const targetHours = f.active.target_hours;
+            const target = targetHours * 3600000;
 
-            fastInterval = setInterval(() => {
-                const now = Date.now();
-                const elapsed = now - start;
-                const hours = Math.floor(elapsed / 3600000);
-                const mins  = Math.floor((elapsed % 3600000) / 60000);
-                const secs  = Math.floor((elapsed % 60000) / 1000);
-                $('#fast-timer').textContent = `${String(hours).padStart(2,'0')}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
-
-                const pct = Math.min(100, (elapsed / target) * 100);
-                const ring = $('#fast-ring-fill');
-                if(ring) ring.style.strokeDashoffset = CIRC - (CIRC * pct / 100);
-                const pctLbl = $('#fast-pct-label');
-                if(pctLbl) pctLbl.textContent = Math.round(pct) + '%';
-                if(pct >= 100 && $('#fast-timer')) {
-                    $('#fast-timer').style.color = '#22c55e';
-                }
-            }, 1000);
+            var doTick = function() {
+                var elapsed = Date.now() - start;
+                updateFastTimerUI(elapsed, target, targetHours);
+            };
+            doTick();
+            fastInterval = setInterval(doTick, 1000);
         } else {
-            $('#fast-active-card').classList.add('hidden');
-            $('#fast-start-card').classList.remove('hidden');
+            document.getElementById('fast-active-card').classList.add('hidden');
+            document.getElementById('fast-start-card').classList.remove('hidden');
             selectFastDuration(16);
         }
 
-        if(!f.history.length) {
-            $('#fast-history').innerHTML = '<div class="empty-state"><p>No fasting history yet.</p></div>';
+        var historyEl = document.getElementById('fast-history');
+        var clearBtn = document.getElementById('fast-clear-all-btn');
+        var entries = f.history.filter(function(h) { return h.status !== 'active'; });
+
+        if (!entries.length) {
+            historyEl.innerHTML = '<div class="empty-state"><p>No fasting history yet.</p></div>';
+            if (clearBtn) clearBtn.classList.add('hidden');
             return;
         }
+        if (clearBtn) clearBtn.classList.remove('hidden');
 
-        $('#fast-history').innerHTML = f.history.map(h => {
-            const dur = Math.round((new Date(h.end_at) - new Date(h.start_at)) / 3600000 * 10) / 10;
-            const completed = dur >= (h.target_hours * 0.9);
-            const pts = Math.floor((new Date(h.end_at)-new Date(h.start_at))/360000);
-            const dateStr = new Date(h.end_at).toLocaleDateString('en-US', {month:'short', day:'numeric'});
-            return `
-            <div class="card rounded-xl p-3 flex items-center gap-3" style="border:1px solid #2a2a2e;">
-                <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                     style="background:${completed ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.08)'};">
-                    <svg class="w-4 h-4" fill="none" stroke="${completed ? '#22c55e' : '#ef4444'}" viewBox="0 0 20 20" stroke-width="1.8">
-                        ${completed ? '<path stroke-linecap="round" stroke-linejoin="round" d="M4 10l4 4 8-8"/>' : '<circle cx="10" cy="10" r="7"/><path stroke-linecap="round" stroke-linejoin="round" d="M10 6v4l2.5 2.5"/>'}
-                    </svg>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <div class="text-sm font-medium" style="color:#f0f0f2;">${dateStr} · ${dur}h fast</div>
-                    <div class="text-xs" style="color:#5c5c6b;">Goal: ${h.target_hours}h · ${completed ? 'Completed' : 'Ended early'}</div>
-                </div>
-                <span class="font-mono text-xs font-semibold flex-shrink-0" style="color:#eab308;">+${pts}</span>
-            </div>`;
-        }).join('');
+        var rows = '';
+        for (var i = 0; i < entries.length; i++) {
+            var h = entries[i];
+            var startMs = new Date(h.start_at).getTime();
+            var endMs = h.end_at ? new Date(h.end_at).getTime() : Date.now();
+            var dur = Math.round((endMs - startMs) / 3600000 * 10) / 10;
+            var completed = h.status === 'completed' && dur >= (h.target_hours * 0.9);
+            var pts = Math.floor((endMs - startMs) / 360000);
+            var dateStr = new Date(h.end_at || h.start_at).toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
+            var iconSvg = completed
+                ? '<path stroke-linecap="round" stroke-linejoin="round" d="M4 10l4 4 8-8"/>'
+                : '<circle cx="10" cy="10" r="7"/><path stroke-linecap="round" stroke-linejoin="round" d="M10 6v4l2.5 2.5"/>';
+            var iconColor = completed ? '#22c55e' : '#ef4444';
+            var iconBg = completed ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.08)';
+            var label = completed ? 'Completed' : (h.status === 'cancelled' ? 'Cancelled' : 'Ended early');
+            var achievementNote = '';
+            if (!completed && dur >= 12) achievementNote = ' \u2014 fat burning territory!';
+            else if (!completed && dur >= 8) achievementNote = ' \u2014 glycogen depleted!';
+            else if (!completed && dur >= 4) achievementNote = ' \u2014 early fasting zone!';
+            rows += '<div class="fast-history-row card rounded-xl p-3 flex items-center gap-3" style="border:1px solid #2a2a2e;" data-fast-id="' + h.id + '">';
+            rows += '<div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:' + iconBg + ';">';
+            rows += '<svg class="w-4 h-4" fill="none" stroke="' + iconColor + '" viewBox="0 0 20 20" stroke-width="1.8">' + iconSvg + '</svg>';
+            rows += '</div>';
+            rows += '<div class="flex-1 min-w-0">';
+            rows += '<div class="text-sm font-medium" style="color:#f0f0f2;">' + dateStr + ' \u00B7 ' + dur + 'h fast</div>';
+            rows += '<div class="text-xs" style="color:#5c5c6b;">Goal: ' + h.target_hours + 'h \u00B7 ' + label + achievementNote + '</div>';
+            rows += '</div>';
+            rows += '<span class="font-mono text-xs font-semibold flex-shrink-0" style="color:#eab308;">+' + pts + '</span>';
+            rows += '<button onclick="deleteFastEntry(' + h.id + ')" class="flex-shrink-0 p-1.5 rounded-lg transition-colors" style="color:#5c5c6b;background:none;border:none;cursor:pointer;" title="Delete" onmouseover="this.style.color=\'#ef4444\';this.style.background=\'rgba(239,68,68,0.08)\'" onmouseout="this.style.color=\'#5c5c6b\';this.style.background=\'none\'">';
+            rows += '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6l8 8M14 6l-8 8"/></svg>';
+            rows += '</button>';
+            rows += '</div>';
+        }
+        historyEl.innerHTML = rows;
+    }
+
+    async function deleteFastEntry(id) {
+        var row = document.querySelector('[data-fast-id="' + id + '"]');
+        if (!row) return;
+        if (row.style.maxHeight === '') row.style.maxHeight = row.offsetHeight + 'px';
+        row.classList.add('removing');
+        await api('/fasting/' + id, 'DELETE');
+        setTimeout(function() {
+            if (row.parentNode) row.parentNode.removeChild(row);
+            var remaining = document.querySelectorAll('.fast-history-row');
+            if (!remaining.length) {
+                document.getElementById('fast-history').innerHTML = '<div class="empty-state"><p>No fasting history yet.</p></div>';
+                var cb = document.getElementById('fast-clear-all-btn');
+                if (cb) cb.classList.add('hidden');
+            }
+        }, 350);
+    }
+
+    async function clearAllFastHistory() {
+        var rows = document.querySelectorAll('.fast-history-row');
+        if (!rows.length) return;
+        await api('/fasting/clear-history', 'POST');
+        document.getElementById('fast-history').innerHTML = '<div class="empty-state"><p>No fasting history yet.</p></div>';
+        var cb = document.getElementById('fast-clear-all-btn');
+        if (cb) cb.classList.add('hidden');
+        showToast('History cleared', 'info');
     }
 
     async function startFast(hours) {
@@ -3134,36 +3472,58 @@
     }
 
     function endFastModal() {
-        showModal('End Fast', `
-            <div class="space-y-3">
-                <p class="text-sm" style="color:#9898a6;">Ready to break your fast? How do you feel?</p>
-                <div>
-                    <div class="flex items-center justify-between mb-2">
-                        <label class="field-label" style="margin:0;">How do you feel?</label>
-                        <span id="ef-mood-v" class="font-mono text-sm" style="color:#4f80ff;">3</span>
-                    </div>
-                    <input type="range" id="ef-mood" min="1" max="5" value="3" oninput="$('#ef-mood-v').textContent=this.value">
-                    <div class="flex justify-between mt-1.5">
-                        <span class="text-xs" style="color:#5c5c6b;">Rough</span>
-                        <span class="text-xs" style="color:#5c5c6b;">Great</span>
-                    </div>
-                </div>
-                <div>
-                    <label class="field-label">Notes (optional)</label>
-                    <textarea id="ef-notes" class="w-full px-3 py-2.5 rounded-lg border text-sm" rows="2" placeholder="How was this fast?"></textarea>
-                </div>
-                <div class="flex gap-2 pt-1">
-                    <button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>
-                    <button onclick="saveEndFast()" class="flex-1 py-2.5 rounded-xl font-semibold text-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);">End Fast</button>
-                </div>
-            </div>
-        `);
+        var elapsedMs = 0;
+        var timerEl = document.getElementById('fast-timer');
+        if (timerEl) {
+            var parts = timerEl.textContent.split(':');
+            if (parts.length === 3) {
+                elapsedMs = ((+parts[0]) * 3600 + (+parts[1]) * 60 + (+parts[2])) * 1000;
+            }
+        }
+        var elapsedHours = Math.round(elapsedMs / 3600000 * 10) / 10;
+        var achieveTxt = '';
+        if (elapsedHours >= 18) achieveTxt = 'Incredible \u2014 deep autophagy zone!';
+        else if (elapsedHours >= 14) achieveTxt = 'Autophagy has started \u2014 great work!';
+        else if (elapsedHours >= 12) achieveTxt = elapsedHours + 'h \u2014 that\'s fat burning territory!';
+        else if (elapsedHours >= 8) achieveTxt = elapsedHours + 'h \u2014 glycogen depleted!';
+        else if (elapsedHours >= 4) achieveTxt = elapsedHours + 'h \u2014 early fasting zone!';
+        else achieveTxt = elapsedHours + 'h completed.';
+
+        var bodyHtml = '<div class="space-y-3">'
+            + '<div class="p-3 rounded-xl text-center text-sm font-medium" style="background:rgba(79,128,255,0.08);color:#7ea8ff;border:1px solid rgba(79,128,255,0.15);">'
+            + '\uD83C\uDFC6 ' + achieveTxt
+            + '</div>'
+            + '<p class="text-sm" style="color:#9898a6;">Ready to break your fast? How do you feel?</p>'
+            + '<div>'
+            + '<div class="flex items-center justify-between mb-2">'
+            + '<label class="field-label" style="margin:0;">How do you feel?</label>'
+            + '<span id="ef-mood-v" class="font-mono text-sm" style="color:#4f80ff;">3</span>'
+            + '</div>'
+            + '<input type="range" id="ef-mood" min="1" max="5" value="3" oninput="document.getElementById(\'ef-mood-v\').textContent=this.value">'
+            + '<div class="flex justify-between mt-1.5">'
+            + '<span class="text-xs" style="color:#5c5c6b;">Rough</span>'
+            + '<span class="text-xs" style="color:#5c5c6b;">Great</span>'
+            + '</div>'
+            + '</div>'
+            + '<div>'
+            + '<label class="field-label">Notes (optional)</label>'
+            + '<textarea id="ef-notes" class="w-full px-3 py-2.5 rounded-lg border text-sm" rows="2" placeholder="How was this fast?"></textarea>'
+            + '</div>'
+            + '<div class="flex gap-2 pt-1">'
+            + '<button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>'
+            + '<button onclick="saveEndFast()" class="flex-1 py-2.5 rounded-xl font-semibold text-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);">End Fast</button>'
+            + '</div>'
+            + '</div>';
+
+        showModal('End Fast', bodyHtml);
     }
 
     async function saveEndFast() {
-        const r = await api('/fasting/end', 'POST', {mood: +$('#ef-mood').value, notes: $('#ef-notes').value});
+        var moodEl = document.getElementById('ef-mood');
+        var notesEl = document.getElementById('ef-notes');
+        const r = await api('/fasting/end', 'POST', {mood: moodEl ? +moodEl.value : 3, notes: notesEl ? notesEl.value : ''});
         hideModal();
-        if(r) showToast(`Fast ended: ${r.hours}h! +${r.points} XP`, 'success');
+        if (r) showToast('Fast ended: ' + r.hours + 'h! +' + r.points + ' XP', 'success');
         loadFasting(); loadStats();
     }
 
