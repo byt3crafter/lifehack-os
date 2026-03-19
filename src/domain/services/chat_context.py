@@ -185,4 +185,3 @@ def build_system_prompt(context: dict) -> str:
 - Use the user's actual currency from Firefly (look at the accounts).
 - Be a strict but caring advisor — like a friend who won't let you waste money or skip workouts.
 """
-```
