@@ -178,7 +178,7 @@ def _get_recommended(provider: str, models: list[str]) -> tuple[str, str]:
     _static = {
         'openai': ('gpt-4o-mini', 'Best balance of cost and quality for food analysis'),
         'anthropic': ('claude-sonnet-4-20250514', 'Good balance of capability and cost'),
-        'minimax': ('MiniMax-Text-01', 'Default MiniMax chat model'),
+        'minimax': ('MiniMax-M2', 'Latest MiniMax model with vision support'),
         'chatgpt_oauth': ('gpt-4o', 'Full-capability model available via ChatGPT OAuth'),
     }
     if provider in _static:
@@ -235,7 +235,7 @@ def test_provider():
         if not base_url:
             base_url = (
                 'https://api.openai.com/v1' if provider == 'openai'
-                else 'https://api.minimaxi.chat/v1'
+                else 'https://api.minimax.io/v1'
             )
         valid, error = _test_openai_compatible(base_url, api_key)
 
@@ -282,7 +282,7 @@ def list_models():
         if not base_url:
             base_url = (
                 'https://api.openai.com/v1' if provider == 'openai'
-                else 'https://api.minimaxi.chat/v1'
+                else 'https://api.minimax.io/v1'
             )
         # For OpenAI specifically, filter out non-chat models.
         models = _fetch_openai_compatible_models(

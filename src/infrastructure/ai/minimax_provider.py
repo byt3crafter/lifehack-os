@@ -7,8 +7,8 @@ import os
 
 from .openai_provider import OpenAIProvider
 
-_MINIMAX_BASE_URL = 'https://api.minimaxi.chat/v1'
-_MINIMAX_DEFAULT_MODEL = 'MiniMax-Text-01'
+_MINIMAX_BASE_URL = 'https://api.minimax.io/v1'
+_MINIMAX_DEFAULT_MODEL = 'MiniMax-M2'
 
 
 class MiniMaxProvider(OpenAIProvider):
