@@ -2204,6 +2204,9 @@
 
         const formData = new FormData();
         formData.append('image', fileInput.files[0]);
+        // Send description so text-only AI providers (MiniMax) can still analyze
+        const descEl = document.getElementById('nf-desc');
+        if(descEl && descEl.value.trim()) formData.append('description', descEl.value.trim());
 
         const resp = await fetch('/api/food/upload', {
             method: 'POST',

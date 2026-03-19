@@ -12,7 +12,11 @@ _MINIMAX_DEFAULT_MODEL = 'MiniMax-M2'
 
 
 class MiniMaxProvider(OpenAIProvider):
-    """MiniMax provider using the OpenAI-compatible MiniMax API."""
+    """MiniMax provider using the OpenAI-compatible MiniMax API.
+
+    Note: MiniMax M2 does NOT support vision/image input.
+    Images are ignored — only text descriptions are analyzed.
+    """
 
     def __init__(self):
         self.api_key = (
@@ -27,3 +31,15 @@ class MiniMaxProvider(OpenAIProvider):
 
     def is_available(self) -> bool:
         return bool(self.api_key)
+
+    def analyze_food(self, description: str, image_base64: str = None) -> 'FoodAnalysis':
+        """MiniMax doesn't support images — use text description only."""
+        if not description and image_base64:
+            # Can't analyze an image without text on MiniMax
+            from .base import FoodAnalysis
+            return FoodAnalysis(
+                estimated=False,
+                description="MiniMax does not support image analysis. Please describe the food."
+            )
+        # Call parent without image (MiniMax ignores it anyway)
+        return super().analyze_food(description, image_base64=None)
