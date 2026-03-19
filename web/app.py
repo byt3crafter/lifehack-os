@@ -103,6 +103,13 @@ def create_app():
         log_event('error', 'flask', str(e), traceback.format_exc())
         return jsonify({'error': str(e)}), 500
 
+    # Serve uploaded files from persistent data directory
+    @app.route('/uploads/<path:filename>')
+    def serve_upload(filename):
+        from flask import send_from_directory
+        upload_dir = Path(__file__).parent.parent / 'data' / 'uploads'
+        return send_from_directory(str(upload_dir), filename)
+
     # Health check endpoint (used by Docker HEALTHCHECK)
     @app.route('/health')
     def health():

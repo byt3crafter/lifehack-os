@@ -11,8 +11,8 @@ from src.infrastructure.database import get_connection
 
 food_bp = Blueprint('food', __name__, url_prefix='/api/food')
 
-# Directory where uploaded food photos are stored.
-_UPLOAD_DIR = Path(__file__).parent.parent / 'static' / 'uploads'
+# Directory where uploaded food photos are stored — inside the persistent data volume.
+_UPLOAD_DIR = Path(__file__).parent.parent.parent / 'data' / 'uploads'
 
 _ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'webp'}
 
@@ -190,7 +190,7 @@ def upload_food_image(food_id):
     Saves the file to static/uploads/ and updates the food_logs row.
 
     Returns:
-        {"success": true, "image_path": "/static/uploads/<filename>"}
+        {"success": true, "image_path": "/uploads/<filename>"}
     """
     _ensure_upload_dir()
 
@@ -214,7 +214,7 @@ def upload_food_image(food_id):
     save_path = _UPLOAD_DIR / filename
     file.save(str(save_path))
 
-    image_url = f"/static/uploads/{filename}"
+    image_url = f"/uploads/{filename}"
 
     conn.execute(
         "UPDATE food_logs SET image_path = ? WHERE id = ?",
@@ -303,7 +303,7 @@ def upload_food_photo():
     Returns JSON:
         {
             "success": true,
-            "image_path": "/static/uploads/<filename>",
+            "image_path": "/uploads/<filename>",
             "analysis": {
                 "calories": ..., "protein_g": ..., "carbs_g": ...,
                 "fat_g": ..., "description": ..., "estimated": true
@@ -327,7 +327,7 @@ def upload_food_photo():
     save_path = _UPLOAD_DIR / filename
     file.save(str(save_path))
 
-    image_url = f"/static/uploads/{filename}"
+    image_url = f"/uploads/{filename}"
 
     from .app_log import log_event
     log_event('info', 'food', 'Photo uploaded', image_url)

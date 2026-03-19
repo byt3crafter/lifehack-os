@@ -1584,6 +1584,16 @@
                                     </div>
                                     <div style="height:1px;background:#2a2a2e;"></div>
                                     <div class="flex items-center justify-between gap-3">
+                                        <div class="flex-1 min-w-0">
+                                            <div class="text-sm font-medium" style="color:#f0f0f2;">Habit Plans</div>
+                                            <div class="text-xs mt-0.5" style="color:#5c5c6b;">AI-generated habit breakdowns</div>
+                                        </div>
+                                        <select id="assign-habits" class="px-2.5 py-1.5 rounded-lg border text-xs" style="min-width:120px;" onchange="saveTaskAssignments()">
+                                            <option value="">— none —</option>
+                                        </select>
+                                    </div>
+                                    <div style="height:1px;background:#2a2a2e;"></div>
+                                    <div class="flex items-center justify-between gap-3">
                                         <div class="text-sm font-medium" style="color:#f0f0f2;">Insights</div>
                                         <select id="assign-insights" class="px-2.5 py-1.5 rounded-lg border text-xs" style="min-width:120px;" onchange="saveTaskAssignments()">
                                             <option value="">— none —</option>
@@ -2401,7 +2411,7 @@
             + '<svg class="w-6 h-6" fill="none" stroke="#5c5c6b" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z"/></svg>'
             + '<span class="text-xs mt-1" style="color:#5c5c6b;">Photo</span>'
             + '</label>'
-            + '<input type="file" id="food-photo" accept="image/*" capture="environment" class="sr-only" onchange="previewFoodPhoto(this)">'
+            + '<input type="file" id="food-photo" accept="image/*" class="sr-only" onchange="previewFoodPhoto(this)">'
             + '<div id="food-photo-preview" style="display:none;margin-top:4px;">'
             + '<img id="food-photo-img" src="" style="width:100px;height:100px;object-fit:cover;border-radius:12px;">'
             + '</div>'
@@ -2607,7 +2617,7 @@
         }
         photoBlock += '<div>'
             + '<label class="field-label" for="ef-photo">' + (imagePath ? 'Change photo' : 'Add photo') + ' (optional)</label>'
-            + '<input type="file" id="ef-photo" accept="image/*" capture="environment" class="w-full px-3 py-2 rounded-lg border text-sm" style="cursor:pointer;" onchange="previewEditFoodPhoto(this)">'
+            + '<input type="file" id="ef-photo" accept="image/*" class="w-full px-3 py-2 rounded-lg border text-sm" style="cursor:pointer;" onchange="previewEditFoodPhoto(this)">'
             + '<div id="ef-photo-preview" class="hidden mt-2 rounded-xl overflow-hidden" style="max-height:160px;">'
             + '<img id="ef-photo-preview-img" src="" alt="New photo preview" class="w-full object-cover" style="max-height:160px;">'
             + '</div>'
@@ -3619,6 +3629,7 @@
 
         var dropdowns = {
             'assign-food':     s.ai_provider_food    || s.ai_provider || '',
+            'assign-habits':   s.ai_provider_habits  || s.ai_provider || '',
             'assign-insights': s.ai_provider_insights || s.ai_provider || '',
             'assign-reports':  s.ai_provider_reports  || s.ai_provider || '',
             'assign-default':  s.ai_provider_default  || s.ai_provider || ''
@@ -3634,6 +3645,7 @@
     async function saveTaskAssignments() {
         var payload = {
             ai_provider_food:     ($('#assign-food')     && $('#assign-food').value)     || '',
+            ai_provider_habits:   ($('#assign-habits')   && $('#assign-habits').value)   || '',
             ai_provider_insights: ($('#assign-insights') && $('#assign-insights').value) || '',
             ai_provider_reports:  ($('#assign-reports')  && $('#assign-reports').value)  || '',
             ai_provider_default:  ($('#assign-default')  && $('#assign-default').value)  || ''

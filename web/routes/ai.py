@@ -31,6 +31,7 @@ _PROVIDER_CREDENTIAL_KEYS = {
 # Per-task setting keys (must match factory.py resolution order).
 _TASK_SETTING_KEYS = {
     'food': 'ai_provider_food',
+    'habits': 'ai_provider_habits',
     'insights': 'ai_provider_insights',
     'reports': 'ai_provider_reports',
     'default': 'ai_provider_default',

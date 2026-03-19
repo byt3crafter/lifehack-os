@@ -919,7 +919,7 @@ def generate_habit_plan():
         return jsonify({'error': 'goal is required'}), 400
 
     from src.infrastructure.ai import get_ai_provider
-    provider = get_ai_provider('default')
+    provider = get_ai_provider('habits')
 
     if not provider.is_available():
         return jsonify({'error': 'No AI provider configured'}), 503

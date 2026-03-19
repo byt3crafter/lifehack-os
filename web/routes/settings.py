@@ -17,6 +17,7 @@ _SETTING_KEYS = {
     'ai_provider',
     # Per-task provider assignments
     'ai_provider_food',
+    'ai_provider_habits',
     'ai_provider_insights',
     'ai_provider_reports',
     'ai_provider_default',
