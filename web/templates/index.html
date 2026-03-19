@@ -5164,8 +5164,8 @@
             return;
         }
 
-        _aiGeneratedPlan = r;
-        var phases = r.phases || [];
+        _aiGeneratedPlan = r.plan || r;
+        var phases = _aiGeneratedPlan.phases || [];
         var phaseCards = '';
         for(var pi = 0; pi < phases.length; pi++) {
             var ph = phases[pi];
@@ -5173,7 +5173,8 @@
             var tasksHtml = '';
             for(var ti = 0; ti < phaseTasks.length; ti++) {
                 var pt = phaseTasks[ti];
-                var vtBadge = pt.verification_type === 'auto'
+                var vRule = pt.verification_rule || {};
+                var vtBadge = vRule.type === 'auto'
                     ? '<span class="vtype-badge vtype-auto">auto</span>'
                     : '<span class="vtype-badge vtype-manual">manual</span>';
                 tasksHtml += '<div class="micro-edit-row">'
@@ -5185,7 +5186,7 @@
             phaseCards += '<div class="ai-plan-card">'
                 + '<div class="flex items-start justify-between gap-2 mb-1">'
                 + '<div class="text-sm font-semibold" style="color:#f0f0f2;">' + ph.name + '</div>'
-                + (ph.duration ? '<span class="text-xs flex-shrink-0 font-mono" style="color:#5c5c6b;">' + ph.duration + '</span>' : '')
+                + (ph.days ? '<span class="text-xs flex-shrink-0 font-mono" style="color:#5c5c6b;">' + ph.days + ' days</span>' : '')
                 + '</div>'
                 + (ph.description ? '<div class="text-xs mb-2" style="color:#9898a6;">' + ph.description + '</div>' : '')
                 + (tasksHtml ? '<div class="space-y-0.5">' + tasksHtml + '</div>' : '')

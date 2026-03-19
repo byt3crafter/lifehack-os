@@ -956,9 +956,10 @@ def generate_habit_plan():
 def create_from_plan():
     """Create a habit with phases and micro-tasks from an AI-generated (or edited) plan."""
     data = request.get_json(silent=True) or {}
-    plan = data.get('plan', {})
+    # Accept both {plan: {...}} and direct {...} format
+    plan = data.get('plan') or data
 
-    habit_name = (plan.get('name') or data.get('name') or '').strip()
+    habit_name = (plan.get('name') or '').strip()
     if not habit_name:
         return jsonify({'error': 'plan.name is required'}), 400
 
