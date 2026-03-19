@@ -349,6 +349,19 @@ def upload_food_photo():
         else:
             image_bytes = save_path.read_bytes()
             image_b64 = base64.b64encode(image_bytes).decode('ascii')
+
+            # If no description provided, try to identify the food first
+            if not description:
+                try:
+                    ident = provider.identify_food(description='', image_base64=image_b64)
+                    if ident.available and ident.description:
+                        description = ident.description
+                except Exception:
+                    pass
+                # If still no description, use a generic one
+                if not description:
+                    description = 'food in the uploaded photo'
+
             result = provider.analyze_food(description, image_base64=image_b64)
             if result.estimated:
                 analysis_dict = {

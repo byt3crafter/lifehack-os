@@ -2178,7 +2178,7 @@
             + '</div>'
 
             // Step 2 — Confirm Nutrition (hidden initially)
-            + '<div id="food-step-2" class="hidden" style="transition:all 0.2s ease;">'
+            + '<div id="food-step-2" style="display:none;transition:all 0.2s ease;">'
             + '<div style="height:1px;background:#2a2a2e;" class="mb-3"></div>'
             + '<p class="text-xs font-semibold mb-2" style="color:#9898a6;letter-spacing:0.05em;text-transform:uppercase;">Step 2 — Confirm Nutrition</p>'
             + '<div id="food-ai-provider" class="hidden mb-2 text-xs px-2 py-1 rounded" style="background:rgba(139,92,246,0.1);color:#c4b5fd;"></div>'
@@ -2202,7 +2202,7 @@
 
     function saveFoodStep1Back() {
         const step2 = document.getElementById('food-step-2');
-        if(step2) step2.classList.add('hidden');
+        if(step2) step2.style.display = 'none';
         _pendingFoodImage = null;
     }
 
@@ -2240,7 +2240,7 @@
 
     async function saveFoodLog() {
         const step2 = document.getElementById('food-step-2');
-        const isStep2Visible = step2 && !step2.classList.contains('hidden');
+        const isStep2Visible = step2 && step2.style.display !== 'none';
 
         // ── Step 2: actually save ────────────────────────────────
         if(isStep2Visible) {
@@ -2316,7 +2316,7 @@
 
         // Reveal step 2
         if(step2) {
-            step2.classList.remove('hidden');
+            step2.style.display = 'block';
             step2.scrollIntoView({behavior:'smooth', block:'nearest'});
         }
     }
