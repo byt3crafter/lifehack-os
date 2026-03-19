@@ -2271,11 +2271,33 @@
         const fileInput = document.getElementById('food-photo');
         const hasPhoto = fileInput && fileInput.files && fileInput.files.length > 0;
 
-        if(!hasPhoto && !desc) return showToast('Upload a photo or describe what you ate', 'error');
+        if(!hasPhoto && !desc && !_pendingFoodImage) return showToast('Upload a photo or describe what you ate', 'error');
 
         const analyzingEl = document.getElementById('food-photo-analyzing');
 
-        if(hasPhoto) {
+        // If image already uploaded (second click after needs_description), use text analysis
+        if(_pendingFoodImage && desc) {
+            // Photo already saved, just need AI to estimate nutrition from the description
+            try {
+                const r = await api('/ai/analyze-food', 'POST', {description: desc});
+                if(r && r.estimated) {
+                    if(r.calories  != null) { const el = document.getElementById('nf-cal');     if(el) el.value = Math.round(r.calories); }
+                    if(r.protein_g != null) { const el = document.getElementById('nf-protein'); if(el) el.value = Math.round(r.protein_g); }
+                    if(r.carbs_g   != null) { const el = document.getElementById('nf-carbs');   if(el) el.value = Math.round(r.carbs_g); }
+                    if(r.fat_g     != null) { const el = document.getElementById('nf-fat');     if(el) el.value = Math.round(r.fat_g); }
+                    showToast('Nutrition estimated — review and log', 'info');
+                } else {
+                    showToast(r && r.ai_error ? r.ai_error : 'Could not estimate — fill in manually', 'warning');
+                }
+            } catch(e) {
+                showToast('AI failed — fill in manually', 'warning');
+            }
+            // Show step 2
+            if(step2) { step2.style.display = 'block'; step2.scrollIntoView({behavior:'smooth', block:'nearest'}); }
+            return;
+        }
+
+        if(hasPhoto && !_pendingFoodImage) {
             // Upload photo, get AI description + nutrition
             if(analyzingEl) analyzingEl.classList.remove('hidden');
             try {
@@ -2301,17 +2323,32 @@
                             providerEl.textContent = 'Estimated by ' + pName;
                             providerEl.classList.remove('hidden');
                         }
+                    } else if(uploadResult.needs_description) {
+                        // Provider can't see images — ask user to describe the food
+                        showToast('Describe the food below, then click Identify again', 'info');
+                        if(descEl) { descEl.focus(); descEl.placeholder = 'Type what you ate (e.g. Avocado toast with egg)'; }
+                        return; // Don't show step 2 yet
                     } else if(uploadResult.ai_error) {
-                        showToast('AI analysis failed: ' + uploadResult.ai_error + ' \u2014 fill in nutrition manually', 'warning');
+                        showToast('AI failed: ' + uploadResult.ai_error, 'warning');
                     }
                 }
             } catch(e) {
                 if(analyzingEl) analyzingEl.classList.add('hidden');
                 showToast('Photo upload failed \u2014 fill in manually', 'warning');
             }
-        } else {
-            // Text-only: use description as-is, no nutrition prefill
+        } else if(desc) {
+            // Text-only: analyze with AI
             _pendingFoodImage = null;
+            try {
+                const r = await api('/ai/analyze-food', 'POST', {description: desc});
+                if(r && r.estimated) {
+                    if(r.calories  != null) { const el = document.getElementById('nf-cal');     if(el) el.value = Math.round(r.calories); }
+                    if(r.protein_g != null) { const el = document.getElementById('nf-protein'); if(el) el.value = Math.round(r.protein_g); }
+                    if(r.carbs_g   != null) { const el = document.getElementById('nf-carbs');   if(el) el.value = Math.round(r.carbs_g); }
+                    if(r.fat_g     != null) { const el = document.getElementById('nf-fat');     if(el) el.value = Math.round(r.fat_g); }
+                    showToast('Nutrition estimated — review and log', 'info');
+                }
+            } catch(e) {}
         }
 
         // Reveal step 2

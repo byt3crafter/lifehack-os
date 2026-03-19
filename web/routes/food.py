@@ -350,7 +350,7 @@ def upload_food_photo():
             image_bytes = save_path.read_bytes()
             image_b64 = base64.b64encode(image_bytes).decode('ascii')
 
-            # If no description provided, try to identify the food first
+            # If no description, try to identify the food from the image
             if not description:
                 try:
                     ident = provider.identify_food(description='', image_base64=image_b64)
@@ -358,11 +358,23 @@ def upload_food_photo():
                         description = ident.description
                 except Exception:
                     pass
-                # If still no description, use a generic one
-                if not description:
-                    description = 'food in the uploaded photo'
 
-            result = provider.analyze_food(description, image_base64=image_b64)
+            # If still no description (provider can't see images), return
+            # the image path but ask the user to describe the food
+            if not description:
+                ai_error = 'This AI provider cannot analyze images. Please describe the food and try again.'
+                # Return early with just the image saved
+                response = {
+                    'success': True,
+                    'image_path': image_url,
+                    'analysis': None,
+                    'provider': provider_info,
+                    'ai_error': ai_error,
+                    'needs_description': True,
+                }
+                return jsonify(response)
+
+            result = provider.analyze_food(description, image_base64=None)
             if result.estimated:
                 analysis_dict = {
                     'calories': result.calories,
