@@ -59,6 +59,7 @@ def _serialize_log(r) -> dict:
         'fat_g': r['fat_g'],
         'image_path': r['image_path'],
         'ai_analysis': r['ai_analysis'],
+        'notes': r['notes'] if 'notes' in r.keys() else '',
     }
 
 

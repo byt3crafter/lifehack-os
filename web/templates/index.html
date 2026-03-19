@@ -3191,6 +3191,7 @@
                 + '</div>'
                 + aiHtml
                 + barsHtml
+                + (m.notes ? '<div class="mt-2 text-xs" style="color:#9898a6;"><span style="color:#5c5c6b;">Note:</span> ' + m.notes + '</div>' : '')
                 + '</div>'
                 + '</div>'
                 + '<div class="flex items-center gap-1 mt-2.5 pt-2.5" style="border-top:1px solid #242428;">'
@@ -3261,6 +3262,8 @@
             + '<div><label class="text-xs" style="color:#5c5c6b;">Carbs</label><input id="nf-carbs" type="number" class="w-full px-2 py-1.5 rounded-lg border text-sm" placeholder="0"></div>'
             + '<div><label class="text-xs" style="color:#5c5c6b;">Fat</label><input id="nf-fat" type="number" class="w-full px-2 py-1.5 rounded-lg border text-sm" placeholder="0"></div>'
             + '</div>'
+            + '<div class="mt-2"><label class="text-xs" style="color:#5c5c6b;">Notes (medicine, how you felt, etc.)</label>'
+            + '<input id="nf-notes" type="text" class="w-full px-2 py-1.5 rounded-lg border text-sm mt-1" placeholder="e.g. Took vitamin D, felt good"></div>'
             + '<div class="flex gap-2 mt-3">'
             + '<button onclick="saveFoodStep1Back()" class="btn-ghost flex-1 py-2">Back</button>'
             + '<button onclick="saveFoodLog()" class="btn-primary flex-1 py-2">Log meal</button>'
@@ -3319,13 +3322,15 @@
             const finalDesc = ($('#nf-desc') || {}).value ? $('#nf-desc').value.trim() : '';
             if(!finalDesc) return showToast('Describe what you ate', 'error');
 
+            var notesEl = document.getElementById('nf-notes');
             const data = {
                 meal_type:   ($('#nf-type')    || {}).value || 'snack',
                 description: finalDesc,
                 calories:    +($('#nf-cal')     || {}).value || null,
                 protein_g:   +($('#nf-protein') || {}).value || null,
                 carbs_g:     +($('#nf-carbs')   || {}).value || null,
-                fat_g:       +($('#nf-fat')     || {}).value || null
+                fat_g:       +($('#nf-fat')     || {}).value || null,
+                notes:       notesEl ? notesEl.value.trim() : ''
             };
             if(_pendingFoodImage) data.image_path = _pendingFoodImage;
 
