@@ -96,7 +96,7 @@ def _check_checkin_done(conn, target_date: str, rule: dict) -> VerificationResul
     return VerificationResult(
         verified=verified,
         check_type='checkin_done',
-        message='Daily check-in completed' if verified else 'Daily check-in not done yet',
+        message='Mood logged today' if verified else 'Log your mood on the Dashboard',
     )
 
 
@@ -156,7 +156,7 @@ def _check_no_alcohol(conn, target_date: str, rule: dict) -> VerificationResult:
         return VerificationResult(
             verified=False,
             check_type='no_alcohol',
-            message='No check-in found for today',
+            message='Log mood first to verify sobriety',
         )
     verified = bool(row['avoided_alcohol'])
     return VerificationResult(

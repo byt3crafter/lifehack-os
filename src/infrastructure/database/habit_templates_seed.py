@@ -91,7 +91,7 @@ BUILTIN_TEMPLATES = [
                 "micro_tasks": [
                     _task("Put book on pillow"),
                     _task("Read 1 page"),
-                    _task("Complete daily check-in", _CHECKIN),
+                    _task("Log mood today", _CHECKIN),
                 ],
             },
             {
@@ -102,7 +102,7 @@ BUILTIN_TEMPLATES = [
                 "micro_tasks": [
                     _task("Set 5 min timer"),
                     _task("Read until timer ends"),
-                    _task("Complete daily check-in", _CHECKIN),
+                    _task("Log mood today", _CHECKIN),
                 ],
             },
             {
@@ -114,7 +114,7 @@ BUILTIN_TEMPLATES = [
                     _task("Find quiet spot"),
                     _task("Read 15 min"),
                     _task("Note one takeaway"),
-                    _task("Complete daily check-in", _CHECKIN),
+                    _task("Log mood today", _CHECKIN),
                 ],
             },
             {
@@ -125,7 +125,7 @@ BUILTIN_TEMPLATES = [
                 "micro_tasks": [
                     _task("30 min focused reading"),
                     _task("Write 1 sentence summary"),
-                    _task("Complete daily check-in", _CHECKIN),
+                    _task("Log mood today", _CHECKIN),
                 ],
             },
         ],
@@ -180,7 +180,7 @@ BUILTIN_TEMPLATES = [
                 "description": "Sustain and protect your sobriety",
                 "days": 0,
                 "micro_tasks": [
-                    _task("Complete daily check-in", _CHECKIN),
+                    _task("Log mood today", _CHECKIN),
                     _task("Avoided alcohol today", _NO_ALCOHOL),
                     _task("Weekly reflection"),
                     _task("Help someone else"),
@@ -206,7 +206,7 @@ BUILTIN_TEMPLATES = [
                     _task("Find a quiet spot"),
                     _task("Set 1 min timer"),
                     _task("Close eyes and breathe"),
-                    _task("Complete daily check-in", _CHECKIN),
+                    _task("Log mood today", _CHECKIN),
                 ],
             },
             {
@@ -218,7 +218,7 @@ BUILTIN_TEMPLATES = [
                     _task("Use a meditation app or timer"),
                     _task("Focus on breath"),
                     _task("Note distractions without judgment"),
-                    _task("Complete daily check-in", _CHECKIN),
+                    _task("Log mood today", _CHECKIN),
                 ],
             },
             {
@@ -230,7 +230,7 @@ BUILTIN_TEMPLATES = [
                     _task("Morning meditation before phone"),
                     _task("Body scan technique"),
                     _task("Gratitude reflection"),
-                    _task("Complete daily check-in", _CHECKIN),
+                    _task("Log mood today", _CHECKIN),
                 ],
             },
             {
@@ -241,7 +241,7 @@ BUILTIN_TEMPLATES = [
                 "micro_tasks": [
                     _task("20 min unguided meditation"),
                     _task("Mindfulness throughout day"),
-                    _task("Complete daily check-in", _CHECKIN),
+                    _task("Log mood today", _CHECKIN),
                 ],
             },
         ],
@@ -263,7 +263,7 @@ BUILTIN_TEMPLATES = [
                 "micro_tasks": [
                     _task("Log every meal", _FOOD_LOG),
                     _task("No judgment, just awareness"),
-                    _task("Complete daily check-in", _CHECKIN),
+                    _task("Log mood today", _CHECKIN),
                 ],
             },
             {
@@ -321,7 +321,7 @@ BUILTIN_TEMPLATES = [
                 "micro_tasks": [
                     _task("Note bedtime"),
                     _task("Note wake time"),
-                    _task("Complete daily check-in", _CHECKIN),
+                    _task("Log mood today", _CHECKIN),
                 ],
             },
             {
@@ -332,7 +332,7 @@ BUILTIN_TEMPLATES = [
                 "micro_tasks": [
                     _task("Wake at same time daily"),
                     _task("No snooze button"),
-                    _task("Complete daily check-in", _CHECKIN),
+                    _task("Log mood today", _CHECKIN),
                 ],
             },
             {
@@ -344,7 +344,7 @@ BUILTIN_TEMPLATES = [
                     _task("Screens off 30 min before bed"),
                     _task("Read or stretch"),
                     _task("Dim lights"),
-                    _task("Complete daily check-in", _CHECKIN),
+                    _task("Log mood today", _CHECKIN),
                 ],
             },
             {
@@ -356,7 +356,7 @@ BUILTIN_TEMPLATES = [
                     _task("Same bedtime +/-30 min"),
                     _task("Cool dark room"),
                     _task("No caffeine after 2pm"),
-                    _task("Complete daily check-in", _CHECKIN),
+                    _task("Log mood today", _CHECKIN),
                 ],
             },
         ],

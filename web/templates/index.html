@@ -5230,6 +5230,11 @@
             + '<span class="text-xs" style="color:#5c5c6b;">Hard</span>'
             + '</div>'
             + '</div>'
+            + '<div>'
+            + '<label class="field-label">Micro-tasks <span style="color:#5c5c6b;font-weight:400;">(optional)</span></label>'
+            + '<div id="nh-tasks-list" class="space-y-1.5"></div>'
+            + '<button onclick="addNewHabitTask()" class="text-xs mt-2 px-2 py-1 rounded" style="color:#4f80ff;background:rgba(79,128,255,0.1);">+ Add micro-task</button>'
+            + '</div>'
             + '<div class="flex gap-2 pt-1">'
             + '<button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>'
             + '<button onclick="createHabit()" class="btn-primary flex-1 py-2.5">Add habit</button>'
@@ -5375,6 +5380,30 @@
         }
     }
 
+    var _newHabitTasks = [];
+
+    function addNewHabitTask() {
+        var idx = _newHabitTasks.length;
+        _newHabitTasks.push({name: '', type: 'manual'});
+        var container = document.getElementById('nh-tasks-list');
+        if(!container) return;
+        var row = document.createElement('div');
+        row.className = 'flex items-center gap-2';
+        row.id = 'nh-task-row-' + idx;
+        row.innerHTML = '<input type="text" placeholder="e.g. Do 3 push-ups" class="flex-1 px-2 py-1.5 rounded-lg border text-sm" onchange="updateNewHabitTask(' + idx + ', this.value)">'
+            + '<select class="px-1.5 py-1 rounded border text-xs" onchange="updateNewHabitTaskType(' + idx + ', this.value)"><option value="manual">Manual</option><option value="auto">Auto</option></select>'
+            + '<button onclick="removeNewHabitTask(' + idx + ')" class="text-xs" style="color:#ef4444;">X</button>';
+        container.appendChild(row);
+    }
+
+    function updateNewHabitTask(idx, val) { if(_newHabitTasks[idx]) _newHabitTasks[idx].name = val; }
+    function updateNewHabitTaskType(idx, val) { if(_newHabitTasks[idx]) _newHabitTasks[idx].type = val; }
+    function removeNewHabitTask(idx) {
+        _newHabitTasks[idx] = null;
+        var row = document.getElementById('nh-task-row-' + idx);
+        if(row) row.remove();
+    }
+
     async function createHabit() {
         var nameEl = document.getElementById('nh-name');
         if(!nameEl) return;
@@ -5382,11 +5411,37 @@
         if(!name) return;
         var catEl = document.getElementById('nh-cat');
         var diffEl = document.getElementById('nh-diff');
-        await api('/habits', 'POST', {
-            name: name,
-            category: catEl ? catEl.value : 'health',
-            difficulty: diffEl ? +diffEl.value : 1
-        });
+
+        // Collect micro-tasks
+        var tasks = _newHabitTasks.filter(function(t) { return t && t.name && t.name.trim(); });
+
+        if(tasks.length > 0) {
+            // Create as a plan with 1 phase containing the tasks
+            var plan = {
+                name: name,
+                category: catEl ? catEl.value : 'health',
+                difficulty: diffEl ? +diffEl.value : 1,
+                duration_weeks: 0,
+                phases: [{
+                    phase: 1,
+                    name: name,
+                    description: '',
+                    days: 0,
+                    micro_tasks: tasks.map(function(t) {
+                        return {name: t.name.trim(), verification_rule: {type: t.type || 'manual'}};
+                    })
+                }]
+            };
+            await api('/habits/create-from-plan', 'POST', plan);
+        } else {
+            // Simple habit, no tasks
+            await api('/habits', 'POST', {
+                name: name,
+                category: catEl ? catEl.value : 'health',
+                difficulty: diffEl ? +diffEl.value : 1
+            });
+        }
+        _newHabitTasks = [];
         hideModal();
         loadHabits();
     }
