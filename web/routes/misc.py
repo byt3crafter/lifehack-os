@@ -74,8 +74,15 @@ def get_categories():
 def get_daily_summary():
     today = date.today().isoformat()
     yesterday = (date.today() - timedelta(days=1)).isoformat()
-    
+
     conn = get_connection()
+
+    # Trigger habit strength decay for uncompleted habits
+    try:
+        from web.routes.habits import _apply_daily_decay
+        _apply_daily_decay(conn)
+    except Exception:
+        pass
     
     def get_day_stats(d):
         habits = habit_repo.get_all()

@@ -405,6 +405,56 @@ def update_habit(habit_id):
         habit.active = data['active']
 
     habit_repo.update(habit)
+
+    # Process phases from the edit modal payload
+    conn = get_connection()
+    phases = data.get('phases', [])
+    for phase_data in phases:
+        phase_id = phase_data.get('id')
+        if not phase_id:
+            continue
+        # Update phase name/description
+        conn.execute(
+            "UPDATE habit_phases SET name = ?, description = ? WHERE id = ? AND habit_id = ?",
+            (phase_data.get('name', ''), phase_data.get('description', ''), phase_id, habit_id)
+        )
+        # Process tasks
+        submitted_task_ids = set()
+        for task_data in phase_data.get('tasks', []):
+            task_id = task_data.get('id')
+            task_name = (task_data.get('name') or '').strip()
+            if not task_name:
+                continue
+            vr = task_data.get('verification_rule', '{"type": "manual"}')
+            if isinstance(vr, dict):
+                vr = json.dumps(vr)
+            if task_id:
+                # Update existing task
+                conn.execute(
+                    "UPDATE habit_micro_tasks SET name = ?, verification_rule = ? WHERE id = ? AND phase_id = ?",
+                    (task_name, vr, task_id, phase_id)
+                )
+                submitted_task_ids.add(task_id)
+            else:
+                # New task (id is null)
+                cursor = conn.execute(
+                    "INSERT INTO habit_micro_tasks (phase_id, name, verification_rule, sort_order) VALUES (?, ?, ?, ?)",
+                    (phase_id, task_name, vr, len(submitted_task_ids))
+                )
+                submitted_task_ids.add(cursor.lastrowid)
+
+        # Delete tasks that were removed (not in submitted list)
+        existing_tasks = conn.execute(
+            "SELECT id FROM habit_micro_tasks WHERE phase_id = ?", (phase_id,)
+        ).fetchall()
+        for row in existing_tasks:
+            if row['id'] not in submitted_task_ids:
+                conn.execute("DELETE FROM micro_task_completions WHERE micro_task_id = ?", (row['id'],))
+                conn.execute("DELETE FROM habit_micro_tasks WHERE id = ?", (row['id'],))
+
+    if phases:
+        conn.commit()
+
     return jsonify({'success': True})
 
 
@@ -459,6 +509,26 @@ def get_habit_detail(habit_id):
 
     cat_info = config.categories.get(habit.category, None)
 
+    # Compute phase_progress from the phases list
+    total_phases = len(phases)
+    current_phase_obj = next((p for p in phases if p['is_current']), None)
+    current_num = current_phase_obj['phase_number'] if current_phase_obj else (total_phases if total_phases > 0 else 0)
+    phase_progress = f'Phase {current_num} of {total_phases}' if total_phases > 0 else ''
+
+    # Build simple 14-day strength history from completions and miss log
+    history = []
+    for i in range(14):
+        d = (date.today() - timedelta(days=13 - i)).isoformat()
+        completed = conn.execute(
+            "SELECT COUNT(*) FROM habit_completions WHERE habit_id = ? AND date(completed_at) = ?",
+            (habit_id, d),
+        ).fetchone()[0]
+        missed = conn.execute(
+            "SELECT COUNT(*) FROM habit_miss_log WHERE habit_id = ? AND date = ?",
+            (habit_id, d),
+        ).fetchone()[0]
+        history.append({'date': d, 'completed': completed > 0, 'missed': missed > 0})
+
     return jsonify({
         'id': habit.id,
         'name': habit.name,
@@ -479,10 +549,12 @@ def get_habit_detail(habit_id):
         'total_completions': strength_data['total_completions'],
         'total_misses': strength_data['total_misses'],
         'phases': phases,
+        'phase_progress': phase_progress,
         'stacks': [
             {'id': s['id'], 'trigger': s['trigger_text']}
             for s in stacks
         ],
+        'stack_trigger': stacks[0]['trigger_text'] if stacks else None,
         'miss_log': [
             {
                 'id': m['id'],
@@ -493,6 +565,7 @@ def get_habit_detail(habit_id):
             }
             for m in miss_logs
         ],
+        'strength_history': history,
     })
 
 
@@ -506,7 +579,7 @@ def log_habit_miss(habit_id):
 
     data = request.get_json(silent=True) or {}
     reason = data.get('reason', '')
-    blocker = data.get('blocker', '')
+    blocker = data.get('blocker') or data.get('note', '')
     miss_date = data.get('date', date.today().isoformat())
 
     conn = get_connection()
@@ -856,6 +929,35 @@ def verify_tasks(habit_id):
         'tasks': tasks,
         'all_complete': all_complete,
     })
+
+
+@habits_bp.route('/micro-tasks/<int:task_id>', methods=['DELETE'])
+@login_required
+def delete_micro_task(task_id):
+    conn = get_connection()
+    conn.execute("DELETE FROM micro_task_completions WHERE micro_task_id = ?", (task_id,))
+    conn.execute("DELETE FROM habit_micro_tasks WHERE id = ?", (task_id,))
+    conn.commit()
+    return jsonify({'success': True})
+
+
+@habits_bp.route('/phases/<int:phase_id>/tasks', methods=['POST'])
+@login_required
+def add_task_to_phase(phase_id):
+    data = request.get_json(silent=True) or {}
+    name = (data.get('name') or '').strip()
+    if not name:
+        return jsonify({'error': 'name required'}), 400
+    vr = data.get('verification_rule', {"type": "manual"})
+    if isinstance(vr, dict):
+        vr = json.dumps(vr)
+    conn = get_connection()
+    cursor = conn.execute(
+        "INSERT INTO habit_micro_tasks (phase_id, name, verification_rule, sort_order) VALUES (?, ?, ?, ?)",
+        (phase_id, name, vr, 99)
+    )
+    conn.commit()
+    return jsonify({'success': True, 'id': cursor.lastrowid}), 201
 
 
 @habits_bp.route('/micro-tasks/<int:task_id>/toggle', methods=['POST'])
