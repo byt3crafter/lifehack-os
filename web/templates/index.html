@@ -4108,9 +4108,10 @@
             // Phase badge
             var phaseHtml = '';
             if(x.current_phase) {
-                var prog = x.phase_progress ? (' <span style="color:#5c5c6b;font-weight:400;">' + x.phase_progress + '</span>') : '';
+                var pName = String(x.current_phase);
+                var prog = x.phase_progress ? String(x.phase_progress) : '';
                 phaseHtml = '<div class="mt-1">'
-                    + '<span class="phase-badge">' + x.current_phase + prog + '</span>'
+                    + '<span class="phase-badge">' + pName + (prog ? ' <span style="color:#5c5c6b;font-weight:400;">' + prog + '</span>' : '') + '</span>'
                     + '</div>';
             }
 

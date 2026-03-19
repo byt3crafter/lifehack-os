@@ -217,6 +217,19 @@ def get_habits():
             (h.id,),
         ).fetchone()
 
+        # Micro-tasks for the current phase
+        micro_tasks = []
+        if current_phase:
+            task_rows = conn.execute(
+                "SELECT name FROM habit_micro_tasks WHERE phase_id = ? ORDER BY sort_order",
+                (current_phase['id'],)
+            ).fetchall()
+            micro_tasks = [{'name': t['name'], 'completed': False} for t in task_rows]
+
+        total_phases = phase_counts['total'] or 0
+        done_phases = phase_counts['done'] or 0
+        phase_num = current_phase['phase_number'] if current_phase else 0
+
         result.append({
             'id': h.id,
             'name': h.name,
@@ -230,14 +243,9 @@ def get_habits():
             'completed': h.id in completed_ids,
             'strength': strength,
             'strength_label': strength_label,
-            'current_phase': {
-                'phase_number': current_phase['phase_number'],
-                'name': current_phase['name'],
-            } if current_phase else None,
-            'phase_progress': {
-                'total': phase_counts['total'] or 0,
-                'completed': phase_counts['done'] or 0,
-            },
+            'current_phase': current_phase['name'] if current_phase else None,
+            'phase_progress': f'Phase {phase_num} of {total_phases}' if total_phases > 0 else '',
+            'micro_tasks': micro_tasks if micro_tasks else None,
         })
     return jsonify(result)
 
