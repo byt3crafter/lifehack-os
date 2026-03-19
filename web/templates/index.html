@@ -2781,6 +2781,7 @@
             if(activeDesc) activeDesc.textContent = dw.active.notes || '';
 
             var startStr = dw.active.started_at.replace(' ', 'T');
+            if(!startStr.endsWith('Z') && !startStr.includes('+')) startStr += 'Z';
             var start = new Date(startStr).getTime();
             var targetMs = 90 * 60 * 1000;
 
@@ -2927,7 +2928,9 @@
             $('#fast-target-hours').textContent = f.active.target_hours;
             $('#fast-start-time').textContent = new Date(f.active.start_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
 
-            const start = new Date(f.active.start_at).getTime();
+            var fastStartStr = (f.active.start_at || '').replace(' ', 'T');
+            if(!fastStartStr.endsWith('Z') && !fastStartStr.includes('+')) fastStartStr += 'Z';
+            const start = new Date(fastStartStr).getTime();
             const target = f.active.target_hours * 3600000;
             // Ring circumference for r=68: 2*PI*68 ≈ 427.3
             const CIRC = 427.3;
