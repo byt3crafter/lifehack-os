@@ -1995,8 +1995,9 @@
                 </div>
 
                 <style>
-                    .card:hover .food-actions { opacity: 1 !important; }
-                    @media (max-width: 768px) { .food-actions { opacity: 1 !important; } }
+                    .food-card:hover .food-actions { opacity: 1 !important; }
+                    @media (max-width: 768px) { .food-actions { opacity: 0.6 !important; } }
+                    @media (hover: hover) { .food-card:hover .food-actions { opacity: 1 !important; } }
                     .fast-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
                     @media (max-width: 640px) { .fast-grid { grid-template-columns: 1fr; } }
                 </style>
@@ -4281,7 +4282,7 @@
                 barsHtml += '</div>';
             }
 
-            return '<div class="card rounded-xl p-3" style="border:1px solid #2a2a2e;position:relative;">'
+            return '<div class="card food-card rounded-xl p-3" style="border:1px solid #2a2a2e;position:relative;">'
                 + '<div class="flex items-start gap-3">'
                 + thumb
                 + '<div class="flex-1 min-w-0">'
