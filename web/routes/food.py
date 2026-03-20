@@ -40,9 +40,15 @@ def _serialize_log(r) -> dict:
     try:
         images = json.loads(r['images_json'] or '[]')
     except (json.JSONDecodeError, TypeError, KeyError):
-        # Fallback to single image_path for rows predating images_json
-        if r.get('image_path'):
-            images = [r['image_path']]
+        pass
+    # Fallback to single image_path if images_json is empty
+    if not images:
+        try:
+            ip = r['image_path']
+            if ip:
+                images = [ip]
+        except (KeyError, IndexError):
+            pass
 
     return {
         'id': r['id'],
@@ -55,7 +61,7 @@ def _serialize_log(r) -> dict:
         'carbs_g': r['carbs_g'],
         'fat_g': r['fat_g'],
         'images': images,
-        'image_path': images[0] if images else r.get('image_path'),  # backward compat
+        'image_path': images[0] if images else (r['image_path'] if 'image_path' in r.keys() else None),
         'ai_analysis': r['ai_analysis'],
         'notes': r['notes'] if 'notes' in r.keys() else '',
         'rating': r['rating'] if 'rating' in r.keys() else None,
