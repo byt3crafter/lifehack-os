@@ -6144,7 +6144,7 @@
                 if(!x.completed) {
                     actHtml += '<button onclick="event.stopPropagation(); missHabitModal(' + x.id + ', \'' + safeName + '\')" class="action-link-danger text-xs" title="Log a miss">Miss</button>';
                 }
-                actHtml += '<button onclick="event.stopPropagation(); editHabitModal(' + x.id + ', \'' + safeName + '\', \'' + x.category + '\', ' + x.difficulty + ')" class="action-link" title="Edit">'
+                actHtml += '<button onclick="event.stopPropagation(); editHabitModal(' + x.id + ', \'' + safeName + '\', \'' + x.category + '\', ' + x.difficulty + ', \'' + (x.scheduled_time || '').replace(/'/g, "\\'") + '\')" class="action-link" title="Edit">'
                     + '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M14.5 3.5l2 2L7 15H5v-2L14.5 3.5z"/></svg>'
                     + '</button>'
                     + '<button onclick="event.stopPropagation(); deleteHabit(' + x.id + ', \'' + safeName + '\')" class="action-link-danger" title="Delete">'
@@ -6196,7 +6196,7 @@
     // Track editable micro-tasks per phase for the edit modal
     var _editPhaseData = [];
 
-    async function editHabitModal(id, name, category, difficulty) {
+    async function editHabitModal(id, name, category, difficulty, scheduledTime) {
         // Fetch full detail to get phases + micro-tasks
         var detail = await api('/habits/' + id + '/detail');
         _editPhaseData = [];
@@ -6263,6 +6263,10 @@
             + '<span id="eh-diff-v" class="font-mono text-sm font-semibold" style="color:#4f80ff;">' + difficulty + '</span>'
             + '</div>'
             + '<input type="range" id="eh-diff" min="1" max="5" value="' + difficulty + '" oninput="document.getElementById(\'eh-diff-v\').textContent=this.value;">'
+            + '</div>'
+            + '<div>'
+            + '<label class="field-label">Scheduled Time <span style="color:#5c5c6b;font-weight:400;">(optional)</span></label>'
+            + '<input id="eh-time" type="time" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="' + (scheduledTime || '') + '">'
             + '</div>'
             + phaseEditorHtml
             + '<div class="flex gap-2 pt-1">'
@@ -6353,10 +6357,12 @@
         var nameEl = document.getElementById('eh-name');
         var catEl = document.getElementById('eh-cat');
         var diffEl = document.getElementById('eh-diff');
+        var timeEl = document.getElementById('eh-time');
         var data = {
             name: nameEl ? nameEl.value.trim() : '',
             category: catEl ? catEl.value : 'health',
-            difficulty: diffEl ? +diffEl.value : 1
+            difficulty: diffEl ? +diffEl.value : 1,
+            scheduled_time: timeEl ? timeEl.value : ''
         };
         if(_editPhaseData.length) {
             data.phases = _editPhaseData.map(function(ph) {

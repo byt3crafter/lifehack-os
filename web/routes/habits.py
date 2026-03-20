@@ -424,6 +424,8 @@ def update_habit(habit_id):
         habit.difficulty = data['difficulty']
     if 'active' in data:
         habit.active = data['active']
+    if 'scheduled_time' in data:
+        habit.scheduled_time = data['scheduled_time']
 
     habit_repo.update(habit)
 
