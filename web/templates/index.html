@@ -2674,10 +2674,7 @@
                             <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/><path d="M10 7v3l2 2"/></svg>
                             AI Provider
                         </button>
-                        <button onclick="settingsTab('openclaw')"   id="stab-openclaw"     class="settings-tab-btn" aria-selected="false" style="display:flex;align-items:center;gap:0.625rem;width:100%;text-align:left;padding:0.5rem 0.75rem;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-size:0.8125rem;font-weight:500;transition:background 0.12s,color 0.12s;background:transparent;color:#9898a6;">
-                            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" viewBox="0 0 20 20"><path d="M4 13s1-1 4-1 5 2 8 2"/><path d="M4 9s1-1 4-1 5 2 8 2"/><path d="M4 5s1-1 4-1 5 2 8 2"/></svg>
-                            AI Agent
-                        </button>
+                        <!-- OpenClaw removed — per-user API keys replace it -->
                         <button onclick="settingsTab('integrations')" id="stab-integrations" class="settings-tab-btn" aria-selected="false" style="display:flex;align-items:center;gap:0.625rem;width:100%;text-align:left;padding:0.5rem 0.75rem;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-size:0.8125rem;font-weight:500;transition:background 0.12s,color 0.12s;background:transparent;color:#9898a6;">
                             <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" viewBox="0 0 20 20"><circle cx="6" cy="10" r="2.5"/><circle cx="14" cy="6" r="2.5"/><circle cx="14" cy="14" r="2.5"/><path d="M8.4 9l4.2-2.2M8.4 11l4.2 2.2"/></svg>
                             Integrations
@@ -2700,7 +2697,6 @@
                             <button onclick="settingsTab('profile')"       id="stab-m-profile"      style="flex-shrink:0;padding:0.375rem 0.875rem;border-radius:100px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;transition:background 0.12s,color 0.12s,border-color 0.12s;background:transparent;color:#9898a6;">Profile</button>
                             <button onclick="settingsTab('modules')"      id="stab-m-modules"      style="flex-shrink:0;padding:0.375rem 0.875rem;border-radius:100px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;transition:background 0.12s,color 0.12s,border-color 0.12s;background:rgba(79,128,255,0.15);color:#f0f0f2;border-color:rgba(79,128,255,0.3);">Modules</button>
                             <button onclick="settingsTab('ai')"           id="stab-m-ai"           style="flex-shrink:0;padding:0.375rem 0.875rem;border-radius:100px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;transition:background 0.12s,color 0.12s,border-color 0.12s;background:transparent;color:#9898a6;">AI Provider</button>
-                            <button onclick="settingsTab('openclaw')"     id="stab-m-openclaw"     style="flex-shrink:0;padding:0.375rem 0.875rem;border-radius:100px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;transition:background 0.12s,color 0.12s,border-color 0.12s;background:transparent;color:#9898a6;">AI Agent</button>
                             <button onclick="settingsTab('integrations')" id="stab-m-integrations" style="flex-shrink:0;padding:0.375rem 0.875rem;border-radius:100px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;transition:background 0.12s,color 0.12s,border-color 0.12s;background:transparent;color:#9898a6;">Integrations</button>
                             <button onclick="settingsTab('about')"        id="stab-m-about"        style="flex-shrink:0;padding:0.375rem 0.875rem;border-radius:100px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;transition:background 0.12s,color 0.12s,border-color 0.12s;background:transparent;color:#9898a6;">About</button>
                             <button onclick="settingsTab('debug')"        id="stab-m-debug"        style="flex-shrink:0;padding:0.375rem 0.875rem;border-radius:100px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;transition:background 0.12s,color 0.12s,border-color 0.12s;background:transparent;color:#9898a6;">Debug Log</button>
@@ -2937,57 +2933,7 @@
                             </div>
                         </div>
 
-                        <!-- ── AI AGENT (OpenClaw) panel ─────────────────── -->
-                        <div id="spanel-openclaw" style="display:none;">
-                            <div class="mb-5">
-                                <h3 class="text-base font-semibold mb-1" style="color:#f0f0f2;">AI Agent — OpenClaw</h3>
-                                <p class="text-sm" style="color:#5c5c6b;">Expose a read/write API so an external AI agent can monitor and interact with your data.</p>
-                            </div>
-
-                            <!-- API Key configuration -->
-                            <div class="mb-2" style="font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#5c5c6b;">API Key</div>
-                            <div class="card p-4 mb-4">
-                                <div class="space-y-3">
-                                    <div>
-                                        <label class="field-label" for="openclaw-api-key-input">OpenClaw API Key</label>
-                                        <div class="flex gap-2">
-                                            <input id="openclaw-api-key-input" type="password" class="flex-1 px-3 py-2.5 rounded-lg border text-sm" placeholder="Enter your API key">
-                                            <button onclick="toggleOpenclawKeyVisibility()" class="btn-ghost px-3 py-2.5 flex-shrink-0" aria-label="Show/hide API key" id="openclaw-key-toggle-btn" style="font-size:0.75rem;">Show</button>
-                                        </div>
-                                    </div>
-                                    <button onclick="saveOpenclawKey()" class="btn-primary w-full py-2.5">Save API Key</button>
-                                </div>
-                            </div>
-
-                            <!-- Connection details -->
-                            <div class="mb-2" style="font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#5c5c6b;">Connection details</div>
-                            <div class="card p-4 mb-4">
-                                <div class="flex items-center justify-between mb-3">
-                                    <span class="text-sm font-semibold" style="color:#f0f0f2;">Endpoints</span>
-                                    <span id="openclaw-status-badge" class="text-xs px-2.5 py-1 rounded-full font-medium" style="background:rgba(100,100,120,0.2);color:#9898a6;">Unknown</span>
-                                </div>
-                                <div class="space-y-2.5">
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-xs" style="color:#5c5c6b;">Schema endpoint</span>
-                                        <code class="text-xs font-mono px-2 py-0.5 rounded" style="background:#141416;color:#9898a6;border:1px solid #2a2a2e;">/api/openclaw/schema</code>
-                                    </div>
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-xs" style="color:#5c5c6b;">Authentication</span>
-                                        <code class="text-xs font-mono px-2 py-0.5 rounded" style="background:#141416;color:#9898a6;border:1px solid #2a2a2e;">X-API-Key: &lt;key above&gt;</code>
-                                    </div>
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-xs" style="color:#5c5c6b;">Log endpoint</span>
-                                        <code class="text-xs font-mono px-2 py-0.5 rounded" style="background:#141416;color:#9898a6;border:1px solid #2a2a2e;">/api/openclaw/log</code>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Recent activity log -->
-                            <div class="mb-2" style="font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#5c5c6b;">Recent activity</div>
-                            <div id="openclaw-log" class="card p-4">
-                                <p class="text-sm" style="color:#5c5c6b;">No recent activity.</p>
-                            </div>
-                        </div>
+                        <!-- OpenClaw panel removed — per-user API keys replace it -->
 
                         <!-- ── INTEGRATIONS panel ────────────────────────── -->
                         <div id="spanel-integrations" style="display:none;">
@@ -5167,7 +5113,7 @@
     var _debugLogActiveFilter = 'all';
 
     function settingsTab(tab) {
-        const panels = ['profile','modules','ai','openclaw','integrations','about','debug'];
+        const panels = ['profile','modules','ai','integrations','about','debug'];
         panels.forEach(p => {
             const panel = $(`#spanel-${p}`);
             if(panel) panel.style.display = (p === tab) ? '' : 'none';

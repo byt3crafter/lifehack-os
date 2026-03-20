@@ -17,7 +17,6 @@ MODULE_DEFS = {
     'finance':    {'name': 'Finance',     'description': 'Personal finance with AI budget advice',           'default': False},
     'challenges': {'name': 'Challenges',  'description': 'Spontaneous one-off commitments',                  'default': False},
     'discover':   {'name': 'Discover',    'description': 'Bucket list of experiences and places',            'default': False},
-    'openclaw':   {'name': 'AI Agent',    'description': 'External AI agent API access',                     'default': False},
     'journal':    {'name': 'Journal',     'description': 'Daily journaling with gratitude, wins, and reflections', 'default': False},
     'books':      {'name': 'Books',       'description': 'Book tracker with reading sessions and yearly challenge', 'default': False},
     'notes':      {'name': 'Notes',       'description': 'Quick capture notes with folders and search',            'default': False},

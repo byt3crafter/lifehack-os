@@ -8,7 +8,7 @@ from src.infrastructure.database.user_scope import get_user_setting, set_user_se
 settings_bp = Blueprint('settings', __name__, url_prefix='/api/settings')
 
 # Keys that hold sensitive values and should be masked in GET responses
-_SENSITIVE_KEYS = {'openclaw_api_key', 'ai_openai_key', 'ai_anthropic_key', 'ai_minimax_key'}
+_SENSITIVE_KEYS = {'ai_openai_key', 'ai_anthropic_key', 'ai_minimax_key'}
 
 # Per-user setting keys (stored in user_settings, not app_settings)
 _USER_SETTING_KEYS = {
