@@ -6192,6 +6192,16 @@
                 + '<div class="flex-1 min-w-0">'
                 + '<button onclick="openHabitDetail(' + x.id + ')" class="text-sm font-medium text-left w-full truncate hover:underline" style="color:' + (x.completed ? '#5c5c6b' : '#f0f0f2') + ';text-decoration:' + (x.completed ? 'line-through' : 'none') + ';background:none;border:none;cursor:pointer;font-family:inherit;">' + x.name + '</button>'
                 + '<span class="text-xs" style="color:' + catColor + ';">' + x.category_name + '</span>'
+                + (function() {
+                    if(!x.scheduled_time) return '';
+                    var now = new Date();
+                    var parts = x.scheduled_time.split(':');
+                    var schedH = parseInt(parts[0]), schedM = parseInt(parts[1] || 0);
+                    var isOverdue = !x.completed && (now.getHours() > schedH || (now.getHours() === schedH && now.getMinutes() > schedM));
+                    var color = isOverdue ? '#ef4444' : '#5c5c6b';
+                    var label = isOverdue ? 'Overdue \u2014 due at ' + x.scheduled_time : 'Due at ' + x.scheduled_time;
+                    return ' <span class="text-xs font-mono" style="color:' + color + ';">\u23F0 ' + label + '</span>';
+                })()
                 + phaseHtml
                 + barHtml
                 + microHtml
