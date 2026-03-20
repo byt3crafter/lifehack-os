@@ -1299,6 +1299,10 @@
             <button onclick="nav('notes')" data-v="notes" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Notes">
                 <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-notes"/></svg>Notes
             </button>
+            <div style="height:1px;background:#2a2a2e;margin:4px 0;"></div>
+            <button onclick="nav('chatmode')" data-v="chatmode" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Chat Mode" style="color:#c4b5fd;">
+                <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#8b5cf6;" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M7 16l-3 3V5a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H7z"/></svg>Chat Mode
+            </button>
             <button onclick="nav('settings')" data-v="settings" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Settings">
                 <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-settings"/></svg>Settings
             </button>
@@ -1354,6 +1358,10 @@
                 </button>
                 <button onclick="desktopNav('notes')" data-v="notes" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Notes">
                     <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-notes"/></svg>Notes
+                </button>
+                <div style="height:1px;background:#2a2a2e;margin:4px 0;"></div>
+                <button onclick="desktopNav('chatmode')" data-v="chatmode" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Chat Mode" style="color:#c4b5fd;">
+                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#8b5cf6;" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M7 16l-3 3V5a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H7z"/></svg>Chat Mode
                 </button>
                 <button onclick="desktopNav('settings')" data-v="settings" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Settings">
                     <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-settings"/></svg>Settings
@@ -1908,6 +1916,7 @@
                 <style>
                     .fast-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
                     @media (max-width: 640px) { .fast-grid { grid-template-columns: 1fr; } }
+                    #v-chatmode:not(.hidden) { display: flex !important; }
                 </style>
 
                 <!-- Start fast card — inviting design -->
@@ -2278,6 +2287,45 @@
                 <div id="disc-gallery-dots" style="display:flex;gap:6px;"></div>
                 <button onclick="discGalleryNav(1)" aria-label="Next photo"
                     style="position:absolute;right:1rem;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:50%;width:2.5rem;height:2.5rem;color:#fff;font-size:1.25rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#8250;</button>
+            </div>
+
+            <!-- CHAT MODE (full-screen) -->
+            <div id="v-chatmode" class="view hidden" style="flex-direction:column;height:calc(100vh - 60px);padding:0;">
+                <!-- Chat header -->
+                <div style="padding:1rem 1.25rem;border-bottom:1px solid #2a2a2e;flex-shrink:0;display:flex;align-items:center;gap:12px;">
+                    <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:linear-gradient(135deg,#4f80ff,#8b5cf6);">
+                        <svg width="18" height="18" fill="none" stroke="#fff" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M7 16l-3 3V5a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H7z"/></svg>
+                    </div>
+                    <div class="flex-1">
+                        <div class="text-sm font-semibold" style="color:#f0f0f2;">LifeHack AI</div>
+                        <div class="text-xs" style="color:#5c5c6b;">Chat with your personal AI — it knows all your data</div>
+                    </div>
+                    <button onclick="clearChatModeHistory()" class="text-xs px-2.5 py-1 rounded-lg" style="color:#9898a6;background:rgba(255,255,255,0.04);border:1px solid #2a2a2e;cursor:pointer;font-family:inherit;">Clear</button>
+                </div>
+
+                <!-- Messages area -->
+                <div id="chatmode-messages" style="flex:1;overflow-y:auto;padding:1rem 1.25rem;" aria-live="polite"></div>
+
+                <!-- Image preview -->
+                <div id="chatmode-img-preview" style="padding:0.5rem 1.25rem 0;display:none;">
+                    <div style="display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;background:#1c1c20;border:1px solid #2a2a2e;">
+                        <img id="chatmode-img-thumb" style="width:40px;height:40px;border-radius:6px;object-fit:cover;" alt="">
+                        <span class="text-xs" style="color:#9898a6;">Image attached</span>
+                        <button onclick="clearChatModeImage()" style="background:none;border:none;color:#5c5c6b;cursor:pointer;font-size:1rem;">&#10005;</button>
+                    </div>
+                </div>
+
+                <!-- Input bar -->
+                <div style="padding:0.75rem 1.25rem;border-top:1px solid #2a2a2e;display:flex;align-items:flex-end;gap:8px;flex-shrink:0;">
+                    <button onclick="document.getElementById('chatmode-img-input').click()" style="width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,0.06);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <svg width="18" height="18" fill="none" stroke="#9898a6" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    </button>
+                    <input type="file" id="chatmode-img-input" accept="image/*" capture="environment" style="display:none;" onchange="handleChatModeImage(this)">
+                    <textarea id="chatmode-input" rows="1" placeholder="Talk to your AI..." style="flex:1;min-height:40px;max-height:150px;padding:0.625rem 0.875rem;border-radius:12px;background:#141416;border:1px solid #2a2a2e;color:#f0f0f2;font-family:inherit;font-size:0.9375rem;resize:none;outline:none;" oninput="this.style.height='40px';this.style.height=Math.min(this.scrollHeight,150)+'px';"></textarea>
+                    <button id="chatmode-send-btn" onclick="sendChatModeMessage()" style="width:40px;height:40px;border-radius:12px;background:#4f80ff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    </button>
+                </div>
             </div>
 
             <!-- JOURNAL -->
@@ -2906,6 +2954,11 @@
         const el = document.querySelector('#v-' + v);
         if(el) el.classList.remove('hidden');
         document.querySelectorAll('[data-v="' + v + '"]').forEach(x => x.classList.add('active'));
+        // Hide floating chat FAB in chat mode, show in other views
+        var fab = document.getElementById('chat-fab');
+        if(fab) fab.style.display = (v === 'chatmode') ? 'none' : 'flex';
+        // Close floating chat panel if open when entering chat mode
+        if(v === 'chatmode' && _chatOpen) toggleChat();
         load(v);
     }
 
@@ -2927,6 +2980,7 @@
         else if(v==='journal') await loadJournal();
         else if(v==='books') await loadBooks();
         else if(v==='notes') await loadNotes();
+        else if(v==='chatmode') await loadChatMode();
     }
 
     // ── Modal ────────────────────────────────────────────────────
@@ -8461,6 +8515,144 @@
         loadFinance();
     }
 
+    // ── Chat Mode (full-screen) ─────────────────────────────────
+    var _chatModeMessages = [];
+    var _chatModeImageBase64 = null;
+    var _chatModeLoaded = false;
+
+    async function loadChatMode() {
+        // Hide the floating chat FAB when in chat mode
+        var fab = document.getElementById('chat-fab');
+        if (fab) fab.style.display = 'none';
+        // Make the view flex
+        var view = document.getElementById('v-chatmode');
+        if (view) view.style.display = 'flex';
+
+        if (!_chatModeLoaded) {
+            try {
+                var r = await api('/chat/history');
+                if (r && r.messages && r.messages.length) {
+                    _chatModeMessages = r.messages;
+                } else {
+                    _chatModeMessages = [{ role: 'assistant', content: 'Hey! I\'m your LifeHack AI. I have access to all your data — habits, finances, food, fasting, journal, books, notes. Just talk to me naturally.\n\nTry: *"Log 30 push-ups"*, *"How am I doing this week?"*, or snap a photo of your meal.', created_at: new Date().toISOString() }];
+                }
+            } catch (e) {
+                _chatModeMessages = [{ role: 'assistant', content: 'Chat mode ready. Ask me anything!', created_at: new Date().toISOString() }];
+            }
+            _chatModeLoaded = true;
+        }
+        renderChatModeMessages();
+        setTimeout(function() { var inp = document.getElementById('chatmode-input'); if (inp) inp.focus(); }, 100);
+    }
+
+    function renderChatModeMessages() {
+        var container = document.getElementById('chatmode-messages');
+        if (!container) return;
+        var html = '';
+        for (var i = 0; i < _chatModeMessages.length; i++) {
+            var m = _chatModeMessages[i];
+            var isUser = m.role === 'user';
+            var align = isUser ? 'flex-end' : 'flex-start';
+            var bg = isUser ? 'linear-gradient(135deg,#4f80ff,#6b96ff)' : '#1c1c20';
+            var color = isUser ? '#fff' : '#f0f0f2';
+            var border = isUser ? 'none' : '1px solid #2a2a2e';
+            var radius = isUser ? '18px 18px 4px 18px' : '18px 18px 18px 4px';
+            var ts = '';
+            if (m.created_at) {
+                try { ts = '<div style="font-size:0.6875rem;color:#5c5c6b;margin-top:4px;">' + new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '</div>'; } catch(e) {}
+            }
+            var imgBadge = (m.has_image && isUser) ? '<div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;opacity:0.7;font-size:0.75rem;">&#128247; Image attached</div>' : '';
+            html += '<div style="display:flex;flex-direction:column;align-items:' + align + ';margin-bottom:12px;">'
+                + '<div style="max-width:80%;padding:12px 16px;border-radius:' + radius + ';background:' + bg + ';color:' + color + ';border:' + border + ';font-size:0.9375rem;line-height:1.6;word-break:break-word;">'
+                + imgBadge + chatFormatMsg(m.content)
+                + '</div>' + ts + '</div>';
+        }
+        container.innerHTML = html;
+        container.scrollTop = container.scrollHeight;
+    }
+
+    async function sendChatModeMessage() {
+        var input = document.getElementById('chatmode-input');
+        var sendBtn = document.getElementById('chatmode-send-btn');
+        if (!input || (!input.value.trim() && !_chatModeImageBase64)) return;
+        var msg = input.value.trim() || (_chatModeImageBase64 ? 'What do you see in this image?' : '');
+        input.value = '';
+        input.style.height = '40px';
+
+        var userMsg = { role: 'user', content: msg, created_at: new Date().toISOString() };
+        if (_chatModeImageBase64) userMsg.has_image = true;
+        _chatModeMessages.push(userMsg);
+        // Also sync to floating chat
+        _chatMessages = _chatModeMessages.slice();
+        renderChatModeMessages();
+
+        if (sendBtn) sendBtn.disabled = true;
+
+        var payload = { message: msg };
+        if (_chatModeImageBase64) {
+            payload.image_base64 = _chatModeImageBase64;
+            clearChatModeImage();
+        }
+
+        // Show typing
+        var container = document.getElementById('chatmode-messages');
+        if (container) {
+            container.innerHTML += '<div id="chatmode-typing" style="display:flex;align-items:center;gap:4px;padding:10px 14px;border-radius:16px;background:#1c1c20;border:1px solid #2a2a2e;width:fit-content;margin-bottom:8px;">'
+                + '<span style="width:6px;height:6px;border-radius:50%;background:#5c5c6b;display:inline-block;animation:chat-bounce 1.2s infinite;"></span>'
+                + '<span style="width:6px;height:6px;border-radius:50%;background:#5c5c6b;display:inline-block;animation:chat-bounce 1.2s 0.2s infinite;"></span>'
+                + '<span style="width:6px;height:6px;border-radius:50%;background:#5c5c6b;display:inline-block;animation:chat-bounce 1.2s 0.4s infinite;"></span></div>';
+            container.scrollTop = container.scrollHeight;
+        }
+
+        try {
+            var r = await api('/chat', 'POST', payload);
+            var reply = (r && r.response) ? r.response : 'Sorry, something went wrong.';
+            _chatModeMessages.push({ role: 'assistant', content: reply, created_at: new Date().toISOString() });
+            _chatMessages = _chatModeMessages.slice();
+        } catch (e) {
+            _chatModeMessages.push({ role: 'assistant', content: 'Connection error. Please try again.', created_at: new Date().toISOString() });
+        }
+        renderChatModeMessages();
+        if (sendBtn) sendBtn.disabled = false;
+        if (input) input.focus();
+    }
+
+    function handleChatModeImage(input) {
+        if (!input.files || !input.files[0]) return;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            _chatModeImageBase64 = e.target.result.split(',')[1];
+            var preview = document.getElementById('chatmode-img-preview');
+            var thumb = document.getElementById('chatmode-img-thumb');
+            if (preview) preview.style.display = 'block';
+            if (thumb) thumb.src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+        input.value = '';
+    }
+
+    function clearChatModeImage() {
+        _chatModeImageBase64 = null;
+        var preview = document.getElementById('chatmode-img-preview');
+        if (preview) preview.style.display = 'none';
+    }
+
+    async function clearChatModeHistory() {
+        await api('/chat/history', 'DELETE');
+        _chatModeMessages = [{ role: 'assistant', content: 'Chat cleared. What would you like to do?', created_at: new Date().toISOString() }];
+        _chatMessages = _chatModeMessages.slice();
+        _chatModeLoaded = true;
+        renderChatModeMessages();
+    }
+
+    // Handle Enter key in chat mode input
+    document.addEventListener('keydown', function(e) {
+        if (e.target && e.target.id === 'chatmode-input' && e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendChatModeMessage();
+        }
+    });
+
     // ── Journal ──────────────────────────────────────────────────
     async function loadJournal(search) {
         var params = search ? '?search=' + encodeURIComponent(search) : '';
@@ -9401,8 +9593,20 @@
             </div>
         </div>
 
+        <!-- Image preview -->
+        <div id="chat-img-preview" class="hidden" style="padding:0.5rem 1rem 0;display:none;">
+            <div style="display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;background:#1c1c20;border:1px solid #2a2a2e;">
+                <img id="chat-img-thumb" style="width:40px;height:40px;border-radius:6px;object-fit:cover;" alt="Attached">
+                <span class="text-xs" style="color:#9898a6;">Image attached</span>
+                <button onclick="clearChatImage()" style="background:none;border:none;color:#5c5c6b;cursor:pointer;font-size:1rem;">&#10005;</button>
+            </div>
+        </div>
         <!-- Input bar -->
         <div id="chat-input-bar">
+            <button id="chat-img-btn" onclick="document.getElementById('chat-img-input').click()" aria-label="Attach image" style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.06);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg width="16" height="16" fill="none" stroke="#9898a6" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            </button>
+            <input type="file" id="chat-img-input" accept="image/*" capture="environment" style="display:none;" onchange="handleChatImage(this)">
             <textarea
                 id="chat-input"
                 rows="1"
@@ -9466,23 +9670,55 @@
         renderChatMessages();
     }
 
+    // ── Image handling ────────────────────────────────────────────
+    var _chatImageBase64 = null;
+
+    function handleChatImage(input) {
+        if (!input.files || !input.files[0]) return;
+        var file = input.files[0];
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            _chatImageBase64 = e.target.result.split(',')[1];
+            var preview = document.getElementById('chat-img-preview');
+            var thumb = document.getElementById('chat-img-thumb');
+            if (preview) { preview.style.display = 'block'; preview.classList.remove('hidden'); }
+            if (thumb) thumb.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+        input.value = '';
+    }
+
+    function clearChatImage() {
+        _chatImageBase64 = null;
+        var preview = document.getElementById('chat-img-preview');
+        if (preview) { preview.style.display = 'none'; preview.classList.add('hidden'); }
+    }
+
     // ── Send message ────────────────────────────────────────────────
     async function sendChatMessage() {
         var input = document.getElementById('chat-input');
         var sendBtn = document.getElementById('chat-send-btn');
-        if (!input || !input.value.trim() || _chatTyping) return;
-        var msg = input.value.trim();
+        if (!input || (!input.value.trim() && !_chatImageBase64) || _chatTyping) return;
+        var msg = input.value.trim() || (_chatImageBase64 ? 'What do you see in this image?' : '');
         input.value = '';
         chatInputAutoResize(input);
 
-        _chatMessages.push({ role: 'user', content: msg, created_at: new Date().toISOString() });
+        var userMsg = { role: 'user', content: msg, created_at: new Date().toISOString() };
+        if (_chatImageBase64) userMsg.has_image = true;
+        _chatMessages.push(userMsg);
         renderChatMessages();
         showChatTyping();
         if (sendBtn) sendBtn.disabled = true;
         if (input) input.disabled = true;
 
+        var payload = { message: msg };
+        if (_chatImageBase64) {
+            payload.image_base64 = _chatImageBase64;
+            clearChatImage();
+        }
+
         try {
-            var r = await api('/chat', 'POST', { message: msg });
+            var r = await api('/chat', 'POST', payload);
             hideChatTyping();
             var reply;
             if (r && r.response) {
@@ -9520,8 +9756,10 @@
                     + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                     + '</div>';
             }
+            var imgBadge = (m.has_image && isUser) ? '<div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;opacity:0.7;"><svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg><span style="font-size:0.6875rem;">Image attached</span></div>' : '';
             html += '<div style="display:flex;flex-direction:column;align-items:' + align + ';margin-bottom:10px;">'
                 + '<div style="max-width:85%;padding:10px 14px;border-radius:16px;background:' + bg + ';color:' + color + ';border:' + border + ';font-size:0.875rem;line-height:1.5;word-break:break-word;">'
+                + imgBadge
                 + chatFormatMsg(m.content)
                 + '</div>'
                 + ts
