@@ -4282,7 +4282,7 @@
                 barsHtml += '</div>';
             }
 
-            return '<div class="card food-card rounded-xl p-3" style="border:1px solid #2a2a2e;position:relative;">'
+            return '<div class="card food-card rounded-xl p-3" style="border:1px solid #2a2a2e;">'
                 + '<div class="flex items-start gap-3">'
                 + thumb
                 + '<div class="flex-1 min-w-0">'
@@ -4294,7 +4294,11 @@
                 + (time ? '<span class="text-xs" style="color:#5c5c6b;">' + time + '</span>' : '')
                 + '</div>'
                 + '</div>'
+                + '<div class="flex items-center gap-1 flex-shrink-0">'
                 + calsHtml
+                + '<button onclick="event.stopPropagation();window._efRating=' + (m.rating||0) + '; window._efMoodAfter=' + (m.mood_after||0) + '; editFoodModal(' + m.id + ', \'' + (m.meal_type||'snack') + '\', \'' + safeDesc + '\', ' + (m.calories||0) + ', ' + (m.protein_g||0) + ', ' + (m.carbs_g||0) + ', ' + (m.fat_g||0) + ', \'' + imgSrc + '\', \'' + (m.notes||'').replace(/'/g,'&#39;') + '\')" style="background:none;border:none;cursor:pointer;padding:3px;color:#5c5c6b;" title="Edit"><svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path d="M14.5 3.5l2 2L7 15H5v-2L14.5 3.5z"/></svg></button>'
+                + '<button onclick="event.stopPropagation();deleteFood(' + m.id + ')" style="background:none;border:none;cursor:pointer;padding:3px;color:#5c5c6b;" title="Delete"><svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path d="M6 6l8 8M14 6l-8 8"/></svg></button>'
+                + '</div>'
                 + '</div>'
                 + aiHtml
                 + barsHtml
@@ -4305,11 +4309,6 @@
                     + '</div>' : '')
                 + '</div>'
                 + '</div>'
-                + '</div>'
-                // Action icons — absolute top-right inside card
-                + '<div style="position:absolute;top:6px;right:6px;display:flex;gap:4px;">'
-                + '<button onclick="event.stopPropagation();window._efRating=' + (m.rating||0) + '; window._efMoodAfter=' + (m.mood_after||0) + '; editFoodModal(' + m.id + ', \'' + (m.meal_type||'snack') + '\', \'' + safeDesc + '\', ' + (m.calories||0) + ', ' + (m.protein_g||0) + ', ' + (m.carbs_g||0) + ', ' + (m.fat_g||0) + ', \'' + imgSrc + '\', \'' + (m.notes||'').replace(/'/g,'&#39;') + '\')" style="background:#1c1c20;border:1px solid #2a2a2e;cursor:pointer;padding:6px;border-radius:8px;color:#4f80ff;display:flex;align-items:center;justify-content:center;" title="Edit"><svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.5 3.5l2 2L7 15H5v-2L14.5 3.5z"/></svg></button>'
-                + '<button onclick="event.stopPropagation();deleteFood(' + m.id + ')" style="background:#1c1c20;border:1px solid #2a2a2e;cursor:pointer;padding:6px;border-radius:8px;color:#ef4444;display:flex;align-items:center;justify-content:center;" title="Delete"><svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6l8 8M14 6l-8 8"/></svg></button>'
                 + '</div>'
                 + '</div>';
         };
