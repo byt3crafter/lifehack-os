@@ -2537,9 +2537,14 @@
                                 <span class="font-mono font-bold text-2xl" style="color:#38bdf8;" id="w-water-total">0</span>
                                 <span class="text-sm" style="color:#5c5c6b;"> / <span id="w-water-goal">8</span> glasses</span>
                             </div>
-                            <button onclick="logWaterQuick()" class="px-4 py-2 rounded-lg text-sm font-medium" style="background:rgba(56,189,248,0.12);color:#38bdf8;border:1px solid rgba(56,189,248,0.2);cursor:pointer;font-family:inherit;">
-                                + 1 Glass
-                            </button>
+                            <div class="flex gap-2">
+                                <button onclick="removeWater()" class="px-3 py-2 rounded-lg text-sm font-medium" style="background:rgba(239,68,68,0.08);color:#ef4444;border:1px solid rgba(239,68,68,0.15);cursor:pointer;font-family:inherit;">
+                                    - 1
+                                </button>
+                                <button onclick="logWaterQuick()" class="px-4 py-2 rounded-lg text-sm font-medium" style="background:rgba(56,189,248,0.12);color:#38bdf8;border:1px solid rgba(56,189,248,0.2);cursor:pointer;font-family:inherit;">
+                                    + 1 Glass
+                                </button>
+                            </div>
                         </div>
                         <div class="h-2 rounded-full" style="background:rgba(255,255,255,0.06);">
                             <div id="w-water-bar" class="h-full rounded-full" style="background:#38bdf8;width:0%;transition:width 0.4s;"></div>
@@ -9379,6 +9384,22 @@
         loadDashboardWellness();
     }
 
+    async function removeWater() {
+        // Get today's water logs and delete the most recent one
+        try {
+            var w = await api('/wellness/water/today');
+            if(w && w.logs && w.logs.length > 0) {
+                var lastEntry = w.logs[w.logs.length - 1];
+                await api('/wellness/water/' + lastEntry.id, 'DELETE');
+                showToast('-1 glass removed', 'info');
+                loadDashboardWellness();
+                if(document.getElementById('v-wellness') && !document.getElementById('v-wellness').classList.contains('hidden')) loadWellness();
+            } else {
+                showToast('No water to remove', 'info');
+            }
+        } catch(e) { showToast('Could not remove', 'error'); }
+    }
+
     async function loadDashboardWellness() {
         // Water
         try {
@@ -9463,6 +9484,7 @@
                     + '<div class="text-xs" style="color:#5c5c6b;">' + dateStr + (s.bedtime ? ' &middot; ' + s.bedtime + ' - ' + s.wake_time : '') + '</div>'
                     + '</div>'
                     + '<div class="text-xs" style="color:#eab308;">' + stars + '</div>'
+                    + '<button onclick="deleteSleep(' + s.id + ')" style="background:none;border:none;cursor:pointer;padding:3px;color:#5c5c6b;" title="Delete"><svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path d="M6 6l8 8M14 6l-8 8"/></svg></button>'
                     + '</div>';
             }).join('');
         } catch(e) {}
@@ -9496,6 +9518,13 @@
             + '<div><label class="field-label">Daily goal (glasses)</label><input id="wg-goal" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="8" min="1" max="20"></div>'
             + '<div class="flex gap-2 pt-1"><button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button><button onclick="saveWaterGoal()" class="btn-primary flex-1 py-2.5">Save</button></div>'
             + '</div>');
+    }
+
+    async function deleteSleep(id) {
+        await api('/wellness/sleep/' + id, 'DELETE');
+        showToast('Sleep entry deleted', 'info');
+        loadDashboardWellness();
+        loadWellness();
     }
 
     async function saveWaterGoal() {

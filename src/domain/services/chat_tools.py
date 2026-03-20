@@ -195,8 +195,8 @@ TOOL_DEFINITIONS = [
     # ── Wellness ─────────────────────────────────────────────────────────────
     {
         "name": "log_water",
-        "description": "Log water intake (glasses)",
-        "parameters": {"glasses": "integer (default 1)"},
+        "description": "Log or remove water intake (glasses). Use negative number to remove.",
+        "parameters": {"glasses": "integer (default 1, use -1 to remove a glass)"},
     },
     {
         "name": "log_sleep",

@@ -1095,24 +1095,42 @@ def _log_water(args: dict, conn, user_id: int) -> dict:
         glasses = int(args.get("glasses", 1))
     except (TypeError, ValueError):
         glasses = 1
-    glasses = max(1, glasses)
 
-    conn.execute(
-        "INSERT INTO water_logs (user_id, glasses) VALUES (?, ?)",
-        (user_id, glasses),
-    )
-    conn.commit()
+    if glasses < 0:
+        # Remove water — delete the most recent N entries
+        to_remove = abs(glasses)
+        rows = conn.execute(
+            "SELECT id FROM water_logs WHERE user_id = ? AND date(logged_at) = date('now') ORDER BY logged_at DESC LIMIT ?",
+            (user_id, to_remove),
+        ).fetchall()
+        for r in rows:
+            conn.execute("DELETE FROM water_logs WHERE id = ?", (r['id'],))
+        conn.commit()
+        removed = len(rows)
+    else:
+        glasses = max(1, glasses)
+        conn.execute(
+            "INSERT INTO water_logs (user_id, glasses) VALUES (?, ?)",
+            (user_id, glasses),
+        )
+        conn.commit()
+        removed = 0
 
     total_row = conn.execute(
         "SELECT COALESCE(SUM(glasses), 0) as total FROM water_logs WHERE user_id = ? AND date(logged_at) = date('now')",
         (user_id,),
     ).fetchone()
 
+    if removed:
+        msg = f"Removed {removed} glass(es). Total today: {total_row['total']}"
+    else:
+        msg = f"Logged {glasses} glass(es) of water. Total today: {total_row['total']}"
+
     return {
         "status": "ok",
         "glasses": glasses,
         "total_today": total_row["total"],
-        "message": f"Logged {glasses} glass(es) of water. Total today: {total_row['total']}",
+        "message": msg,
     }
 
 
