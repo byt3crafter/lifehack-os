@@ -2687,6 +2687,10 @@
                             <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" viewBox="0 0 20 20"><circle cx="6" cy="10" r="2.5"/><circle cx="14" cy="6" r="2.5"/><circle cx="14" cy="14" r="2.5"/><path d="M8.4 9l4.2-2.2M8.4 11l4.2 2.2"/></svg>
                             Integrations
                         </button>
+                        <button onclick="settingsTab('guide')"      id="stab-guide"        class="settings-tab-btn" aria-selected="false" style="display:flex;align-items:center;gap:0.625rem;width:100%;text-align:left;padding:0.5rem 0.75rem;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-size:0.8125rem;font-weight:500;transition:background 0.12s,color 0.12s;background:transparent;color:#9898a6;">
+                            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" viewBox="0 0 20 20"><path d="M3 4h4l3 2 3-2h4v12h-4l-3 2-3-2H3z"/></svg>
+                            User Guide
+                        </button>
                         <button onclick="settingsTab('about')"      id="stab-about"        class="settings-tab-btn" aria-selected="false" style="display:flex;align-items:center;gap:0.625rem;width:100%;text-align:left;padding:0.5rem 0.75rem;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-size:0.8125rem;font-weight:500;transition:background 0.12s,color 0.12s;background:transparent;color:#9898a6;">
                             <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/><path d="M10 9v5M10 7v.01"/></svg>
                             About
@@ -2706,6 +2710,7 @@
                             <button onclick="settingsTab('modules')"      id="stab-m-modules"      style="flex-shrink:0;padding:0.375rem 0.875rem;border-radius:100px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;transition:background 0.12s,color 0.12s,border-color 0.12s;background:rgba(79,128,255,0.15);color:#f0f0f2;border-color:rgba(79,128,255,0.3);">Modules</button>
                             <button onclick="settingsTab('ai')"           id="stab-m-ai"           style="flex-shrink:0;padding:0.375rem 0.875rem;border-radius:100px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;transition:background 0.12s,color 0.12s,border-color 0.12s;background:transparent;color:#9898a6;">AI Provider</button>
                             <button onclick="settingsTab('integrations')" id="stab-m-integrations" style="flex-shrink:0;padding:0.375rem 0.875rem;border-radius:100px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;transition:background 0.12s,color 0.12s,border-color 0.12s;background:transparent;color:#9898a6;">Integrations</button>
+                            <button onclick="settingsTab('guide')"        id="stab-m-guide"        style="flex-shrink:0;padding:0.375rem 0.875rem;border-radius:100px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;transition:background 0.12s,color 0.12s,border-color 0.12s;background:transparent;color:#9898a6;">Guide</button>
                             <button onclick="settingsTab('about')"        id="stab-m-about"        style="flex-shrink:0;padding:0.375rem 0.875rem;border-radius:100px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;transition:background 0.12s,color 0.12s,border-color 0.12s;background:transparent;color:#9898a6;">About</button>
                             <button onclick="settingsTab('debug')"        id="stab-m-debug"        style="flex-shrink:0;padding:0.375rem 0.875rem;border-radius:100px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;transition:background 0.12s,color 0.12s,border-color 0.12s;background:transparent;color:#9898a6;">Debug Log</button>
                         </div>
@@ -2941,7 +2946,117 @@
                             </div>
                         </div>
 
-                        <!-- OpenClaw panel removed — per-user API keys replace it -->
+                        <!-- ── USER GUIDE panel ─────────────────────────── -->
+                        <div id="spanel-guide" style="display:none;">
+                            <h3 class="text-base font-semibold mb-1" style="color:#f0f0f2;">User Guide</h3>
+                            <p class="text-xs mb-5" style="color:#5c5c6b;">Everything you need to know about LifeHack OS</p>
+
+                            <div class="space-y-4">
+                                <!-- What is this -->
+                                <div class="p-4 rounded-xl" style="background:linear-gradient(135deg,#141420,#1a1428);border:1px solid rgba(139,92,246,0.15);">
+                                    <div class="text-sm font-semibold mb-2" style="color:#c4b5fd;">What is LifeHack OS?</div>
+                                    <div class="text-xs" style="color:#9898a6;line-height:1.6;">A personal operating system that tracks your habits, health, finances, journal, books, contacts, and more — all in one place. An AI assistant has access to all your data and can help you log meals, create habits, track spending, and give personalized advice. Everything is private and self-hosted.</div>
+                                </div>
+
+                                <!-- Modules -->
+                                <div>
+                                    <div class="text-xs font-semibold mb-2" style="color:#9898a6;letter-spacing:0.06em;text-transform:uppercase;">Health Modules</div>
+                                    <div class="space-y-2">
+                                        <div class="p-3 rounded-lg" style="background:#1c1c20;border:1px solid #2a2a2e;">
+                                            <div class="text-sm font-medium" style="color:#f0f0f2;">&#9989; Habits</div>
+                                            <div class="text-xs mt-1" style="color:#5c5c6b;">Track daily habits with strength scores, phases, micro-tasks, and scheduled times. Set a time like 08:00 and it shows overdue if you miss it. Log why you missed with reason tracking.</div>
+                                        </div>
+                                        <div class="p-3 rounded-lg" style="background:#1c1c20;border:1px solid #2a2a2e;">
+                                            <div class="text-sm font-medium" style="color:#f0f0f2;">&#127869; Food & Drinks</div>
+                                            <div class="text-xs mt-1" style="color:#5c5c6b;">Log meals and drinks with AI photo analysis. Snap a photo and the AI identifies the food and estimates calories. Track protein, carbs, fat. Rate meals and log mood after eating. Multiple images per entry.</div>
+                                        </div>
+                                        <div class="p-3 rounded-lg" style="background:#1c1c20;border:1px solid #2a2a2e;">
+                                            <div class="text-sm font-medium" style="color:#f0f0f2;">&#9201; Fasting</div>
+                                            <div class="text-xs mt-1" style="color:#5c5c6b;">Intermittent fasting timer with body stage tracking (Fed State → Early Fasting → Glycogen Depletion → Fat Burning → Autophagy). Live timer with progress ring, hydration tips per stage.</div>
+                                        </div>
+                                        <div class="p-3 rounded-lg" style="background:#1c1c20;border:1px solid #2a2a2e;">
+                                            <div class="text-sm font-medium" style="color:#f0f0f2;">&#10024; Wellness</div>
+                                            <div class="text-xs mt-1" style="color:#5c5c6b;">Track water intake (glasses per day with goal), sleep (bedtime, wake time, quality), and get a wellness score (0-100) calculated from habits + water + sleep + food.</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div class="text-xs font-semibold mb-2" style="color:#9898a6;letter-spacing:0.06em;text-transform:uppercase;">Productivity Modules</div>
+                                    <div class="space-y-2">
+                                        <div class="p-3 rounded-lg" style="background:#1c1c20;border:1px solid #2a2a2e;">
+                                            <div class="text-sm font-medium" style="color:#f0f0f2;">&#128161; Deep Work</div>
+                                            <div class="text-xs mt-1" style="color:#5c5c6b;">Start focused work sessions with a timer. Track by project. See daily, weekly, and total focus time. Integrates with Vikunja for task management.</div>
+                                        </div>
+                                        <div class="p-3 rounded-lg" style="background:#1c1c20;border:1px solid #2a2a2e;">
+                                            <div class="text-sm font-medium" style="color:#f0f0f2;">&#127942; Challenges</div>
+                                            <div class="text-xs mt-1" style="color:#5c5c6b;">Set personal challenges (e.g., "Stop drinking for 90 days"). Track streaks, check-in daily, see heatmap calendar. If you break it, log why and restart.</div>
+                                        </div>
+                                        <div class="p-3 rounded-lg" style="background:#1c1c20;border:1px solid #2a2a2e;">
+                                            <div class="text-sm font-medium" style="color:#f0f0f2;">&#128196; Notes</div>
+                                            <div class="text-xs mt-1" style="color:#5c5c6b;">Quick capture ideas with title, body (markdown), tags, and folders. Pin important notes. Search across all notes. Random note button to rediscover old ideas.</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div class="text-xs font-semibold mb-2" style="color:#9898a6;letter-spacing:0.06em;text-transform:uppercase;">Life Modules</div>
+                                    <div class="space-y-2">
+                                        <div class="p-3 rounded-lg" style="background:#1c1c20;border:1px solid #2a2a2e;">
+                                            <div class="text-sm font-medium" style="color:#f0f0f2;">&#128176; Finance</div>
+                                            <div class="text-xs mt-1" style="color:#5c5c6b;">Connect Firefly III for live accounts and budgets. Track subscriptions with "worth it?" rating. Log income. Spending insights, recurring expense detection, anomaly alerts, weekly digest. AI can scan receipts.</div>
+                                        </div>
+                                        <div class="p-3 rounded-lg" style="background:#1c1c20;border:1px solid #2a2a2e;">
+                                            <div class="text-sm font-medium" style="color:#f0f0f2;">&#128221; Journal</div>
+                                            <div class="text-xs mt-1" style="color:#5c5c6b;">Daily entries with mood, energy, gratitude (3 things), daily wins, lessons learned, and freeform writing. Tags for organization. "On This Day" shows past entries. Full-text search.</div>
+                                        </div>
+                                        <div class="p-3 rounded-lg" style="background:#1c1c20;border:1px solid #2a2a2e;">
+                                            <div class="text-sm font-medium" style="color:#f0f0f2;">&#128214; Books</div>
+                                            <div class="text-xs mt-1" style="color:#5c5c6b;">Track books you're reading, want to read, and have finished. Log reading sessions (pages per sitting). Set a yearly reading challenge. Star ratings and reviews.</div>
+                                        </div>
+                                        <div class="p-3 rounded-lg" style="background:#1c1c20;border:1px solid #2a2a2e;">
+                                            <div class="text-sm font-medium" style="color:#f0f0f2;">&#128100; Contacts CRM</div>
+                                            <div class="text-xs mt-1" style="color:#5c5c6b;">Personal relationship manager. Add contacts with relationship type, reach-out frequency, birthday. Get reminders when you're overdue to contact someone. Log interactions (calls, texts, meetings). Gift ideas per person.</div>
+                                        </div>
+                                        <div class="p-3 rounded-lg" style="background:#1c1c20;border:1px solid #2a2a2e;">
+                                            <div class="text-sm font-medium" style="color:#f0f0f2;">&#127919; Discover</div>
+                                            <div class="text-xs mt-1" style="color:#5c5c6b;">Bucket list of places, experiences, and skills you want to try. Track status (want → planning → done), add photos, rate experiences.</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- AI -->
+                                <div>
+                                    <div class="text-xs font-semibold mb-2" style="color:#9898a6;letter-spacing:0.06em;text-transform:uppercase;">AI Assistant</div>
+                                    <div class="p-3 rounded-lg" style="background:#1c1c20;border:1px solid #2a2a2e;">
+                                        <div class="text-sm font-medium mb-1" style="color:#f0f0f2;">&#129302; Chat Mode</div>
+                                        <div class="text-xs" style="color:#5c5c6b;line-height:1.6;">A full-screen AI chat that knows all your data. Just talk naturally:<br>
+                                        &bull; <em>"Log 30 push-ups"</em> — creates a habit entry<br>
+                                        &bull; <em>"I had a black coffee"</em> — logs a drink<br>
+                                        &bull; <em>"How am I doing this week?"</em> — analyzes your data<br>
+                                        &bull; <em>"Add Atomic Habits to my reading list"</em> — adds a book<br>
+                                        &bull; <em>"I called my mom today"</em> — logs a contact interaction<br>
+                                        &bull; Snap a photo of a receipt to auto-log expenses<br>
+                                        &bull; Snap a meal photo for AI nutrition analysis<br>
+                                        Supports OpenAI, Anthropic, Ollama (local), and more.</div>
+                                    </div>
+                                </div>
+
+                                <!-- API & Sharing -->
+                                <div>
+                                    <div class="text-xs font-semibold mb-2" style="color:#9898a6;letter-spacing:0.06em;text-transform:uppercase;">Sharing & API</div>
+                                    <div class="p-3 rounded-lg" style="background:#1c1c20;border:1px solid #2a2a2e;">
+                                        <div class="text-xs" style="color:#5c5c6b;line-height:1.6;">
+                                        &bull; <strong style="color:#f0f0f2;">Invite friends & family</strong> — generate invite links from your Profile<br>
+                                        &bull; <strong style="color:#f0f0f2;">Each person gets their own data</strong> — complete isolation, nobody sees your stuff<br>
+                                        &bull; <strong style="color:#f0f0f2;">API keys</strong> — generate from Profile to use the REST API programmatically<br>
+                                        &bull; <strong style="color:#f0f0f2;">Export your data</strong> — Settings > About > Export (JSON per module or all)<br>
+                                        &bull; <strong style="color:#f0f0f2;">PWA</strong> — add to home screen on mobile for app-like experience
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
                         <!-- ── INTEGRATIONS panel ────────────────────────── -->
                         <div id="spanel-integrations" style="display:none;">
@@ -5138,7 +5253,7 @@
     var _debugLogActiveFilter = 'all';
 
     function settingsTab(tab) {
-        const panels = ['profile','modules','ai','integrations','about','debug'];
+        const panels = ['profile','modules','ai','integrations','guide','about','debug'];
         panels.forEach(p => {
             const panel = $(`#spanel-${p}`);
             if(panel) panel.style.display = (p === tab) ? '' : 'none';

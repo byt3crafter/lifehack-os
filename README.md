@@ -1,205 +1,153 @@
 # LifeHack OS
 
-**A personal operating system for discipline, habit tracking, project execution, and life rebuilding.**
-
-Created by **Ludovic Micinthe** (dovik@micinthe.com) | Vibe Coder
+**Your personal life operating system — self-hosted, AI-powered, open source.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![CI](https://github.com/byt3crafter/lifehack-os/actions/workflows/ci.yml/badge.svg)](https://github.com/byt3crafter/lifehack-os/actions)
+[![Python 3.11](https://img.shields.io/badge/Python-3.11-blue.svg)](https://python.org)
+[![Docker](https://img.shields.io/badge/Docker-ready-blue.svg)](docker-compose.yml)
 
 ---
 
-## What Is This?
+## What is LifeHack OS?
 
-LifeHack OS is a self-hosted, local-first personal dashboard that helps you build discipline through gamified habit tracking, daily check-ins, movement logging, nutrition tracking, and project management. It treats you like an adult — no childish animations, no subscription fees, no cloud lock-in.
+LifeHack OS is a modular personal operating system for your life — habits, food, fasting, finance, journaling, books, contacts, and more, all in one self-hosted web app. Every module is optional and toggleable per user. The AI layer is also optional: the entire system works without any API keys, and you can plug in any of six supported providers when you want AI features. Built to be cloned, owned, and extended.
 
-**Who it's for:** Anyone rebuilding their life, building better habits, tracking sobriety, or wanting a serious personal operating system that runs on your own machine.
+![Dashboard](docs/screenshot.png)
 
-### Modular Features
+---
 
-Enable only what you need. All modules are toggleable from Settings:
+## Features
 
-| Module | Description | Default |
-|---|---|---|
-| **Habits** | Daily/weekly tracking with streaks and multipliers | ON |
-| **Check-in** | Daily reflection — mood, energy, sobriety | ON |
-| **Analytics** | XP breakdown, point ledger, stats | ON |
-| **Projects** | Project management with milestones | OFF |
-| **Movement** | Walk & exercise logging with mood tracking | OFF |
-| **Food** | Nutrition & meal tracking with AI estimation | OFF |
-| **Fasting** | Timer-based fasting tracker | OFF |
-| **Deep Work** | Focused work session tracking | OFF |
-| **Challenges** | Custom streak challenges (30-day, 90-day, etc.) | OFF |
-| **Redirect** | Sobriety replacement actions with urge tracking | OFF |
-| **Wishlist** | Places to visit, things to do | OFF |
-| **AI Agent** | OpenClaw external AI agent API | OFF |
+### Health
+- **Habits** — Progressive phases with micro-tasks, strength meter (builds and decays over time), miss logging with blocker notes, habit stacks, template library, scheduled reminders
+- **Food** — Calorie and macro tracking, AI food photo analysis (single or multi-image), drink logging, daily goal, receipt scanning
+- **Fasting** — Intermittent fasting tracker with body stage timeline (ketosis, autophagy), hydration tips, deletable history
+- **Wellness** — Daily water intake (glass counter), sleep tracking, composite wellness score
 
-### Gamification (Not Childish)
+### Productivity
+- **Deep Work** — Focus sessions linked to color-coded projects, cumulative hour tracking per project
+- **Challenges** — Streak-based one-off commitments with heatmap visualization and flexible target days
+- **Notes** — Quick-capture markdown notes, folder organization, full-text search, random note discovery
 
-- **XP Points** for all actions — habits, check-ins, walks, deep work, fasting
-- **Levels**: Initiate → Apprentice → Practitioner → Adept → Master → Grandmaster → Legend
-- **Streak multipliers** — 7+ day streaks earn 1.5x points
-- **Sobriety bonuses** — Daily XP for staying on track
-- **Point ledger** — Full audit trail of every XP earned
-- No fake achievements. Real progress only.
+### Life
+- **Finance** — Firefly III integration (live accounts, transactions, budgets), local spending log, savings goals, subscriptions tracker, income entries, AI budget insights, anomaly detection, spending digest
+- **Journal** — Daily entries with structured gratitude, wins, and lessons fields, on-this-day lookback, tag system
+- **Books** — Reading log, session tracking, yearly reading challenge, ratings and reviews
+- **Contacts CRM** — Personal relationship manager with reach-out frequency reminders, birthday tracking, gift ideas, and interaction history
+- **Discover** — Bucket list organized by category (places, skills, experiences, food, creative) with completion tracking
 
-### AI Integration (Optional)
+### AI
+- **Chat Mode** — Full-screen AI assistant with markdown rendering, image upload, and persistent conversation history
+- **27 AI tools** — The assistant can create habits, log food, start a fast, add journal entries, create notes, manage contacts, log transactions, set budgets, and more — all from natural language
+- **Proactive daily insights** — AI-generated daily summary surfaced on the dashboard
+- **Food photo analysis** — Photograph or describe a meal for instant macro estimates
+- **Receipt scanner** — Photograph a receipt to log transactions automatically
 
-LifeHack OS works **perfectly without AI**. When you want AI features:
-
-| Provider | Cost | Setup |
-|---|---|---|
-| **Standalone** | Free | Default — no AI needed |
-| **Ollama** | Free | Local LLM, private, zero cost |
-| **OpenAI-compatible** | Paid | Works with OpenAI, Groq, Together, etc. |
-| **OpenClaw** | Free | External AI agents push data via API |
-
-### REST API
-
-Full REST API for all features. Discover all endpoints at `GET /api`. Connect external tools, build automations, or integrate with AI agents via the [OpenClaw API](docs/openclaw-api.md).
+### Platform
+- **Multi-user** — Full data isolation per user; each user has independent module settings, AI provider settings, and data
+- **Invite-based registration** — Admin creates invite codes; new users register with a valid code
+- **Per-user API keys** — Generate `key_id:key_secret` pairs for programmatic access to any endpoint
+- **Profile** — Display name, body metrics (height, weight, age), Gravatar support
+- **Data export** — Download any module's data as JSON at any time
+- **PWA** — Installable as a progressive web app
+- **Global search** — Search across habits, food logs, notes, journal entries, books, contacts, and more from one input
 
 ---
 
 ## Quick Start
 
-### Option A: Make (recommended)
+### Docker (recommended)
 
 ```bash
-git clone https://github.com/byt3crafter/lifehack-os.git
-cd lifehack-os
-make setup    # creates venv, installs deps, copies .env
-# Edit .env with your username/password
-make run      # starts the app at http://localhost:8420
+cp .env.example .env        # edit LIFEHACK_USERNAME and LIFEHACK_PASSWORD at minimum
+docker compose up --build -d
+open http://localhost:8420
 ```
 
-### Option B: Docker
+The database is persisted in the `lifehack_data` named volume. Rebuilding the container does not lose data.
+
+### Manual
 
 ```bash
-git clone https://github.com/byt3crafter/lifehack-os.git
+git clone https://github.com/dovik/lifehack-os.git
 cd lifehack-os
-cp .env.example .env
-# Edit .env with your username/password
-make docker   # builds and starts at http://localhost:8420
-```
-
-### Option C: Manual
-
-```bash
-git clone https://github.com/byt3crafter/lifehack-os.git
-cd lifehack-os
-python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env
-# Edit .env with your username/password
-cd web && python app.py
+cp .env.example .env        # edit as needed
+python -m web.app
 ```
 
-### Demo Data
-
-Want to see the app with sample data?
-
-```bash
-cd web && python seed_demo.py
-```
+The app starts on `http://localhost:8420`.
 
 ---
 
 ## Configuration
 
-At minimum, set these in `.env`:
+All configuration is done via environment variables (or a `.env` file in the project root).
 
-```
-LIFEHACK_SECRET_KEY=your-random-secret-here
-LIFEHACK_USERNAME=your-username
-LIFEHACK_PASSWORD=your-password
-```
+| Variable | Default | Description |
+|---|---|---|
+| `LIFEHACK_USERNAME` | `admin` | Admin account username created on first run |
+| `LIFEHACK_PASSWORD` | `changeme` | Admin account password — change this |
+| `LIFEHACK_SECRET_KEY` | random | Flask session secret key — set a fixed value in production |
+| `LIFEHACK_AI_PROVIDER` | `none` | Default AI provider: `openai`, `anthropic`, `ollama`, `minimax`, `chatgpt_oauth`, or `none` |
+| `LIFEHACK_HOST` | `0.0.0.0` | Host to bind the Flask server |
+| `LIFEHACK_PORT` | `8420` | Port to listen on |
 
-See [docs/configuration.md](docs/configuration.md) for the complete reference of all environment variables, scoring rules, and category settings.
+After first run, AI provider settings (API keys, models, per-task overrides) can also be configured per-user from the Settings page in the UI. Those values are stored in the database and take priority over the environment variable.
 
 ---
 
-## Documentation
+## AI Providers
 
-| Doc | Description |
-|---|---|
-| [Getting Started](docs/getting-started.md) | Installation, first run, .env setup |
-| [Modules](docs/modules.md) | Complete guide to all 12 modules |
-| [AI Providers](docs/ai-providers.md) | Standalone, Ollama, OpenAI setup |
-| [OpenClaw API](docs/openclaw-api.md) | Full API reference with curl examples |
-| [Integrations](docs/integrations.md) | Vikunja, Google Calendar, Firefly III |
-| [Configuration](docs/configuration.md) | Every .env var, rules.toml, categories.toml |
+All providers are optional. The app runs fully without any AI configuration.
+
+| Provider | Setting value | Notes |
+|---|---|---|
+| OpenAI | `openai` | Requires an OpenAI API key. Supports vision for food photo analysis. |
+| Anthropic Claude | `anthropic` | Requires an Anthropic API key. Full tool and vision support. |
+| Ollama | `ollama` | Local LLM, no API key needed. Set `OLLAMA_URL` (default: `http://localhost:11434`). See `docker-compose.yml` for the optional sidecar service. |
+| MiniMax | `minimax` | Requires a MiniMax API key. Reasoning `<think>` blocks are stripped automatically. |
+| ChatGPT OAuth | `chatgpt_oauth` | Uses OpenAI's OAuth flow — no manual API key management. |
+| None | `none` | Disables all AI features. All other functionality works normally. |
+
+Each user can override the global provider from their own Settings page, including setting different providers per task (food analysis, insights, reports, chat).
+
+---
+
+## API
+
+LifeHack OS exposes 145 REST API endpoints across all modules. Every endpoint that returns user data requires authentication.
+
+**Authentication** — pass a `Bearer` token in the `Authorization` header:
+
+```bash
+curl http://localhost:8420/api/habits \
+  -H "Authorization: Bearer <key_id>:<key_secret>"
+```
+
+Generate API keys from **Settings > API Keys** in the UI. Keys are scoped to the generating user and cannot access another user's data.
+
+For interactive API documentation, visit `/api/docs` while the app is running.
 
 ---
 
 ## Architecture
 
-```
-lifehack-os/
-├── web/                           # Flask web application
-│   ├── app.py                     # Application factory
-│   ├── routes/                    # API blueprints (14 modules)
-│   │   ├── habits.py              # Habit CRUD + completion
-│   │   ├── modules.py             # Module toggle system
-│   │   ├── ai.py                  # AI provider endpoints
-│   │   ├── openclaw.py            # External AI agent API
-│   │   └── ...                    # checkins, food, walks, etc.
-│   ├── templates/                 # HTML templates
-│   ├── static/                    # PWA manifest, service worker
-│   └── seed_demo.py               # Demo data seeder
-├── src/
-│   ├── domain/entities/           # Pure business logic (dataclasses)
-│   ├── infrastructure/
-│   │   ├── database/              # SQLite connection & repositories
-│   │   ├── config/                # TOML config loader
-│   │   ├── ai/                    # AI provider abstraction
-│   │   │   ├── null.py            # Standalone (no AI)
-│   │   │   ├── ollama.py          # Local Ollama LLM
-│   │   │   └── openai_provider.py # OpenAI-compatible
-│   │   └── providers/             # Vikunja, Google Calendar, Firefly
-├── config/                        # TOML configuration files
-├── docs/                          # Comprehensive documentation
-├── data/                          # SQLite database (auto-created)
-├── Dockerfile                     # Container deployment
-├── docker-compose.yml             # Docker Compose with optional Ollama
-├── Makefile                       # setup, run, lint, docker, clean
-├── .env.example                   # Configuration template
-└── .github/workflows/ci.yml      # CI: lint + smoke test
-```
-
-## Tech Stack
-
-- **Python 3.11+** with Flask
-- **SQLite** — Local-first, zero-config database
-- **Vanilla JavaScript** — No framework dependencies
-- **TOML** — Human-readable configuration
-- **Docker** — One-command deployment
-
-## Design Principles
-
-1. **Local-first** — Your data stays on your machine
-2. **AI-optional** — Works fully without any AI provider
-3. **Modular** — Enable only the features you need
-4. **Configurable** — Rules in TOML, secrets in `.env`
-5. **Honest** — No fake achievements, real progress only
-6. **Free forever** — MIT licensed, self-hosted, no subscriptions
+See [ARCHITECTURE.md](ARCHITECTURE.md) for a full technical walkthrough covering the directory structure, database schema and migrations, module system, AI provider factory, multi-user isolation patterns, image processing pipeline, and frontend design.
 
 ---
 
 ## Contributing
 
-Contributions are welcome! Please open an issue first to discuss what you'd like to change.
+1. Fork the repository and create a feature branch
+2. Follow the existing module pattern — Flask blueprint, `user_id` on all DB queries, `@login_required` on every authenticated route
+3. Run `ruff check .` before submitting a pull request
+4. See [ROADMAP.md](ROADMAP.md) for ideas on what to build next
 
-```bash
-make setup    # set up dev environment
-make lint     # run linter
-make test     # run tests (when they exist)
-```
-
-## License
-
-[MIT](LICENSE) — Copyright (c) 2026 Ludovic Micinthe
+Bug reports and pull requests are welcome.
 
 ---
 
-Built for serious use. Not a toy.
+## License
+
+MIT — see [LICENSE](LICENSE). Created by [Ludovic Micinthe](https://github.com/dovik).
