@@ -2858,6 +2858,22 @@
 
                         <!-- ── AI PROVIDER panel ─────────────────────────── -->
                         <div id="spanel-ai" style="display:none;">
+                            <!-- BYOK check: non-BYOK users see a simple message, not provider config -->
+                            <div id="ai-byok-blocked" class="hidden">
+                                <div class="mb-5">
+                                    <h3 class="text-base font-semibold mb-1" style="color:#f0f0f2;">AI</h3>
+                                    <p class="text-sm" style="color:#5c5c6b;">AI is provided by the system administrator. You don't need to configure anything.</p>
+                                </div>
+                                <div class="p-4 rounded-xl" style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.15);">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <span style="color:#22c55e;font-size:1rem;">&#9989;</span>
+                                        <span class="text-sm font-semibold" style="color:#22c55e;">AI is active</span>
+                                    </div>
+                                    <p class="text-xs" style="color:#5c5c6b;">The AI assistant is powered by the system. Use Chat Mode to talk to it. If you want to use your own API keys, contact the admin to enable "Bring Your Own Key" for your account.</p>
+                                </div>
+                                <div class="mt-4 p-3 rounded-lg" style="background:#1c1c20;border:1px solid #2a2a2e;" id="ai-usage-display"></div>
+                            </div>
+                            <div id="ai-byok-allowed">
                             <div class="mb-5">
                                 <h3 class="text-base font-semibold mb-1" style="color:#f0f0f2;">AI Providers</h3>
                                 <p class="text-sm" style="color:#5c5c6b;">Life Hack OS works fully without AI. Configure one or more providers and assign them to specific tasks.</p>
@@ -3061,6 +3077,7 @@
                                     </div>
                                 </div>
                             </div>
+                            </div><!-- /ai-byok-allowed -->
                         </div>
 
                         <!-- ── INTEGRATIONS panel ────────────────────────── -->
@@ -5297,6 +5314,8 @@
         });
         // Load profile data when profile tab is selected
         if(tab === 'profile') loadProfile();
+        // Check BYOK status for AI tab
+        if(tab === 'ai') checkByokStatus();
         // Start/stop debug log auto-refresh
         if(_debugLogInterval) { clearInterval(_debugLogInterval); _debugLogInterval = null; }
         if(tab === 'debug') {
@@ -5946,6 +5965,37 @@
         const cb = $('#int-firefly');
         if(cb) cb.checked = false;
         _setToggleBg('firefly', false);
+    }
+
+    // ── BYOK check for AI settings tab ──────────────────────────
+    async function checkByokStatus() {
+        try {
+            var usage = await api('/usage');
+            var profile = await api('/profile');
+            var blockedEl = document.getElementById('ai-byok-blocked');
+            var allowedEl = document.getElementById('ai-byok-allowed');
+            var usageEl = document.getElementById('ai-usage-display');
+
+            // Check if user is admin (admins always see full settings)
+            var isAdmin = false;
+            try { isAdmin = profile.is_admin; } catch(e) {}
+
+            if(!isAdmin) {
+                // Non-admin: show blocked message, hide provider config
+                if(blockedEl) blockedEl.classList.remove('hidden');
+                if(allowedEl) allowedEl.style.display = 'none';
+                // Show usage info
+                if(usageEl) {
+                    usageEl.innerHTML = '<div class="text-xs" style="color:#9898a6;">AI Usage Today: <strong style="color:#f0f0f2;">' + (usage.used || 0) + '</strong> / ' + (usage.limit || 10) + ' calls'
+                        + '<br>Plan: <strong style="color:#f0f0f2;">' + (usage.plan_name || 'Free') + '</strong>'
+                        + '<br>Monthly: ' + (usage.monthly_calls || 0) + ' calls, ' + (usage.monthly_tokens || 0) + ' tokens</div>';
+                }
+            } else {
+                // Admin: show full provider config
+                if(blockedEl) blockedEl.classList.add('hidden');
+                if(allowedEl) allowedEl.style.display = '';
+            }
+        } catch(e) {}
     }
 
     // ── AI Provider helpers (multi-provider) ────────────────────
