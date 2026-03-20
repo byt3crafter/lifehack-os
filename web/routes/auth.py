@@ -500,6 +500,98 @@ def reset_password_post():
 
 
 # ---------------------------------------------------------------------------
+# User API key management
+# ---------------------------------------------------------------------------
+
+@auth_bp.route('/api/api-keys', methods=['POST'])
+@login_required
+def create_api_key():
+    """Generate a new API key for the authenticated user.
+
+    The key_secret is returned ONCE and never stored in plaintext.
+    """
+    uid = current_user_id()
+    data = request.get_json(silent=True) or {}
+
+    name = (data.get('name') or '').strip()
+    scopes = (data.get('scopes') or 'full').strip()
+    expires_in_days = data.get('expires_in_days')
+
+    key_id = 'lhk_' + secrets.token_urlsafe(16)
+    key_secret = secrets.token_urlsafe(32)
+    key_secret_hash = generate_password_hash(key_secret)
+
+    expires_at = None
+    if expires_in_days is not None:
+        try:
+            expires_at = (_now_utc() + timedelta(days=int(expires_in_days))).isoformat()
+        except (TypeError, ValueError):
+            return jsonify({'error': 'expires_in_days must be a positive integer'}), 400
+
+    conn = get_connection()
+    cursor = conn.execute(
+        """INSERT INTO user_api_keys (user_id, key_id, key_secret_hash, name, scopes, expires_at)
+           VALUES (?, ?, ?, ?, ?, ?)""",
+        (uid, key_id, key_secret_hash, name, scopes, expires_at),
+    )
+    conn.commit()
+    db_id = cursor.lastrowid
+
+    created_at = conn.execute(
+        "SELECT created_at FROM user_api_keys WHERE id = ?", (db_id,)
+    ).fetchone()['created_at']
+
+    # key_secret is shown ONCE here and never again
+    return jsonify({
+        'id': db_id,
+        'key_id': key_id,
+        'key_secret': key_secret,
+        'name': name,
+        'scopes': scopes,
+        'expires_at': expires_at,
+        'created_at': created_at,
+    }), 201
+
+
+@auth_bp.route('/api/api-keys', methods=['GET'])
+@login_required
+def list_api_keys():
+    """List all API keys for the authenticated user. Secrets are never returned."""
+    uid = current_user_id()
+    conn = get_connection()
+    rows = conn.execute(
+        """SELECT id, key_id, name, scopes, last_used_at, created_at, expires_at, active
+           FROM user_api_keys
+           WHERE user_id = ?
+           ORDER BY created_at DESC""",
+        (uid,),
+    ).fetchall()
+    return jsonify([dict(row) for row in rows])
+
+
+@auth_bp.route('/api/api-keys/<int:key_db_id>', methods=['DELETE'])
+@login_required
+def delete_api_key(key_db_id: int):
+    """Revoke (delete) an API key. Only the owner or an admin may do this."""
+    uid = current_user_id()
+    is_admin = session.get('is_admin', False)
+
+    conn = get_connection()
+    key_row = conn.execute(
+        "SELECT id, user_id FROM user_api_keys WHERE id = ?", (key_db_id,)
+    ).fetchone()
+
+    if not key_row:
+        return jsonify({'error': 'API key not found'}), 404
+    if key_row['user_id'] != uid and not is_admin:
+        return jsonify({'error': 'Forbidden'}), 403
+
+    conn.execute("DELETE FROM user_api_keys WHERE id = ?", (key_db_id,))
+    conn.commit()
+    return '', 204
+
+
+# ---------------------------------------------------------------------------
 # Profile API
 # ---------------------------------------------------------------------------
 

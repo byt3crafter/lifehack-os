@@ -747,6 +747,31 @@ def run_migrations(conn) -> None:
         conn.commit()
         print("  Migration 22: Contacts CRM — contacts, contact_interactions, gift_ideas")
 
+    # Migration 23: Per-user API keys
+    current = get_current_version(conn)
+    if current < 23:
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS user_api_keys (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                key_id TEXT NOT NULL UNIQUE,
+                key_secret_hash TEXT NOT NULL,
+                name TEXT DEFAULT '',
+                scopes TEXT DEFAULT 'full',
+                last_used_at TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                expires_at TEXT,
+                active INTEGER DEFAULT 1
+            );
+            CREATE INDEX IF NOT EXISTS idx_user_api_keys_key ON user_api_keys(key_id);
+            CREATE INDEX IF NOT EXISTS idx_user_api_keys_user ON user_api_keys(user_id);
+        """)
+        conn.execute(
+            "INSERT OR IGNORE INTO schema_version (version, description) VALUES (23, 'Per-user API keys')"
+        )
+        conn.commit()
+        print("  Migration 23: Per-user API keys")
+
     # Migration 20: Wellness — water_logs and sleep_logs
     current = get_current_version(conn)
     if current < 20:

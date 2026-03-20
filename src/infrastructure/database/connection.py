@@ -769,6 +769,22 @@ def init_database() -> None:
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
         CREATE INDEX IF NOT EXISTS idx_gift_ideas_contact ON gift_ideas(contact_id);
+
+        -- Per-user API keys (key_secret is hashed; secret shown ONCE at creation)
+        CREATE TABLE IF NOT EXISTS user_api_keys (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            key_id TEXT NOT NULL UNIQUE,
+            key_secret_hash TEXT NOT NULL,
+            name TEXT DEFAULT '',
+            scopes TEXT DEFAULT 'full',
+            last_used_at TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            expires_at TEXT,
+            active INTEGER DEFAULT 1
+        );
+        CREATE INDEX IF NOT EXISTS idx_user_api_keys_key ON user_api_keys(key_id);
+        CREATE INDEX IF NOT EXISTS idx_user_api_keys_user ON user_api_keys(user_id);
     """)
 
     conn.commit()

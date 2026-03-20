@@ -2805,6 +2805,22 @@
                                 </div>
                                 <div id="invite-codes-list" class="space-y-2"></div>
                             </div>
+
+                            <!-- API Keys -->
+                            <div class="mt-6 pt-5" style="border-top:1px solid #2a2a2e;">
+                                <h4 class="text-sm font-semibold mb-1" style="color:#f0f0f2;">API Keys</h4>
+                                <p class="text-xs mb-3" style="color:#5c5c6b;">Generate keys to access the API programmatically. Use header: <code style="background:#1c1c20;padding:1px 4px;border-radius:3px;font-size:0.75rem;">Authorization: Bearer key_id:secret</code></p>
+                                <div class="flex gap-2 mb-3">
+                                    <input id="ak-name" class="flex-1 px-3 py-2 rounded-lg border text-sm" placeholder="Key name (e.g. My Script)">
+                                    <button onclick="generateApiKey()" class="btn-primary px-4 py-2">Generate</button>
+                                </div>
+                                <div id="api-key-new" class="hidden mb-3 p-3 rounded-xl" style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.15);">
+                                    <div class="text-xs font-semibold mb-1" style="color:#22c55e;">Key created! Copy your secret now — it won't be shown again.</div>
+                                    <div class="font-mono text-xs p-2 rounded" style="background:#1c1c20;color:#f0f0f2;word-break:break-all;" id="ak-secret-display"></div>
+                                    <button onclick="navigator.clipboard.writeText(document.getElementById('ak-secret-display').textContent);showToast('Copied!','success')" class="text-xs mt-2 px-2.5 py-1 rounded" style="background:rgba(79,128,255,0.12);color:#4f80ff;border:none;cursor:pointer;font-family:inherit;">Copy to clipboard</button>
+                                </div>
+                                <div id="api-keys-list" class="space-y-2"></div>
+                            </div>
                         </div>
 
                         <!-- ── MODULES panel ─────────────────────────────── -->
@@ -5233,6 +5249,7 @@
             _updateSidebarAvatar(data.photo_url, data.display_name || data.username);
         } catch(e) {}
         loadInviteCodes();
+        loadApiKeys();
     }
 
     function _getInitial(name) {
@@ -5428,6 +5445,44 @@
     async function deleteInviteCode(id) {
         await api('/invite-codes/' + id, 'DELETE');
         loadInviteCodes();
+    }
+
+    // ── API Keys ─────────────────────────────────────────────────
+    async function generateApiKey() {
+        var name = (document.getElementById('ak-name')||{}).value||'';
+        var r = await api('/api-keys', 'POST', {name: name});
+        if(r && r.key_id && r.key_secret) {
+            var display = document.getElementById('ak-secret-display');
+            var wrap = document.getElementById('api-key-new');
+            if(display) display.textContent = r.key_id + ':' + r.key_secret;
+            if(wrap) wrap.classList.remove('hidden');
+            document.getElementById('ak-name').value = '';
+            loadApiKeys();
+        } else {
+            showToast(r?.error || 'Failed', 'error');
+        }
+    }
+
+    async function loadApiKeys() {
+        try {
+            var data = await api('/api-keys');
+            var el = document.getElementById('api-keys-list');
+            if(!el) return;
+            if(!data || !data.length) {
+                el.innerHTML = '<div class="text-xs" style="color:#5c5c6b;">No API keys yet.</div>';
+                return;
+            }
+            el.innerHTML = data.map(function(k) {
+                var lastUsed = k.last_used_at ? new Date(k.last_used_at).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : 'Never';
+                return '<div class="flex items-center justify-between py-2" style="border-bottom:1px solid rgba(255,255,255,0.04);">'
+                    + '<div class="min-w-0 flex-1">'
+                    + '<div class="text-sm font-mono truncate" style="color:#f0f0f2;">' + k.key_id + '</div>'
+                    + '<div class="text-xs" style="color:#5c5c6b;">' + (k.name||'Unnamed') + ' &middot; Last used: ' + lastUsed + '</div>'
+                    + '</div>'
+                    + '<button onclick="deleteApiKey(' + k.id + ')" class="text-xs px-2 py-1 rounded" style="background:rgba(239,68,68,0.1);color:#fca5a5;border:none;cursor:pointer;font-family:inherit;">Revoke</button>'
+                    + '</div>';
+            }).join('');
+        } catch(e) {}
     }
 
     function debugLogFilter(level) {
@@ -9074,6 +9129,12 @@
             sendChatModeMessage();
         }
     });
+
+    async function deleteApiKey(id) {
+        await api('/api-keys/' + id, 'DELETE');
+        showToast('API key revoked', 'info');
+        loadApiKeys();
+    }
 
     // ── Data Export ──────────────────────────────────────────────
     async function exportData(module) {
