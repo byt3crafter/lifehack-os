@@ -151,7 +151,7 @@ def register_post():
     username = (request.form.get('username') or '').strip().lower()
     password = request.form.get('password') or ''
     display_name = (request.form.get('display_name') or username).strip()
-    code_value = (request.form.get('code') or '').strip()
+    code_value = (request.form.get('invite_code') or request.form.get('code') or '').strip()
 
     # --- Input validation ---
     if not username:
