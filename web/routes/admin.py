@@ -597,6 +597,97 @@ def admin_delete_announcement(key: str):
     return '', 204
 
 
+# ---------------------------------------------------------------------------
+# AI Configuration (global provider setup)
+# ---------------------------------------------------------------------------
+
+# All AI-related app_settings keys
+_AI_SETTINGS_KEYS = [
+    'ai_provider', 'ai_provider_default', 'ai_provider_food', 'ai_provider_habits',
+    'ai_provider_insights', 'ai_provider_reports',
+    'ai_openai_key', 'ai_openai_url', 'ai_openai_model',
+    'ai_anthropic_key', 'ai_anthropic_model',
+    'ai_minimax_key', 'ai_minimax_model',
+    'ai_ollama_url', 'ai_ollama_model',
+    'ai_chatgpt_model', 'openai_oauth_token',
+]
+
+_SENSITIVE_AI_KEYS = {'ai_openai_key', 'ai_anthropic_key', 'ai_minimax_key', 'openai_oauth_token'}
+
+
+@admin_bp.route('/ai-config')
+def admin_get_ai_config():
+    """Get all global AI provider settings."""
+    guard = _require_admin()
+    if guard:
+        return guard
+
+    conn = get_connection()
+    config = {}
+    for key in _AI_SETTINGS_KEYS:
+        row = conn.execute("SELECT value FROM app_settings WHERE key = ?", (key,)).fetchone()
+        val = row['value'] if row else ''
+        # Mask sensitive values
+        if key in _SENSITIVE_AI_KEYS and val:
+            config[key] = val[:8] + '••••••••' if len(val) > 8 else '••••••••'
+            config[key + '_set'] = True
+        else:
+            config[key] = val
+    return jsonify(config)
+
+
+@admin_bp.route('/ai-config', methods=['POST'])
+def admin_save_ai_config():
+    """Save global AI provider settings."""
+    guard = _require_admin()
+    if guard:
+        return guard
+
+    data = request.get_json(silent=True) or {}
+    conn = get_connection()
+
+    for key in _AI_SETTINGS_KEYS:
+        if key in data:
+            val = data[key]
+            # Don't overwrite with masked value
+            if key in _SENSITIVE_AI_KEYS and '••••' in str(val):
+                continue
+            if val:
+                conn.execute(
+                    """INSERT INTO app_settings (key, value, updated_at)
+                       VALUES (?, ?, CURRENT_TIMESTAMP)
+                       ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at""",
+                    (key, str(val)),
+                )
+            else:
+                conn.execute("DELETE FROM app_settings WHERE key = ?", (key,))
+    conn.commit()
+    return jsonify({'success': True})
+
+
+@admin_bp.route('/ai-config/test', methods=['POST'])
+def admin_test_ai():
+    """Test the current AI configuration."""
+    guard = _require_admin()
+    if guard:
+        return guard
+
+    try:
+        from src.infrastructure.ai import get_ai_provider
+        provider = get_ai_provider('default')
+        available = provider.is_available()
+        provider_name = type(provider).__name__.replace('Provider', '')
+        model = getattr(provider, 'model', 'unknown')
+        return jsonify({
+            'success': True,
+            'available': available,
+            'provider': provider_name,
+            'model': model,
+        })
+    except Exception as exc:
+        return jsonify({'success': False, 'error': str(exc)})
+
+
 @admin_bp.route('/backup')
 def admin_backup():
     """Download the entire SQLite database as a backup."""

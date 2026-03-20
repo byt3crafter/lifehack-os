@@ -603,6 +603,12 @@
             System
         </button>
 
+        <span class="nav-label">Configuration</span>
+        <button class="nav-link" data-section="aiconfig">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+            AI Providers
+        </button>
+
         <span class="nav-label">Analytics</span>
         <button class="nav-link" data-section="modules">
             <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
@@ -785,6 +791,85 @@
             <div id="disk-card"></div>
         </div>
 
+        <!-- AI Configuration Section -->
+        <div class="section" id="section-aiconfig" style="display:none;">
+            <div class="section-heading">Global AI Provider Configuration</div>
+            <p style="color:#5c5c6b;font-size:13px;margin-bottom:20px;">These settings apply to ALL users (unless they have BYOK enabled). Your API keys and OAuth tokens power the AI for everyone.</p>
+
+            <!-- Provider Selection -->
+            <div style="background:#1c1c20;border:1px solid #2a2a2e;border-radius:12px;padding:16px;margin-bottom:16px;">
+                <div style="font-size:11px;font-weight:600;color:#5c5c6b;letter-spacing:0.8px;margin-bottom:12px;">DEFAULT PROVIDER</div>
+                <select id="aicfg-default" style="width:100%;padding:10px;background:#141416;border:1px solid #2a2a2e;border-radius:8px;color:#f0f0f2;font-size:14px;">
+                    <option value="">None (AI disabled)</option>
+                    <option value="openai">OpenAI</option>
+                    <option value="anthropic">Anthropic (Claude)</option>
+                    <option value="ollama">Ollama (Local)</option>
+                    <option value="minimax">MiniMax</option>
+                    <option value="chatgpt_oauth">ChatGPT Account (OAuth)</option>
+                </select>
+            </div>
+
+            <!-- OpenAI -->
+            <div style="background:#1c1c20;border:1px solid #2a2a2e;border-radius:12px;padding:16px;margin-bottom:12px;">
+                <div style="font-size:13px;font-weight:600;color:#f0f0f2;margin-bottom:8px;">OpenAI API</div>
+                <div style="display:flex;gap:8px;margin-bottom:8px;">
+                    <input id="aicfg-openai-key" type="password" placeholder="sk-..." style="flex:1;padding:8px 12px;background:#141416;border:1px solid #2a2a2e;border-radius:8px;color:#f0f0f2;font-size:13px;">
+                    <input id="aicfg-openai-model" placeholder="gpt-4o-mini" style="width:140px;padding:8px 12px;background:#141416;border:1px solid #2a2a2e;border-radius:8px;color:#f0f0f2;font-size:13px;">
+                </div>
+                <input id="aicfg-openai-url" placeholder="Base URL (default: api.openai.com)" style="width:100%;padding:8px 12px;background:#141416;border:1px solid #2a2a2e;border-radius:8px;color:#f0f0f2;font-size:13px;">
+            </div>
+
+            <!-- ChatGPT OAuth -->
+            <div style="background:#1c1c20;border:1px solid #2a2a2e;border-radius:12px;padding:16px;margin-bottom:12px;">
+                <div style="font-size:13px;font-weight:600;color:#f0f0f2;margin-bottom:4px;">ChatGPT Account (OAuth)</div>
+                <div style="font-size:11px;color:#5c5c6b;margin-bottom:8px;">Uses your ChatGPT Pro/Max subscription directly</div>
+                <div style="display:flex;gap:8px;">
+                    <input id="aicfg-oauth-token" type="password" placeholder="OAuth token" style="flex:1;padding:8px 12px;background:#141416;border:1px solid #2a2a2e;border-radius:8px;color:#f0f0f2;font-size:13px;">
+                    <input id="aicfg-chatgpt-model" placeholder="gpt-5.4" style="width:120px;padding:8px 12px;background:#141416;border:1px solid #2a2a2e;border-radius:8px;color:#f0f0f2;font-size:13px;">
+                </div>
+            </div>
+
+            <!-- Anthropic -->
+            <div style="background:#1c1c20;border:1px solid #2a2a2e;border-radius:12px;padding:16px;margin-bottom:12px;">
+                <div style="font-size:13px;font-weight:600;color:#f0f0f2;margin-bottom:8px;">Anthropic (Claude)</div>
+                <div style="display:flex;gap:8px;">
+                    <input id="aicfg-anthropic-key" type="password" placeholder="sk-ant-..." style="flex:1;padding:8px 12px;background:#141416;border:1px solid #2a2a2e;border-radius:8px;color:#f0f0f2;font-size:13px;">
+                    <input id="aicfg-anthropic-model" placeholder="claude-sonnet-4-20250514" style="width:200px;padding:8px 12px;background:#141416;border:1px solid #2a2a2e;border-radius:8px;color:#f0f0f2;font-size:13px;">
+                </div>
+            </div>
+
+            <!-- MiniMax -->
+            <div style="background:#1c1c20;border:1px solid #2a2a2e;border-radius:12px;padding:16px;margin-bottom:12px;">
+                <div style="font-size:13px;font-weight:600;color:#f0f0f2;margin-bottom:8px;">MiniMax</div>
+                <div style="display:flex;gap:8px;">
+                    <input id="aicfg-minimax-key" type="password" placeholder="API key" style="flex:1;padding:8px 12px;background:#141416;border:1px solid #2a2a2e;border-radius:8px;color:#f0f0f2;font-size:13px;">
+                    <input id="aicfg-minimax-model" placeholder="MiniMax-M2" style="width:140px;padding:8px 12px;background:#141416;border:1px solid #2a2a2e;border-radius:8px;color:#f0f0f2;font-size:13px;">
+                </div>
+            </div>
+
+            <!-- Ollama -->
+            <div style="background:#1c1c20;border:1px solid #2a2a2e;border-radius:12px;padding:16px;margin-bottom:12px;">
+                <div style="font-size:13px;font-weight:600;color:#f0f0f2;margin-bottom:8px;">Ollama (Local LLM)</div>
+                <div style="display:flex;gap:8px;">
+                    <input id="aicfg-ollama-url" placeholder="http://localhost:11434" style="flex:1;padding:8px 12px;background:#141416;border:1px solid #2a2a2e;border-radius:8px;color:#f0f0f2;font-size:13px;">
+                    <input id="aicfg-ollama-model" placeholder="llama3" style="width:140px;padding:8px 12px;background:#141416;border:1px solid #2a2a2e;border-radius:8px;color:#f0f0f2;font-size:13px;">
+                </div>
+            </div>
+
+            <!-- Task Assignments -->
+            <div style="background:#1c1c20;border:1px solid #2a2a2e;border-radius:12px;padding:16px;margin-bottom:16px;">
+                <div style="font-size:11px;font-weight:600;color:#5c5c6b;letter-spacing:0.8px;margin-bottom:12px;">TASK ASSIGNMENTS</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="aicfg-tasks"></div>
+            </div>
+
+            <!-- Save + Test -->
+            <div style="display:flex;gap:8px;">
+                <button onclick="saveAIConfig()" style="flex:1;padding:12px;background:#ef4444;border:none;border-radius:8px;color:#fff;font-weight:600;cursor:pointer;font-size:14px;">Save Configuration</button>
+                <button onclick="testAIConfig()" style="padding:12px 20px;background:#1c1c20;border:1px solid #2a2a2e;border-radius:8px;color:#f0f0f2;cursor:pointer;font-size:14px;">Test</button>
+            </div>
+            <div id="aicfg-status" style="margin-top:12px;"></div>
+        </div>
+
         <!-- Module Usage Section -->
         <div class="section" id="section-modules" style="display:none;">
             <div class="section-heading">Module Usage</div>
@@ -863,7 +948,7 @@ let _systemLoaded = false;
 // =========================================================================
 // Navigation
 // =========================================================================
-const SECTIONS = ['dashboard', 'users', 'invites', 'apikeys', 'logs', 'system', 'modules', 'ai', 'storage', 'announcements', 'backup'];
+const SECTIONS = ['dashboard', 'users', 'invites', 'apikeys', 'logs', 'system', 'aiconfig', 'modules', 'ai', 'storage', 'announcements', 'backup'];
 const SECTION_TITLES = {
     dashboard: 'Dashboard',
     users: 'Users',
@@ -871,6 +956,7 @@ const SECTION_TITLES = {
     apikeys: 'API Keys',
     logs: 'Application Logs',
     system: 'System Information',
+    aiconfig: 'AI Configuration',
     modules: 'Module Usage',
     ai: 'AI Usage',
     storage: 'Storage',
@@ -894,6 +980,7 @@ function showSection(name) {
     if (name === 'apikeys' && !_apikeysLoaded) loadApiKeys();
     if (name === 'logs' && !_logsLoaded) loadLogs();
     if (name === 'system' && !_systemLoaded) loadSystem();
+    if (name === 'aiconfig') loadAIConfig();
     if (name === 'modules') loadModuleUsage();
     if (name === 'ai') loadAIUsage();
     if (name === 'storage') loadStorage();
@@ -1241,6 +1328,118 @@ async function loadSystem() {
     } catch (e) {
         container.innerHTML = '<div class="empty-state">Failed to load system info.</div>';
     }
+}
+
+// =========================================================================
+// AI Configuration
+// =========================================================================
+const AI_FIELD_MAP = {
+    'aicfg-default': 'ai_provider_default',
+    'aicfg-openai-key': 'ai_openai_key',
+    'aicfg-openai-model': 'ai_openai_model',
+    'aicfg-openai-url': 'ai_openai_url',
+    'aicfg-oauth-token': 'openai_oauth_token',
+    'aicfg-chatgpt-model': 'ai_chatgpt_model',
+    'aicfg-anthropic-key': 'ai_anthropic_key',
+    'aicfg-anthropic-model': 'ai_anthropic_model',
+    'aicfg-minimax-key': 'ai_minimax_key',
+    'aicfg-minimax-model': 'ai_minimax_model',
+    'aicfg-ollama-url': 'ai_ollama_url',
+    'aicfg-ollama-model': 'ai_ollama_model',
+};
+
+const TASK_ASSIGNMENTS = [
+    { key: 'ai_provider_food', label: 'Food Analysis' },
+    { key: 'ai_provider_habits', label: 'Habit Plans' },
+    { key: 'ai_provider_insights', label: 'Insights' },
+    { key: 'ai_provider_reports', label: 'Reports' },
+    { key: 'ai_provider_default', label: 'Default / Chat' },
+];
+
+const PROVIDER_OPTIONS = '<option value="">System Default</option><option value="openai">OpenAI</option><option value="anthropic">Anthropic</option><option value="ollama">Ollama</option><option value="minimax">MiniMax</option><option value="chatgpt_oauth">ChatGPT Account</option>';
+
+async function loadAIConfig() {
+    try {
+        const res = await fetch('/admin/ai-config');
+        const cfg = await res.json();
+
+        // Set field values
+        Object.entries(AI_FIELD_MAP).forEach(([elId, cfgKey]) => {
+            const el = document.getElementById(elId);
+            if (el) {
+                if (cfgKey.endsWith('_set') || cfg[cfgKey + '_set']) {
+                    // Sensitive field that's set — show masked value
+                    el.value = cfg[cfgKey] || '';
+                    el.placeholder = cfg[cfgKey] ? '(configured)' : el.placeholder;
+                } else {
+                    el.value = cfg[cfgKey] || '';
+                }
+            }
+        });
+
+        // Task assignments
+        const tasksEl = document.getElementById('aicfg-tasks');
+        if (tasksEl) {
+            tasksEl.innerHTML = TASK_ASSIGNMENTS.map(t => {
+                const current = cfg[t.key] || '';
+                const opts = PROVIDER_OPTIONS.replace(`value="${current}"`, `value="${current}" selected`);
+                return `<div><label style="font-size:12px;color:#9898a6;margin-bottom:4px;display:block;">${t.label}</label><select id="aicfg-task-${t.key}" style="width:100%;padding:8px;background:#141416;border:1px solid #2a2a2e;border-radius:6px;color:#f0f0f2;font-size:12px;">${opts}</select></div>`;
+            }).join('');
+        }
+    } catch (e) {
+        console.error('Failed to load AI config:', e);
+    }
+}
+
+async function saveAIConfig() {
+    const data = {};
+
+    // Collect field values
+    Object.entries(AI_FIELD_MAP).forEach(([elId, cfgKey]) => {
+        const el = document.getElementById(elId);
+        if (el && el.value) data[cfgKey] = el.value;
+    });
+
+    // Collect task assignments
+    TASK_ASSIGNMENTS.forEach(t => {
+        const el = document.getElementById('aicfg-task-' + t.key);
+        if (el) data[t.key] = el.value;
+    });
+
+    try {
+        const res = await fetch('/admin/ai-config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+        const result = await res.json();
+        const statusEl = document.getElementById('aicfg-status');
+        if (result.success) {
+            statusEl.innerHTML = '<div style="padding:10px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);border-radius:8px;color:#22c55e;font-size:13px;">Configuration saved successfully.</div>';
+        } else {
+            statusEl.innerHTML = '<div style="padding:10px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:8px;color:#ef4444;font-size:13px;">Failed to save.</div>';
+        }
+        setTimeout(() => { statusEl.innerHTML = ''; }, 3000);
+    } catch (e) {
+        document.getElementById('aicfg-status').innerHTML = '<div style="padding:10px;color:#ef4444;">Error saving.</div>';
+    }
+}
+
+async function testAIConfig() {
+    const statusEl = document.getElementById('aicfg-status');
+    statusEl.innerHTML = '<div style="padding:10px;color:#9898a6;">Testing connection...</div>';
+    try {
+        const res = await fetch('/admin/ai-config/test', { method: 'POST' });
+        const result = await res.json();
+        if (result.available) {
+            statusEl.innerHTML = `<div style="padding:10px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);border-radius:8px;color:#22c55e;font-size:13px;">✅ Connected — ${result.provider} (${result.model})</div>`;
+        } else {
+            statusEl.innerHTML = '<div style="padding:10px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:8px;color:#ef4444;font-size:13px;">❌ Provider not available. Check your keys.</div>';
+        }
+    } catch (e) {
+        statusEl.innerHTML = '<div style="padding:10px;color:#ef4444;">Test failed.</div>';
+    }
+    setTimeout(() => { statusEl.innerHTML = ''; }, 5000);
 }
 
 // =========================================================================
