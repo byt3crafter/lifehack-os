@@ -127,6 +127,15 @@ def create_app():
         upload_dir = Path(__file__).parent.parent / 'data' / 'uploads'
         return send_from_directory(str(upload_dir), filename)
 
+    # Service worker — must be served from root scope for PWA to work
+    @app.route('/sw.js')
+    def service_worker():
+        from flask import send_from_directory
+        response = send_from_directory(str(Path(__file__).parent / 'static'), 'sw.js', mimetype='application/javascript')
+        response.headers['Service-Worker-Allowed'] = '/'
+        response.headers['Cache-Control'] = 'no-cache'
+        return response
+
     # Favicon — serve icon.svg so browsers don't get a 500
     @app.route('/favicon.ico')
     def favicon():

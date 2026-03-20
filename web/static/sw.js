@@ -1,31 +1,30 @@
 /**
- * LifeHack OS — Service Worker
+ * LifeHack OS — Service Worker (PWA)
  *
  * Strategy:
- *   - API calls (/api/*)     : Network-first, fall back to a minimal offline response
- *   - Static assets          : Cache-first (versioned cache, stale served instantly)
- *   - Navigation (HTML pages): Network-first, fall back to cached shell
+ *   - API calls (/api/*)     : Network-only (always fresh data, no stale cache)
+ *   - Static assets (/static): Cache-first (fast loads)
+ *   - Navigation (HTML)      : Network-first, fall back to cached app shell
+ *   - Uploads (/uploads)     : Cache-first (images don't change)
  */
 
-const CACHE_VERSION = 'lifehack-v1';
+const CACHE_VERSION = 'lifehack-v3';
 const STATIC_CACHE  = `${CACHE_VERSION}-static`;
-const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 
-// Resources to pre-cache on install (the app shell)
 const PRECACHE_URLS = [
   '/',
   '/static/manifest.json',
+  '/static/icon-192.png',
+  '/static/icon-512.png',
+  '/static/icon.svg',
 ];
 
 // ─── Install ────────────────────────────────────────────────────────────────
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => {
-      return cache.addAll(PRECACHE_URLS);
-    })
+    caches.open(STATIC_CACHE).then((cache) => cache.addAll(PRECACHE_URLS))
   );
-  // Activate the new SW immediately without waiting for old tabs to close
   self.skipWaiting();
 });
 
@@ -36,12 +35,11 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((key) => key.startsWith('lifehack-') && key !== STATIC_CACHE && key !== DYNAMIC_CACHE)
+          .filter((key) => key.startsWith('lifehack-') && key !== STATIC_CACHE)
           .map((key) => caches.delete(key))
       )
     )
   );
-  // Take control of all open clients immediately
   self.clients.claim();
 });
 
@@ -51,38 +49,30 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Only handle same-origin requests
+  // Only handle same-origin
   if (url.origin !== location.origin) return;
 
-  // API requests: network-first, no caching (always fresh data)
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(networkFirst(request, null));
-    return;
-  }
+  // API: always network, never cache
+  if (url.pathname.startsWith('/api/')) return;
 
-  // Auth routes: always network (never cache login/logout)
-  if (url.pathname.startsWith('/auth/')) {
-    return;
-  }
+  // Auth routes: always network
+  if (url.pathname === '/login' || url.pathname === '/logout' || url.pathname === '/register') return;
 
-  // Static assets: cache-first
-  if (url.pathname.startsWith('/static/')) {
+  // Static assets + uploads: cache-first
+  if (url.pathname.startsWith('/static/') || url.pathname.startsWith('/uploads/')) {
     event.respondWith(cacheFirst(request));
     return;
   }
 
-  // Navigation (HTML): network-first, fall back to cached shell
+  // Navigation: network-first with shell fallback
   if (request.mode === 'navigate') {
-    event.respondWith(networkFirst(request, '/'));
+    event.respondWith(networkFirst(request));
     return;
   }
 });
 
 // ─── Strategies ─────────────────────────────────────────────────────────────
 
-/**
- * Cache-first: serve from cache, fetch & update cache on miss.
- */
 async function cacheFirst(request) {
   const cached = await caches.match(request);
   if (cached) return cached;
@@ -95,46 +85,26 @@ async function cacheFirst(request) {
     }
     return response;
   } catch {
-    return new Response('Offline — resource not cached', { status: 503 });
+    return new Response('', { status: 503 });
   }
 }
 
-/**
- * Network-first: try network, fall back to cache or fallbackUrl.
- */
-async function networkFirst(request, fallbackUrl) {
+async function networkFirst(request) {
   try {
     const response = await fetch(request);
-
-    // Cache successful non-API GET responses for offline fallback
-    if (response.ok && request.method === 'GET' && !request.url.includes('/api/')) {
-      const cache = await caches.open(DYNAMIC_CACHE);
+    if (response.ok) {
+      const cache = await caches.open(STATIC_CACHE);
       cache.put(request, response.clone());
     }
-
     return response;
   } catch {
-    // Network failed — try cache
     const cached = await caches.match(request);
     if (cached) return cached;
 
-    // Fall back to shell URL (e.g. "/") for navigation requests
-    if (fallbackUrl) {
-      const shell = await caches.match(fallbackUrl);
-      if (shell) return shell;
-    }
+    // Fall back to cached shell
+    const shell = await caches.match('/');
+    if (shell) return shell;
 
-    // Final fallback for API calls when offline
-    if (request.url.includes('/api/')) {
-      return new Response(
-        JSON.stringify({ error: 'Offline — no network connection', offline: true }),
-        {
-          status: 503,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    return new Response('You are offline and this page is not cached.', { status: 503 });
+    return new Response('Offline', { status: 503 });
   }
 }

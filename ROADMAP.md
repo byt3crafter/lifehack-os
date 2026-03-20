@@ -1,282 +1,119 @@
-# LifeHack OS — Project Roadmap
+# LifeHack OS — Roadmap
 
-**Owner:** Dovik  
-**Developer:** Enki  
-**Created:** 2026-03-15  
-**Status:** Active Development
+**Created by:** Ludovic Micinthe (dovik)
 
 ---
 
-## 🎯 Vision
+## Current State
 
-LifeHack OS is a **daily-focused personal operating system** that tracks everything in one place:
-- Habits, health, food, movement, projects, goals
-- AI-powered insights and recommendations
-- Daily scoring and progress comparison
-- Everything feeds into one unified view
+LifeHack OS is a fully functional self-hosted personal operating system with 12 independent modules, 145 API endpoints, 56 database tables, 27 AI tools, and support for 6 AI providers.
 
-**Core Principle:** Track everything daily. Compare. Improve. Repeat.
+### Modules
 
----
+| Module | Status | What it does |
+|---|---|---|
+| **Habits** | Stable | Habit tracking with progressive phases, micro-tasks, strength meter, miss logging, habit stacks, template library |
+| **Food** | Stable | Calorie and macro logging, AI photo analysis, drink tracking, multi-image meals, receipt scanning |
+| **Fasting** | Stable | Intermittent fasting with body stage timeline, hydration tips, deletable history |
+| **Wellness** | Stable | Water intake (glass counter), sleep tracking, composite wellness score |
+| **Deep Work** | Stable | Focus sessions linked to color-coded projects, cumulative hours per project |
+| **Challenges** | Stable | Streak-based commitments, heatmap visualization, flexible target days |
+| **Finance** | Stable | Firefly III integration, local spending log, budgets, savings goals, subscriptions, income entries, AI insights, anomaly detection, spending digest |
+| **Journal** | Stable | Structured daily entries (gratitude, wins, lessons), on-this-day lookback, tags |
+| **Books** | Stable | Book library, timed reading sessions, yearly challenge, ratings and reviews |
+| **Notes** | Stable | Quick-capture markdown notes, folder organization, full-text search, random discovery |
+| **Contacts CRM** | Stable | Personal relationship manager, reach-out frequency reminders, birthdays, gift ideas, interaction history |
+| **Discover** | Stable | Bucket list with categories, completion tracking |
 
-## 📊 Current State (2026-03-15)
+### Platform features
 
-### What Exists
-
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Habits | ✅ Working | 9 habits, complete/uncomplete/skip |
-| Check-in | ✅ Working | Daily mood, energy, sobriety |
-| Food Log | ✅ Basic | Just added, needs AI analysis |
-| Projects | ⚠️ Partial | Vikunja integration works, UI needs work |
-| Movement/Walks | ⚠️ Empty | Table exists, no data |
-| Redirect (urges) | ⚠️ Empty | Table exists, not used |
-| Settings | ✅ Working | Integration toggles |
-| XP/Levels | ✅ Working | Points system functional |
-| Sobriety Tracker | ✅ Working | 4-day streak |
-
-### Database Tables
-- `habits` (9) — habit definitions
-- `habit_completions` (5) — completion logs
-- `daily_checkins` (4) — daily check-ins
-- `food_logs` (1) — food entries
-- `goals` (1) — user goals
-- `point_ledger` (12) — XP transactions
-- `user_stats` (1) — XP, level
-- `walk_logs` (0) — empty
-- `replacement_logs` (0) — empty
-- `deep_work_sessions` (0) — empty
-- `daily_scores` (0) — just created
-
-### UI Views
-1. Dashboard
-2. Habits
-3. Projects
-4. Check-in
-5. Movement
-6. Redirect
-7. Food
-8. Settings
+- Multi-user with full data isolation and per-user settings
+- Invite-based registration with code expiry and use limits
+- Per-user API keys with expiry (`key_id:key_secret` Bearer token scheme)
+- Per-user AI provider configuration (different providers per task type)
+- User profiles with body metrics and Gravatar support
+- Per-module JSON data export
+- Global search across all modules
+- PWA (installable, service worker)
+- AI Chat Mode with 27 tool integrations
+- Proactive daily AI insights on dashboard
+- Application event and error log
+- AI token usage and cost tracking
 
 ---
 
-## 🚀 Phase 1: Daily Focus (Priority)
+## Recently Completed
 
-**Goal:** Make the dashboard a proper DAILY TRACKER
+These features shipped and are currently live:
 
-### 1.1 Daily View Redesign ✅
-- [x] Today's date prominently displayed
-- [x] Daily score (0-100%) calculated from:
-  - Habits completed (50%)
-  - Check-in done (25%)
-  - Food logged (25%)
-- [x] Visual progress ring/circle (animated SVG)
-- [x] "Yesterday" comparison panel
-- [x] Delta indicators (↑↓) showing improvement
-- [x] Daily tips based on what's missing
-
-### 1.2 Daily History ✅
-- [x] Calendar view showing daily scores (last 7 days)
-- [x] Color-coded days (gray/warning/accent/success)
-- [x] Week averages displayed
-- [ ] Click day to see details (future)
-
-### 1.3 Daily Tips
-- [ ] AI-generated tips based on:
-  - What's not done today
-  - Patterns from past days
-  - Upcoming events (if calendar connected)
-- [ ] "Focus for today" suggestions
-
-### 1.4 Daily Summary
-- [ ] End-of-day summary generation
-- [ ] What was accomplished
-- [ ] What was missed
-- [ ] Streaks updated
+- **Finance Stage 2** — subscriptions tracker, income entries, AI budget insights, spending digest, anomaly detection
+- **Multi-user architecture** — full `user_id` isolation on all tables, per-user settings and integrations
+- **Invite-based registration** — admin-controlled invite codes with use limits and expiry
+- **Chat Mode** — full-screen AI assistant with tool execution, image upload, and conversation history
+- **Wellness module** — water intake, sleep tracking, wellness score
+- **Books module** — reading sessions, yearly challenge, ratings
+- **Journal module** — structured daily entries, on-this-day, tags
+- **Notes module** — markdown notes, folders, full-text search
+- **Contacts CRM** — reach-out reminders, birthdays, gift ideas, interaction history
+- **Global search** — cross-module search from one input
+- **Data export** — per-module JSON download
+- **Per-user API keys** — programmatic access with `key_id:key_secret` Bearer tokens
+- **Firefly III timezone fix** — fasting start time correctly displays local timezone
 
 ---
 
-## 🍽️ Phase 2: Food & Nutrition ✅
+## Next Up
 
-### 2.1 Enhanced Food Logging
-- [x] Quick-add common meals
-- [x] Macro tracking (P/C/F)
-- [ ] Meal templates (save favorites)
-- [x] AI analysis integration (backend ready)
+These are ideas for future development. Nothing is scheduled; contributions are welcome.
 
-### 🗺️ Phase 9: Wishlist & Exploration ✅
-- [x] Places to visit wishlist
-- [x] Location and description tracking
+### Notification system
+Push notifications for habit reminders, upcoming birthdays, reach-out nudges (contacts past their frequency), and subscription renewals. Would require a notification backend (Web Push API) and per-user notification preferences.
 
-### ⏱️ Phase 10: Fasting Tracker ✅
-- [x] Advanced live timer
-- [x] Progress visualization
-- [x] Target hour presets (16h, 18h, etc.)
-- [x] Fasting history and XP awards
+### Calendar view
+A weekly and monthly calendar that aggregates events across all modules — habit completions, deep work sessions, journal entries, fasting windows, book reading sessions. A single place to see how a day or week was spent.
 
-### 2.4 Nutrition Dashboard
-- [ ] Daily calorie goal progress
-- [ ] Macro breakdown (P/C/F)
-- [ ] Weekly nutrition trends
+### Mobile app
+A React Native wrapper or significantly improved PWA (better touch targets, bottom nav, offline queue for logging). The API already supports everything needed; the gap is the native experience.
 
----
+### Advanced analytics
+Cross-module insight reports — correlation between sleep quality and habit completion, deep work hours vs. mood, food macros vs. energy levels. Trend charts over 30/90/365-day windows.
 
-## 💪 Phase 3: Habits Enhancement
+### Import from other apps
+CSV and JSON import per module for migrating data from MyFitnessPal (food), Goodreads (books), Notion (notes), and similar apps. Each module would define its own import schema.
 
-### 3.1 Habit Management ✅
-- [x] Edit habit (name, category, difficulty)
-- [x] Delete/archive habit (soft delete)
-- [ ] Disable habit for specific days (weekends off)
-- [ ] Habit scheduling (daily/weekly/specific days)
-
-### 3.2 Habit Insights
-- [ ] Streak visualization
-- [ ] Best day of week for each habit
-- [ ] Completion rate over time
-- [ ] Habit correlation (which habits done together)
-
-### 3.3 Habit Categories
-- [ ] Custom categories
-- [ ] Category-based views
-- [ ] Category daily goals
+### Theme customization
+Light mode toggle, accent color picker, font size preference. The dark theme is hard-coded today; extracting it to CSS custom properties at the user level would make this straightforward.
 
 ---
 
-## 📋 Phase 4: Projects & Tasks
+## Won't Build
 
-### 4.1 Vikunja Full Integration
-- [ ] View all projects with tasks
-- [ ] Create/edit/delete tasks
-- [ ] Due dates and priorities
-- [ ] Task completion syncs both ways
+Some features are intentionally out of scope.
 
-### 4.2 Daily Tasks View
-- [ ] "Due Today" section on dashboard
-- [ ] Overdue tasks highlighted
-- [ ] Quick-add task
+**Menstrual cycle tracker** — this is a specialized health domain with its own privacy considerations and UX requirements. Dedicated apps (Clue, Flo, Natural Cycles) do this well. LifeHack OS will not try to compete with them.
 
-### 4.3 Project Progress
-- [ ] Milestone tracking
-- [ ] Project completion percentage
-- [ ] Time spent on projects (via deep work)
+**Medication tracker** — medication management involves safety-critical reminders and interactions. It belongs in a dedicated medical app, not a general life OS. Referring users to purpose-built tools is the right call.
+
+**Social / sharing features** — LifeHack OS is intentionally a private, self-hosted tool. There are no plans for public profiles, friend feeds, or leaderboards. The value is in personal data ownership, not social comparison.
 
 ---
 
-## 🚶 Phase 5: Movement & Health
+## Contributing a New Module
 
-### 5.1 Walk/Exercise Logging
-- [ ] Quick log walk (distance, duration)
-- [ ] GPS integration (optional)
-- [ ] Exercise types (walk, run, gym, etc.)
+If you want to add a module, follow this pattern:
 
-### 5.2 Health Metrics
-- [ ] Weight tracking
-- [ ] Sleep logging (or integration)
-- [ ] Symptom tracking
-- [ ] Correlations (food → symptoms)
+1. **Route file** — create `web/routes/your_module.py` as a Flask Blueprint with `url_prefix='/api/your_module'`. Add `@login_required` on every route and call `uid = current_user_id()` at the top of each handler.
 
----
+2. **Tables** — add `CREATE TABLE IF NOT EXISTS` statements to `src/infrastructure/database/connection.py`. Include `user_id INTEGER REFERENCES users(id)` on every user-data table. Then add a migration entry in `src/infrastructure/database/migrations.py` for any tables added after the initial schema.
 
-## 📅 Phase 6: Calendar & Events ✅
+3. **Register the blueprint** — import and register it in `web/app.py`.
 
-### 6.1 Google Calendar Integration
-- [x] Show today's events on dashboard
-- [x] Upcoming events (next 24h)
-- [ ] Event reminders (future)
+4. **Add to MODULE_DEFS** — add an entry in `web/routes/modules.py` with a name, description, and `default` value (use `False` for modules that are off by default).
 
----
+5. **Frontend** — add a JS file to `web/static/js/` and load it from `web/templates/index.html`. Wire up the nav item conditionally on the module being enabled.
 
-## 💰 Phase 7: Finance (Optional)
+6. **Export** — add the module's tables to `_MODULE_TABLES` in `web/routes/export.py`.
 
-### 7.1 Firefly III Integration
-- [ ] Daily spending summary
-- [ ] Budget status
-- [ ] Quick expense logging
+7. **AI tools (optional)** — if the module should be controllable from Chat Mode, add tool definitions to `src/domain/services/chat_tools.py` and implement the execution logic in `src/domain/services/chat_tool_executor.py`.
 
----
-
-## 🤖 Phase 8: AI Enhancement
-
-### 8.1 Daily AI Companion
-- [ ] Morning briefing (via Telegram)
-- [ ] Evening summary
-- [ ] Proactive suggestions
-
-### 8.2 Pattern Recognition
-- [ ] Identify trends
-- [ ] Predict habit completion
-- [ ] Personalized coaching
-
----
-
-## 📱 Technical Improvements
-
-### Infrastructure
-- [ ] Mobile-responsive improvements
-- [ ] PWA (installable app)
-- [ ] Offline support
-- [ ] Push notifications
-
-### Performance
-- [ ] API caching
-- [ ] Lazy loading
-- [ ] Image optimization
-
-### Code Quality
-- [ ] Unit tests
-- [ ] Error handling
-- [ ] Logging
-
----
-
-## 📅 Implementation Order
-
-### Week 1 (Current)
-1. ✅ Vikunja integration
-2. ✅ Food logging basic
-3. ✅ Habit undo/skip
-4. 🔄 Daily view redesign
-5. 🔄 Daily scoring
-
-### Week 2
-1. Daily history calendar
-2. Food image upload
-3. AI food analysis
-4. Habit management (edit/delete)
-
-### Week 3
-1. Movement logging
-2. Projects tasks view
-3. Daily tips AI
-4. End-of-day summary
-
-### Week 4
-1. Calendar integration
-2. Deep work tracking
-3. Weekly reports
-4. Mobile PWA
-
----
-
-## 📝 Notes
-
-- Database: SQLite at `data/lifehack.db` (auto-created)
-- Web: Flask on port 8420 (configurable via `.env`)
-- Configure via `.env` file (see `.env.example`)
-
----
-
-## ✅ Completed Today (2026-03-15)
-
-1. ✅ Vikunja integration (projects/tasks from Vikunja)
-2. ✅ Settings page with integration toggles
-3. ✅ Habit undo (click again to uncomplete)
-4. ✅ Habit skip for today
-5. ✅ Food logging section added
-6. ✅ Sobriety backfill (4 days logged)
-7. ✅ Projects showing on dashboard
-8. ✅ XP progress bar
-
----
-
-*Last updated: 2026-03-15 11:05 MU*
+The most important rule: **never query a user-data table without a `WHERE user_id = ?` clause**. This is what keeps one user's data from appearing in another user's account.

@@ -1,11 +1,12 @@
 {
+  "id": "lifehack-os",
   "name": "LifeHack OS",
   "short_name": "LifeHack",
-  "description": "AI-native personal operating system for habits, health, and productivity",
+  "description": "AI-powered personal operating system for habits, health, finances, and productivity",
   "theme_color": "#0c0c0e",
   "background_color": "#0c0c0e",
   "display": "standalone",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "start_url": "/",
   "scope": "/",
   "icons": [
@@ -13,42 +14,50 @@
       "src": "/static/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/static/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "categories": ["health", "fitness", "productivity", "lifestyle"],
-  "screenshots": [],
   "shortcuts": [
     {
-      "name": "Daily Check-in",
-      "url": "/?module=checkin",
-      "description": "Complete your daily check-in"
-    },
-    {
-      "name": "Log Food",
-      "url": "/?module=food",
-      "description": "Log a meal"
-    },
-    {
-      "name": "Log Walk",
-      "url": "/?module=walks",
-      "description": "Log a walk or exercise"
-    },
-    {
       "name": "Chat Mode",
+      "short_name": "Chat",
       "url": "/?module=chatmode",
-      "description": "Talk to your AI assistant"
+      "description": "Talk to your AI assistant",
+      "icons": [{"src": "/static/icon-192.png", "sizes": "192x192"}]
     },
     {
       "name": "Journal",
+      "short_name": "Journal",
       "url": "/?module=journal",
-      "description": "Write a journal entry"
+      "description": "Write a journal entry",
+      "icons": [{"src": "/static/icon-192.png", "sizes": "192x192"}]
+    },
+    {
+      "name": "Log Food",
+      "short_name": "Food",
+      "url": "/?module=food",
+      "description": "Log a meal or drink",
+      "icons": [{"src": "/static/icon-192.png", "sizes": "192x192"}]
     }
-  ]
+  ],
+  "prefer_related_applications": false
 }
