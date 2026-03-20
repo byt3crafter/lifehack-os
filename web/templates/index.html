@@ -4307,7 +4307,7 @@
                 + '</div>'
                 + '</div>'
                 // Action icons — absolute top-right inside card
-                + '<div style="position:absolute;top:8px;right:8px;display:flex;gap:2px;opacity:0;transition:opacity 0.15s;" class="food-actions">'
+                + '<div style="position:absolute;top:8px;right:8px;display:flex;gap:2px;">'
                 + '<button onclick="event.stopPropagation();window._efRating=' + (m.rating||0) + '; window._efMoodAfter=' + (m.mood_after||0) + '; editFoodModal(' + m.id + ', \'' + (m.meal_type||'snack') + '\', \'' + safeDesc + '\', ' + (m.calories||0) + ', ' + (m.protein_g||0) + ', ' + (m.carbs_g||0) + ', ' + (m.fat_g||0) + ', \'' + imgSrc + '\', \'' + (m.notes||'').replace(/'/g,'&#39;') + '\')" style="background:rgba(255,255,255,0.06);border:none;cursor:pointer;padding:5px;border-radius:6px;color:#9898a6;" title="Edit"><svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M14.5 3.5l2 2L7 15H5v-2L14.5 3.5z"/></svg></button>'
                 + '<button onclick="event.stopPropagation();deleteFood(' + m.id + ')" style="background:rgba(255,255,255,0.06);border:none;cursor:pointer;padding:5px;border-radius:6px;color:#9898a6;" title="Delete"><svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5l10 10M15 5L5 15"/></svg></button>'
                 + '</div>'
