@@ -1265,8 +1265,16 @@
         </div>
         <!-- XP card at top of mobile nav -->
         <div class="mb-4 p-3 rounded-xl" style="background:#1c1c20; border:1px solid #2a2a2e;">
-            <div id="nav-xp" class="font-mono font-medium text-sm" style="color:#eab308;">0 XP</div>
-            <div id="nav-level" class="text-xs mt-0.5" style="color:#5c5c6b;">Level 1</div>
+            <div class="flex items-center gap-2.5">
+                <div id="nav-avatar-wrap" style="flex-shrink:0;width:32px;height:32px;border-radius:50%;overflow:hidden;background:#2a2a2e;display:flex;align-items:center;justify-content:center;">
+                    <img id="nav-avatar-img" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:none;">
+                    <span id="nav-avatar-initial" style="font-size:0.8125rem;font-weight:600;color:#9898a6;"></span>
+                </div>
+                <div>
+                    <div id="nav-xp" class="font-mono font-medium text-sm" style="color:#eab308;">0 XP</div>
+                    <div id="nav-level" class="text-xs mt-0.5" style="color:#5c5c6b;">Level 1</div>
+                </div>
+            </div>
         </div>
         <div class="space-y-0.5 flex-1 overflow-y-auto">
             <button onclick="nav('dashboard')" data-v="dashboard" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Dashboard">
@@ -1322,10 +1330,18 @@
                 <div class="font-semibold text-sm tracking-tight" style="color:#f0f0f2;">Life Hack OS</div>
                 <div class="text-xs mt-0.5" style="color:#5c5c6b;">Personal Operating System</div>
             </div>
-            <!-- XP display -->
+            <!-- Avatar + XP display -->
             <div class="mb-4 px-2 py-2.5 rounded-xl" style="background:#1c1c20; border:1px solid #2a2a2e;">
-                <div id="desk-xp" class="font-mono font-medium text-sm" style="color:#eab308;">0 XP</div>
-                <div id="desk-level" class="text-xs mt-0.5" style="color:#5c5c6b;">Level 1</div>
+                <div class="flex items-center gap-2.5 mb-2">
+                    <div id="desk-avatar-wrap" style="flex-shrink:0;width:32px;height:32px;border-radius:50%;overflow:hidden;background:#2a2a2e;display:flex;align-items:center;justify-content:center;">
+                        <img id="desk-avatar-img" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:none;">
+                        <span id="desk-avatar-initial" style="font-size:0.8125rem;font-weight:600;color:#9898a6;"></span>
+                    </div>
+                    <div style="min-width:0;">
+                        <div id="desk-xp" class="font-mono font-medium text-sm" style="color:#eab308;">0 XP</div>
+                        <div id="desk-level" class="text-xs mt-0.5" style="color:#5c5c6b;">Level 1</div>
+                    </div>
+                </div>
             </div>
             <!-- Nav items -->
             <nav aria-label="Main navigation" class="space-y-0.5 flex-1 overflow-y-auto">
@@ -2509,10 +2525,32 @@
                             <p class="text-xs mb-5" style="color:#5c5c6b;">Personal info that helps the AI understand you</p>
 
                             <div class="space-y-3" id="profile-form">
+
+                                <!-- Photo section -->
+                                <div class="flex items-center gap-4 pb-3" style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                                    <div id="pf-photo-wrap" style="flex-shrink:0;width:80px;height:80px;border-radius:50%;overflow:hidden;background:#2a2a2e;border:2px solid #3a3a42;display:flex;align-items:center;justify-content:center;">
+                                        <img id="pf-photo-preview" src="" alt="Avatar" style="width:100%;height:100%;object-fit:cover;display:none;">
+                                        <span id="pf-photo-initial" style="font-size:1.75rem;font-weight:600;color:#9898a6;"></span>
+                                    </div>
+                                    <div class="flex-1 min-w-0 space-y-2">
+                                        <div>
+                                            <label class="field-label">Profile Photo</label>
+                                            <input id="pf-photo-file" type="file" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none;" onchange="onPhotoFileSelected(this)">
+                                            <button type="button" onclick="document.getElementById('pf-photo-file').click()" class="btn-ghost text-xs px-3 py-1.5">Upload Photo</button>
+                                            <span id="pf-photo-filename" class="text-xs ml-2" style="color:#5c5c6b;"></span>
+                                        </div>
+                                        <label class="flex items-center gap-2 cursor-pointer select-none" style="color:#9898a6;font-size:0.8125rem;">
+                                            <input id="pf-use-gravatar" type="checkbox" onchange="onGravatarToggle()" style="accent-color:#4f80ff;width:15px;height:15px;">
+                                            Use Gravatar
+                                        </label>
+                                    </div>
+                                </div>
+
                                 <div class="grid grid-cols-2 gap-3">
                                     <div><label class="field-label">Display Name</label><input id="pf-display-name" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="Your name"></div>
                                     <div><label class="field-label">AI calls you...</label><input id="pf-preferred-name" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="e.g. Dovik, bro, boss"></div>
                                 </div>
+                                <div><label class="field-label">Email <span style="color:#5c5c6b;font-weight:400;">(used for Gravatar)</span></label><input id="pf-email" type="email" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="you@example.com"></div>
                                 <div><label class="field-label">Bio / About You</label><textarea id="pf-bio" class="w-full px-3 py-2.5 rounded-lg border text-sm" rows="2" placeholder="A bit about yourself..."></textarea></div>
                                 <div class="grid grid-cols-3 gap-3">
                                     <div><label class="field-label">Age</label><input id="pf-age" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="25"></div>
@@ -4962,6 +5000,7 @@
             var f = function(id, val) { var el = document.getElementById(id); if(el) el.value = val || ''; };
             f('pf-display-name', data.display_name);
             f('pf-preferred-name', data.preferred_name);
+            f('pf-email', data.email);
             f('pf-age', data.age);
             f('pf-gender', data.gender);
             f('pf-bio', data.bio);
@@ -4976,8 +5015,76 @@
             f('pf-target-weight', data.target_weight_kg);
             if(data.bmi) f('pf-bmi', data.bmi);
             _calcBMI();
+
+            // Gravatar toggle
+            var gravatarEl = document.getElementById('pf-use-gravatar');
+            if(gravatarEl) gravatarEl.checked = !!data.use_gravatar;
+
+            // Profile photo preview in settings panel
+            _updateProfilePhotoPreview(data.photo_url, data.display_name || data.username);
+
+            // Update sidebar avatars
+            _updateSidebarAvatar(data.photo_url, data.display_name || data.username);
         } catch(e) {}
         loadInviteCodes();
+    }
+
+    function _getInitial(name) {
+        return (name || '?').trim().charAt(0).toUpperCase();
+    }
+
+    function _updateProfilePhotoPreview(photoUrl, name) {
+        var img = document.getElementById('pf-photo-preview');
+        var initial = document.getElementById('pf-photo-initial');
+        if(!img || !initial) return;
+        if(photoUrl) {
+            img.src = photoUrl;
+            img.style.display = 'block';
+            initial.style.display = 'none';
+        } else {
+            img.style.display = 'none';
+            img.src = '';
+            initial.textContent = _getInitial(name);
+            initial.style.display = 'block';
+        }
+    }
+
+    function _updateSidebarAvatar(photoUrl, name) {
+        var ids = [['desk-avatar-img', 'desk-avatar-initial'], ['nav-avatar-img', 'nav-avatar-initial']];
+        ids.forEach(function(pair) {
+            var img = document.getElementById(pair[0]);
+            var span = document.getElementById(pair[1]);
+            if(!img || !span) return;
+            if(photoUrl) {
+                img.src = photoUrl;
+                img.style.display = 'block';
+                span.style.display = 'none';
+            } else {
+                img.style.display = 'none';
+                img.src = '';
+                span.textContent = _getInitial(name);
+                span.style.display = 'block';
+            }
+        });
+    }
+
+    function onPhotoFileSelected(input) {
+        var file = input.files && input.files[0];
+        var filenameEl = document.getElementById('pf-photo-filename');
+        if(filenameEl) filenameEl.textContent = file ? file.name : '';
+        if(file) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                _updateProfilePhotoPreview(e.target.result, '');
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function onGravatarToggle() {
+        var checked = (document.getElementById('pf-use-gravatar') || {}).checked;
+        // If gravatar is enabled and there's no file selected, show a preview hint
+        // The actual gravatar preview happens after save
     }
 
     function _calcBMI() {
@@ -4997,25 +5104,68 @@
 
     async function saveProfile() {
         var g = function(id) { return (document.getElementById(id) || {}).value || ''; };
-        var data = {
-            display_name: g('pf-display-name'),
-            preferred_name: g('pf-preferred-name'),
-            age: parseInt(g('pf-age')) || null,
-            gender: g('pf-gender'),
-            bio: g('pf-bio'),
-            timezone: g('pf-timezone'),
-            health_goals: g('pf-health-goals'),
-            fitness_level: g('pf-fitness'),
-            work_type: g('pf-work-type'),
-            work_hours: g('pf-work-hours'),
-            dietary_preferences: g('pf-dietary'),
-            height_cm: parseFloat(g('pf-height')) || null,
-            weight_kg: parseFloat(g('pf-weight')) || null,
-            target_weight_kg: parseFloat(g('pf-target-weight')) || null,
-        };
-        var r = await api('/profile', 'PUT', data);
-        if(r && !r.error) showToast('Profile saved', 'success');
-        else showToast(r?.error || 'Save failed', 'error');
+        var photoInput = document.getElementById('pf-photo-file');
+        var hasPhoto = photoInput && photoInput.files && photoInput.files.length > 0;
+        var useGravatar = !!(document.getElementById('pf-use-gravatar') || {}).checked;
+
+        var r;
+        if(hasPhoto) {
+            // Use multipart FormData for photo upload
+            var fd = new FormData();
+            fd.append('photo', photoInput.files[0]);
+            fd.append('display_name', g('pf-display-name'));
+            fd.append('preferred_name', g('pf-preferred-name'));
+            fd.append('email', g('pf-email'));
+            fd.append('age', g('pf-age'));
+            fd.append('gender', g('pf-gender'));
+            fd.append('bio', g('pf-bio'));
+            fd.append('timezone', g('pf-timezone'));
+            fd.append('health_goals', g('pf-health-goals'));
+            fd.append('fitness_level', g('pf-fitness'));
+            fd.append('work_type', g('pf-work-type'));
+            fd.append('work_hours', g('pf-work-hours'));
+            fd.append('dietary_preferences', g('pf-dietary'));
+            fd.append('height_cm', g('pf-height'));
+            fd.append('weight_kg', g('pf-weight'));
+            fd.append('target_weight_kg', g('pf-target-weight'));
+            fd.append('use_gravatar', useGravatar ? '1' : '0');
+            var resp = await fetch('/api/profile', {method:'PUT', body: fd});
+            r = await resp.json();
+            // Clear file input after successful upload
+            if(r && !r.error) {
+                photoInput.value = '';
+                var filenameEl = document.getElementById('pf-photo-filename');
+                if(filenameEl) filenameEl.textContent = '';
+            }
+        } else {
+            var data = {
+                display_name: g('pf-display-name'),
+                preferred_name: g('pf-preferred-name'),
+                email: g('pf-email'),
+                age: parseInt(g('pf-age')) || null,
+                gender: g('pf-gender'),
+                bio: g('pf-bio'),
+                timezone: g('pf-timezone'),
+                health_goals: g('pf-health-goals'),
+                fitness_level: g('pf-fitness'),
+                work_type: g('pf-work-type'),
+                work_hours: g('pf-work-hours'),
+                dietary_preferences: g('pf-dietary'),
+                height_cm: parseFloat(g('pf-height')) || null,
+                weight_kg: parseFloat(g('pf-weight')) || null,
+                target_weight_kg: parseFloat(g('pf-target-weight')) || null,
+                use_gravatar: useGravatar,
+            };
+            r = await api('/profile', 'PUT', data);
+        }
+        if(r && !r.error) {
+            showToast('Profile saved', 'success');
+            // Update avatars with the returned photo_url
+            _updateProfilePhotoPreview(r.photo_url, r.display_name || r.username);
+            _updateSidebarAvatar(r.photo_url, r.display_name || r.username);
+        } else {
+            showToast(r?.error || 'Save failed', 'error');
+        }
     }
 
     async function changeProfilePassword() {
@@ -9618,6 +9768,12 @@
         $$('[data-v="dashboard"]').forEach(b => b.classList.add('active'));
         load('dashboard');
         loadStats();
+        // Load profile silently to populate sidebar avatars
+        api('/profile').then(function(data) {
+            if(data && !data.error) {
+                _updateSidebarAvatar(data.photo_url, data.display_name || data.username);
+            }
+        }).catch(function() {});
     });
     </script>
 

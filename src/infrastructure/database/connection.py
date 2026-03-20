@@ -364,6 +364,8 @@ def init_database() -> None:
             gender TEXT DEFAULT '',
             target_weight_kg REAL,
             preferred_name TEXT DEFAULT '',
+            email TEXT DEFAULT '',
+            use_gravatar INTEGER DEFAULT 0,
             updated_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
 

@@ -517,6 +517,13 @@ def _allowed_image(filename: str) -> bool:
     )
 
 
+def _gravatar_url(email_or_username: str, size: int = 200) -> str:
+    """Return a Gravatar URL for the given email or username@lifehack.local."""
+    identifier = email_or_username.strip().lower()
+    md5_hash = hashlib.md5(identifier.encode()).hexdigest()  # noqa: S324
+    return f"https://www.gravatar.com/avatar/{md5_hash}?d=identicon&s={size}"
+
+
 @auth_bp.route('/api/profile', methods=['GET'])
 @login_required
 def get_profile():
@@ -528,6 +535,7 @@ def get_profile():
                p.bio, p.age, p.timezone, p.health_goals, p.fitness_level,
                p.dietary_preferences, p.work_type, p.work_hours, p.photo_path,
                p.height_cm, p.weight_kg, p.gender, p.target_weight_kg, p.preferred_name,
+               p.email, p.use_gravatar,
                p.updated_at
            FROM users u
            LEFT JOIN user_profiles p ON p.user_id = u.id
@@ -548,6 +556,20 @@ def get_profile():
     else:
         result['bmi'] = None
 
+    # Compute photo_url: uploaded photo > gravatar > null
+    photo_path = result.get('photo_path') or ''
+    use_gravatar = bool(result.get('use_gravatar', 0))
+    email = (result.get('email') or '').strip()
+    username = result.get('username', '')
+
+    if photo_path:
+        result['photo_url'] = f"/uploads/{photo_path}"
+    elif use_gravatar:
+        gravatar_input = email if email else f"{username}@lifehack.local"
+        result['photo_url'] = _gravatar_url(gravatar_input)
+    else:
+        result['photo_url'] = None
+
     return jsonify(result)
 
 
@@ -566,6 +588,7 @@ def update_profile():
         'bio', 'age', 'timezone', 'health_goals',
         'fitness_level', 'dietary_preferences', 'work_type', 'work_hours',
         'height_cm', 'weight_kg', 'gender', 'target_weight_kg', 'preferred_name',
+        'email',
     ]
 
     conn = get_connection()
@@ -581,7 +604,8 @@ def update_profile():
         filename = f"{uid}.{ext}"
         save_path = os.path.join(_UPLOAD_DIR, filename)
         photo_file.save(save_path)
-        photo_path = f"data/uploads/profiles/{filename}"
+        # Store as relative path from data/uploads/ so /uploads/{photo_path} resolves correctly
+        photo_path = f"profiles/{filename}"
 
     # --- Update display_name on users table if provided ---
     display_name = (data.get('display_name') or '').strip()
@@ -598,6 +622,8 @@ def update_profile():
             updates[field] = data[field] if data[field] != '' else None
     if photo_path is not None:
         updates['photo_path'] = photo_path
+    if 'use_gravatar' in data:
+        updates['use_gravatar'] = 1 if data['use_gravatar'] in (True, 'true', '1', 1) else 0
     updates['updated_at'] = _now_utc().isoformat()
 
     # Ensure profile row exists
@@ -620,6 +646,7 @@ def update_profile():
                p.bio, p.age, p.timezone, p.health_goals, p.fitness_level,
                p.dietary_preferences, p.work_type, p.work_hours, p.photo_path,
                p.height_cm, p.weight_kg, p.gender, p.target_weight_kg, p.preferred_name,
+               p.email, p.use_gravatar,
                p.updated_at
            FROM users u
            LEFT JOIN user_profiles p ON p.user_id = u.id
@@ -636,5 +663,19 @@ def update_profile():
         result['bmi'] = round(weight_kg / (height_cm / 100) ** 2, 1)
     else:
         result['bmi'] = None
+
+    # Compute photo_url: uploaded photo > gravatar > null
+    photo_path_val = result.get('photo_path') or ''
+    use_gravatar_val = bool(result.get('use_gravatar', 0))
+    email_val = (result.get('email') or '').strip()
+    username_val = result.get('username', '')
+
+    if photo_path_val:
+        result['photo_url'] = f"/uploads/{photo_path_val}"
+    elif use_gravatar_val:
+        gravatar_input = email_val if email_val else f"{username_val}@lifehack.local"
+        result['photo_url'] = _gravatar_url(gravatar_input)
+    else:
+        result['photo_url'] = None
 
     return jsonify(result)

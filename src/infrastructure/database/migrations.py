@@ -645,6 +645,20 @@ def run_migrations(conn) -> None:
         conn.commit()
         print("  Migration 17: Add scheduled_time to habits")
 
+    # Migration 19: Add email and use_gravatar to user_profiles
+    current = get_current_version(conn)
+    if current < 19:
+        profile_cols = [r[1] for r in conn.execute("PRAGMA table_info(user_profiles)").fetchall()]
+        if 'email' not in profile_cols:
+            conn.execute("ALTER TABLE user_profiles ADD COLUMN email TEXT DEFAULT ''")
+        if 'use_gravatar' not in profile_cols:
+            conn.execute("ALTER TABLE user_profiles ADD COLUMN use_gravatar INTEGER DEFAULT 0")
+        conn.execute(
+            "INSERT OR IGNORE INTO schema_version (version, description) VALUES (19, 'Add email and use_gravatar to user_profiles')"
+        )
+        conn.commit()
+        print("  Migration 19: Add email and use_gravatar to user_profiles")
+
     # Migration 18: Journal, Books, Notes modules
     current = get_current_version(conn)
     if current < 18:
