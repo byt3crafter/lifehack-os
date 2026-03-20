@@ -191,7 +191,13 @@
             {% endif %}
 
             <form method="POST" action="/register" id="register-form" novalidate>
-                <input type="hidden" name="invite_code" value="{{ code }}">
+                <div class="field">
+                    <label for="invite_code">Invite Code</label>
+                    <input type="text" id="invite_code" name="invite_code" required
+                           value="{{ code }}" placeholder="Enter your invite code"
+                           autocomplete="off" spellcheck="false"
+                           style="font-family:monospace;letter-spacing:0.05em;">
+                </div>
 
                 <div class="field">
                     <label for="username">Username</label>
