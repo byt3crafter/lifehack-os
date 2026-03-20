@@ -609,6 +609,70 @@ def init_database() -> None:
         CREATE INDEX IF NOT EXISTS idx_finance_advice_created ON finance_advice(created_at);
         CREATE INDEX IF NOT EXISTS idx_savings_goals_created ON savings_goals(created_at);
         CREATE INDEX IF NOT EXISTS idx_user_integrations_user ON user_integrations(user_id);
+
+        -- Journal
+        CREATE TABLE IF NOT EXISTS journal_entries (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER REFERENCES users(id),
+            date TEXT NOT NULL,
+            mood INTEGER DEFAULT 3,
+            energy INTEGER DEFAULT 3,
+            gratitude_json TEXT DEFAULT '[]',
+            wins_json TEXT DEFAULT '[]',
+            lessons TEXT DEFAULT '',
+            content TEXT DEFAULT '',
+            tags_json TEXT DEFAULT '[]',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_journal_entries_user ON journal_entries(user_id);
+        CREATE INDEX IF NOT EXISTS idx_journal_entries_date ON journal_entries(date);
+
+        -- Books
+        CREATE TABLE IF NOT EXISTS books (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER REFERENCES users(id),
+            title TEXT NOT NULL,
+            author TEXT DEFAULT '',
+            genre TEXT DEFAULT '',
+            page_count INTEGER DEFAULT 0,
+            current_page INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'to-read',
+            rating INTEGER,
+            review TEXT DEFAULT '',
+            cover_url TEXT DEFAULT '',
+            format TEXT DEFAULT 'physical',
+            started_at TEXT,
+            finished_at TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_books_user ON books(user_id);
+        CREATE INDEX IF NOT EXISTS idx_books_status ON books(status);
+
+        CREATE TABLE IF NOT EXISTS reading_sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER REFERENCES users(id),
+            book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+            pages_read INTEGER NOT NULL DEFAULT 0,
+            date TEXT NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_reading_sessions_book ON reading_sessions(book_id);
+
+        -- Notes
+        CREATE TABLE IF NOT EXISTS notes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER REFERENCES users(id),
+            title TEXT NOT NULL,
+            body TEXT DEFAULT '',
+            tags_json TEXT DEFAULT '[]',
+            folder TEXT DEFAULT '',
+            pinned INTEGER DEFAULT 0,
+            archived INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_notes_user ON notes(user_id);
+        CREATE INDEX IF NOT EXISTS idx_notes_pinned ON notes(pinned);
     """)
 
     conn.commit()

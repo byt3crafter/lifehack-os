@@ -1,0 +1,374 @@
+# LifehackOS — Full Agent Build Prompt
+
+## PROJECT OVERVIEW
+
+Build **LifehackOS**, a modular personal life operating system as a web application. The system is composed of independent, self-contained **modules** that users can **enable or disable** from a central settings/dashboard panel. Each module must function independently — enabling or disabling one module must never break another. The app should use persistent storage (local database or cloud-synced) so data survives between sessions.
+
+---
+
+## ARCHITECTURE REQUIREMENTS
+
+### Modularity
+- Every feature below is a **standalone module** with its own data model, UI views, and logic.
+- A central **Module Manager** (settings page) lets the user toggle each module ON/OFF. When OFF, the module's navigation entry, widgets, and background processes are completely hidden/disabled.
+- Modules may optionally expose **dashboard widgets** (small summary cards) to a central Home/Dashboard view when enabled.
+- Modules can reference each other loosely (e.g., the Symptom Journal can optionally link to a Medication entry) but must never hard-depend on another module being enabled.
+
+### Tech Stack (Flexible)
+- Use a modern framework: React/Next.js, Vue/Nuxt, or SvelteKit — agent's choice based on best fit.
+- Component library or Tailwind CSS for consistent, clean UI.
+- Database: SQLite, PostgreSQL, or a local-first solution (e.g., IndexedDB + sync). The data model must support modular schema migrations.
+- Mobile-responsive design is required.
+
+### Design Principles
+- **Calm & welcoming UI** — soft colors, generous whitespace, intuitive navigation.
+- **Accessibility first** — proper contrast, keyboard navigation, screen-reader labels.
+- **Progressive complexity** — simple on the surface, powerful when you dig in.
+- **Privacy-first** — all data stays local or user-controlled. No third-party analytics. Health data is sensitive.
+
+---
+
+## MODULE DEFINITIONS
+
+Build every module below. Each section describes the module name, its features, and its data model.
+
+---
+
+### MODULE 1: Task & Project Manager
+
+**Purpose:** GTD-style task management with projects and goals.
+
+**Features:**
+- Quick-capture inbox for new tasks/thoughts
+- Tasks have: title, description, due date, priority (low/medium/high/urgent), status (inbox/next action/waiting/someday-maybe/done), tags, project assignment
+- Projects with progress bars (% tasks complete)
+- Goals dashboard: set quarterly or yearly goals (OKR style), link projects to goals
+- Weekly review view: surfaces overdue tasks, items stuck in inbox, goals progress
+- Recurring tasks support (daily, weekly, monthly, custom)
+- Kanban board view and list view toggle
+
+**Dashboard Widget:** Tasks due today count, overdue count, inbox count.
+
+---
+
+### MODULE 2: Book Read Counter & Reading Dashboard
+
+**Purpose:** Track reading habits with rich stats.
+
+**Features:**
+- Add books: title, author, genre, page count, cover image (URL or upload), format (physical/ebook/audiobook)
+- Status: to-read queue, currently reading (with current page/%), finished, abandoned
+- Reading log: log pages read per session with date — calculates reading speed
+- Yearly reading challenge: set a target number of books, visual progress bar
+- Stats dashboard: books per month/year, pages read, genre breakdown (pie chart), average rating, reading streak (consecutive days with a logged session)
+- Star rating (1-5) and personal notes/review per book
+- Favorites and "recommend to others" flag
+
+**Dashboard Widget:** Books read this year vs. goal, current book title & progress.
+
+---
+
+### MODULE 3: Journal
+
+**Purpose:** Daily journaling with structured and freeform modes.
+
+**Features:**
+- Daily entry with date, mood selector (emoji or scale 1-10), and freeform text editor (rich text or markdown)
+- Structured prompts mode: gratitude (3 things), daily wins, lessons learned, one-word-for-today
+- Evening reflection prompt: what went well, what to improve, tomorrow's intention
+- Weekly review template: auto-generated summary of the week's moods, key entries, patterns
+- Monthly retrospective template
+- Tagging system for entries (e.g., #work, #health, #relationships)
+- Search across all entries (full-text)
+- "On this day" feature: shows journal entry from 1 year ago, 2 years ago, etc.
+- Private/locked entries with PIN or password
+- Export to markdown or PDF
+
+**Dashboard Widget:** Today's mood, journaling streak (days in a row).
+
+---
+
+### MODULE 4: Note Taking
+
+**Purpose:** Quick-capture knowledge base with linking.
+
+**Features:**
+- Create notes with title, body (rich text or markdown), tags, category/folder
+- Folder/category hierarchy (unlimited nesting)
+- Bi-directional linking: [[note title]] syntax to link between notes, backlinks panel showing what links to current note
+- Quick capture: floating button or shortcut to create a note instantly with minimal friction
+- Pin important notes to top
+- Full-text search with filters (by tag, folder, date range)
+- "Random note" feature: surfaces a random old note for rediscovery
+- Trash/archive with restore capability
+- Templates: create reusable note templates (meeting notes, book notes, idea template, etc.)
+
+**Dashboard Widget:** Total notes count, recently edited notes list (3-5).
+
+---
+
+### MODULE 5: Menstrual Cycle Tracker
+
+**Purpose:** Comprehensive cycle tracking with pattern recognition. Make this a first-class, thoughtfully designed module — not an afterthought.
+
+**Features:**
+- Log period: start date, end date, flow intensity per day (light/medium/heavy/spotting)
+- Cycle calendar: visual monthly calendar with color-coded days (period, fertile window estimate, PMS window estimate, ovulation estimate)
+- Symptom tracker per day: cramps (severity 1-5), bloating, headache, breast tenderness, acne, fatigue, nausea, back pain, mood swings, food cravings, insomnia — customizable symptom list
+- Mood tracker integrated per day: emotional state (happy, sad, anxious, irritable, calm, energetic, etc.)
+- Energy level per day (1-5 scale)
+- Cycle statistics: average cycle length, average period duration, cycle length history chart, regularity indicator
+- Predicted next period and fertile window (based on historical averages)
+- Phase indicator: current phase (menstrual, follicular, ovulation, luteal) with brief educational description of what to expect
+- Correlation insights: "You tend to have low energy on days 22-26" or "Cramps are usually worst on day 2" — pattern recognition from logged data
+- Productivity correlation: optional link to Task module — suggest lighter workload during historically low-energy phases
+- Notes field per day for anything else
+- Export data for sharing with doctor (PDF or CSV)
+- Discreet UI: option to rename the module in navigation (e.g., "Health Tracker" or a custom name) for privacy
+
+**Dashboard Widget:** Current cycle day, days until next period, current phase.
+
+---
+
+### MODULE 6: Medicine & Chronic Pain Tracker
+
+**Purpose:** Complete medication management system for people with chronic conditions or complex medication needs.
+
+**Sub-modules (all part of this single toggleable module):**
+
+#### 6A: Medication Tracker
+- Add medications: name, dosage (amount + unit), frequency (daily/twice daily/weekly/as needed/custom schedule), time(s) of day, take with food (yes/no/optional), prescribing doctor, start date, end date (if applicable), purpose/condition
+- Daily check-off log: mark each dose as taken/missed/skipped with timestamp
+- Refill tracking: pill count, refill date, auto-calculate when to reorder based on remaining supply
+- Missed dose alerts: visual indicator + streak tracking (adherence percentage per medication and overall)
+- Interaction warnings field: manually note known interactions between medications
+- Side effects log per medication: record observed side effects with severity and date
+
+#### 6B: Pharmacy Directory
+- Add pharmacies: name, address, phone, hours, website
+- Per-pharmacy tracking: which medications they stock, prices per medication, stock reliability rating (1-5), wait time rating (1-5), staff helpfulness rating (1-5), general notes
+- "Preferred pharmacy" flag per medication
+- Price comparison view: same medication across different pharmacies
+- Map integration (optional): link to Google Maps for directions
+
+#### 6C: Substitution & Generic Log
+- Log entries: original brand/manufacturer, substituted brand/manufacturer, date of switch, reason for switch (pharmacy out of stock, insurance change, cost, doctor recommendation)
+- Body reaction log: did it work the same? (yes/partially/no), side effects observed, effectiveness compared to original (better/same/worse), notes
+- Status: keeping substitution / switching back / still evaluating
+- Summary view: per medication, see all substitution history at a glance — critical for doctor consultations
+
+#### 6D: Symptom & Pain Journal
+- Daily log: date, overall pain level (0-10 scale), pain location(s) (body map selector or text), pain type (sharp, dull, throbbing, burning, etc.)
+- Additional daily fields: energy level (1-10), sleep quality (1-10), hours slept, stress level (1-10), weather/barometric pressure (manual or auto), exercise (yes/no + type), food/drink notes
+- Symptom tags: customizable list (nausea, dizziness, brain fog, joint stiffness, etc.)
+- Flare-up flag: mark particularly bad days for pattern analysis
+- Correlation dashboard: charts overlaying pain levels with medications taken, sleep, weather, stress — help identify triggers and what helps
+- Trend charts: pain over time (weekly, monthly), medication adherence vs. pain levels
+
+#### 6E: Doctor & Appointment Hub
+- Doctor directory: name, specialty, clinic/hospital, phone, email, address, notes
+- Per-doctor: which medications they prescribed, appointment history
+- Appointments: date, time, doctor, purpose, status (upcoming/completed/cancelled)
+- Pre-appointment prep: "questions to ask" list per upcoming appointment — add questions as they come to mind throughout the month
+- Post-appointment notes: what was discussed, changes to treatment, follow-up actions, test results
+- Referral tracking: who referred to whom, status (pending/scheduled/completed)
+- Test results log: date, test name, key results, doctor who ordered it, notes — attach files if possible (PDF/image)
+
+#### 6F: Insurance & Cost Tracking
+- Insurance plan details: provider, plan name, policy number, group number, coverage start/end dates
+- Per-medication: covered (yes/no/partial), copay amount, prior authorization required (yes/no + status), tier level
+- Out-of-pocket tracker: log each medical expense (date, amount, category: medication/appointment/test/procedure), running total vs. annual deductible and out-of-pocket max
+- Cost comparison: flag when a cheaper generic or alternative pharmacy could save money
+- Annual summary: total spent, total covered by insurance, total out-of-pocket
+
+#### 6G: Emergency Info Card
+- Single-page quick reference view optimized for sharing/screenshotting
+- Contents: full name, date of birth, blood type, known allergies (medication, food, environmental), current medications (auto-pulled from Medication Tracker if enabled), current conditions/diagnoses, emergency contacts (name, relationship, phone — up to 3), primary doctor name & phone, insurance info (provider + policy number)
+- Export: generate as PDF, shareable image, or printable card
+- Last updated timestamp — prominently displayed so responders know how current the info is
+
+**Dashboard Widget:** Today's medication checklist (taken/pending), current pain level, next appointment date.
+
+---
+
+### MODULE 7: Finance & Budget Tracker
+
+**Purpose:** Personal finance management and spending awareness.
+
+**Features:**
+- Accounts: add bank accounts, credit cards, cash — manual balance tracking
+- Transactions: date, amount, category (groceries, transport, bills, entertainment, health, etc.), account, notes, recurring flag
+- Budget: set monthly budget per category, visual progress bars showing spent vs. budget
+- Subscription manager: name, cost, billing cycle, next billing date, category, "worth it?" rating — total monthly subscription cost
+- Savings goals: name, target amount, current amount, deadline, visual progress
+- Net worth dashboard: sum of all accounts over time (monthly snapshots)
+- Monthly and yearly spending reports with category breakdowns (charts)
+- Income tracking: log income sources, amounts, dates
+- Bill reminders: upcoming bills with due dates
+
+**Dashboard Widget:** Monthly spending vs. budget, total balance across accounts.
+
+---
+
+### MODULE 8: Health & Wellness Dashboard
+
+**Purpose:** Holistic health tracking beyond medications.
+
+**Features:**
+- Daily log: water intake (glasses/ml), exercise (type, duration, intensity), sleep (hours, quality 1-5, bedtime, wake time), weight (optional)
+- Workout planner: create workout routines, log completed workouts, track progression (reps, weight, distance)
+- Meal log: breakfast/lunch/dinner/snacks — simple text or detailed with calories (optional)
+- Habit tracker: define daily habits (meditate, stretch, take vitamins, etc.), daily check-off, streak tracking per habit, overall habit score
+- Wellness score: auto-calculated from sleep + exercise + water + habit completion — trend over time
+- Weekly health summary: auto-generated report of averages
+
+**Dashboard Widget:** Today's habit checklist progress, water intake, wellness score.
+
+---
+
+### MODULE 9: Relationships & Personal CRM
+
+**Purpose:** Nurture personal and professional relationships intentionally.
+
+**Features:**
+- Contact cards: name, relationship type (family/friend/colleague/mentor/acquaintance), birthday, email, phone, notes, photo (URL)
+- Last contact date: manually log when you last reached out or met — auto-sorts by "longest since contact"
+- Reach-out reminders: set frequency per person (weekly, monthly, quarterly) — surfaces people you're overdue to contact
+- Interaction log: date, type (call/text/meeting/coffee/email), brief notes
+- Gift ideas: per-person list of gift ideas with links/prices
+- Important dates: anniversaries, milestones — reminder integration
+- Groups/circles: organize contacts into groups (close friends, work team, family, etc.)
+- Conversation notes: things they mentioned that matter — kids' names, projects they're working on, health updates — so you can follow up meaningfully
+
+**Dashboard Widget:** People to reach out to this week, upcoming birthdays.
+
+---
+
+### MODULE 10: Home & Life Admin
+
+**Purpose:** Household management and life logistics.
+
+**Features:**
+- Cleaning schedule: room-by-room tasks with frequency (daily/weekly/monthly), assign to household members, checklist mode
+- Maintenance log: appliances, vehicles, home systems — track service dates, warranty expiration, next maintenance due
+- Important documents vault: list of important documents (passport, insurance, deed, etc.) with location stored, expiration dates, renewal reminders
+- Travel planner: trip templates with packing lists, itinerary builder, budget per trip
+- Errand/life admin inbox: quick-capture for "adulting" tasks (renew license, call plumber, schedule vet, etc.)
+- Household inventory: optional — track high-value items with purchase date, warranty, serial number
+
+**Dashboard Widget:** Overdue maintenance items, upcoming errand count.
+
+---
+
+### MODULE 11: Creative & Side Projects
+
+**Purpose:** Manage creative work, content, and side hustles.
+
+**Features:**
+- Project board: kanban-style (idea → in progress → review → done) for creative projects
+- Content calendar: plan content by date, platform, status (draft/scheduled/published)
+- Idea parking lot: quick-capture ideas with tags — rate by excitement and feasibility
+- Writing pipeline: for writers — track pieces from draft to submission to publication
+- Inspiration/swipe file: save links, images, quotes for reference — tagged by theme
+- Time log: track hours spent on creative projects (manual entry or simple timer)
+
+**Dashboard Widget:** Active projects count, ideas captured this week.
+
+---
+
+### MODULE 12: Career & Professional Development
+
+**Purpose:** Career growth tracking and professional preparedness.
+
+**Features:**
+- Skills inventory: list skills, self-rate proficiency (beginner/intermediate/advanced/expert), target level, learning plan
+- Brag document: log achievements, wins, positive feedback, projects delivered — with dates — invaluable for performance reviews and resume updates
+- Learning tracker: courses, books, certifications — status (planned/in-progress/completed), notes, completion date
+- Resume/CV tracker: version history, last updated date, tailored versions per role type
+- Meeting notes template: date, attendees, agenda, notes, action items — searchable archive
+- 1-on-1 agenda: running doc per person you have regular meetings with — topics to discuss, past discussion notes
+- Job search pipeline (optional sub-module): companies, roles applied, status (researching/applied/interviewing/offer/rejected), contacts, notes per stage
+- Networking log: events attended, people met, follow-up actions
+
+**Dashboard Widget:** Recent wins count, skills in progress, next learning milestone.
+
+---
+
+## CENTRAL DASHBOARD
+
+The Home/Dashboard is the landing page after login. It displays:
+- A greeting with the current date and an optional motivational quote or daily intention (from Journal if enabled)
+- A grid/masonry layout of **dashboard widgets** from all currently enabled modules
+- Widget arrangement should be customizable (drag-and-drop reorder or priority setting)
+- Quick-action buttons: add task, log journal entry, log medication, capture note — contextual based on enabled modules
+- A "daily review" or "daily snapshot" section summarizing the most important items across modules
+
+---
+
+## MODULE MANAGER (Settings)
+
+- List all 12 modules with toggle switches (ON/OFF)
+- Brief description of each module shown next to the toggle
+- When toggling OFF: confirm dialog warning that data is preserved but the module will be hidden
+- When toggling ON: module appears in navigation and dashboard immediately
+- Module data is **never deleted** when toggled off — only hidden
+- Optional: module display name override (especially useful for Menstrual Cycle Tracker — allow renaming to "Health Cycles" or any custom name for privacy)
+- Optional: choose which dashboard widgets appear even among enabled modules
+
+---
+
+## DATA & PRIVACY
+
+- All data stored locally or in user-controlled storage — no third-party analytics, no selling data
+- Export all data: full export in JSON or CSV per module
+- Import data: support importing from JSON/CSV
+- Optional: backup to file (encrypted ZIP)
+- Sensitive modules (Menstrual Tracker, Medicine Tracker, Journal) should support an optional **app-level PIN/password lock** or per-module lock
+
+---
+
+## NAVIGATION
+
+- Sidebar or bottom-tab navigation (responsive: sidebar on desktop, bottom tabs on mobile)
+- Only show navigation items for enabled modules
+- Group related modules under collapsible sections:
+  - **Productivity**: Tasks, Notes, Career, Creative Projects
+  - **Health**: Wellness, Medicine Tracker, Menstrual Tracker
+  - **Life**: Journal, Books, Finance, Relationships, Home Admin
+- Settings/Module Manager always accessible
+- Search bar: global search across all enabled modules
+
+---
+
+## NICE-TO-HAVES (V2 — build only if time permits)
+
+- Dark mode / light mode toggle
+- Notification system: reminders for medications, tasks due, birthdays, refill dates
+- Calendar integration: sync with Google Calendar or iCal
+- API endpoints per module for external integrations
+- PWA support for mobile installation
+- Multi-user / household mode: shared modules (e.g., Home Admin, Finance) with individual modules (Journal, Menstrual Tracker) remaining private
+- AI assistant: use LLM to analyze patterns across modules ("You tend to have low productivity on high-pain days — consider scheduling lighter work on those days")
+
+---
+
+## SUMMARY OF MODULES
+
+| # | Module | Key Purpose |
+|---|--------|-------------|
+| 1 | Task & Project Manager | GTD tasks, projects, goals, weekly reviews |
+| 2 | Book Read Counter | Reading log, stats, yearly challenge |
+| 3 | Journal | Daily journaling, prompts, mood, reflections |
+| 4 | Note Taking | Knowledge base, linking, quick capture |
+| 5 | Menstrual Cycle Tracker | Period logging, symptoms, cycle predictions, phase awareness |
+| 6 | Medicine & Chronic Pain Tracker | Medications, pharmacy, substitutions, pain journal, doctors, insurance, emergency card |
+| 7 | Finance & Budget Tracker | Spending, budgets, subscriptions, savings goals |
+| 8 | Health & Wellness Dashboard | Exercise, sleep, water, habits, wellness score |
+| 9 | Relationships & Personal CRM | Contact management, reach-out reminders, gift ideas |
+| 10 | Home & Life Admin | Cleaning, maintenance, documents, travel, errands |
+| 11 | Creative & Side Projects | Project boards, content calendar, idea capture |
+| 12 | Career & Professional Dev | Skills, brag doc, learning, meetings, job search |
+
+---
+
+**Build this as a production-quality application. Each module should be independently toggleable from the Module Manager. Start with the core architecture (auth, module manager, dashboard, navigation) then build modules one by one. Prioritize modules 1, 3, 5, 6, and 8 for the first sprint.**

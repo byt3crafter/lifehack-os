@@ -46,6 +46,9 @@ def execute_tool(tool_name: str, args: dict, conn, user_id: int) -> dict:
         "start_deep_work": _start_deep_work,
         "end_deep_work": _end_deep_work,
         "log_mood": _log_mood,
+        "log_journal": _log_journal,
+        "log_book": _log_book,
+        "create_note": _create_note,
     }
 
     handler = handlers.get(tool_name)
@@ -787,6 +790,202 @@ def _log_mood(args: dict, conn, user_id: int) -> dict:
         "success": True,
         "message": f"{action} mood: {mood}/5, energy: {energy}/5",
     }
+
+
+# ---------------------------------------------------------------------------
+# Journal
+# ---------------------------------------------------------------------------
+
+def _log_journal(args: dict, conn, user_id: int) -> dict:
+    entry_date = (args.get("date") or date.today().isoformat()).strip()
+
+    # Validate / normalise date
+    try:
+        datetime.fromisoformat(entry_date)
+    except (ValueError, TypeError):
+        entry_date = date.today().isoformat()
+
+    # Coerce integer fields
+    def _int_clamp(v, lo=1, hi=5):
+        if v is None:
+            return None
+        try:
+            return max(lo, min(hi, int(v)))
+        except (TypeError, ValueError):
+            return None
+
+    mood = _int_clamp(args.get("mood"))
+    energy = _int_clamp(args.get("energy"))
+    lessons = (args.get("lessons") or "").strip() or None
+    content = (args.get("content") or "").strip() or None
+
+    # JSON array fields — accept list or leave None
+    def _json_list(v):
+        if v is None:
+            return None
+        if isinstance(v, list):
+            return json.dumps(v)
+        return None
+
+    gratitude_json = _json_list(args.get("gratitude"))
+    wins_json = _json_list(args.get("wins"))
+    tags_json = _json_list(args.get("tags"))
+
+    existing = conn.execute(
+        "SELECT id FROM journal_entries WHERE user_id = ? AND date = ?",
+        (user_id, entry_date),
+    ).fetchone()
+
+    if existing:
+        # Build UPDATE — only set fields that are non-None in this call
+        updates = []
+        params = []
+        for col, val in [
+            ("mood", mood),
+            ("energy", energy),
+            ("lessons", lessons),
+            ("content", content),
+            ("gratitude_json", gratitude_json),
+            ("wins_json", wins_json),
+            ("tags_json", tags_json),
+        ]:
+            if val is not None:
+                updates.append(f"{col} = ?")
+                params.append(val)
+
+        if updates:
+            params.extend([user_id, entry_date])
+            conn.execute(
+                f"UPDATE journal_entries SET {', '.join(updates)} WHERE user_id = ? AND date = ?",
+                params,
+            )
+        action = "updated"
+    else:
+        conn.execute(
+            """INSERT INTO journal_entries
+               (date, mood, energy, lessons, content, gratitude_json, wins_json, tags_json, user_id)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (entry_date, mood, energy, lessons, content, gratitude_json, wins_json, tags_json, user_id),
+        )
+        action = "created"
+
+    conn.commit()
+
+    return {"status": "ok", "date": entry_date, "action": action}
+
+
+# ---------------------------------------------------------------------------
+# Books
+# ---------------------------------------------------------------------------
+
+def _log_book(args: dict, conn, user_id: int) -> dict:
+    title = (args.get("title") or "").strip()
+    if not title:
+        return {"error": "title is required"}
+
+    author = (args.get("author") or "").strip() or None
+    genre = (args.get("genre") or "").strip() or None
+    review = (args.get("review") or "").strip() or None
+    status = (args.get("status") or "").strip().lower() or None
+
+    valid_statuses = {"to-read", "reading", "finished", "abandoned"}
+    if status and status not in valid_statuses:
+        status = None
+
+    page_count = args.get("page_count")
+    if page_count is not None:
+        try:
+            page_count = int(page_count)
+            if page_count <= 0:
+                page_count = None
+        except (TypeError, ValueError):
+            page_count = None
+
+    rating = args.get("rating")
+    if rating is not None:
+        try:
+            rating = max(1, min(5, int(rating)))
+        except (TypeError, ValueError):
+            rating = None
+
+    now_iso = datetime.now().isoformat()
+
+    existing = conn.execute(
+        "SELECT id, started_at FROM books WHERE user_id = ? AND title = ?",
+        (user_id, title),
+    ).fetchone()
+
+    if existing:
+        book_id = existing["id"]
+        updates = []
+        params = []
+
+        for col, val in [
+            ("author", author),
+            ("genre", genre),
+            ("page_count", page_count),
+            ("status", status),
+            ("rating", rating),
+            ("review", review),
+        ]:
+            if val is not None:
+                updates.append(f"{col} = ?")
+                params.append(val)
+
+        # started_at / finished_at side-effects
+        if status == "reading" and existing["started_at"] is None:
+            updates.append("started_at = ?")
+            params.append(now_iso)
+        if status == "finished":
+            updates.append("finished_at = ?")
+            params.append(now_iso)
+
+        if updates:
+            params.extend([user_id, title])
+            conn.execute(
+                f"UPDATE books SET {', '.join(updates)} WHERE user_id = ? AND title = ?",
+                params,
+            )
+    else:
+        started_at = now_iso if status == "reading" else None
+        finished_at = now_iso if status == "finished" else None
+
+        cursor = conn.execute(
+            """INSERT INTO books
+               (title, author, genre, page_count, status, rating, review, started_at, finished_at, user_id)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (title, author, genre, page_count, status, rating, review, started_at, finished_at, user_id),
+        )
+        book_id = cursor.lastrowid
+
+    conn.commit()
+
+    return {"status": "ok", "book_id": book_id, "title": title}
+
+
+# ---------------------------------------------------------------------------
+# Notes
+# ---------------------------------------------------------------------------
+
+def _create_note(args: dict, conn, user_id: int) -> dict:
+    title = (args.get("title") or "").strip()
+    if not title:
+        return {"error": "title is required"}
+
+    body = (args.get("body") or "").strip() or None
+    folder = (args.get("folder") or "").strip() or None
+
+    tags = args.get("tags")
+    tags_json = json.dumps(tags) if isinstance(tags, list) else None
+
+    cursor = conn.execute(
+        """INSERT INTO notes (title, body, tags_json, folder, user_id)
+           VALUES (?, ?, ?, ?, ?)""",
+        (title, body, tags_json, folder, user_id),
+    )
+    conn.commit()
+
+    return {"status": "ok", "note_id": cursor.lastrowid, "title": title}
 
 
 __all__ = ["execute_tool"]

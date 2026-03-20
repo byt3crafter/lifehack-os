@@ -29,6 +29,9 @@ from .finance import finance_bp
 from .discover import discover_bp
 from .chat import chat_bp
 from .deepwork import deepwork_bp
+from .journal import journal_bp
+from .books import books_bp
+from .notes import notes_bp
 
 __all__ = [
     'auth_bp',
@@ -56,4 +59,7 @@ __all__ = [
     'discover_bp',
     'chat_bp',
     'deepwork_bp',
+    'journal_bp',
+    'books_bp',
+    'notes_bp',
 ]

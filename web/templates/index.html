@@ -1223,6 +1223,15 @@
         <symbol id="icon-discover" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="10" cy="10" r="7"/><path d="M13.5 6.5l-2.5 5-5 2.5 2.5-5 5-2.5z"/>
         </symbol>
+        <symbol id="icon-journal" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 3h12a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z"/><path d="M7 7h6M7 10h6M7 13h4"/>
+        </symbol>
+        <symbol id="icon-books" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 4h4l3 2 3-2h4v12h-4l-3 2-3-2H3z"/>
+        </symbol>
+        <symbol id="icon-notes" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 3H6a1 1 0 00-1 1v12a1 1 0 001 1h8a1 1 0 001-1V7z"/><path d="M14 3v4h-4M8 10h4M8 13h2"/>
+        </symbol>
     </svg>
 
     <!-- Mobile Header -->
@@ -1281,6 +1290,15 @@
             <button onclick="nav('discover')" data-v="discover" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Discover">
                 <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-discover"/></svg>Discover
             </button>
+            <button onclick="nav('journal')" data-v="journal" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Journal">
+                <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-journal"/></svg>Journal
+            </button>
+            <button onclick="nav('books')" data-v="books" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Books">
+                <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-books"/></svg>Books
+            </button>
+            <button onclick="nav('notes')" data-v="notes" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Notes">
+                <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-notes"/></svg>Notes
+            </button>
             <button onclick="nav('settings')" data-v="settings" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Settings">
                 <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-settings"/></svg>Settings
             </button>
@@ -1327,6 +1345,15 @@
                 </button>
                 <button onclick="desktopNav('discover')" data-v="discover" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Discover">
                     <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-discover"/></svg>Discover
+                </button>
+                <button onclick="desktopNav('journal')" data-v="journal" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Journal">
+                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-journal"/></svg>Journal
+                </button>
+                <button onclick="desktopNav('books')" data-v="books" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Books">
+                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-books"/></svg>Books
+                </button>
+                <button onclick="desktopNav('notes')" data-v="notes" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Notes">
+                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-notes"/></svg>Notes
                 </button>
                 <button onclick="desktopNav('settings')" data-v="settings" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Settings">
                     <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-settings"/></svg>Settings
@@ -2261,6 +2288,79 @@
                     style="position:absolute;right:1rem;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:50%;width:2.5rem;height:2.5rem;color:#fff;font-size:1.25rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#8250;</button>
             </div>
 
+            <!-- JOURNAL -->
+            <div id="v-journal" class="view hidden">
+                <div class="view-header">
+                    <div>
+                        <h2 class="view-title">Journal</h2>
+                        <p class="text-xs mt-0.5" style="color:#5c5c6b;">Daily reflections, gratitude, and wins</p>
+                    </div>
+                    <button onclick="newJournalEntry()" class="btn-primary flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 4v12M4 10h12"/></svg>
+                        New Entry
+                    </button>
+                </div>
+                <!-- On This Day -->
+                <div id="journal-otd" class="hidden mb-4 p-3 rounded-xl" style="background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.15);">
+                    <div class="text-xs font-semibold mb-1" style="color:#c4b5fd;">On This Day</div>
+                    <div id="journal-otd-content" class="text-sm" style="color:#e0dce8;"></div>
+                </div>
+                <!-- Search -->
+                <div class="mb-4">
+                    <input id="journal-search" type="search" class="w-full px-3 py-2 rounded-lg border text-sm" placeholder="Search journal entries..." oninput="searchJournal(this.value)">
+                </div>
+                <!-- Entries list -->
+                <div id="journal-entries" class="space-y-3"></div>
+            </div>
+
+            <!-- BOOKS -->
+            <div id="v-books" class="view hidden">
+                <div class="view-header">
+                    <div>
+                        <h2 class="view-title">Books</h2>
+                        <p class="text-xs mt-0.5" style="color:#5c5c6b;">Track your reading journey</p>
+                    </div>
+                    <button onclick="addBookModal()" class="btn-primary flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 4v12M4 10h12"/></svg>
+                        Add Book
+                    </button>
+                </div>
+                <!-- Status tabs -->
+                <div class="flex gap-1 mb-4 p-1 rounded-xl" style="background:#141416;">
+                    <button onclick="loadBooks('all')" id="btab-all" class="flex-1 py-1.5 rounded-lg text-sm font-medium" style="background:rgba(79,128,255,0.15);color:#f0f0f2;">All</button>
+                    <button onclick="loadBooks('reading')" id="btab-reading" class="flex-1 py-1.5 rounded-lg text-sm font-medium" style="background:transparent;color:#9898a6;">Reading</button>
+                    <button onclick="loadBooks('to-read')" id="btab-to-read" class="flex-1 py-1.5 rounded-lg text-sm font-medium" style="background:transparent;color:#9898a6;">To Read</button>
+                    <button onclick="loadBooks('finished')" id="btab-finished" class="flex-1 py-1.5 rounded-lg text-sm font-medium" style="background:transparent;color:#9898a6;">Done</button>
+                </div>
+                <!-- Book list -->
+                <div id="books-list" class="space-y-2"></div>
+                <!-- Stats -->
+                <div id="books-stats" class="mt-5 hidden"></div>
+            </div>
+
+            <!-- NOTES -->
+            <div id="v-notes" class="view hidden">
+                <div class="view-header">
+                    <div>
+                        <h2 class="view-title">Notes</h2>
+                        <p class="text-xs mt-0.5" style="color:#5c5c6b;">Quick capture ideas and knowledge</p>
+                    </div>
+                    <button onclick="newNoteModal()" class="btn-primary flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 4v12M4 10h12"/></svg>
+                        New Note
+                    </button>
+                </div>
+                <!-- Folder filter + search -->
+                <div class="flex gap-2 mb-4">
+                    <select id="notes-folder-filter" class="px-3 py-2 rounded-lg border text-sm flex-shrink-0" onchange="loadNotes()" style="min-width:100px;">
+                        <option value="">All Folders</option>
+                    </select>
+                    <input id="notes-search" type="search" class="flex-1 px-3 py-2 rounded-lg border text-sm" placeholder="Search notes..." oninput="loadNotes()">
+                </div>
+                <!-- Notes list -->
+                <div id="notes-list" class="space-y-2"></div>
+            </div>
+
             <!-- SETTINGS -->
             <div id="v-settings" class="view hidden">
                 <!-- Page header -->
@@ -2832,6 +2932,9 @@
         else if(v==='challenges') await loadChallenges();
         else if(v==='finance') await loadFinance();
         else if(v==='discover') await loadDiscover();
+        else if(v==='journal') await loadJournal();
+        else if(v==='books') await loadBooks();
+        else if(v==='notes') await loadNotes();
     }
 
     // ── Modal ────────────────────────────────────────────────────
@@ -8369,6 +8472,295 @@
         await api('/finance/card-settings', 'PUT', payload);
         loadFinance();
     }
+
+    // ── Journal ──────────────────────────────────────────────────
+    async function loadJournal(search) {
+        var params = search ? '?search=' + encodeURIComponent(search) : '';
+        var data = await api('/journal' + params);
+        var el = document.getElementById('journal-entries');
+        if(!el) return;
+        if(!data || !data.length) {
+            el.innerHTML = '<div class="empty-state"><p>No journal entries yet. Write your first entry.</p></div>';
+        } else {
+            el.innerHTML = data.map(function(e) {
+                var mood = ['','&#128542;','&#128528;','&#128578;','&#128522;','&#129321;'][e.mood||3];
+                var tags = [];
+                try { tags = JSON.parse(e.tags_json || '[]'); } catch(x) {}
+                var tagHtml = tags.map(function(t) { return '<span class="text-xs px-1.5 py-0.5 rounded" style="background:rgba(79,128,255,0.1);color:#4f80ff;">#' + t + '</span>'; }).join(' ');
+                var dateStr = '';
+                try { dateStr = new Date(e.date + 'T12:00:00').toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'}); } catch(x) {}
+                return '<div class="card p-4 rounded-xl" style="border:1px solid #2a2a2e;cursor:pointer;" onclick="editJournalEntry(' + e.id + ')">'
+                    + '<div class="flex items-center justify-between mb-2">'
+                    + '<div class="flex items-center gap-2">'
+                    + '<span style="font-size:1.1rem;">' + mood + '</span>'
+                    + '<span class="text-sm font-medium" style="color:#f0f0f2;">' + dateStr + '</span>'
+                    + '</div>'
+                    + '<div class="flex items-center gap-1.5">'
+                    + '<span class="text-xs" style="color:#5c5c6b;">Energy ' + (e.energy||3) + '/5</span>'
+                    + '</div></div>'
+                    + (e.content ? '<p class="text-xs mb-2" style="color:#9898a6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">' + e.content.substring(0, 150) + '</p>' : '')
+                    + (tagHtml ? '<div class="flex flex-wrap gap-1">' + tagHtml + '</div>' : '')
+                    + '</div>';
+            }).join('');
+        }
+        // On This Day
+        try {
+            var otd = await api('/journal/on-this-day');
+            var otdEl = document.getElementById('journal-otd');
+            var otdContent = document.getElementById('journal-otd-content');
+            if(otd && otd.length && otdEl && otdContent) {
+                var e = otd[0];
+                otdContent.textContent = (e.content || '').substring(0, 200) + (e.content && e.content.length > 200 ? '...' : '');
+                otdEl.classList.remove('hidden');
+            } else if(otdEl) { otdEl.classList.add('hidden'); }
+        } catch(x) {}
+    }
+    function searchJournal(q) { loadJournal(q); }
+
+    function newJournalEntry() {
+        var today = new Date().toISOString().split('T')[0];
+        showModal('Journal Entry', '<div class="space-y-3">'
+            + '<input id="je-date" type="date" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="' + today + '">'
+            + '<div class="grid grid-cols-2 gap-3">'
+            + '<div><label class="field-label">Mood (1-5)</label><input id="je-mood" type="range" min="1" max="5" value="3" class="w-full"></div>'
+            + '<div><label class="field-label">Energy (1-5)</label><input id="je-energy" type="range" min="1" max="5" value="3" class="w-full"></div>'
+            + '</div>'
+            + '<div><label class="field-label">Gratitude (3 things)</label>'
+            + '<input id="je-g1" class="w-full px-3 py-2 rounded-lg border text-sm mb-1" placeholder="1. I\'m grateful for...">'
+            + '<input id="je-g2" class="w-full px-3 py-2 rounded-lg border text-sm mb-1" placeholder="2. I\'m grateful for...">'
+            + '<input id="je-g3" class="w-full px-3 py-2 rounded-lg border text-sm" placeholder="3. I\'m grateful for...">'
+            + '</div>'
+            + '<div><label class="field-label">Daily Wins</label><input id="je-wins" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="What went well today?"></div>'
+            + '<div><label class="field-label">Lessons Learned</label><input id="je-lessons" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="What did you learn?"></div>'
+            + '<div><label class="field-label">Free Write</label><textarea id="je-content" class="w-full px-3 py-2.5 rounded-lg border text-sm" rows="4" placeholder="Write freely..."></textarea></div>'
+            + '<div><label class="field-label">Tags</label><input id="je-tags" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="work, health, growth (comma separated)"></div>'
+            + '<div class="flex gap-2 pt-1">'
+            + '<button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>'
+            + '<button onclick="saveJournalEntry()" class="btn-primary flex-1 py-2.5">Save Entry</button>'
+            + '</div></div>');
+    }
+
+    async function saveJournalEntry(editId) {
+        var g = function(id) { return (document.getElementById(id)||{}).value||''; };
+        var gratitude = [g('je-g1'), g('je-g2'), g('je-g3')].filter(function(x) { return x.trim(); });
+        var wins = g('je-wins').split(',').map(function(w) { return w.trim(); }).filter(function(x) { return x; });
+        var tags = g('je-tags').split(',').map(function(t) { return t.trim(); }).filter(function(x) { return x; });
+        var payload = {
+            date: g('je-date') || new Date().toISOString().split('T')[0],
+            mood: parseInt(g('je-mood')) || 3,
+            energy: parseInt(g('je-energy')) || 3,
+            gratitude: gratitude, wins: wins,
+            lessons: g('je-lessons'), content: g('je-content'), tags: tags
+        };
+        var url = editId ? '/journal/' + editId : '/journal';
+        var method = editId ? 'PUT' : 'POST';
+        await api(url, method, payload);
+        hideModal();
+        showToast('Entry saved', 'success');
+        loadJournal();
+    }
+
+    async function editJournalEntry(id) {
+        var e = await api('/journal/' + id);
+        if(!e) return;
+        newJournalEntry();
+        setTimeout(function() {
+            var f = function(id, val) { var el = document.getElementById(id); if(el) el.value = val||''; };
+            f('je-date', e.date);
+            f('je-mood', e.mood); f('je-energy', e.energy);
+            var g = []; try { g = JSON.parse(e.gratitude_json||'[]'); } catch(x) {}
+            f('je-g1', g[0]||''); f('je-g2', g[1]||''); f('je-g3', g[2]||'');
+            var w = []; try { w = JSON.parse(e.wins_json||'[]'); } catch(x) {}
+            f('je-wins', w.join(', '));
+            f('je-lessons', e.lessons); f('je-content', e.content);
+            var t = []; try { t = JSON.parse(e.tags_json||'[]'); } catch(x) {}
+            f('je-tags', t.join(', '));
+            // Change save button to update
+            var btn = document.querySelector('#modal-body .btn-primary');
+            if(btn) { btn.textContent = 'Update Entry'; btn.setAttribute('onclick', 'saveJournalEntry(' + id + ')'); }
+        }, 100);
+    }
+
+    // ── Books ───────────────────────────────────────────────────
+    var _booksTab = 'all';
+    async function loadBooks(status) {
+        if(status) _booksTab = status;
+        var tabs = ['all','reading','to-read','finished'];
+        tabs.forEach(function(t) {
+            var btn = document.getElementById('btab-' + t);
+            if(btn) { btn.style.background = t === _booksTab ? 'rgba(79,128,255,0.15)' : 'transparent'; btn.style.color = t === _booksTab ? '#f0f0f2' : '#9898a6'; }
+        });
+        var params = _booksTab !== 'all' ? '?status=' + _booksTab : '';
+        var data = await api('/books' + params);
+        var el = document.getElementById('books-list');
+        if(!el) return;
+        if(!data || !data.length) {
+            el.innerHTML = '<div class="empty-state"><p>No books yet. Add your first book!</p></div>';
+            return;
+        }
+        el.innerHTML = data.map(function(b) {
+            var pct = b.page_count > 0 ? Math.round(b.current_page / b.page_count * 100) : 0;
+            var stars = '';
+            if(b.rating) { for(var i=0;i<5;i++) stars += i < b.rating ? '&#9733;' : '&#9734;'; }
+            var statusColor = {reading:'#4f80ff','to-read':'#9898a6',finished:'#22c55e',abandoned:'#ef4444'}[b.status]||'#9898a6';
+            var formatIcon = {physical:'&#128214;',ebook:'&#128241;',audiobook:'&#127911;'}[b.format]||'&#128214;';
+            return '<div class="card p-3 rounded-xl flex gap-3" style="border:1px solid #2a2a2e;">'
+                + '<div class="w-12 h-16 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(79,128,255,0.08);font-size:1.5rem;">' + formatIcon + '</div>'
+                + '<div class="flex-1 min-w-0">'
+                + '<div class="text-sm font-medium truncate" style="color:#f0f0f2;">' + b.title + '</div>'
+                + '<div class="text-xs" style="color:#5c5c6b;">' + (b.author||'Unknown') + (b.genre ? ' &middot; ' + b.genre : '') + '</div>'
+                + (b.status === 'reading' ? '<div class="mt-1.5"><div class="h-1.5 rounded-full" style="background:rgba(255,255,255,0.06);"><div class="h-full rounded-full" style="width:' + pct + '%;background:#4f80ff;"></div></div><div class="text-xs mt-0.5 font-mono" style="color:#5c5c6b;">' + b.current_page + '/' + b.page_count + ' pages (' + pct + '%)</div></div>' : '')
+                + (stars ? '<div class="mt-1" style="color:#eab308;font-size:0.75rem;">' + stars + '</div>' : '')
+                + '</div>'
+                + '<div class="flex flex-col gap-1 flex-shrink-0">'
+                + '<span class="text-xs px-2 py-0.5 rounded-full" style="color:' + statusColor + ';background:' + statusColor + '15;border:1px solid ' + statusColor + '25;">' + b.status + '</span>'
+                + (b.status === 'reading' ? '<button onclick="logReadingModal(' + b.id + ',\'' + b.title.replace(/'/g,"\\'") + '\',' + b.current_page + ',' + b.page_count + ')" class="text-xs px-2 py-0.5 rounded" style="color:#4f80ff;background:rgba(79,128,255,0.1);border:none;cursor:pointer;font-family:inherit;">+Pages</button>' : '')
+                + '<button onclick="editBookModal(' + b.id + ')" class="text-xs px-2 py-0.5 rounded" style="color:#9898a6;background:rgba(255,255,255,0.04);border:none;cursor:pointer;font-family:inherit;">Edit</button>'
+                + '</div></div>';
+        }).join('');
+    }
+
+    function addBookModal() {
+        showModal('Add Book', '<div class="space-y-3">'
+            + '<div><label class="field-label">Title</label><input id="ab-title" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="Book title"></div>'
+            + '<div class="grid grid-cols-2 gap-3">'
+            + '<div><label class="field-label">Author</label><input id="ab-author" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="Author name"></div>'
+            + '<div><label class="field-label">Genre</label><input id="ab-genre" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="e.g. Self-help"></div>'
+            + '</div>'
+            + '<div class="grid grid-cols-2 gap-3">'
+            + '<div><label class="field-label">Pages</label><input id="ab-pages" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="300"></div>'
+            + '<div><label class="field-label">Format</label><select id="ab-format" class="w-full px-3 py-2.5 rounded-lg border text-sm"><option value="physical">Physical</option><option value="ebook">E-book</option><option value="audiobook">Audiobook</option></select></div>'
+            + '</div>'
+            + '<div><label class="field-label">Status</label><select id="ab-status" class="w-full px-3 py-2.5 rounded-lg border text-sm"><option value="to-read">To Read</option><option value="reading">Reading</option><option value="finished">Finished</option></select></div>'
+            + '<div class="flex gap-2 pt-1"><button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button><button onclick="saveBook()" class="btn-primary flex-1 py-2.5">Add Book</button></div>'
+            + '</div>');
+    }
+
+    async function saveBook(editId) {
+        var g = function(id) { return (document.getElementById(id)||{}).value||''; };
+        var payload = { title: g('ab-title'), author: g('ab-author'), genre: g('ab-genre'), page_count: parseInt(g('ab-pages'))||0, format: g('ab-format'), status: g('ab-status') };
+        if(!payload.title) return showToast('Title required', 'error');
+        var url = editId ? '/books/' + editId : '/books';
+        await api(url, editId ? 'PUT' : 'POST', payload);
+        hideModal(); showToast('Book saved', 'success'); loadBooks();
+    }
+
+    async function editBookModal(id) {
+        var b = await api('/books/' + id);
+        if(!b) return;
+        addBookModal();
+        setTimeout(function() {
+            var f = function(eid,val) { var el = document.getElementById(eid); if(el) el.value = val||''; };
+            f('ab-title',b.title); f('ab-author',b.author); f('ab-genre',b.genre); f('ab-pages',b.page_count); f('ab-format',b.format); f('ab-status',b.status);
+            var btn = document.querySelector('#modal-body .btn-primary');
+            if(btn) { btn.textContent = 'Update Book'; btn.setAttribute('onclick', 'saveBook(' + id + ')'); }
+        }, 100);
+    }
+
+    function logReadingModal(bookId, title, currentPage, totalPages) {
+        showModal('Log Reading: ' + title, '<div class="space-y-3">'
+            + '<p class="text-sm" style="color:#9898a6;">Currently at page ' + currentPage + ' of ' + totalPages + '</p>'
+            + '<div><label class="field-label">Pages read</label><input id="lr-pages" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="e.g. 25"></div>'
+            + '<div class="flex gap-2 pt-1"><button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button><button onclick="submitReadingSession(' + bookId + ')" class="btn-primary flex-1 py-2.5">Log</button></div>'
+            + '</div>');
+    }
+
+    async function submitReadingSession(bookId) {
+        var pages = parseInt((document.getElementById('lr-pages')||{}).value)||0;
+        if(!pages) return showToast('Enter pages read', 'error');
+        await api('/books/' + bookId + '/sessions', 'POST', { pages_read: pages, date: new Date().toISOString().split('T')[0] });
+        hideModal(); showToast(pages + ' pages logged!', 'success'); loadBooks();
+    }
+
+    // ── Notes ────────────────────────────────────────────────────
+    async function loadNotes() {
+        var folder = (document.getElementById('notes-folder-filter')||{}).value||'';
+        var search = (document.getElementById('notes-search')||{}).value||'';
+        var params = '?archived=0';
+        if(folder) params += '&folder=' + encodeURIComponent(folder);
+        if(search) params += '&search=' + encodeURIComponent(search);
+        var data = await api('/notes' + params);
+        var el = document.getElementById('notes-list');
+        if(!el) return;
+        // Load folders for filter
+        try {
+            var folders = await api('/notes/folders');
+            var sel = document.getElementById('notes-folder-filter');
+            if(sel && folders) {
+                var opts = '<option value="">All Folders</option>';
+                folders.forEach(function(f) { opts += '<option value="' + f + '"' + (f === folder ? ' selected' : '') + '>' + f + '</option>'; });
+                sel.innerHTML = opts;
+            }
+        } catch(x) {}
+        if(!data || !data.length) {
+            el.innerHTML = '<div class="empty-state"><p>No notes yet. Capture your first idea.</p></div>';
+            return;
+        }
+        el.innerHTML = data.map(function(n) {
+            var tags = []; try { tags = JSON.parse(n.tags_json||'[]'); } catch(x) {}
+            var tagHtml = tags.map(function(t) { return '<span class="text-xs px-1.5 py-0.5 rounded" style="background:rgba(79,128,255,0.1);color:#4f80ff;">' + t + '</span>'; }).join(' ');
+            var timeAgo = '';
+            try { var d = new Date(n.updated_at); timeAgo = d.toLocaleDateString('en-US', {month:'short',day:'numeric'}); } catch(x) {}
+            return '<div class="card p-3 rounded-xl" style="border:1px solid #2a2a2e;cursor:pointer;" onclick="editNoteModal(' + n.id + ')">'
+                + '<div class="flex items-start justify-between mb-1">'
+                + '<div class="flex items-center gap-2">'
+                + (n.pinned ? '<span style="color:#eab308;font-size:0.75rem;">&#128204;</span>' : '')
+                + '<span class="text-sm font-medium" style="color:#f0f0f2;">' + n.title + '</span>'
+                + '</div>'
+                + '<div class="flex items-center gap-2 flex-shrink-0">'
+                + (n.folder ? '<span class="text-xs px-1.5 py-0.5 rounded" style="background:rgba(255,255,255,0.04);color:#5c5c6b;">' + n.folder + '</span>' : '')
+                + '<span class="text-xs" style="color:#5c5c6b;">' + timeAgo + '</span>'
+                + '</div></div>'
+                + (n.body ? '<p class="text-xs mb-1.5" style="color:#9898a6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">' + n.body.substring(0,120) + '</p>' : '')
+                + (tagHtml ? '<div class="flex flex-wrap gap-1">' + tagHtml + '</div>' : '')
+                + '</div>';
+        }).join('');
+    }
+
+    function newNoteModal() {
+        showModal('New Note', '<div class="space-y-3">'
+            + '<div><label class="field-label">Title</label><input id="nn-title" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="Note title"></div>'
+            + '<div><label class="field-label">Content</label><textarea id="nn-body" class="w-full px-3 py-2.5 rounded-lg border text-sm" rows="6" placeholder="Write your note... (supports markdown)"></textarea></div>'
+            + '<div class="grid grid-cols-2 gap-3">'
+            + '<div><label class="field-label">Folder</label><input id="nn-folder" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="e.g. Ideas, Work"></div>'
+            + '<div><label class="field-label">Tags</label><input id="nn-tags" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="tag1, tag2"></div>'
+            + '</div>'
+            + '<div class="flex gap-2 pt-1"><button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button><button onclick="saveNote()" class="btn-primary flex-1 py-2.5">Save Note</button></div>'
+            + '</div>');
+    }
+
+    async function saveNote(editId) {
+        var g = function(id) { return (document.getElementById(id)||{}).value||''; };
+        var tags = g('nn-tags').split(',').map(function(t) { return t.trim(); }).filter(function(x) { return x; });
+        var payload = { title: g('nn-title'), body: g('nn-body'), folder: g('nn-folder'), tags: tags };
+        if(!payload.title) return showToast('Title required', 'error');
+        var url = editId ? '/notes/' + editId : '/notes';
+        await api(url, editId ? 'PUT' : 'POST', payload);
+        hideModal(); showToast('Note saved', 'success'); loadNotes();
+    }
+
+    async function editNoteModal(id) {
+        var n = await api('/notes/' + id);
+        if(!n) return;
+        newNoteModal();
+        setTimeout(function() {
+            var f = function(eid,val) { var el = document.getElementById(eid); if(el) el.value = val||''; };
+            f('nn-title', n.title); f('nn-body', n.body); f('nn-folder', n.folder);
+            var tags = []; try { tags = JSON.parse(n.tags_json||'[]'); } catch(x) {}
+            f('nn-tags', tags.join(', '));
+            var btn = document.querySelector('#modal-body .btn-primary');
+            if(btn) { btn.textContent = 'Update Note'; btn.setAttribute('onclick', 'saveNote(' + id + ')'); }
+            // Add pin/delete buttons
+            var form = document.querySelector('#modal-body .space-y-3');
+            if(form) {
+                var extra = '<div class="flex gap-2"><button onclick="toggleNotePin(' + id + ')" class="btn-ghost flex-1 py-2">' + (n.pinned ? 'Unpin' : 'Pin') + '</button><button onclick="deleteNote(' + id + ')" class="flex-1 py-2 rounded-lg text-sm font-medium" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);cursor:pointer;font-family:inherit;">Delete</button></div>';
+                form.insertAdjacentHTML('beforeend', extra);
+            }
+        }, 100);
+    }
+
+    async function toggleNotePin(id) { await api('/notes/' + id + '/pin', 'POST'); hideModal(); loadNotes(); }
+    async function deleteNote(id) { await api('/notes/' + id, 'DELETE'); hideModal(); showToast('Note deleted', 'info'); loadNotes(); }
 
     // ── Discover ──────────────────────────────────────────────────
     var _discoverActiveTab = 'want';

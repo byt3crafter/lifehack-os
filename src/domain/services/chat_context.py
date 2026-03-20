@@ -180,6 +180,29 @@ def assemble_context(conn, user_id: int) -> dict:
         (user_id, today),
     )
 
+    # Journal — today and recent
+    context['journal_today'] = _safe_query(conn,
+        "SELECT date, mood, energy, gratitude_json, wins_json, lessons, content FROM journal_entries WHERE user_id = ? AND date = ?",
+        (user_id, today))
+
+    context['journal_recent'] = _safe_query(conn,
+        "SELECT date, mood, energy, gratitude_json, wins_json, tags_json FROM journal_entries WHERE user_id = ? ORDER BY date DESC LIMIT 7",
+        (user_id,))
+
+    # Books currently reading
+    context['books_reading'] = _safe_query(conn,
+        "SELECT title, author, current_page, page_count, genre FROM books WHERE user_id = ? AND status = 'reading'",
+        (user_id,))
+
+    context['books_finished_recent'] = _safe_query(conn,
+        "SELECT title, author, rating, finished_at FROM books WHERE user_id = ? AND status = 'finished' ORDER BY finished_at DESC LIMIT 5",
+        (user_id,))
+
+    # Pinned notes
+    context['pinned_notes'] = _safe_query(conn,
+        "SELECT title, body, tags_json, folder FROM notes WHERE user_id = ? AND pinned = 1 AND archived = 0 LIMIT 10",
+        (user_id,))
+
     # Firefly III data (if connected)
     try:
         from src.infrastructure.plugins import plugin_registry

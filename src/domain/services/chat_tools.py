@@ -163,6 +163,46 @@ TOOL_DEFINITIONS = [
             "note": "string (optional)",
         },
     },
+    # ── Journal ─────────────────────────────────────────────────────────────
+    {
+        "name": "log_journal",
+        "description": "Create or update a journal entry for a given date",
+        "parameters": {
+            "date": "YYYY-MM-DD (defaults to today)",
+            "mood": "integer 1-5",
+            "energy": "integer 1-5",
+            "gratitude": "list of up to 3 strings",
+            "wins": "list of strings",
+            "lessons": "string",
+            "content": "freeform text",
+            "tags": "list of tag strings",
+        },
+    },
+    # ── Books ────────────────────────────────────────────────────────────────
+    {
+        "name": "log_book",
+        "description": "Add a book or update its status",
+        "parameters": {
+            "title": "string (required)",
+            "author": "string",
+            "genre": "string",
+            "page_count": "integer",
+            "status": "to-read/reading/finished/abandoned",
+            "rating": "integer 1-5 (for finished books)",
+            "review": "string",
+        },
+    },
+    # ── Notes ────────────────────────────────────────────────────────────────
+    {
+        "name": "create_note",
+        "description": "Create a quick capture note",
+        "parameters": {
+            "title": "string (required)",
+            "body": "markdown text",
+            "tags": "list of strings",
+            "folder": "string",
+        },
+    },
 ]
 
 __all__ = ["TOOL_DEFINITIONS"]
