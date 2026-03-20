@@ -188,9 +188,33 @@ def checkin_challenge(challenge_id):
     )
 
     conn.execute(
-        "INSERT INTO challenge_logs (challenge_id, action, note) VALUES (?, ?, ?)",
-        (challenge_id, 'checkin', data.get('note', 'Still going strong!'))
+        "INSERT INTO challenge_logs (challenge_id, user_id, action, note, logged_at) VALUES (?, ?, ?, ?, ?)",
+        (challenge_id, uid, 'checkin', data.get('note', 'Still going strong!'), now)
     )
+
+    # Auto-backfill missed days since challenge start
+    challenge = conn.execute(
+        "SELECT start_date FROM challenges WHERE id = ? AND user_id = ?", (challenge_id, uid)
+    ).fetchone()
+    if challenge and challenge['start_date']:
+        from datetime import timedelta
+        start = date.fromisoformat(challenge['start_date'])
+        today = date.today()
+        existing = conn.execute(
+            "SELECT DISTINCT date(logged_at) as d FROM challenge_logs WHERE challenge_id = ? AND user_id = ? AND action = 'checkin'",
+            (challenge_id, uid)
+        ).fetchall()
+        existing_dates = {r['d'] for r in existing}
+        d = start
+        while d < today:
+            ds = d.isoformat()
+            if ds not in existing_dates:
+                conn.execute(
+                    "INSERT INTO challenge_logs (challenge_id, user_id, action, note, logged_at) VALUES (?, ?, 'checkin', 'Auto-filled', ?)",
+                    (challenge_id, uid, ds + ' 12:00:00')
+                )
+            d += timedelta(days=1)
+
     conn.commit()
 
     return jsonify({'success': True, 'checked_in_at': now})

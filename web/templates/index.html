@@ -4583,7 +4583,7 @@
         
         // Build calendar grid
         let calendar = '';
-        const checkinDates = new Set((logs || []).filter(l => l.action === 'checkin').map(l => l.logged_at.split('T')[0]));
+        const checkinDates = new Set((logs || []).filter(l => l.action === 'checkin').map(l => (l.logged_at||'').replace(' ','T').split('T')[0]));
         
         for(let i = 0; i < Math.min(days, 42); i++) {
             const d = new Date(start);
