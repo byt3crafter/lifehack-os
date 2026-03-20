@@ -1004,7 +1004,10 @@
         }
 
         /* ── Chat FAB ────────────────────────────────── */
-        #chat-fab {
+        /* Floating chat removed — Chat Mode replaces it */
+        #chat-fab {display:none !important;}
+        #chat-panel {display:none !important;}
+        .chat-fab-removed {
             position: fixed;
             bottom: 24px;
             right: 24px;
@@ -2993,21 +2996,16 @@
         if(el) el.classList.remove('hidden');
         document.querySelectorAll('[data-v="' + v + '"]').forEach(x => x.classList.add('active'));
 
-        // Chat mode: hide sidebar + FAB, show exit button
+        // Chat mode: hide sidebar, show exit button
         var sidebar = document.getElementById('desktop-sidebar');
-        var fab = document.getElementById('chat-fab');
         var chatExit = document.getElementById('chatmode-exit-btn');
         if(v === 'chatmode') {
             if(sidebar) sidebar.style.display = 'none';
-            if(fab) fab.style.display = 'none';
             if(chatExit) chatExit.style.display = 'flex';
-            if(_chatOpen) toggleChat();
-            // Make main area full width
             var main = document.querySelector('main');
             if(main) main.style.marginLeft = '0';
         } else {
             if(sidebar) sidebar.style.display = '';
-            if(fab) fab.style.display = 'flex';
             if(chatExit) chatExit.style.display = 'none';
             var main2 = document.querySelector('main');
             if(main2) main2.style.marginLeft = '';
@@ -9622,219 +9620,20 @@
     });
     </script>
 
-    <!-- ── AI Chat FAB ─────────────────────────────────────────────── -->
-    <button id="chat-fab" onclick="toggleChat()" aria-label="Open AI chat">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#fff;">
-            <path d="M12 2l1.68 3.4 3.75.55-2.71 2.64.64 3.72L12 10.51l-3.36 1.77.64-3.72L6.57 5.95l3.75-.55z"/>
-            <path d="M4.5 14.5C3 16 3 17.5 4.5 19c1 1 2.5 1.5 4 1l1.5 2.5 1.5-2.5c3 .5 5-1 5-3.5s-2.5-4-6-4-7 1.5-6 2z"/>
-        </svg>
-    </button>
-
-    <!-- ── AI Chat Panel ────────────────────────────────────────────── -->
-    <div id="chat-panel" role="dialog" aria-label="LifeHack AI Chat" aria-modal="true">
-
-        <!-- Header -->
-        <div id="chat-header">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4f80ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M12 2l1.68 3.4 3.75.55-2.71 2.64.64 3.72L12 10.51l-3.36 1.77.64-3.72L6.57 5.95l3.75-.55z"/>
-                <path d="M4.5 14.5C3 16 3 17.5 4.5 19c1 1 2.5 1.5 4 1l1.5 2.5 1.5-2.5c3 .5 5-1 5-3.5s-2.5-4-6-4-7 1.5-6 2z"/>
-            </svg>
-            <span id="chat-header-title">LifeHack AI</span>
-            <button class="chat-header-btn" onclick="toggleChat()" aria-label="Close chat" title="Close">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-            </button>
-        </div>
-
-        <!-- Messages -->
-        <div id="chat-messages" aria-live="polite" aria-label="Chat messages">
-            <!-- Typing indicator lives inside here so it scrolls with content -->
-            <div id="chat-typing" role="status" aria-label="AI is typing">
-                <span></span><span></span><span></span>
-            </div>
-        </div>
-
-        <!-- Image preview -->
-        <div id="chat-img-preview" class="hidden" style="padding:0.5rem 1rem 0;display:none;">
-            <div style="display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;background:#1c1c20;border:1px solid #2a2a2e;">
-                <img id="chat-img-thumb" style="width:40px;height:40px;border-radius:6px;object-fit:cover;" alt="Attached">
-                <span class="text-xs" style="color:#9898a6;">Image attached</span>
-                <button onclick="clearChatImage()" style="background:none;border:none;color:#5c5c6b;cursor:pointer;font-size:1rem;">&#10005;</button>
-            </div>
-        </div>
-        <!-- Input bar -->
-        <div id="chat-input-bar">
-            <button id="chat-img-btn" onclick="document.getElementById('chat-img-input').click()" aria-label="Attach image" style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.06);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                <svg width="16" height="16" fill="none" stroke="#9898a6" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-            </button>
-            <input type="file" id="chat-img-input" accept="image/*" capture="environment" style="display:none;" onchange="handleChatImage(this)">
-            <textarea
-                id="chat-input"
-                rows="1"
-                placeholder="Ask anything..."
-                aria-label="Message input"
-                autocomplete="off"
-                spellcheck="true"
-            ></textarea>
-            <button id="chat-send-btn" onclick="sendChatMessage()" aria-label="Send message">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                </svg>
-            </button>
-        </div>
-    </div>
+    <!-- Floating chat FAB + panel removed — Chat Mode in sidebar replaces them -->
 
     <script>
-    // ── Chat state ──────────────────────────────────────────────────
+    // ── Chat state (floating panel removed — Chat Mode is the primary chat UI) ──
     var _chatOpen = false;
     var _chatMessages = [];
-    var _chatTyping = false;
 
-    // ── Toggle panel ────────────────────────────────────────────────
+    // toggleChat now redirects to Chat Mode view
     function toggleChat() {
-        _chatOpen = !_chatOpen;
-        var panel = document.getElementById('chat-panel');
-        var fab = document.getElementById('chat-fab');
         if (_chatOpen) {
-            panel.style.display = 'flex';
-            setTimeout(function () { panel.classList.add('chat-open'); }, 10);
-            fab.style.display = 'none';
-            if (!_chatMessages.length) {
-                loadChatHistory();
-            } else {
-                renderChatMessages();
-            }
-            setTimeout(function () {
-                var input = document.getElementById('chat-input');
-                if (input) input.focus();
-            }, 220);
+            _chatOpen = false;
         } else {
-            panel.classList.remove('chat-open');
-            setTimeout(function () { panel.style.display = 'none'; }, 210);
-            fab.style.display = 'flex';
+            _switchView('chatmode');
         }
-    }
-
-    // ── Load history ────────────────────────────────────────────────
-    async function loadChatHistory() {
-        var welcomeMsg = { role: 'assistant', content: 'Hi! I have access to all your data. Ask me anything about your habits, finances, food, goals, or anything else on your mind.', created_at: new Date().toISOString() };
-        try {
-            var r = await api('/chat/history');
-            if (r && r.messages && r.messages.length) {
-                _chatMessages = r.messages;
-            } else {
-                _chatMessages = [welcomeMsg];
-            }
-        } catch (e) {
-            _chatMessages = [welcomeMsg];
-        }
-        renderChatMessages();
-    }
-
-    // ── Image handling ────────────────────────────────────────────
-    var _chatImageBase64 = null;
-
-    function handleChatImage(input) {
-        if (!input.files || !input.files[0]) return;
-        var file = input.files[0];
-        var reader = new FileReader();
-        reader.onload = function(e) {
-            _chatImageBase64 = e.target.result.split(',')[1];
-            var preview = document.getElementById('chat-img-preview');
-            var thumb = document.getElementById('chat-img-thumb');
-            if (preview) { preview.style.display = 'block'; preview.classList.remove('hidden'); }
-            if (thumb) thumb.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-        input.value = '';
-    }
-
-    function clearChatImage() {
-        _chatImageBase64 = null;
-        var preview = document.getElementById('chat-img-preview');
-        if (preview) { preview.style.display = 'none'; preview.classList.add('hidden'); }
-    }
-
-    // ── Send message ────────────────────────────────────────────────
-    async function sendChatMessage() {
-        var input = document.getElementById('chat-input');
-        var sendBtn = document.getElementById('chat-send-btn');
-        if (!input || (!input.value.trim() && !_chatImageBase64) || _chatTyping) return;
-        var msg = input.value.trim() || (_chatImageBase64 ? 'What do you see in this image?' : '');
-        input.value = '';
-        chatInputAutoResize(input);
-
-        var userMsg = { role: 'user', content: msg, created_at: new Date().toISOString() };
-        if (_chatImageBase64) userMsg.has_image = true;
-        _chatMessages.push(userMsg);
-        renderChatMessages();
-        showChatTyping();
-        if (sendBtn) sendBtn.disabled = true;
-        if (input) input.disabled = true;
-
-        var payload = { message: msg };
-        if (_chatImageBase64) {
-            payload.image_base64 = _chatImageBase64;
-            clearChatImage();
-        }
-
-        try {
-            var r = await api('/chat', 'POST', payload);
-            hideChatTyping();
-            var reply;
-            if (r && r.response) {
-                reply = r.response;
-            } else {
-                reply = 'Sorry, I couldn\'t process that. Please try again.';
-            }
-            _chatMessages.push({ role: 'assistant', content: reply, created_at: new Date().toISOString() });
-        } catch (e) {
-            hideChatTyping();
-            _chatMessages.push({ role: 'assistant', content: 'Something went wrong. Please check your connection and try again.', created_at: new Date().toISOString() });
-        }
-
-        if (sendBtn) sendBtn.disabled = false;
-        if (input) { input.disabled = false; input.focus(); }
-        renderChatMessages();
-    }
-
-    // ── Render messages ─────────────────────────────────────────────
-    function renderChatMessages() {
-        var container = document.getElementById('chat-messages');
-        if (!container) return;
-        var html = '';
-        for (var i = 0; i < _chatMessages.length; i++) {
-            var m = _chatMessages[i];
-            var isUser = m.role === 'user';
-            var align = isUser ? 'flex-end' : 'flex-start';
-            var bg = isUser ? '#4f80ff' : '#1c1c20';
-            var color = isUser ? '#fff' : '#f0f0f2';
-            var border = isUser ? 'none' : '1px solid #2a2a2e';
-            var ts = '';
-            if (m.created_at) {
-                var d = new Date(m.created_at);
-                ts = '<div style="font-size:0.6875rem;color:#5c5c6b;margin-top:4px;text-align:' + (isUser ? 'right' : 'left') + ';">'
-                    + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                    + '</div>';
-            }
-            var imgBadge = (m.has_image && isUser) ? '<div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;opacity:0.7;"><svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg><span style="font-size:0.6875rem;">Image attached</span></div>' : '';
-            html += '<div style="display:flex;flex-direction:column;align-items:' + align + ';margin-bottom:10px;">'
-                + '<div style="max-width:85%;padding:10px 14px;border-radius:16px;background:' + bg + ';color:' + color + ';border:' + border + ';font-size:0.875rem;line-height:1.5;word-break:break-word;">'
-                + imgBadge
-                + chatFormatMsg(m.content)
-                + '</div>'
-                + ts
-                + '</div>';
-        }
-        // Append typing indicator placeholder at end
-        html += '<div id="chat-typing" role="status" aria-label="AI is typing" style="display:' + (_chatTyping ? 'flex' : 'none') + ';align-items:center;gap:4px;padding:10px 14px;border-radius:16px;background:#1c1c20;border:1px solid #2a2a2e;width:fit-content;margin-bottom:8px;">'
-            + '<span style="width:6px;height:6px;border-radius:50%;background:#5c5c6b;display:inline-block;animation:chat-bounce 1.2s infinite ease-in-out;"></span>'
-            + '<span style="width:6px;height:6px;border-radius:50%;background:#5c5c6b;display:inline-block;animation:chat-bounce 1.2s 0.2s infinite ease-in-out;"></span>'
-            + '<span style="width:6px;height:6px;border-radius:50%;background:#5c5c6b;display:inline-block;animation:chat-bounce 1.2s 0.4s infinite ease-in-out;"></span>'
-            + '</div>';
-        container.innerHTML = html;
-        container.scrollTop = container.scrollHeight;
     }
 
     function chatFormatMsg(text) {
@@ -9877,52 +9676,30 @@
         return s;
     }
 
-    function chatFormatMsgFull(text) {
-        // Enhanced version for chat mode with cm-content class support
-        return chatFormatMsg(text);
-    }
-
-    // ── Typing indicator ────────────────────────────────────────────
-    function showChatTyping() {
-        _chatTyping = true;
+    // Stubs for code that references old floating chat functions
+    function showChatTyping() {}
         var el = document.getElementById('chat-typing');
         if (el) el.style.display = 'flex';
         var container = document.getElementById('chat-messages');
         if (container) container.scrollTop = container.scrollHeight;
     }
 
-    function hideChatTyping() {
-        _chatTyping = false;
-        var el = document.getElementById('chat-typing');
-        if (el) el.style.display = 'none';
-    }
-
-    // ── Auto-resize textarea ────────────────────────────────────────
-    function chatInputAutoResize(el) {
-        el.style.height = 'auto';
-        el.style.height = Math.min(el.scrollHeight, 120) + 'px';
-    }
+    function hideChatTyping() {}
+    function chatInputAutoResize(el) { if(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; } }
 
     // ── Keyboard handling ───────────────────────────────────────────
     document.addEventListener('keydown', function (e) {
-        // Escape closes chat
-        if (e.key === 'Escape' && _chatOpen) {
-            toggleChat();
-            return;
+        // Escape exits chat mode
+        if (e.key === 'Escape') {
+            var chatView = document.getElementById('v-chatmode');
+            if (chatView && !chatView.classList.contains('hidden')) {
+                _switchView('dashboard');
+            }
         }
     });
 
-    // Wire up input events — script runs after DOM so elements exist
+    // Old floating chat input wiring removed — Chat Mode handles its own input
     (function () {
-        var input = document.getElementById('chat-input');
-        if (!input) return;
-
-        input.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendChatMessage();
-            }
-        });
 
         input.addEventListener('input', function () {
             chatInputAutoResize(this);
