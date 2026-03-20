@@ -826,6 +826,29 @@ def run_migrations(conn) -> None:
         conn.commit()
         print("  Migration 24: Add images_json to food_logs")
 
+    # Migration 25: AI billing — user plans and per-user usage tracking
+    current = get_current_version(conn)
+    if current < 25:
+        user_cols = [r[1] for r in conn.execute("PRAGMA table_info(users)").fetchall()]
+        if 'plan' not in user_cols:
+            conn.execute("ALTER TABLE users ADD COLUMN plan TEXT DEFAULT 'free'")
+        if 'byok_enabled' not in user_cols:
+            conn.execute("ALTER TABLE users ADD COLUMN byok_enabled INTEGER DEFAULT 0")
+
+        ai_cols = [r[1] for r in conn.execute("PRAGMA table_info(ai_usage_log)").fetchall()]
+        if 'user_id' not in ai_cols:
+            conn.execute("ALTER TABLE ai_usage_log ADD COLUMN user_id INTEGER")
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ai_usage_user ON ai_usage_log(user_id)"
+            )
+
+        conn.execute(
+            "INSERT OR IGNORE INTO schema_version (version, description) "
+            "VALUES (25, 'AI billing: plans, BYOK, per-user usage')"
+        )
+        conn.commit()
+        print("  Migration 25: AI billing: plans, BYOK, per-user usage")
+
     # Migration 18: Journal, Books, Notes modules
     current = get_current_version(conn)
     if current < 18:

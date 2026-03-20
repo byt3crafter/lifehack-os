@@ -781,3 +781,31 @@ def update_profile():
         result['photo_url'] = None
 
     return jsonify(result)
+
+
+# ---------------------------------------------------------------------------
+# AI usage stats for the current user
+# ---------------------------------------------------------------------------
+
+@auth_bp.route('/api/usage')
+@login_required
+def get_usage():
+    """Return the current user's AI usage — today's calls vs. plan limit plus monthly totals."""
+    uid = current_user_id()
+    conn = get_connection()
+
+    from src.infrastructure.ai.usage import check_ai_usage
+    usage = check_ai_usage(uid, conn)
+
+    monthly = conn.execute(
+        """SELECT COUNT(*) as calls, COALESCE(SUM(total_tokens), 0) as tokens
+           FROM ai_usage_log
+           WHERE user_id = ? AND timestamp >= date('now', 'start of month')""",
+        (uid,),
+    ).fetchone()
+
+    return jsonify({
+        **usage,
+        'monthly_calls':  monthly['calls'] if monthly else 0,
+        'monthly_tokens': monthly['tokens'] if monthly else 0,
+    })

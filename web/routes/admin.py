@@ -19,6 +19,7 @@ from flask import (
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from src.infrastructure.database import get_connection
+from src.infrastructure.ai.usage import PLAN_LIMITS
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -614,6 +615,80 @@ def admin_backup():
         download_name=f"lifehack_backup_{_now_utc().strftime('%Y%m%d_%H%M%S')}.db",
         mimetype='application/x-sqlite3',
     )
+
+
+# ---------------------------------------------------------------------------
+# Plan management & per-user AI cost breakdown
+# ---------------------------------------------------------------------------
+
+@admin_bp.route('/users/<int:user_id>/plan', methods=['POST'])
+def admin_set_plan(user_id: int):
+    """Set a user's plan (free / personal / pro / unlimited)."""
+    guard = _require_admin()
+    if guard:
+        return guard
+
+    data = request.get_json(silent=True) or {}
+    plan = data.get('plan', 'free')
+    if plan not in PLAN_LIMITS:
+        return jsonify({'error': f"Invalid plan '{plan}'. Valid: {list(PLAN_LIMITS)}"}), 400
+
+    conn = get_connection()
+    user = conn.execute("SELECT id FROM users WHERE id = ?", (user_id,)).fetchone()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    conn.execute("UPDATE users SET plan = ? WHERE id = ?", (plan, user_id))
+    conn.commit()
+    return jsonify({'success': True, 'user_id': user_id, 'plan': plan})
+
+
+@admin_bp.route('/users/<int:user_id>/byok', methods=['POST'])
+def admin_toggle_byok(user_id: int):
+    """Toggle BYOK (bring-your-own-key) for a user."""
+    guard = _require_admin()
+    if guard:
+        return guard
+
+    conn = get_connection()
+    user = conn.execute(
+        "SELECT id, byok_enabled FROM users WHERE id = ?", (user_id,)
+    ).fetchone()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    new_val = 0 if user['byok_enabled'] else 1
+    conn.execute("UPDATE users SET byok_enabled = ? WHERE id = ?", (new_val, user_id))
+    conn.commit()
+    return jsonify({'success': True, 'user_id': user_id, 'byok_enabled': bool(new_val)})
+
+
+@admin_bp.route('/user-costs')
+def admin_user_costs():
+    """Per-user AI cost and usage breakdown."""
+    guard = _require_admin()
+    if guard:
+        return guard
+
+    conn = get_connection()
+    try:
+        rows = conn.execute("""
+            SELECT
+                u.id, u.username, u.display_name,
+                COALESCE(u.plan, 'free') as plan,
+                COALESCE(u.byok_enabled, 0) as byok_enabled,
+                COUNT(a.id) as total_calls,
+                COALESCE(SUM(a.total_tokens), 0) as total_tokens,
+                COALESCE(SUM(a.cost_usd), 0) as total_cost,
+                COUNT(CASE WHEN date(a.timestamp) = date('now') THEN 1 END) as today_calls
+            FROM users u
+            LEFT JOIN ai_usage_log a ON a.user_id = u.id
+            GROUP BY u.id
+            ORDER BY total_cost DESC
+        """).fetchall()
+        return jsonify([dict(r) for r in rows])
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
 
 
 def _format_uptime(seconds: int) -> str:

@@ -81,12 +81,24 @@ def send_message():
     if not user_message:
         return jsonify({"error": "message is required"}), 400
 
-    # Resolve the AI provider
-    provider = get_ai_provider("default")
+    conn = get_connection()
+
+    # Check daily AI usage limits before touching the provider
+    from src.infrastructure.ai.usage import check_ai_usage
+    usage = check_ai_usage(uid, conn)
+    if not usage['allowed']:
+        return jsonify({
+            'error': (
+                f"Daily AI limit reached ({usage['used']}/{usage['limit']} calls). "
+                "Upgrade your plan for more."
+            ),
+            'usage': usage,
+        }), 429
+
+    # Resolve the AI provider — pass user_id so BYOK keys are respected
+    provider = get_ai_provider("default", user_id=uid)
     if not provider.is_available():
         return jsonify({"error": "No AI provider configured. Go to Settings > AI Providers."}), 503
-
-    conn = get_connection()
 
     # Assemble live context from all modules
     try:

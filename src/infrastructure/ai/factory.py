@@ -11,24 +11,37 @@ from .null import NullAIProvider
 
 
 def _get_setting(key: str, user_id: Optional[int] = None) -> str:
-    """Read a setting value, checking per-user settings first.
+    """Read a setting value, respecting BYOK preference.
 
-    Resolution: user_settings → app_settings → empty string.
+    Resolution:
+      - BYOK enabled:  user_settings → app_settings → ''
+      - BYOK disabled: app_settings only → ''
+
+    When ``user_id`` is None the global app_settings path is used directly.
     """
     try:
         from src.infrastructure.database import get_connection
         conn = get_connection()
 
-        # Per-user setting first
         if user_id is not None:
-            row = conn.execute(
-                "SELECT value FROM user_settings WHERE user_id = ? AND key = ?",
-                (user_id, key),
+            # Check whether this user has BYOK enabled
+            user = conn.execute(
+                "SELECT byok_enabled FROM users WHERE id = ?", (user_id,)
             ).fetchone()
-            if row and row['value']:
-                return row['value']
+            byok = user and user['byok_enabled']
 
-        # Global fallback
+            if byok:
+                # BYOK path: use the user's own keys first
+                row = conn.execute(
+                    "SELECT value FROM user_settings WHERE user_id = ? AND key = ?",
+                    (user_id, key),
+                ).fetchone()
+                if row and row['value']:
+                    return row['value']
+            # If BYOK is off (or the user has no personal key), fall through
+            # to the global app_settings below — intentionally no early return.
+
+        # Global fallback (admin's / app-level keys)
         row = conn.execute(
             "SELECT value FROM app_settings WHERE key = ?", (key,)
         ).fetchone()

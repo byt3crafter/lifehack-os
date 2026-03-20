@@ -402,9 +402,10 @@ def init_database() -> None:
             dismissed INTEGER DEFAULT 0
         );
 
-        -- AI Usage Log (GLOBAL — tracks costs system-wide)
+        -- AI Usage Log (GLOBAL — tracks costs system-wide; user_id is nullable for legacy rows)
         CREATE TABLE IF NOT EXISTS ai_usage_log (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
             timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
             provider TEXT NOT NULL,
             model TEXT NOT NULL,
@@ -620,6 +621,7 @@ def init_database() -> None:
         CREATE INDEX IF NOT EXISTS idx_food_date ON food_logs(logged_at);
         CREATE INDEX IF NOT EXISTS idx_challenges_status ON challenges(status);
         CREATE INDEX IF NOT EXISTS idx_ai_usage_timestamp ON ai_usage_log(timestamp);
+        CREATE INDEX IF NOT EXISTS idx_ai_usage_user ON ai_usage_log(user_id);
         CREATE INDEX IF NOT EXISTS idx_app_log_timestamp ON app_log(timestamp);
         CREATE INDEX IF NOT EXISTS idx_habit_phases_habit ON habit_phases(habit_id);
         CREATE INDEX IF NOT EXISTS idx_habit_micro_tasks_phase ON habit_micro_tasks(phase_id);
