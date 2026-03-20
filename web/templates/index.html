@@ -8492,7 +8492,7 @@
                 var tagHtml = tags.map(function(t) { return '<span class="text-xs px-1.5 py-0.5 rounded" style="background:rgba(79,128,255,0.1);color:#4f80ff;">#' + t + '</span>'; }).join(' ');
                 var dateStr = '';
                 try { dateStr = new Date(e.date + 'T12:00:00').toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'}); } catch(x) {}
-                return '<div class="card p-4 rounded-xl" style="border:1px solid #2a2a2e;cursor:pointer;" onclick="editJournalEntry(' + e.id + ')">'
+                return '<div class="card p-4 rounded-xl" style="border:1px solid #2a2a2e;cursor:pointer;" onclick="viewJournalEntry(' + e.id + ')">'
                     + '<div class="flex items-center justify-between mb-2">'
                     + '<div class="flex items-center gap-2">'
                     + '<span style="font-size:1.1rem;">' + mood + '</span>'
@@ -8563,12 +8563,75 @@
         loadJournal();
     }
 
+    async function viewJournalEntry(id) {
+        var e = await api('/journal/' + id);
+        if(!e) return;
+        var moods = ['','&#128542;','&#128528;','&#128578;','&#128522;','&#129321;'];
+        var mood = moods[e.mood||3] || '';
+        var gratitude = []; try { gratitude = JSON.parse(e.gratitude_json||'[]'); } catch(x) {}
+        var wins = []; try { wins = JSON.parse(e.wins_json||'[]'); } catch(x) {}
+        var tags = []; try { tags = JSON.parse(e.tags_json||'[]'); } catch(x) {}
+        var dateStr = '';
+        try { dateStr = new Date(e.date + 'T12:00:00').toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'}); } catch(x) { dateStr = e.date; }
+
+        var html = '<div class="space-y-3">';
+        // Header
+        html += '<div class="flex items-center justify-between">'
+            + '<div class="flex items-center gap-2"><span style="font-size:1.5rem;">' + mood + '</span><span class="text-sm font-medium" style="color:#f0f0f2;">' + dateStr + '</span></div>'
+            + '<div class="flex items-center gap-2"><span class="text-xs px-2 py-0.5 rounded" style="background:rgba(79,128,255,0.1);color:#4f80ff;">Mood ' + (e.mood||3) + '/5</span>'
+            + '<span class="text-xs px-2 py-0.5 rounded" style="background:rgba(34,197,94,0.1);color:#22c55e;">Energy ' + (e.energy||3) + '/5</span></div></div>';
+
+        // Gratitude
+        if(gratitude.length && gratitude.some(function(g){return g;})) {
+            html += '<div class="p-3 rounded-lg" style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.12);">'
+                + '<div class="text-xs font-semibold mb-1.5" style="color:#f59e0b;">Grateful For</div>';
+            gratitude.forEach(function(g,i) { if(g) html += '<div class="text-sm" style="color:#f0f0f2;">' + (i+1) + '. ' + g + '</div>'; });
+            html += '</div>';
+        }
+        // Wins
+        if(wins.length && wins.some(function(w){return w;})) {
+            html += '<div class="p-3 rounded-lg" style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.12);">'
+                + '<div class="text-xs font-semibold mb-1.5" style="color:#22c55e;">Daily Wins</div>';
+            wins.forEach(function(w) { if(w) html += '<div class="text-sm" style="color:#f0f0f2;">&bull; ' + w + '</div>'; });
+            html += '</div>';
+        }
+        // Lessons
+        if(e.lessons) {
+            html += '<div class="p-3 rounded-lg" style="background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.12);">'
+                + '<div class="text-xs font-semibold mb-1.5" style="color:#c4b5fd;">Lessons</div>'
+                + '<div class="text-sm" style="color:#f0f0f2;">' + e.lessons + '</div></div>';
+        }
+        // Content
+        if(e.content) {
+            html += '<div class="p-3 rounded-lg" style="background:rgba(255,255,255,0.02);border:1px solid #2a2a2e;">'
+                + '<div class="text-sm" style="color:#f0f0f2;white-space:pre-wrap;line-height:1.6;">' + e.content + '</div></div>';
+        }
+        // Tags
+        if(tags.length) {
+            html += '<div class="flex flex-wrap gap-1">';
+            tags.forEach(function(t) { html += '<span class="text-xs px-2 py-0.5 rounded" style="background:rgba(79,128,255,0.1);color:#4f80ff;">#' + t + '</span>'; });
+            html += '</div>';
+        }
+        // Action buttons
+        html += '<div class="flex gap-2 pt-2">'
+            + '<button onclick="hideModal();editJournalEntry(' + id + ')" class="btn-primary flex-1 py-2.5">Edit</button>'
+            + '<button onclick="deleteJournalEntry(' + id + ')" class="flex-1 py-2.5 rounded-lg text-sm font-medium" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);cursor:pointer;font-family:inherit;">Delete</button>'
+            + '</div>';
+        html += '</div>';
+        showModal('Journal Entry', html);
+    }
+
+    async function deleteJournalEntry(id) {
+        await api('/journal/' + id, 'DELETE');
+        hideModal(); showToast('Entry deleted', 'info'); loadJournal();
+    }
+
     async function editJournalEntry(id) {
         var e = await api('/journal/' + id);
         if(!e) return;
         newJournalEntry();
         setTimeout(function() {
-            var f = function(id, val) { var el = document.getElementById(id); if(el) el.value = val||''; };
+            var f = function(fid, val) { var el = document.getElementById(fid); if(el) el.value = val||''; };
             f('je-date', e.date);
             f('je-mood', e.mood); f('je-energy', e.energy);
             var g = []; try { g = JSON.parse(e.gratitude_json||'[]'); } catch(x) {}
@@ -8578,7 +8641,6 @@
             f('je-lessons', e.lessons); f('je-content', e.content);
             var t = []; try { t = JSON.parse(e.tags_json||'[]'); } catch(x) {}
             f('je-tags', t.join(', '));
-            // Change save button to update
             var btn = document.querySelector('#modal-body .btn-primary');
             if(btn) { btn.textContent = 'Update Entry'; btn.setAttribute('onclick', 'saveJournalEntry(' + id + ')'); }
         }, 100);
@@ -8704,7 +8766,7 @@
             var tagHtml = tags.map(function(t) { return '<span class="text-xs px-1.5 py-0.5 rounded" style="background:rgba(79,128,255,0.1);color:#4f80ff;">' + t + '</span>'; }).join(' ');
             var timeAgo = '';
             try { var d = new Date(n.updated_at); timeAgo = d.toLocaleDateString('en-US', {month:'short',day:'numeric'}); } catch(x) {}
-            return '<div class="card p-3 rounded-xl" style="border:1px solid #2a2a2e;cursor:pointer;" onclick="editNoteModal(' + n.id + ')">'
+            return '<div class="card p-3 rounded-xl" style="border:1px solid #2a2a2e;cursor:pointer;" onclick="viewNoteModal(' + n.id + ')">'
                 + '<div class="flex items-start justify-between mb-1">'
                 + '<div class="flex items-center gap-2">'
                 + (n.pinned ? '<span style="color:#eab308;font-size:0.75rem;">&#128204;</span>' : '')
@@ -8742,6 +8804,45 @@
         hideModal(); showToast('Note saved', 'success'); loadNotes();
     }
 
+    async function viewNoteModal(id) {
+        var n = await api('/notes/' + id);
+        if(!n) return;
+        var tags = []; try { tags = JSON.parse(n.tags_json||'[]'); } catch(x) {}
+        var timeStr = '';
+        try { timeStr = new Date(n.updated_at).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit'}); } catch(x) {}
+
+        var html = '<div class="space-y-3">';
+        // Meta
+        html += '<div class="flex items-center justify-between">'
+            + '<div class="flex items-center gap-2">'
+            + (n.pinned ? '<span style="color:#eab308;">&#128204;</span>' : '')
+            + (n.folder ? '<span class="text-xs px-2 py-0.5 rounded" style="background:rgba(255,255,255,0.04);color:#9898a6;">' + n.folder + '</span>' : '')
+            + '</div>'
+            + '<span class="text-xs" style="color:#5c5c6b;">' + timeStr + '</span>'
+            + '</div>';
+        // Body
+        if(n.body) {
+            html += '<div class="p-4 rounded-lg" style="background:rgba(255,255,255,0.02);border:1px solid #2a2a2e;">'
+                + '<div class="text-sm" style="color:#f0f0f2;white-space:pre-wrap;line-height:1.7;">' + n.body + '</div></div>';
+        } else {
+            html += '<div class="text-sm" style="color:#5c5c6b;font-style:italic;">No content</div>';
+        }
+        // Tags
+        if(tags.length) {
+            html += '<div class="flex flex-wrap gap-1">';
+            tags.forEach(function(t) { html += '<span class="text-xs px-2 py-0.5 rounded" style="background:rgba(79,128,255,0.1);color:#4f80ff;">' + t + '</span>'; });
+            html += '</div>';
+        }
+        // Actions
+        html += '<div class="flex gap-2 pt-2">'
+            + '<button onclick="hideModal();editNoteModal(' + id + ')" class="btn-primary flex-1 py-2.5">Edit</button>'
+            + '<button onclick="toggleNotePin(' + id + ')" class="btn-ghost flex-1 py-2.5">' + (n.pinned ? 'Unpin' : 'Pin') + '</button>'
+            + '<button onclick="deleteNote(' + id + ')" class="flex-1 py-2.5 rounded-lg text-sm font-medium" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);cursor:pointer;font-family:inherit;">Delete</button>'
+            + '</div>';
+        html += '</div>';
+        showModal(n.title, html);
+    }
+
     async function editNoteModal(id) {
         var n = await api('/notes/' + id);
         if(!n) return;
@@ -8753,12 +8854,6 @@
             f('nn-tags', tags.join(', '));
             var btn = document.querySelector('#modal-body .btn-primary');
             if(btn) { btn.textContent = 'Update Note'; btn.setAttribute('onclick', 'saveNote(' + id + ')'); }
-            // Add pin/delete buttons
-            var form = document.querySelector('#modal-body .space-y-3');
-            if(form) {
-                var extra = '<div class="flex gap-2"><button onclick="toggleNotePin(' + id + ')" class="btn-ghost flex-1 py-2">' + (n.pinned ? 'Unpin' : 'Pin') + '</button><button onclick="deleteNote(' + id + ')" class="flex-1 py-2 rounded-lg text-sm font-medium" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);cursor:pointer;font-family:inherit;">Delete</button></div>';
-                form.insertAdjacentHTML('beforeend', extra);
-            }
         }, 100);
     }
 
