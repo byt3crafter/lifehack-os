@@ -1814,109 +1814,124 @@
             <div id="v-fasting" class="view hidden">
                 <div class="view-header">
                     <div>
-                        <h2 class="view-title">Fasting Tracker</h2>
-                        <p class="text-xs mt-0.5" style="color:#5c5c6b;">Intermittent fasting timer</p>
+                        <h2 class="view-title">Fasting</h2>
+                        <p class="text-xs mt-0.5" style="color:#5c5c6b;">Intermittent fasting tracker</p>
                     </div>
                     <div id="fast-streak-badge" class="hidden flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold" style="background:rgba(249,115,22,0.12);color:#f97316;border:1px solid rgba(249,115,22,0.25);">
                         <span>&#128293;</span><span id="fast-streak-text">0-day streak</span>
                     </div>
                 </div>
 
-                <!-- Active fast card -->
-                <div id="fast-active-card" class="hidden mb-4">
-                    <div class="p-5 rounded-2xl" style="background:linear-gradient(135deg,#171728 0%,#141e30 100%);border:1px solid rgba(79,128,255,0.25);">
-                        <div class="text-xs font-semibold mb-4 text-center" style="color:#9898a6;letter-spacing:0.08em;text-transform:uppercase;">Active Fast</div>
+                <!-- Active fast card — premium redesign -->
+                <div id="fast-active-card" class="hidden mb-5">
+                    <!-- Hero timer -->
+                    <div class="rounded-2xl overflow-hidden" style="background:linear-gradient(160deg,#0d0d1a 0%,#111128 40%,#0f1a2e 100%);border:1px solid rgba(79,128,255,0.15);">
+                        <div class="px-5 pt-6 pb-4">
+                            <!-- Timer ring — centered hero -->
+                            <div style="position:relative;width:200px;height:200px;margin:0 auto;">
+                                <svg width="200" height="200" style="transform:rotate(-90deg);display:block;">
+                                    <circle cx="100" cy="100" r="86" stroke="rgba(255,255,255,0.04)" stroke-width="10" fill="none"/>
+                                    <circle id="fast-ring-fill" cx="100" cy="100" r="86"
+                                        stroke="url(#fastGrad)" stroke-width="10" fill="none"
+                                        stroke-linecap="round"
+                                        stroke-dasharray="540.4" stroke-dashoffset="540.4"
+                                        style="transition:stroke-dashoffset 0.5s ease;filter:drop-shadow(0 0 12px rgba(79,128,255,0.3));"/>
+                                    <defs>
+                                        <linearGradient id="fastGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" stop-color="#4f80ff"/>
+                                            <stop offset="50%" stop-color="#8b5cf6"/>
+                                            <stop offset="100%" stop-color="#22c55e"/>
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+                                <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                                    <div id="fast-timer" style="font-family:'DM Sans',sans-serif;font-size:2.25rem;font-weight:700;letter-spacing:-0.02em;color:#f0f0f2;">00:00:00</div>
+                                    <div id="fast-pct-label" class="text-xs font-mono mt-1" style="color:#9898a6;">0%</div>
+                                </div>
+                            </div>
 
-                        <!-- SVG progress ring -->
-                        <div class="relative inline-flex items-center justify-center mb-2" style="width:160px;height:160px;display:block;margin:0 auto 0.5rem;">
-                            <svg width="160" height="160" style="transform:rotate(-90deg);display:block;margin:0 auto;">
-                                <circle cx="80" cy="80" r="68" stroke="#1e2440" stroke-width="8" fill="none"/>
-                                <circle id="fast-ring-fill" cx="80" cy="80" r="68"
-                                    stroke="url(#fastGrad)" stroke-width="8" fill="none"
-                                    stroke-linecap="round"
-                                    stroke-dasharray="427.3" stroke-dashoffset="427.3"/>
-                                <defs>
-                                    <linearGradient id="fastGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" stop-color="#4f80ff"/>
-                                        <stop offset="100%" stop-color="#22c55e"/>
-                                    </linearGradient>
-                                </defs>
-                            </svg>
-                            <div style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-                                <div id="fast-timer" class="timer-display" style="color:#f0f0f2;">00:00:00</div>
-                                <div id="fast-pct-label" class="text-xs mt-1 font-mono" style="color:#5c5c6b;">0%</div>
+                            <!-- Stage label + next stage -->
+                            <div class="text-center mt-4">
+                                <div id="fast-stage-label" class="text-base font-semibold" style="color:#f0f0f2;">&#8212;</div>
+                                <div id="fast-progress-label" class="text-xs mt-1" style="color:#9898a6;">&#8212;</div>
+                                <div id="fast-next-label" class="text-xs mt-1" style="color:#5c5c6b;">&#8212;</div>
+                            </div>
+
+                            <!-- Start time + target — compact pills -->
+                            <div class="flex justify-center gap-3 mt-4">
+                                <div class="px-3 py-1.5 rounded-lg text-center" style="background:rgba(255,255,255,0.04);">
+                                    <div class="text-xs" style="color:#5c5c6b;">Started</div>
+                                    <div id="fast-start-time" class="text-sm font-medium" style="color:#f0f0f2;">&#8212;</div>
+                                </div>
+                                <div class="px-3 py-1.5 rounded-lg text-center" style="background:rgba(255,255,255,0.04);">
+                                    <div class="text-xs" style="color:#5c5c6b;">Target</div>
+                                    <div class="text-sm font-mono font-semibold" style="color:#4f80ff;"><span id="fast-target-hours">&#8212;</span>h</div>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Current stage label + progress info -->
-                        <div class="text-center mt-3 mb-1">
-                            <div id="fast-stage-label" class="text-sm font-semibold mb-0.5" style="color:#f0f0f2;">&#8212;</div>
-                            <div id="fast-progress-label" class="text-xs" style="color:#9898a6;">&#8212;</div>
-                            <div id="fast-next-label" class="text-xs mt-0.5" style="color:#5c5c6b;">&#8212;</div>
+                        <!-- Body Stages — visual journey timeline -->
+                        <div class="px-5 py-4" style="background:rgba(0,0,0,0.2);border-top:1px solid rgba(255,255,255,0.04);">
+                            <div class="text-xs font-semibold mb-3" style="color:#9898a6;letter-spacing:0.06em;text-transform:uppercase;">Your Journey</div>
+                            <div id="fast-stages-timeline"></div>
                         </div>
 
-                        <div class="flex justify-center gap-6 text-sm mt-4 mb-5">
-                            <div class="text-center">
-                                <div class="text-xs" style="color:#5c5c6b;">Started</div>
-                                <div id="fast-start-time" class="font-medium mt-0.5" style="color:#f0f0f2;">&#8212;</div>
-                            </div>
-                            <div style="width:1px;background:#2a2a2e;"></div>
-                            <div class="text-center">
-                                <div class="text-xs" style="color:#5c5c6b;">Target</div>
-                                <div class="font-mono font-semibold mt-0.5" style="color:#4f80ff;"><span id="fast-target-hours">&#8212;</span>h</div>
-                            </div>
+                        <!-- Hydration — collapsible -->
+                        <div class="px-5 py-3" style="border-top:1px solid rgba(255,255,255,0.04);">
+                            <button onclick="document.getElementById('fast-hydration-items').classList.toggle('hidden')" class="flex items-center gap-2 w-full text-left" style="background:none;border:none;cursor:pointer;font-family:inherit;">
+                                <span style="font-size:0.9rem;">&#128167;</span>
+                                <span class="text-xs font-semibold flex-1" style="color:#9898a6;">Hydration Tips</span>
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="#5c5c6b" viewBox="0 0 20 20" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8l5 5 5-5"/></svg>
+                            </button>
+                            <div id="fast-hydration-items" class="hidden mt-2 space-y-1"></div>
                         </div>
 
-                        <!-- Body Stages Timeline -->
-                        <div class="mb-4">
-                            <div class="section-label mb-2">Body Stages</div>
-                            <div id="fast-stages-timeline" class="space-y-0.5"></div>
+                        <!-- End Fast button — prominent -->
+                        <div class="p-4" style="border-top:1px solid rgba(255,255,255,0.04);">
+                            <button onclick="endFastModal()"
+                                    class="w-full py-3 rounded-xl font-semibold text-sm transition-all"
+                                    style="background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(239,68,68,0.08));color:#ef4444;border:1px solid rgba(239,68,68,0.25);cursor:pointer;font-family:inherit;">
+                                End Fast
+                            </button>
                         </div>
-
-                        <!-- Hydration Card -->
-                        <div id="fast-hydration-card" class="fast-hydration mb-5">
-                            <div class="flex items-center gap-2 mb-2">
-                                <span style="font-size:1rem;">&#128167;</span>
-                                <span class="text-sm font-semibold" style="color:#f0f0f2;">Hydration</span>
-                            </div>
-                            <div id="fast-hydration-items" class="space-y-1"></div>
-                        </div>
-
-                        <button onclick="endFastModal()"
-                                class="w-full px-6 py-2.5 rounded-xl font-semibold text-sm transition-all"
-                                style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);">
-                            End Fast
-                        </button>
                     </div>
                 </div>
 
-                <!-- Start fast card -->
+                <!-- Start fast card — inviting design -->
                 <div id="fast-start-card" class="hidden mb-5">
-                    <div class="p-6 rounded-2xl text-center" style="border:1px dashed #2a2a2e;">
-                        <div class="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style="background:rgba(79,128,255,0.08);border:1px solid rgba(79,128,255,0.15);">
-                            <svg class="w-6 h-6" fill="none" stroke="#4f80ff" viewBox="0 0 20 20" stroke-width="1.6"><circle cx="10" cy="10" r="7"/><path stroke-linecap="round" stroke-linejoin="round" d="M10 6v4l2.5 2.5"/></svg>
-                        </div>
-                        <div class="text-sm font-medium mb-1" style="color:#f0f0f2;">Ready to start a fast?</div>
-                        <div class="text-xs mb-5" style="color:#5c5c6b;">Choose your target duration</div>
+                    <div class="rounded-2xl text-center overflow-hidden" style="background:linear-gradient(160deg,#0d0d1a 0%,#111128 40%,#0f1a2e 100%);border:1px solid rgba(79,128,255,0.12);">
+                        <div class="px-6 py-8">
+                            <!-- Decorative ring -->
+                            <div style="width:120px;height:120px;margin:0 auto 1.5rem;position:relative;">
+                                <svg width="120" height="120" style="display:block;">
+                                    <circle cx="60" cy="60" r="52" stroke="rgba(79,128,255,0.12)" stroke-width="6" fill="none" stroke-dasharray="8 6"/>
+                                </svg>
+                                <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+                                    <svg class="w-8 h-8" fill="none" stroke="#4f80ff" viewBox="0 0 24 24" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M12 7v5l3 3"/></svg>
+                                </div>
+                            </div>
+                            <div class="text-lg font-semibold mb-1" style="color:#f0f0f2;">Ready to fast?</div>
+                            <div class="text-xs mb-6" style="color:#5c5c6b;">Choose your target duration</div>
 
-                        <div id="fast-duration-buttons" class="flex gap-2 mb-5">
-                            <button onclick="selectFastDuration(16)" data-h="16" class="fast-btn">16h</button>
-                            <button onclick="selectFastDuration(18)" data-h="18" class="fast-btn">18h</button>
-                            <button onclick="selectFastDuration(20)" data-h="20" class="fast-btn">20h</button>
-                            <button onclick="selectFastDuration(24)" data-h="24" class="fast-btn">24h</button>
-                        </div>
+                            <div id="fast-duration-buttons" class="flex gap-2 justify-center mb-6">
+                                <button onclick="selectFastDuration(16)" data-h="16" class="fast-btn">16h</button>
+                                <button onclick="selectFastDuration(18)" data-h="18" class="fast-btn">18h</button>
+                                <button onclick="selectFastDuration(20)" data-h="20" class="fast-btn">20h</button>
+                                <button onclick="selectFastDuration(24)" data-h="24" class="fast-btn">24h</button>
+                            </div>
 
-                        <button id="fast-start-btn" onclick="startFast(window._fastHours||16)"
-                                class="px-8 py-3 rounded-xl font-semibold text-sm w-full"
-                                style="background:#4f80ff;color:#fff;box-shadow:0 4px 20px rgba(79,128,255,0.25);">
-                            Start 16h Fast
-                        </button>
+                            <button id="fast-start-btn" onclick="startFast(window._fastHours||16)"
+                                    class="px-8 py-3.5 rounded-xl font-semibold text-sm w-full"
+                                    style="background:linear-gradient(135deg,#4f80ff,#6b96ff);color:#fff;box-shadow:0 4px 24px rgba(79,128,255,0.3);border:none;cursor:pointer;font-family:inherit;font-size:0.9375rem;">
+                                Start 16h Fast
+                            </button>
+                        </div>
                     </div>
                 </div>
 
                 <div class="flex items-center justify-between mb-3">
                     <div class="section-label">History</div>
-                    <button id="fast-clear-all-btn" onclick="clearAllFastHistory()" class="hidden text-xs font-medium px-2.5 py-1 rounded-lg transition-colors" style="color:#9898a6;border:1px solid #2a2a2e;background:none;">Clear All</button>
+                    <button id="fast-clear-all-btn" onclick="clearAllFastHistory()" class="hidden text-xs font-medium px-2.5 py-1 rounded-lg transition-colors" style="color:#9898a6;border:1px solid #2a2a2e;background:none;cursor:pointer;font-family:inherit;">Clear All</button>
                 </div>
                 <div id="fast-history" class="space-y-2"></div>
             </div>
@@ -3382,36 +3397,45 @@
 
     function renderFastStages(elapsedHours) {
         var stageIdx = getFastStageIdx(elapsedHours);
-        var html = '';
+        var html = '<div style="display:flex;flex-direction:column;gap:0;">';
         for (var i = 0; i < FASTING_STAGES.length; i++) {
             var s = FASTING_STAGES[i];
-            var stateClass = (i < stageIdx) ? 'completed' : (i === stageIdx ? 'active' : 'locked');
-            var prefix = '';
-            if (i < stageIdx) {
-                prefix = '<span style="font-size:0.75rem;color:#22c55e;">\u2713</span> ';
-            } else if (i === stageIdx) {
-                prefix = '<span style="font-size:0.75rem;">' + s.icon + '</span> ';
-            } else {
-                prefix = '<span style="font-size:0.75rem;opacity:0.5;">\uD83D\uDD12</span> ';
-            }
-            var iconBg = (i <= stageIdx) ? s.color + '22' : 'rgba(255,255,255,0.04)';
-            var rangeLabel = s.start + '\u2013' + s.end + 'h';
-            var currentLabel = (i === stageIdx) ? ' <span style="font-size:0.625rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:' + s.color + ';background:' + s.color + '22;padding:1px 5px;border-radius:3px;">NOW</span>' : '';
+            var isDone = i < stageIdx;
+            var isCurrent = i === stageIdx;
+            var isLocked = i > stageIdx;
+
+            // Connector line between stages
             if (i > 0) {
-                html += '<div class="fast-stage-connector' + (i <= stageIdx ? ' completed-line' : '') + '"></div>';
+                var lineColor = isDone || isCurrent ? s.color : 'rgba(255,255,255,0.06)';
+                html += '<div style="width:2px;height:12px;margin-left:15px;background:' + lineColor + ';"></div>';
             }
-            html += '<div class="fast-stage ' + stateClass + '" id="fast-stage-' + i + '" onclick="toggleFastStage(' + i + ')">';
-            html += '<div class="fast-stage-icon" style="background:' + iconBg + ';">' + s.icon + '</div>';
-            html += '<div class="flex-1 min-w-0">';
-            html += '<div class="flex items-center gap-1.5 flex-wrap">';
-            html += '<span class="text-sm font-medium" style="color:' + (i <= stageIdx ? '#f0f0f2' : '#5c5c6b') + ';">' + s.name + '</span>';
-            html += currentLabel;
-            html += '<span class="text-xs font-mono" style="color:#5c5c6b;">' + rangeLabel + '</span>';
+
+            // Stage row
+            var opacity = isLocked ? '0.35' : '1';
+            var bg = isCurrent ? s.color + '10' : 'transparent';
+            var border = isCurrent ? '1px solid ' + s.color + '30' : '1px solid transparent';
+            html += '<div id="fast-stage-' + i + '" onclick="toggleFastStage(' + i + ')" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;cursor:pointer;opacity:' + opacity + ';background:' + bg + ';border:' + border + ';transition:all 0.2s;">';
+
+            // Icon circle
+            var iconBg = isDone ? 'rgba(34,197,94,0.15)' : (isCurrent ? s.color + '25' : 'rgba(255,255,255,0.04)');
+            var iconContent = isDone ? '<svg width="12" height="12" fill="none" stroke="#22c55e" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' : '<span style="font-size:0.85rem;">' + s.icon + '</span>';
+            html += '<div style="width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:' + iconBg + ';">' + iconContent + '</div>';
+
+            // Text
+            html += '<div style="flex:1;min-width:0;">';
+            html += '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">';
+            html += '<span style="font-size:0.8125rem;font-weight:600;color:' + (isLocked ? '#5c5c6b' : '#f0f0f2') + ';">' + s.name + '</span>';
+            if (isCurrent) {
+                html += '<span style="font-size:0.5625rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:' + s.color + ';background:' + s.color + '20;padding:2px 6px;border-radius:4px;">NOW</span>';
+            }
+            html += '<span style="font-size:0.6875rem;font-family:\'DM Sans\',monospace;color:#5c5c6b;">' + s.start + '\u2013' + s.end + 'h</span>';
             html += '</div>';
-            html += '<div class="fast-stage-detail">' + s.desc + '</div>';
+            // Expandable description
+            html += '<div class="fast-stage-detail" style="font-size:0.75rem;color:#9898a6;margin-top:2px;line-height:1.4;">' + s.desc + '</div>';
             html += '</div>';
             html += '</div>';
         }
+        html += '</div>';
         var el = document.getElementById('fast-stages-timeline');
         if (el) el.innerHTML = html;
     }
@@ -3443,7 +3467,7 @@
         if (timerEl) timerEl.textContent = pad2(hours) + ':' + pad2(mins) + ':' + pad2(secs);
 
         var pct = Math.min(100, (elapsed / target) * 100);
-        var CIRC = 427.3;
+        var CIRC = 540.4;
         var ring = document.getElementById('fast-ring-fill');
         if (ring) ring.style.strokeDashoffset = CIRC - (CIRC * pct / 100);
         var pctLbl = document.getElementById('fast-pct-label');
