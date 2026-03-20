@@ -804,6 +804,159 @@ def complete_wishlist_item(item_id):
     return jsonify({'success': True})
 
 
+# ============== GLOBAL SEARCH ==============
+
+@misc_bp.route('/search')
+@login_required
+def global_search():
+    """Search across all modules.
+
+    GET /api/search?q=<query>
+
+    Returns up to 20 results ordered by most recent first.
+    Each result contains: module, type, id, title, subtitle, match_text.
+    """
+    query = (request.args.get('q') or '').strip()
+    if not query:
+        return jsonify([])
+
+    uid = current_user_id()
+    conn = get_connection()
+    like = f'%{query}%'
+    results: list[dict] = []
+
+    def _add(module: str, type_: str, row_id: int, title: str,
+             subtitle: str, match_text: str, sort_key: str) -> None:
+        results.append({
+            'module': module,
+            'type': type_,
+            'id': row_id,
+            'title': title,
+            'subtitle': subtitle,
+            'match_text': match_text,
+            '_sort': sort_key or '',
+        })
+
+    # habits — name
+    try:
+        for r in conn.execute(
+            "SELECT id, name, created_at FROM habits WHERE user_id = ? AND name LIKE ?",
+            (uid, like),
+        ).fetchall():
+            _add('habits', 'habit', r['id'], r['name'], '', r['name'], r['created_at'] or '')
+    except Exception:
+        pass
+
+    # food_logs — description
+    try:
+        for r in conn.execute(
+            "SELECT id, description, calories, logged_at FROM food_logs WHERE user_id = ? AND description LIKE ?",
+            (uid, like),
+        ).fetchall():
+            subtitle = f"{r['calories']} kcal" if r['calories'] else ''
+            _add('food', 'food_log', r['id'], r['description'], subtitle, r['description'], r['logged_at'] or '')
+    except Exception:
+        pass
+
+    # journal_entries — content, gratitude_json, wins_json, lessons, tags_json
+    try:
+        for r in conn.execute(
+            """SELECT id, date, content, gratitude_json, wins_json, lessons, tags_json, created_at
+               FROM journal_entries
+               WHERE user_id = ?
+                 AND (content LIKE ? OR gratitude_json LIKE ? OR wins_json LIKE ?
+                      OR lessons LIKE ? OR tags_json LIKE ?)""",
+            (uid, like, like, like, like, like),
+        ).fetchall():
+            snippet = (r['content'] or '')[:120]
+            _add('journal', 'journal_entry', r['id'], f"Journal — {r['date']}", snippet, snippet, r['created_at'] or r['date'] or '')
+    except Exception:
+        pass
+
+    # notes — title, body, tags_json
+    try:
+        for r in conn.execute(
+            """SELECT id, title, body, tags_json, updated_at, created_at
+               FROM notes
+               WHERE user_id = ?
+                 AND (title LIKE ? OR body LIKE ? OR tags_json LIKE ?)""",
+            (uid, like, like, like),
+        ).fetchall():
+            snippet = (r['body'] or '')[:120]
+            _add('notes', 'note', r['id'], r['title'] or 'Untitled', snippet, snippet, r['updated_at'] or r['created_at'] or '')
+    except Exception:
+        pass
+
+    # books — title, author
+    try:
+        for r in conn.execute(
+            "SELECT id, title, author, created_at FROM books WHERE user_id = ? AND (title LIKE ? OR author LIKE ?)",
+            (uid, like, like),
+        ).fetchall():
+            _add('books', 'book', r['id'], r['title'] or '', r['author'] or '', r['title'] or '', r['created_at'] or '')
+    except Exception:
+        pass
+
+    # contacts — name, notes
+    try:
+        for r in conn.execute(
+            "SELECT id, name, notes, created_at FROM contacts WHERE user_id = ? AND (name LIKE ? OR notes LIKE ?)",
+            (uid, like, like),
+        ).fetchall():
+            _add('contacts', 'contact', r['id'], r['name'] or '', (r['notes'] or '')[:80], r['name'] or '', r['created_at'] or '')
+    except Exception:
+        pass
+
+    # challenges — name
+    try:
+        for r in conn.execute(
+            "SELECT id, name, created_at FROM challenges WHERE user_id = ? AND name LIKE ?",
+            (uid, like),
+        ).fetchall():
+            _add('challenges', 'challenge', r['id'], r['name'] or '', '', r['name'] or '', r['created_at'] or '')
+    except Exception:
+        pass
+
+    # wishlist — title, description
+    try:
+        for r in conn.execute(
+            "SELECT id, title, description, created_at FROM wishlist WHERE user_id = ? AND (title LIKE ? OR description LIKE ?)",
+            (uid, like, like),
+        ).fetchall():
+            _add('wishlist', 'wishlist_item', r['id'], r['title'] or '', r['description'] or '', r['title'] or '', r['created_at'] or '')
+    except Exception:
+        pass
+
+    # finance_log — description
+    try:
+        for r in conn.execute(
+            "SELECT id, description, amount, date FROM finance_log WHERE user_id = ? AND description LIKE ?",
+            (uid, like),
+        ).fetchall():
+            subtitle = f"{r['amount']}" if r['amount'] is not None else ''
+            _add('finance', 'finance_log', r['id'], r['description'] or '', subtitle, r['description'] or '', r['date'] or '')
+    except Exception:
+        pass
+
+    # subscriptions — name
+    try:
+        for r in conn.execute(
+            "SELECT id, name, created_at FROM subscriptions WHERE user_id = ? AND name LIKE ?",
+            (uid, like),
+        ).fetchall():
+            _add('finance', 'subscription', r['id'], r['name'] or '', '', r['name'] or '', r['created_at'] or '')
+    except Exception:
+        pass
+
+    # Sort by most recent first, cap at 20, strip internal sort key
+    results.sort(key=lambda x: x['_sort'], reverse=True)
+    results = results[:20]
+    for r in results:
+        del r['_sort']
+
+    return jsonify(results)
+
+
 # ============== DEEP WORK (backwards-compat shims) ==============
 # These routes are kept so any existing clients that still call /api/deepwork/*
 # via the misc blueprint continue to work. They delegate to the canonical

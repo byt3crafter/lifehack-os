@@ -32,6 +32,7 @@ from routes import (
     openai_oauth_bp, ai_models_bp, app_log_bp,
     finance_bp, discover_bp, chat_bp, deepwork_bp,
     journal_bp, books_bp, notes_bp, wellness_bp, contacts_bp,
+    export_bp,
 )
 
 
@@ -103,6 +104,7 @@ def create_app():
     app.register_blueprint(notes_bp)
     app.register_blueprint(wellness_bp)
     app.register_blueprint(contacts_bp)
+    app.register_blueprint(export_bp)
 
     # Flask error handlers — log to app_log table and return safe JSON responses
 

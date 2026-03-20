@@ -39,6 +39,16 @@
       "name": "Log Walk",
       "url": "/?module=walks",
       "description": "Log a walk or exercise"
+    },
+    {
+      "name": "Chat Mode",
+      "url": "/?module=chatmode",
+      "description": "Talk to your AI assistant"
+    },
+    {
+      "name": "Journal",
+      "url": "/?module=journal",
+      "description": "Write a journal entry"
     }
   ]
 }

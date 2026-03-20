@@ -1349,52 +1349,47 @@
                     </div>
                 </div>
             </div>
-            <!-- Nav items -->
-            <nav aria-label="Main navigation" class="space-y-0.5 flex-1 overflow-y-auto">
-                <button onclick="desktopNav('dashboard')" data-v="dashboard" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Dashboard">
+            <!-- Global Search -->
+            <div class="mb-3 px-1">
+                <div style="position:relative;">
+                    <input id="global-search" type="search" placeholder="Search everything..." oninput="globalSearch(this.value)" class="w-full px-3 py-2 rounded-lg text-xs" style="background:#1c1c20;border:1px solid #2a2a2e;color:#f0f0f2;outline:none;padding-left:28px;">
+                    <svg style="position:absolute;left:8px;top:50%;transform:translateY(-50%);" width="12" height="12" fill="none" stroke="#5c5c6b" viewBox="0 0 24 24" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+                </div>
+                <div id="global-search-results" class="hidden" style="position:absolute;left:0.875rem;right:0.875rem;top:100%;z-index:50;background:#141416;border:1px solid #2a2a2e;border-radius:8px;max-height:300px;overflow-y:auto;margin-top:4px;"></div>
+            </div>
+
+            <!-- Nav items (grouped) -->
+            <nav aria-label="Main navigation" class="space-y-0.5 flex-1 overflow-y-auto" style="font-size:0.8125rem;">
+                <button onclick="desktopNav('dashboard')" data-v="dashboard" class="nav-btn w-full text-left px-3 py-2 rounded-lg" aria-label="Dashboard">
                     <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-dashboard"/></svg>Dashboard
                 </button>
-                <button onclick="desktopNav('habits')" data-v="habits" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Habits">
-                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-habits"/></svg>Habits
-                </button>
-                <button onclick="desktopNav('food')" data-v="food" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Food">
-                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-food"/></svg>Food
-                </button>
-                <button onclick="desktopNav('fasting')" data-v="fasting" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Fasting">
-                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-fasting"/></svg>Fasting
-                </button>
-                <button onclick="desktopNav('deepwork')" data-v="deepwork" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Deep Work">
-                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-deepwork"/></svg>Deep Work
-                </button>
-                <button onclick="desktopNav('finance')" data-v="finance" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Finance">
-                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-finance"/></svg>Finance
-                </button>
-                <button onclick="desktopNav('challenges')" data-v="challenges" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Challenges">
-                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-challenges"/></svg>Challenges
-                </button>
-                <button onclick="desktopNav('discover')" data-v="discover" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Discover">
-                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-discover"/></svg>Discover
-                </button>
-                <button onclick="desktopNav('contacts')" data-v="contacts" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Contacts">
-                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.6"><circle cx="10" cy="7" r="3"/><path d="M3 18c0-3.3 2.7-6 7-6s7 2.7 7 6"/></svg>Contacts
-                </button>
-                <button onclick="desktopNav('wellness')" data-v="wellness" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Wellness">
-                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.6"><path d="M10 2C5.6 2 2 5.6 2 10s3.6 8 8 8 8-3.6 8-8S14.4 2 10 2z"/><path d="M7 10l2 2 4-4"/></svg>Wellness
-                </button>
-                <button onclick="desktopNav('journal')" data-v="journal" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Journal">
-                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-journal"/></svg>Journal
-                </button>
-                <button onclick="desktopNav('books')" data-v="books" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Books">
-                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-books"/></svg>Books
-                </button>
-                <button onclick="desktopNav('notes')" data-v="notes" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Notes">
-                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-notes"/></svg>Notes
-                </button>
-                <div style="height:1px;background:#2a2a2e;margin:4px 0;"></div>
-                <button onclick="desktopNav('chatmode')" data-v="chatmode" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Chat Mode" style="color:#c4b5fd;">
+
+                <!-- Health group -->
+                <div class="text-xs font-semibold px-3 pt-3 pb-1" style="color:#5c5c6b;letter-spacing:0.06em;text-transform:uppercase;">Health</div>
+                <button onclick="desktopNav('habits')" data-v="habits" class="nav-btn w-full text-left px-3 py-2 rounded-lg"><svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-habits"/></svg>Habits</button>
+                <button onclick="desktopNav('food')" data-v="food" class="nav-btn w-full text-left px-3 py-2 rounded-lg"><svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-food"/></svg>Food</button>
+                <button onclick="desktopNav('fasting')" data-v="fasting" class="nav-btn w-full text-left px-3 py-2 rounded-lg"><svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-fasting"/></svg>Fasting</button>
+                <button onclick="desktopNav('wellness')" data-v="wellness" class="nav-btn w-full text-left px-3 py-2 rounded-lg"><svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.6"><path d="M10 2C5.6 2 2 5.6 2 10s3.6 8 8 8 8-3.6 8-8S14.4 2 10 2z"/><path d="M7 10l2 2 4-4"/></svg>Wellness</button>
+
+                <!-- Productivity group -->
+                <div class="text-xs font-semibold px-3 pt-3 pb-1" style="color:#5c5c6b;letter-spacing:0.06em;text-transform:uppercase;">Productivity</div>
+                <button onclick="desktopNav('deepwork')" data-v="deepwork" class="nav-btn w-full text-left px-3 py-2 rounded-lg"><svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-deepwork"/></svg>Deep Work</button>
+                <button onclick="desktopNav('challenges')" data-v="challenges" class="nav-btn w-full text-left px-3 py-2 rounded-lg"><svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-challenges"/></svg>Challenges</button>
+                <button onclick="desktopNav('notes')" data-v="notes" class="nav-btn w-full text-left px-3 py-2 rounded-lg"><svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-notes"/></svg>Notes</button>
+
+                <!-- Life group -->
+                <div class="text-xs font-semibold px-3 pt-3 pb-1" style="color:#5c5c6b;letter-spacing:0.06em;text-transform:uppercase;">Life</div>
+                <button onclick="desktopNav('finance')" data-v="finance" class="nav-btn w-full text-left px-3 py-2 rounded-lg"><svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-finance"/></svg>Finance</button>
+                <button onclick="desktopNav('journal')" data-v="journal" class="nav-btn w-full text-left px-3 py-2 rounded-lg"><svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-journal"/></svg>Journal</button>
+                <button onclick="desktopNav('books')" data-v="books" class="nav-btn w-full text-left px-3 py-2 rounded-lg"><svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-books"/></svg>Books</button>
+                <button onclick="desktopNav('contacts')" data-v="contacts" class="nav-btn w-full text-left px-3 py-2 rounded-lg"><svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.6"><circle cx="10" cy="7" r="3"/><path d="M3 18c0-3.3 2.7-6 7-6s7 2.7 7 6"/></svg>Contacts</button>
+                <button onclick="desktopNav('discover')" data-v="discover" class="nav-btn w-full text-left px-3 py-2 rounded-lg"><svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-discover"/></svg>Discover</button>
+
+                <div style="height:1px;background:#2a2a2e;margin:6px 0;"></div>
+                <button onclick="desktopNav('chatmode')" data-v="chatmode" class="nav-btn w-full text-left px-3 py-2 rounded-lg" style="color:#c4b5fd;">
                     <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#8b5cf6;" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M7 16l-3 3V5a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H7z"/></svg>Chat Mode
                 </button>
-                <button onclick="desktopNav('settings')" data-v="settings" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Settings">
+                <button onclick="desktopNav('settings')" data-v="settings" class="nav-btn w-full text-left px-3 py-2 rounded-lg">
                     <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-settings"/></svg>Settings
                 </button>
             </nav>
@@ -3082,6 +3077,23 @@
                                         <span class="text-sm" style="color:#9898a6;">License</span>
                                         <span class="text-sm" style="color:#9898a6;">MIT</span>
                                     </div>
+                                </div>
+                            </div>
+
+                            <!-- Data Export -->
+                            <div class="card p-4 mb-4">
+                                <div class="text-sm font-semibold mb-2" style="color:#f0f0f2;">Export Your Data</div>
+                                <p class="text-xs mb-3" style="color:#5c5c6b;">Download all your data as JSON. Your data belongs to you.</p>
+                                <div class="flex flex-wrap gap-2">
+                                    <button onclick="exportData('all')" class="text-xs px-3 py-1.5 rounded-lg" style="background:#4f80ff;color:#fff;border:none;cursor:pointer;font-family:inherit;font-weight:500;">Export All</button>
+                                    <button onclick="exportData('habits')" class="text-xs px-2.5 py-1 rounded-lg" style="background:rgba(255,255,255,0.04);color:#9898a6;border:1px solid #2a2a2e;cursor:pointer;font-family:inherit;">Habits</button>
+                                    <button onclick="exportData('food')" class="text-xs px-2.5 py-1 rounded-lg" style="background:rgba(255,255,255,0.04);color:#9898a6;border:1px solid #2a2a2e;cursor:pointer;font-family:inherit;">Food</button>
+                                    <button onclick="exportData('finance')" class="text-xs px-2.5 py-1 rounded-lg" style="background:rgba(255,255,255,0.04);color:#9898a6;border:1px solid #2a2a2e;cursor:pointer;font-family:inherit;">Finance</button>
+                                    <button onclick="exportData('journal')" class="text-xs px-2.5 py-1 rounded-lg" style="background:rgba(255,255,255,0.04);color:#9898a6;border:1px solid #2a2a2e;cursor:pointer;font-family:inherit;">Journal</button>
+                                    <button onclick="exportData('books')" class="text-xs px-2.5 py-1 rounded-lg" style="background:rgba(255,255,255,0.04);color:#9898a6;border:1px solid #2a2a2e;cursor:pointer;font-family:inherit;">Books</button>
+                                    <button onclick="exportData('notes')" class="text-xs px-2.5 py-1 rounded-lg" style="background:rgba(255,255,255,0.04);color:#9898a6;border:1px solid #2a2a2e;cursor:pointer;font-family:inherit;">Notes</button>
+                                    <button onclick="exportData('contacts')" class="text-xs px-2.5 py-1 rounded-lg" style="background:rgba(255,255,255,0.04);color:#9898a6;border:1px solid #2a2a2e;cursor:pointer;font-family:inherit;">Contacts</button>
+                                    <button onclick="exportData('wellness')" class="text-xs px-2.5 py-1 rounded-lg" style="background:rgba(255,255,255,0.04);color:#9898a6;border:1px solid #2a2a2e;cursor:pointer;font-family:inherit;">Wellness</button>
                                 </div>
                             </div>
 
@@ -9060,6 +9072,78 @@
         if (e.target && e.target.id === 'chatmode-input' && e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             sendChatModeMessage();
+        }
+    });
+
+    // ── Data Export ──────────────────────────────────────────────
+    async function exportData(module) {
+        showToast('Preparing export...', 'info');
+        try {
+            var resp = await fetch('/api/export/' + module, {credentials: 'same-origin'});
+            if(!resp.ok) { showToast('Export failed', 'error'); return; }
+            var blob = await resp.blob();
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'lifehack_' + module + '_' + new Date().toISOString().split('T')[0] + '.json';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            showToast('Downloaded!', 'success');
+        } catch(e) { showToast('Export failed', 'error'); }
+    }
+
+    // ── Global Search ─────────────────────────────────────────────
+    var _searchTimeout = null;
+    function globalSearch(query) {
+        clearTimeout(_searchTimeout);
+        var resultsEl = document.getElementById('global-search-results');
+        if(!resultsEl) return;
+        if(!query || query.length < 2) { resultsEl.classList.add('hidden'); resultsEl.innerHTML = ''; return; }
+        _searchTimeout = setTimeout(async function() {
+            try {
+                var data = await api('/search?q=' + encodeURIComponent(query));
+                if(!data || !data.length) {
+                    resultsEl.innerHTML = '<div class="p-3 text-xs" style="color:#5c5c6b;">No results</div>';
+                    resultsEl.classList.remove('hidden');
+                    return;
+                }
+                var moduleIcons = {habits:'&#9989;',food:'&#127869;',journal:'&#128221;',notes:'&#128196;',books:'&#128214;',contacts:'&#128100;',challenges:'&#127942;',finance:'&#128176;',wishlist:'&#127919;'};
+                resultsEl.innerHTML = data.map(function(r) {
+                    var icon = moduleIcons[r.module] || '&#128269;';
+                    return '<div class="flex items-center gap-2 px-3 py-2 cursor-pointer" style="border-bottom:1px solid #2a2a2e;" onmouseover="this.style.background=\'#1c1c20\'" onmouseout="this.style.background=\'transparent\'" onclick="globalSearchNavigate(\'' + r.module + '\',' + r.id + ',\'' + r.type + '\')">'
+                        + '<span style="font-size:0.8rem;">' + icon + '</span>'
+                        + '<div class="flex-1 min-w-0"><div class="text-xs font-medium truncate" style="color:#f0f0f2;">' + (r.title||'') + '</div>'
+                        + '<div class="text-xs truncate" style="color:#5c5c6b;">' + (r.subtitle||r.module) + '</div></div>'
+                        + '<span class="text-xs flex-shrink-0" style="color:#5c5c6b;">' + r.module + '</span></div>';
+                }).join('');
+                resultsEl.classList.remove('hidden');
+            } catch(e) { resultsEl.classList.add('hidden'); }
+        }, 300);
+    }
+
+    function globalSearchNavigate(module, id, type) {
+        document.getElementById('global-search-results').classList.add('hidden');
+        document.getElementById('global-search').value = '';
+        var viewMap = {habits:'habits',food:'food',journal:'journal',notes:'notes',books:'books',contacts:'contacts',challenges:'challenges',finance:'finance',wishlist:'discover'};
+        var view = viewMap[module] || module;
+        desktopNav(view);
+        // Try to open the detail view after loading
+        setTimeout(function() {
+            if(type === 'note') viewNoteModal(id);
+            else if(type === 'journal_entry') viewJournalEntry(id);
+            else if(type === 'book') editBookModal(id);
+            else if(type === 'contact') viewContact(id);
+        }, 500);
+    }
+
+    // Close search results on click outside
+    document.addEventListener('click', function(e) {
+        var results = document.getElementById('global-search-results');
+        var input = document.getElementById('global-search');
+        if(results && input && !results.contains(e.target) && e.target !== input) {
+            results.classList.add('hidden');
         }
     });
 
