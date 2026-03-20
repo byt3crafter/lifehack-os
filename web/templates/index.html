@@ -1312,7 +1312,7 @@
 
     <div class="flex min-h-screen">
         <!-- Desktop Sidebar -->
-        <aside class="hidden md:flex flex-col fixed left-0 top-0 bottom-0 w-56"
+        <aside id="desktop-sidebar" class="hidden md:flex flex-col fixed left-0 top-0 bottom-0 w-56"
                style="background:#141416; border-right:1px solid #2a2a2e; padding:1.25rem 0.875rem;">
             <!-- Brand -->
             <div class="mb-6 px-2">
@@ -2289,12 +2289,15 @@
             </div>
 
             <!-- CHAT MODE (full-screen, Claude/ChatGPT style) -->
-            <div id="v-chatmode" class="view hidden" style="flex-direction:column;height:calc(100vh - 60px);padding:0;">
+            <div id="v-chatmode" class="view hidden" style="flex-direction:column;height:100vh;padding:0;margin-top:-1.5rem;">
                 <style>
                     #v-chatmode:not(.hidden) { display: flex !important; }
-                    .cm-msg { max-width:720px; margin:0 auto; width:100%; padding:20px 24px; }
+                    .cm-msg { max-width:720px; margin:0 auto; width:100%; padding:16px 24px; }
                     .cm-msg-user { background:rgba(255,255,255,0.02); }
                     .cm-msg-ai { background:transparent; }
+                    #chatmode-messages { display:flex; flex-direction:column; justify-content:flex-end; min-height:100%; }
+                    #chatmode-input:focus { outline:none !important; box-shadow:none !important; border:none !important; }
+                    .cm-input-wrap:focus-within { border-color:#3a3a48 !important; }
                     .cm-avatar { width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px; }
                     .cm-content { flex:1; min-width:0; font-size:0.9375rem; line-height:1.7; color:#f0f0f2; }
                     .cm-content p { margin:0 0 0.5em; }
@@ -2324,6 +2327,14 @@
                         .cm-msg { padding:14px 16px; }
                     }
                 </style>
+
+                <!-- Exit button (visible in chat mode) -->
+                <div id="chatmode-exit-btn" style="display:none;position:fixed;top:12px;left:12px;z-index:50;">
+                    <button onclick="_switchView('dashboard')" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:10px;background:#141416;border:1px solid #2a2a2e;color:#9898a6;cursor:pointer;font-family:inherit;font-size:0.8125rem;font-weight:500;transition:all 0.15s;" onmouseover="this.style.background='#1c1c20';this.style.color='#f0f0f2'" onmouseout="this.style.background='#141416';this.style.color='#9898a6'">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                        Exit Chat
+                    </button>
+                </div>
 
                 <!-- Messages area -->
                 <div id="chatmode-messages" style="flex:1;overflow-y:auto;" aria-live="polite"></div>
@@ -2981,11 +2992,26 @@
         const el = document.querySelector('#v-' + v);
         if(el) el.classList.remove('hidden');
         document.querySelectorAll('[data-v="' + v + '"]').forEach(x => x.classList.add('active'));
-        // Hide floating chat FAB in chat mode, show in other views
+
+        // Chat mode: hide sidebar + FAB, show exit button
+        var sidebar = document.getElementById('desktop-sidebar');
         var fab = document.getElementById('chat-fab');
-        if(fab) fab.style.display = (v === 'chatmode') ? 'none' : 'flex';
-        // Close floating chat panel if open when entering chat mode
-        if(v === 'chatmode' && _chatOpen) toggleChat();
+        var chatExit = document.getElementById('chatmode-exit-btn');
+        if(v === 'chatmode') {
+            if(sidebar) sidebar.style.display = 'none';
+            if(fab) fab.style.display = 'none';
+            if(chatExit) chatExit.style.display = 'flex';
+            if(_chatOpen) toggleChat();
+            // Make main area full width
+            var main = document.querySelector('main');
+            if(main) main.style.marginLeft = '0';
+        } else {
+            if(sidebar) sidebar.style.display = '';
+            if(fab) fab.style.display = 'flex';
+            if(chatExit) chatExit.style.display = 'none';
+            var main2 = document.querySelector('main');
+            if(main2) main2.style.marginLeft = '';
+        }
         load(v);
     }
 
