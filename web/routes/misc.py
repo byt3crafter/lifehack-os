@@ -24,23 +24,33 @@ def get_stats():
     conn = get_connection()
 
     row = conn.execute(
-        "SELECT total_xp, level FROM user_stats WHERE user_id = ?", (uid,)
+        "SELECT total_xp, level, sobriety_start_date FROM user_stats WHERE user_id = ?", (uid,)
     ).fetchone()
     total_xp = row['total_xp'] if row else 0
     level = row['level'] if row else 1
 
-    # Sobriety streak scoped to this user
-    rows = conn.execute(
-        """SELECT date, avoided_alcohol FROM daily_checkins
-           WHERE user_id = ? ORDER BY date DESC LIMIT 365""",
-        (uid,)
-    ).fetchall()
+    # Sobriety days from sobriety_start_date (accurate) with checkin streak as fallback
     sobriety = 0
-    for r in rows:
-        if r['avoided_alcohol']:
-            sobriety += 1
-        else:
-            break
+    if row and row['sobriety_start_date']:
+        try:
+            from datetime import date as dt_date
+            start = dt_date.fromisoformat(row['sobriety_start_date'])
+            sobriety = (date.today() - start).days
+        except (ValueError, TypeError):
+            sobriety = 0
+
+    if sobriety == 0:
+        # Fallback: count from daily_checkins
+        checkin_rows = conn.execute(
+            """SELECT date, avoided_alcohol FROM daily_checkins
+               WHERE user_id = ? ORDER BY date DESC LIMIT 365""",
+            (uid,)
+        ).fetchall()
+        for r in checkin_rows:
+            if r['avoided_alcohol']:
+                sobriety += 1
+            else:
+                break
 
     from src.domain.entities import UserStats
     stats = UserStats(id=uid, total_xp=total_xp, level=level)
