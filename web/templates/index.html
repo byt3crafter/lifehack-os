@@ -296,15 +296,15 @@
         /* ── Fast duration button ────────────────────── */
         .fast-btn {
             flex: 1;
-            padding: 0.625rem 0.5rem;
-            border-radius: 10px;
+            padding: 0.75rem 0.5rem;
+            border-radius: 14px;
             border: 1px solid #2a2a2e;
             background: #141416;
             color: #9898a6;
             font-size: 0.875rem;
             font-weight: 600;
             cursor: pointer;
-            transition: border-color 0.15s, background 0.15s, color 0.15s;
+            transition: all 0.2s ease;
             font-family: 'DM Mono', monospace;
             text-align: center;
         }
@@ -312,11 +312,317 @@
             border-color: #4f80ff;
             color: #f0f0f2;
             background: rgba(79,128,255,0.08);
+            transform: translateY(-1px);
         }
         .fast-btn.active {
             border-color: #4f80ff;
             background: rgba(79,128,255,0.15);
             color: #4f80ff;
+            box-shadow: 0 0 20px rgba(79,128,255,0.15);
+        }
+
+        /* ── Premium Fasting Timer ──────────────────────── */
+        @keyframes fast-ring-rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes fast-pulse-glow {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+        }
+        @keyframes fast-stage-enter {
+            from { opacity: 0; transform: translateX(-8px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes fast-badge-pop {
+            0% { transform: scale(0.8); opacity: 0; }
+            60% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .fast-timer-hero {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1.5rem 1.5rem;
+        }
+        .fast-timer-ring-wrap {
+            position: relative;
+            width: 200px;
+            height: 200px;
+        }
+        .fast-timer-ring-wrap .glow-ring {
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, transparent 0%, rgba(79,128,255,0.08) 25%, rgba(139,92,246,0.08) 50%, rgba(34,197,94,0.08) 75%, transparent 100%);
+            animation: fast-ring-rotate 12s linear infinite;
+        }
+        .fast-timer-ring-wrap .pulse-glow {
+            position: absolute;
+            inset: 8px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(79,128,255,0.06) 0%, transparent 70%);
+            animation: fast-pulse-glow 3s ease-in-out infinite;
+        }
+        .fast-timer-center {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+        .fast-timer-digits {
+            font-family: 'DM Mono', monospace;
+            font-size: 2.25rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #f0f0f2;
+            line-height: 1;
+        }
+        .fast-timer-pct {
+            font-family: 'DM Mono', monospace;
+            font-size: 0.8125rem;
+            color: #9898a6;
+            margin-top: 4px;
+        }
+        .fast-meta-pills {
+            display: flex;
+            gap: 8px;
+            margin-top: 1rem;
+        }
+        .fast-meta-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06);
+            font-size: 0.75rem;
+        }
+        .fast-meta-pill .pill-label { color: #5c5c6b; }
+        .fast-meta-pill .pill-value { color: #f0f0f2; font-weight: 600; }
+
+        /* Stage journey */
+        .fast-journey {
+            padding: 0 1.5rem 1rem;
+        }
+        .fast-journey-title {
+            font-size: 0.6875rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #5c5c6b;
+            margin-bottom: 12px;
+        }
+        .fast-stage-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        .fast-stage-row:hover { background: rgba(255,255,255,0.02); }
+        .fast-stage-row.current {
+            background: rgba(79,128,255,0.06);
+            border: 1px solid rgba(79,128,255,0.12);
+        }
+        .fast-stage-row.locked { opacity: 0.35; }
+        .fast-stage-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 0.75rem;
+            position: relative;
+            z-index: 1;
+        }
+        .fast-stage-connector {
+            position: absolute;
+            left: 23px;
+            top: -6px;
+            width: 2px;
+            height: 6px;
+            z-index: 0;
+        }
+        .fast-stage-name {
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: #f0f0f2;
+            flex: 1;
+        }
+        .fast-stage-range {
+            font-size: 0.6875rem;
+            color: #5c5c6b;
+            font-family: 'DM Mono', monospace;
+        }
+        .fast-stage-now {
+            font-size: 0.5625rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 2px 7px;
+            border-radius: 4px;
+        }
+        .fast-stage-desc {
+            display: none;
+            font-size: 0.75rem;
+            color: #9898a6;
+            padding: 4px 0 2px 38px;
+            line-height: 1.5;
+        }
+        .fast-stage-row.expanded + .fast-stage-desc { display: block; }
+
+        /* Bottom bar */
+        .fast-bottom-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            border-top: 1px solid rgba(255,255,255,0.04);
+        }
+        .fast-end-btn {
+            padding: 10px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.8125rem;
+            background: rgba(239,68,68,0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239,68,68,0.2);
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+        .fast-end-btn:hover {
+            background: rgba(239,68,68,0.18);
+            box-shadow: 0 0 20px rgba(239,68,68,0.1);
+            transform: translateY(-1px);
+        }
+        .fast-hydration-toggle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.04);
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s;
+        }
+        .fast-hydration-toggle:hover { background: rgba(255,255,255,0.07); }
+
+        /* Start card */
+        .fast-start-hero {
+            text-align: center;
+            padding: 2.5rem 1.5rem 2rem;
+        }
+        .fast-start-ring {
+            width: 140px;
+            height: 140px;
+            margin: 0 auto 1.5rem;
+            position: relative;
+        }
+        .fast-start-ring .orbit {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 1.5px dashed rgba(79,128,255,0.15);
+            animation: fast-ring-rotate 20s linear infinite;
+        }
+        .fast-start-ring .center-icon {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .fast-start-cta {
+            width: 100%;
+            padding: 14px 32px;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 0.9375rem;
+            background: linear-gradient(135deg, #4f80ff, #6b96ff);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 24px rgba(79,128,255,0.25);
+        }
+        .fast-start-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(79,128,255,0.35);
+        }
+
+        /* History */
+        .fast-hist-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: #141416;
+            border: 1px solid #2a2a2e;
+            transition: all 0.25s ease;
+            overflow: hidden;
+        }
+        .fast-hist-card.removing {
+            opacity: 0;
+            transform: translateX(16px);
+            max-height: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        .fast-hist-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .fast-hist-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.625rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            animation: fast-badge-pop 0.3s ease-out;
+        }
+        .fast-hist-del {
+            padding: 6px;
+            border-radius: 8px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #5c5c6b;
+            flex-shrink: 0;
+            transition: all 0.15s;
+        }
+        .fast-hist-del:hover { color: #ef4444; background: rgba(239,68,68,0.08); }
+
+        @media (max-width: 640px) {
+            .fast-timer-ring-wrap { width: 170px; height: 170px; }
+            .fast-timer-digits { font-size: 1.875rem; }
+            .fast-journey { padding: 0 1rem 0.75rem; }
+            .fast-bottom-bar { flex-wrap: wrap; }
         }
 
         /* ── Nutrition bar ───────────────────────────── */
@@ -638,22 +944,11 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            font-size: 0.8125rem;
+            font-size: 0.75rem;
             color: #9898a6;
-            padding: 0.125rem 0;
-        }
-
-        /* ── Fast history delete ─────────────────────── */
-        .fast-history-row {
-            transition: opacity 0.25s, transform 0.25s, max-height 0.3s;
-            overflow: hidden;
-        }
-        .fast-history-row.removing {
-            opacity: 0;
-            transform: translateX(16px);
-            max-height: 0 !important;
-            padding: 0 !important;
-            margin: 0 !important;
+            padding: 3px 8px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
         }
 
         /* ── Stage milestone flash ───────────────────── */
@@ -661,8 +956,8 @@
             animation: milestone-flash 0.7s ease-out;
         }
         @keyframes milestone-flash {
-            0%   { background: rgba(79,128,255,0.25); }
-            100% { background: transparent; }
+            0%   { box-shadow: 0 0 20px rgba(79,128,255,0.4); }
+            100% { box-shadow: none; }
         }
 
         /* ── Timer display ───────────────────────────── */
@@ -1935,65 +2230,78 @@
                     </div>
                 </div>
 
-                <!-- Active fast card — compact dashboard layout -->
+                <!-- Active fast card — premium health app design -->
                 <div id="fast-active-card" class="hidden mb-5">
-                    <div class="rounded-2xl overflow-hidden" style="background:linear-gradient(160deg,#0d0d1a 0%,#111128 40%,#0f1a2e 100%);border:1px solid rgba(79,128,255,0.15);">
-                        <!-- Top section: Timer + Stages side by side on desktop, stacked on mobile -->
-                        <div class="p-4 fast-grid">
-                            <!-- Left: Timer -->
-                            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
-                                <div style="position:relative;width:150px;height:150px;">
-                                    <svg width="150" height="150" style="transform:rotate(-90deg);display:block;">
-                                        <circle cx="75" cy="75" r="64" stroke="rgba(255,255,255,0.04)" stroke-width="8" fill="none"/>
-                                        <circle id="fast-ring-fill" cx="75" cy="75" r="64"
-                                            stroke="url(#fastGrad)" stroke-width="8" fill="none"
-                                            stroke-linecap="round"
-                                            stroke-dasharray="402.1" stroke-dashoffset="402.1"
-                                            style="transition:stroke-dashoffset 0.5s ease;filter:drop-shadow(0 0 8px rgba(79,128,255,0.25));"/>
-                                        <defs>
-                                            <linearGradient id="fastGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                                <stop offset="0%" stop-color="#4f80ff"/>
-                                                <stop offset="50%" stop-color="#8b5cf6"/>
-                                                <stop offset="100%" stop-color="#22c55e"/>
-                                            </linearGradient>
-                                        </defs>
-                                    </svg>
-                                    <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-                                        <div id="fast-timer" style="font-size:1.75rem;font-weight:700;letter-spacing:-0.02em;color:#f0f0f2;">00:00:00</div>
-                                        <div id="fast-pct-label" class="text-xs font-mono" style="color:#9898a6;">0%</div>
-                                    </div>
-                                </div>
-                                <div id="fast-stage-label" class="text-sm font-semibold mt-2" style="color:#f0f0f2;">&#8212;</div>
-                                <div id="fast-progress-label" class="text-xs" style="color:#9898a6;">&#8212;</div>
-                                <div id="fast-next-label" class="text-xs" style="color:#5c5c6b;">&#8212;</div>
-                                <div class="flex gap-2 mt-3">
-                                    <div class="px-2.5 py-1 rounded-md" style="background:rgba(255,255,255,0.04);">
-                                        <span class="text-xs" style="color:#5c5c6b;">Start </span><span id="fast-start-time" class="text-xs font-medium" style="color:#f0f0f2;">&#8212;</span>
-                                    </div>
-                                    <div class="px-2.5 py-1 rounded-md" style="background:rgba(255,255,255,0.04);">
-                                        <span class="text-xs" style="color:#5c5c6b;">Goal </span><span class="text-xs font-mono font-semibold" style="color:#4f80ff;"><span id="fast-target-hours">&#8212;</span>h</span>
-                                    </div>
+                    <div class="rounded-2xl overflow-hidden" style="background:linear-gradient(160deg,#0d0d1a 0%,#0e1025 30%,#0f1a2e 70%,#0d1520 100%);border:1px solid rgba(79,128,255,0.12);">
+
+                        <!-- Timer hero -->
+                        <div class="fast-timer-hero">
+                            <div id="fast-stage-label" style="font-size:0.8125rem;font-weight:600;color:#f0f0f2;margin-bottom:1rem;display:flex;align-items:center;gap:6px;">&#8212;</div>
+
+                            <div class="fast-timer-ring-wrap">
+                                <div class="glow-ring"></div>
+                                <div class="pulse-glow"></div>
+                                <svg width="200" height="200" style="transform:rotate(-90deg);display:block;position:relative;z-index:1;">
+                                    <!-- Track -->
+                                    <circle cx="100" cy="100" r="86" stroke="rgba(255,255,255,0.03)" stroke-width="10" fill="none"/>
+                                    <!-- Stage markers -->
+                                    <circle cx="100" cy="100" r="86" stroke="rgba(255,255,255,0.04)" stroke-width="10" fill="none"
+                                        stroke-dasharray="1.5 88.7" stroke-dashoffset="0"/>
+                                    <!-- Progress ring -->
+                                    <circle id="fast-ring-fill" cx="100" cy="100" r="86"
+                                        stroke="url(#fastGrad2)" stroke-width="10" fill="none"
+                                        stroke-linecap="round"
+                                        stroke-dasharray="540.4" stroke-dashoffset="540.4"
+                                        style="transition:stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1);filter:drop-shadow(0 0 12px rgba(79,128,255,0.3));"/>
+                                    <defs>
+                                        <linearGradient id="fastGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" stop-color="#4f80ff"/>
+                                            <stop offset="40%" stop-color="#8b5cf6"/>
+                                            <stop offset="100%" stop-color="#22c55e"/>
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+                                <div class="fast-timer-center">
+                                    <div id="fast-timer" class="fast-timer-digits">00:00:00</div>
+                                    <div id="fast-pct-label" class="fast-timer-pct">0%</div>
                                 </div>
                             </div>
 
-                            <!-- Right: Body stages compact -->
-                            <div>
-                                <div class="text-xs font-semibold mb-2" style="color:#9898a6;letter-spacing:0.06em;text-transform:uppercase;">Your Journey</div>
-                                <div id="fast-stages-timeline"></div>
+                            <div id="fast-progress-label" style="font-size:0.75rem;color:#9898a6;margin-top:0.75rem;">&#8212;</div>
+                            <div id="fast-next-label" style="font-size:0.75rem;color:#5c5c6b;margin-top:2px;">&#8212;</div>
+
+                            <div class="fast-meta-pills">
+                                <div class="fast-meta-pill">
+                                    <span class="pill-label">Started</span>
+                                    <span id="fast-start-time" class="pill-value">&#8212;</span>
+                                </div>
+                                <div class="fast-meta-pill">
+                                    <span class="pill-label">Goal</span>
+                                    <span class="pill-value" style="color:#4f80ff;"><span id="fast-target-hours">&#8212;</span>h</span>
+                                </div>
                             </div>
                         </div>
 
+                        <!-- Body stages journey -->
+                        <div class="fast-journey">
+                            <div class="fast-journey-title">Body Stages</div>
+                            <div id="fast-stages-timeline"></div>
+                        </div>
+
                         <!-- Bottom bar: Hydration + End Fast -->
-                        <div class="flex items-center gap-3 px-4 py-3" style="border-top:1px solid rgba(255,255,255,0.04);">
-                            <button onclick="document.getElementById('fast-hydration-items').classList.toggle('hidden')" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg flex-shrink-0" style="background:rgba(255,255,255,0.04);border:none;cursor:pointer;font-family:inherit;">
+                        <div class="fast-bottom-bar">
+                            <button onclick="document.getElementById('fast-hydration-items').classList.toggle('hidden')" class="fast-hydration-toggle">
                                 <span style="font-size:0.8rem;">&#128167;</span>
-                                <span class="text-xs" style="color:#9898a6;">Tips</span>
+                                <span class="text-xs" style="color:#9898a6;">Hydration tips</span>
+                                <svg class="w-3 h-3" fill="none" stroke="#5c5c6b" viewBox="0 0 20 20" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8l5 5 5-5"/></svg>
                             </button>
                             <div id="fast-hydration-items" class="hidden flex-1 flex flex-wrap gap-2"></div>
-                            <button onclick="endFastModal()"
-                                    class="px-5 py-2 rounded-lg font-semibold text-xs flex-shrink-0"
-                                    style="background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.2);cursor:pointer;font-family:inherit;">
-                                End Fast
+                            <div style="flex:1;"></div>
+                            <button onclick="endFastModal()" class="fast-end-btn">
+                                <span style="display:flex;align-items:center;gap:6px;">
+                                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+                                    End Fast
+                                </span>
                             </button>
                         </div>
                     </div>
@@ -2003,36 +2311,36 @@
                     .food-card:hover .food-actions { opacity: 1 !important; }
                     @media (max-width: 768px) { .food-actions { opacity: 0.6 !important; } }
                     @media (hover: hover) { .food-card:hover .food-actions { opacity: 1 !important; } }
-                    .fast-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-                    @media (max-width: 640px) { .fast-grid { grid-template-columns: 1fr; } }
                 </style>
 
-                <!-- Start fast card — inviting design -->
+                <!-- Start fast card — premium design -->
                 <div id="fast-start-card" class="hidden mb-5">
-                    <div class="rounded-2xl text-center overflow-hidden" style="background:linear-gradient(160deg,#0d0d1a 0%,#111128 40%,#0f1a2e 100%);border:1px solid rgba(79,128,255,0.12);">
-                        <div class="px-6 py-8">
+                    <div class="rounded-2xl overflow-hidden" style="background:linear-gradient(160deg,#0d0d1a 0%,#0e1025 30%,#0f1a2e 70%,#0d1520 100%);border:1px solid rgba(79,128,255,0.1);">
+                        <div class="fast-start-hero">
                             <!-- Decorative ring -->
-                            <div style="width:120px;height:120px;margin:0 auto 1.5rem;position:relative;">
-                                <svg width="120" height="120" style="display:block;">
-                                    <circle cx="60" cy="60" r="52" stroke="rgba(79,128,255,0.12)" stroke-width="6" fill="none" stroke-dasharray="8 6"/>
-                                </svg>
-                                <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
-                                    <svg class="w-8 h-8" fill="none" stroke="#4f80ff" viewBox="0 0 24 24" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M12 7v5l3 3"/></svg>
+                            <div class="fast-start-ring">
+                                <div class="orbit"></div>
+                                <div class="orbit" style="inset:12px;animation-duration:15s;animation-direction:reverse;border-color:rgba(139,92,246,0.1);"></div>
+                                <div class="center-icon">
+                                    <svg width="44" height="44" fill="none" stroke="#4f80ff" viewBox="0 0 24 24" stroke-width="1.2">
+                                        <circle cx="12" cy="12" r="9" opacity="0.3"/>
+                                        <path stroke-linecap="round" d="M12 7v5l3 3"/>
+                                        <circle cx="12" cy="12" r="9" stroke-dasharray="4 4" opacity="0.15"/>
+                                    </svg>
                                 </div>
                             </div>
-                            <div class="text-lg font-semibold mb-1" style="color:#f0f0f2;">Ready to fast?</div>
-                            <div class="text-xs mb-6" style="color:#5c5c6b;">Choose your target duration</div>
 
-                            <div id="fast-duration-buttons" class="flex gap-2 justify-center mb-6">
+                            <div style="font-size:1.25rem;font-weight:600;color:#f0f0f2;margin-bottom:4px;">Ready to fast?</div>
+                            <div style="font-size:0.8125rem;color:#5c5c6b;margin-bottom:2rem;">Choose your target duration</div>
+
+                            <div id="fast-duration-buttons" class="flex gap-2 justify-center mb-6" style="max-width:320px;margin-left:auto;margin-right:auto;">
                                 <button onclick="selectFastDuration(16)" data-h="16" class="fast-btn">16h</button>
                                 <button onclick="selectFastDuration(18)" data-h="18" class="fast-btn">18h</button>
                                 <button onclick="selectFastDuration(20)" data-h="20" class="fast-btn">20h</button>
                                 <button onclick="selectFastDuration(24)" data-h="24" class="fast-btn">24h</button>
                             </div>
 
-                            <button id="fast-start-btn" onclick="startFast(window._fastHours||16)"
-                                    class="px-8 py-3.5 rounded-xl font-semibold text-sm w-full"
-                                    style="background:linear-gradient(135deg,#4f80ff,#6b96ff);color:#fff;box-shadow:0 4px 24px rgba(79,128,255,0.3);border:none;cursor:pointer;font-family:inherit;font-size:0.9375rem;">
+                            <button id="fast-start-btn" onclick="startFast(window._fastHours||16)" class="fast-start-cta">
                                 Start 16h Fast
                             </button>
                         </div>
@@ -3950,28 +4258,34 @@
             var isCurrent = i === stageIdx;
             var isLocked = i > stageIdx;
 
-            // Connector line
+            // Connector line between stages
             if (i > 0) {
-                var lineColor = isDone || isCurrent ? s.color : 'rgba(255,255,255,0.06)';
-                html += '<div style="width:2px;height:6px;margin-left:11px;background:' + lineColor + ';"></div>';
+                var lineColor = isDone || isCurrent ? s.color : 'rgba(255,255,255,0.05)';
+                html += '<div class="fast-stage-connector" style="position:relative;width:2px;height:6px;margin-left:23px;background:' + lineColor + ';"></div>';
             }
 
-            var opacity = isLocked ? '0.3' : '1';
-            var bg = isCurrent ? s.color + '12' : 'transparent';
-            var border = isCurrent ? '1px solid ' + s.color + '25' : '1px solid transparent';
-            html += '<div id="fast-stage-' + i + '" onclick="toggleFastStage(' + i + ')" style="display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:8px;cursor:pointer;opacity:' + opacity + ';background:' + bg + ';border:' + border + ';">';
+            var rowClass = 'fast-stage-row' + (isCurrent ? ' current' : '') + (isLocked ? ' locked' : '');
+            html += '<div id="fast-stage-' + i + '" class="' + rowClass + '" onclick="toggleFastStage(' + i + ')" style="animation:fast-stage-enter 0.3s ease ' + (i * 0.05) + 's both;">';
 
-            // Compact icon
-            var iconBg = isDone ? 'rgba(34,197,94,0.15)' : (isCurrent ? s.color + '20' : 'rgba(255,255,255,0.04)');
-            var iconContent = isDone ? '<svg width="10" height="10" fill="none" stroke="#22c55e" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' : '<span style="font-size:0.7rem;">' + s.icon + '</span>';
-            html += '<div style="width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:' + iconBg + ';">' + iconContent + '</div>';
+            // Icon
+            var iconBg = isDone ? 'rgba(34,197,94,0.15)' : (isCurrent ? s.color + '15' : 'rgba(255,255,255,0.04)');
+            var iconBorder = isCurrent ? '1px solid ' + s.color + '30' : '1px solid transparent';
+            var iconContent = isDone
+                ? '<svg width="12" height="12" fill="none" stroke="#22c55e" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>'
+                : '<span>' + s.icon + '</span>';
+            html += '<div class="fast-stage-dot" style="background:' + iconBg + ';border:' + iconBorder + ';">' + iconContent + '</div>';
 
-            html += '<span style="font-size:0.75rem;font-weight:' + (isCurrent ? '600' : '500') + ';color:' + (isLocked ? '#5c5c6b' : '#f0f0f2') + ';flex:1;">' + s.name + '</span>';
+            html += '<span class="fast-stage-name" style="color:' + (isLocked ? '#5c5c6b' : (isCurrent ? '#f0f0f2' : '#c8c8d0')) + ';font-weight:' + (isCurrent ? '600' : '500') + ';">' + s.name + '</span>';
+
             if (isCurrent) {
-                html += '<span style="font-size:0.5rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:' + s.color + ';background:' + s.color + '18;padding:1px 5px;border-radius:3px;">NOW</span>';
+                html += '<span class="fast-stage-now" style="color:' + s.color + ';background:' + s.color + '18;">NOW</span>';
             }
-            html += '<span style="font-size:0.625rem;color:#5c5c6b;flex-shrink:0;">' + s.start + '-' + s.end + 'h</span>';
+
+            html += '<span class="fast-stage-range">' + s.start + '-' + s.end + 'h</span>';
             html += '</div>';
+
+            // Expandable description
+            html += '<div class="fast-stage-desc">' + s.desc + '</div>';
         }
         var el = document.getElementById('fast-stages-timeline');
         if (el) el.innerHTML = html;
@@ -4004,7 +4318,7 @@
         if (timerEl) timerEl.textContent = pad2(hours) + ':' + pad2(mins) + ':' + pad2(secs);
 
         var pct = Math.min(100, (elapsed / target) * 100);
-        var CIRC = 402.1;
+        var CIRC = 540.4; // 2 * PI * 86
         var ring = document.getElementById('fast-ring-fill');
         if (ring) ring.style.strokeDashoffset = CIRC - (CIRC * pct / 100);
         var pctLbl = document.getElementById('fast-pct-label');
@@ -4016,10 +4330,13 @@
         var stage = FASTING_STAGES[stageIdx];
 
         var stageLbl = document.getElementById('fast-stage-label');
-        if (stageLbl) stageLbl.textContent = stage.icon + '  ' + stage.name;
+        if (stageLbl) {
+            stageLbl.innerHTML = '<span style="font-size:1rem;">' + stage.icon + '</span> ' + stage.name;
+            stageLbl.style.color = stage.color;
+        }
 
         var progressLbl = document.getElementById('fast-progress-label');
-        if (progressLbl) progressLbl.textContent = "You're " + Math.round(pct) + '% through your ' + targetHours + 'h fast';
+        if (progressLbl) progressLbl.textContent = Math.round(pct) + '% through your ' + targetHours + 'h fast';
 
         var nextLbl = document.getElementById('fast-next-label');
         if (nextLbl) {
@@ -4140,26 +4457,43 @@
             var completed = h.status === 'completed' && dur >= (h.target_hours * 0.9);
             var pts = Math.floor((endMs - startMs) / 360000);
             var dateStr = new Date(hEndStr || hStartStr).toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
+            var timeStr = new Date(hStartStr).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+
             var iconSvg = completed
                 ? '<path stroke-linecap="round" stroke-linejoin="round" d="M4 10l4 4 8-8"/>'
                 : '<circle cx="10" cy="10" r="7"/><path stroke-linecap="round" stroke-linejoin="round" d="M10 6v4l2.5 2.5"/>';
-            var iconColor = completed ? '#22c55e' : '#ef4444';
-            var iconBg = completed ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.08)';
-            var label = completed ? 'Completed' : (h.status === 'cancelled' ? 'Cancelled' : 'Ended early');
-            var achievementNote = '';
-            if (!completed && dur >= 12) achievementNote = ' \u2014 fat burning territory!';
-            else if (!completed && dur >= 8) achievementNote = ' \u2014 glycogen depleted!';
-            else if (!completed && dur >= 4) achievementNote = ' \u2014 early fasting zone!';
-            rows += '<div class="fast-history-row card rounded-xl p-3 flex items-center gap-3" style="border:1px solid #2a2a2e;" data-fast-id="' + h.id + '">';
-            rows += '<div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:' + iconBg + ';">';
-            rows += '<svg class="w-4 h-4" fill="none" stroke="' + iconColor + '" viewBox="0 0 20 20" stroke-width="1.8">' + iconSvg + '</svg>';
+            var iconColor = completed ? '#22c55e' : (h.status === 'cancelled' ? '#ef4444' : '#f59e0b');
+            var iconBg = completed ? 'rgba(34,197,94,0.1)' : (h.status === 'cancelled' ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.08)');
+
+            // Achievement badge
+            var badge = '';
+            if (completed && dur >= 20) badge = '<span class="fast-hist-badge" style="background:rgba(79,128,255,0.12);color:#4f80ff;">&#10024; Elite</span>';
+            else if (completed && dur >= 16) badge = '<span class="fast-hist-badge" style="background:rgba(139,92,246,0.12);color:#8b5cf6;">&#127942; Champion</span>';
+            else if (completed) badge = '<span class="fast-hist-badge" style="background:rgba(34,197,94,0.12);color:#22c55e;">&#9989; Done</span>';
+            else if (dur >= 12) badge = '<span class="fast-hist-badge" style="background:rgba(245,158,11,0.1);color:#f59e0b;">&#128170; Solid effort</span>';
+
+            var pctOfGoal = Math.round((dur / h.target_hours) * 100);
+
+            rows += '<div class="fast-hist-card" data-fast-id="' + h.id + '">';
+            rows += '<div class="fast-hist-icon" style="background:' + iconBg + ';">';
+            rows += '<svg width="16" height="16" fill="none" stroke="' + iconColor + '" viewBox="0 0 20 20" stroke-width="1.8">' + iconSvg + '</svg>';
             rows += '</div>';
             rows += '<div class="flex-1 min-w-0">';
-            rows += '<div class="text-sm font-medium" style="color:#f0f0f2;">' + dateStr + ' \u00B7 ' + dur + 'h fast</div>';
-            rows += '<div class="text-xs" style="color:#5c5c6b;">Goal: ' + h.target_hours + 'h \u00B7 ' + label + achievementNote + '</div>';
+            rows += '<div class="flex items-center gap-2 flex-wrap">';
+            rows += '<span class="text-sm font-semibold" style="color:#f0f0f2;">' + dur + 'h</span>';
+            rows += '<span class="text-xs" style="color:#5c5c6b;">/ ' + h.target_hours + 'h goal</span>';
+            rows += badge;
             rows += '</div>';
-            rows += '<span class="font-mono text-xs font-semibold flex-shrink-0" style="color:#eab308;">+' + pts + '</span>';
-            rows += '<button onclick="deleteFastEntry(' + h.id + ')" class="flex-shrink-0 p-1.5 rounded-lg transition-colors" style="color:#5c5c6b;background:none;border:none;cursor:pointer;" title="Delete" onmouseover="this.style.color=\'#ef4444\';this.style.background=\'rgba(239,68,68,0.08)\'" onmouseout="this.style.color=\'#5c5c6b\';this.style.background=\'none\'">';
+            rows += '<div class="flex items-center gap-2 mt-1">';
+            rows += '<span class="text-xs" style="color:#5c5c6b;">' + dateStr + ' at ' + timeStr + '</span>';
+            rows += '<span class="font-mono text-xs font-semibold" style="color:#eab308;">+' + pts + ' XP</span>';
+            rows += '</div>';
+            // Mini progress bar
+            rows += '<div style="height:3px;border-radius:2px;background:rgba(255,255,255,0.04);margin-top:6px;overflow:hidden;">';
+            rows += '<div style="height:100%;width:' + Math.min(100, pctOfGoal) + '%;border-radius:2px;background:' + iconColor + ';opacity:0.5;"></div>';
+            rows += '</div>';
+            rows += '</div>';
+            rows += '<button onclick="deleteFastEntry(' + h.id + ')" class="fast-hist-del" title="Delete">';
             rows += '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6l8 8M14 6l-8 8"/></svg>';
             rows += '</button>';
             rows += '</div>';
@@ -4175,7 +4509,7 @@
         await api('/fasting/' + id, 'DELETE');
         setTimeout(function() {
             if (row.parentNode) row.parentNode.removeChild(row);
-            var remaining = document.querySelectorAll('.fast-history-row');
+            var remaining = document.querySelectorAll('.fast-hist-card');
             if (!remaining.length) {
                 document.getElementById('fast-history').innerHTML = '<div class="empty-state"><p>No fasting history yet.</p></div>';
                 var cb = document.getElementById('fast-clear-all-btn');
