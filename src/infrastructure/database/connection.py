@@ -46,6 +46,7 @@ def init_database() -> None:
             difficulty INTEGER NOT NULL DEFAULT 1,
             points INTEGER NOT NULL DEFAULT 10,
             active INTEGER NOT NULL DEFAULT 1,
+            scheduled_time TEXT DEFAULT '',
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
 

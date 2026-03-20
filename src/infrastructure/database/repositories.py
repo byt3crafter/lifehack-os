@@ -42,10 +42,10 @@ class HabitRepository:
 
     def create(self, habit: Habit) -> Habit:
         cursor = self.conn.execute(
-            """INSERT INTO habits (user_id, name, category, frequency, difficulty, points, active)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            """INSERT INTO habits (user_id, name, category, frequency, difficulty, points, active, scheduled_time)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
             (self.user_id, habit.name, habit.category, habit.frequency.value,
-             habit.difficulty, habit.points, habit.active)
+             habit.difficulty, habit.points, habit.active, habit.scheduled_time)
         )
         self.conn.commit()
         habit.id = cursor.lastrowid
@@ -54,9 +54,9 @@ class HabitRepository:
     def update(self, habit: Habit) -> None:
         self.conn.execute(
             """UPDATE habits SET name=?, category=?, frequency=?,
-               difficulty=?, points=?, active=? WHERE id=? AND user_id=?""",
+               difficulty=?, points=?, active=?, scheduled_time=? WHERE id=? AND user_id=?""",
             (habit.name, habit.category, habit.frequency.value,
-             habit.difficulty, habit.points, habit.active, habit.id, self.user_id)
+             habit.difficulty, habit.points, habit.active, habit.scheduled_time, habit.id, self.user_id)
         )
         self.conn.commit()
 
@@ -113,6 +113,11 @@ class HabitRepository:
         return streak
 
     def _row_to_habit(self, row: sqlite3.Row) -> Habit:
+        # scheduled_time may not exist on old DBs before migration 17
+        try:
+            sched = row['scheduled_time'] or ''
+        except (IndexError, KeyError):
+            sched = ''
         return Habit(
             id=row['id'],
             name=row['name'],
@@ -121,6 +126,7 @@ class HabitRepository:
             difficulty=row['difficulty'],
             points=row['points'],
             active=bool(row['active']),
+            scheduled_time=sched,
             created_at=datetime.fromisoformat(row['created_at'])
         )
 

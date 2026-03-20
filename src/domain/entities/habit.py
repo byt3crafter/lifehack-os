@@ -27,6 +27,7 @@ class Habit:
     difficulty: int = 1  # 1-5
     points: int = 10
     active: bool = True
+    scheduled_time: str = ""
     created_at: datetime = field(default_factory=datetime.now)
     
     def calculate_points(self, streak: int = 0, multiplier_threshold: int = 7, multiplier: float = 1.5) -> int:

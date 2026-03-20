@@ -632,3 +632,15 @@ def run_migrations(conn) -> None:
         )
         conn.commit()
         print("  Migration 16: Add body metrics and preferred_name to user_profiles")
+
+    # Migration 17: Add scheduled_time to habits
+    current = get_current_version(conn)
+    if current < 17:
+        habit_cols = [r[1] for r in conn.execute("PRAGMA table_info(habits)").fetchall()]
+        if 'scheduled_time' not in habit_cols:
+            conn.execute("ALTER TABLE habits ADD COLUMN scheduled_time TEXT DEFAULT ''")
+        conn.execute(
+            "INSERT OR IGNORE INTO schema_version (version, description) VALUES (17, 'Add scheduled_time to habits')"
+        )
+        conn.commit()
+        print("  Migration 17: Add scheduled_time to habits")

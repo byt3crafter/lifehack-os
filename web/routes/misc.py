@@ -100,8 +100,8 @@ def _get_todays_insight(conn, uid: int):
     ).fetchone()
 
 
-def _build_insight_context(conn, uid: int) -> str:
-    """Gather key data points and return a concise context string for the AI."""
+def _build_insight_context(conn, uid: int) -> dict:
+    """Gather key data points and return a context dict for the AI provider."""
     today = date.today().isoformat()
 
     # Habit completions today vs total
@@ -113,7 +113,7 @@ def _build_insight_context(conn, uid: int) -> str:
         (uid, today),
     ).fetchone()['c']
 
-    # Top streaks
+    # Top streaks — best_streak is the max strength value across all habits
     streaks_rows = conn.execute(
         """SELECT hs.strength, hs.total_completions, h.name
            FROM habit_strength hs
@@ -122,10 +122,24 @@ def _build_insight_context(conn, uid: int) -> str:
            ORDER BY hs.strength DESC LIMIT 3""",
         (uid,),
     ).fetchall()
+    best_streak = int(streaks_rows[0]['strength']) if streaks_rows else 0
     streaks_info = "; ".join(
         f"{r['name']} ({r['strength']:.0f}% strength, {r['total_completions']} completions)"
         for r in streaks_rows
     ) if streaks_rows else "no habit data"
+
+    # XP total
+    xp_row = conn.execute(
+        "SELECT total_xp FROM user_stats WHERE user_id = ?", (uid,)
+    ).fetchone()
+    total_xp = xp_row['total_xp'] if xp_row else 0
+
+    # Today's mood from latest check-in
+    mood_row = conn.execute(
+        "SELECT mood FROM daily_checkins WHERE user_id = ? AND date = ? LIMIT 1",
+        (uid, today),
+    ).fetchone()
+    mood_today = mood_row['mood'] if mood_row else None
 
     # Calorie total today
     cal_row = conn.execute(
@@ -172,14 +186,42 @@ def _build_insight_context(conn, uid: int) -> str:
         for r in mood_rows
     ) if mood_rows else "no mood data"
 
-    return (
+    # Sobriety days from sobriety_start_date
+    sobriety_days = 0
+    stats_row = conn.execute(
+        "SELECT sobriety_start_date FROM user_stats WHERE user_id = ?", (uid,)
+    ).fetchone()
+    if stats_row and stats_row['sobriety_start_date']:
+        try:
+            start = date.fromisoformat(stats_row['sobriety_start_date'])
+            sobriety_days = (date.today() - start).days
+        except (ValueError, TypeError):
+            sobriety_days = 0
+
+    # Full text summary kept for providers that use 'context' as a fallback string
+    context_string = (
         f"Habits today: {completed_habits}/{total_habits} completed. "
         f"Top habits: {streaks_info}. "
         f"Calories today: {calories_today} kcal. "
         f"Fasting: {fast_info}. "
         f"Budget: {budget_info}. "
-        f"Recent mood: {mood_info}."
+        f"Recent mood: {mood_info}. "
+        f"Sobriety: {sobriety_days} days."
     )
+
+    return {
+        'total_xp': total_xp,
+        'habits_completed': completed_habits,
+        'habits_total': total_habits,
+        'best_streak': best_streak,
+        'mood': mood_today,
+        'calories_today': calories_today,
+        'fast_info': fast_info,
+        'budget_info': budget_info,
+        'mood_trend': mood_info,
+        'sobriety_days': sobriety_days,
+        'context': context_string,
+    }
 
 
 @misc_bp.route('/insights/generate', methods=['POST'])
@@ -202,7 +244,7 @@ def generate_insight():
         })
 
     # Gather context and call AI
-    context_str = _build_insight_context(conn, uid)
+    context_dict = _build_insight_context(conn, uid)
 
     try:
         from src.infrastructure.ai import get_ai_provider
@@ -214,7 +256,7 @@ def generate_insight():
         return jsonify({'error': 'AI provider not configured'}), 503
 
     try:
-        insight = provider.generate_insight({'summary': context_str, 'type': 'daily_briefing'})
+        insight = provider.generate_insight(context_dict)
     except Exception as exc:
         return jsonify({'error': f'AI generation failed: {exc}'}), 500
 
@@ -285,10 +327,21 @@ def get_daily_summary():
     except Exception:
         pass
 
+    # Check whether habits table has a scheduled_time column
+    habit_columns = {
+        row[1] for row in conn.execute("PRAGMA table_info(habits)").fetchall()
+    }
+    has_scheduled_time = 'scheduled_time' in habit_columns
+
     def get_day_stats(d):
-        habits = conn.execute(
-            "SELECT id FROM habits WHERE user_id = ? AND active = 1", (uid,)
-        ).fetchall()
+        if has_scheduled_time:
+            habits = conn.execute(
+                "SELECT id, scheduled_time FROM habits WHERE user_id = ? AND active = 1", (uid,)
+            ).fetchall()
+        else:
+            habits = conn.execute(
+                "SELECT id FROM habits WHERE user_id = ? AND active = 1", (uid,)
+            ).fetchall()
         habit_ids = [h['id'] for h in habits]
 
         completions = conn.execute(
@@ -322,7 +375,7 @@ def get_daily_summary():
         movement_done = 1 if walks['c'] >= 1 else 0
         score = int((habits_pct * 0.4) + (checkin_done * 20) + (food_done * 20) + (movement_done * 20))
 
-        return {
+        result = {
             'date': d,
             'habits_completed': len(completed_ids),
             'habits_total': len(habit_ids),
@@ -337,6 +390,18 @@ def get_daily_summary():
             'points': points['p'] or 0,
             'score': min(100, score)
         }
+
+        if has_scheduled_time:
+            result['habits'] = [
+                {
+                    'id': h['id'],
+                    'completed': h['id'] in completed_ids,
+                    'scheduled_time': h['scheduled_time'],
+                }
+                for h in habits
+            ]
+
+        return result
 
     today_stats = get_day_stats(today)
     yesterday_stats = get_day_stats(yesterday)
@@ -583,6 +648,61 @@ def clear_fasting_history():
     )
     conn.commit()
     return jsonify({'success': True})
+
+
+# ============== DASHBOARD LIVE ==============
+@misc_bp.route('/dashboard/live')
+@login_required
+def dashboard_live():
+    """Return live dashboard data for auto-refresh (active fast, sobriety counter)."""
+    uid = current_user_id()
+    conn = get_connection()
+
+    result = {}
+
+    # Active fasting timer
+    active_fast = conn.execute(
+        "SELECT id, start_at, target_hours FROM fasting_logs WHERE user_id = ? AND status = 'active' ORDER BY start_at DESC LIMIT 1",
+        (uid,),
+    ).fetchone()
+    if active_fast:
+        result['active_fast'] = {
+            'id': active_fast['id'],
+            'start_at': active_fast['start_at'],
+            'target_hours': active_fast['target_hours'],
+        }
+
+    # Sobriety info with goal
+    stats = conn.execute(
+        "SELECT sobriety_start_date FROM user_stats WHERE user_id = ?", (uid,)
+    ).fetchone()
+    if stats and stats['sobriety_start_date']:
+        try:
+            start = date.fromisoformat(stats['sobriety_start_date'])
+            days = (date.today() - start).days
+        except (ValueError, TypeError):
+            days = 0
+            start = date.today()
+
+        # Check if there's a sobriety-related challenge for the target
+        challenge = conn.execute(
+            """SELECT target_days FROM challenges
+               WHERE user_id = ? AND status = 'active'
+                 AND (name LIKE '%sober%' OR name LIKE '%drinking%'
+                      OR name LIKE '%alcohol%' OR name LIKE '%smoking%')
+               ORDER BY created_at DESC LIMIT 1""",
+            (uid,),
+        ).fetchone()
+        target = challenge['target_days'] if challenge and challenge['target_days'] else 100
+
+        result['sobriety'] = {
+            'days': days,
+            'target': target,
+            'remaining': max(0, target - days),
+            'start_date': stats['sobriety_start_date'],
+        }
+
+    return jsonify(result)
 
 
 # ============== WISHLIST ==============

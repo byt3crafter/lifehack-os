@@ -254,6 +254,7 @@ def get_habits():
             'frequency': h.frequency.value,
             'difficulty': h.difficulty,
             'points': h.points,
+            'scheduled_time': h.scheduled_time or '',
             'streak': streak,
             'active': h.active,
             'completed': h.id in completed_ids,
@@ -279,6 +280,7 @@ def create_habit():
         frequency=Frequency(data.get('frequency', 'daily')),
         difficulty=data.get('difficulty', 1),
         points=config.scoring.base_habit_points,
+        scheduled_time=data.get('scheduled_time', ''),
     )
     habit = habit_repo.create(habit)
 

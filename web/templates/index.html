@@ -1447,15 +1447,42 @@
                 <!-- AI Insights -->
                 <div id="insights-container" class="mb-5 space-y-2"></div>
 
+                <!-- Live fasting timer (shown only when actively fasting) -->
+                <div id="d-fasting-timer" class="hidden mb-4 p-4 rounded-xl flex items-center gap-3" style="background:linear-gradient(135deg,#1a1820 0%,#201828 100%);border:1px solid rgba(168,85,247,0.2);">
+                    <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(168,85,247,0.15);">
+                        <svg class="w-5 h-5" fill="none" stroke="#a855f7" viewBox="0 0 20 20" stroke-width="1.8"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l2.5 2.5"/></svg>
+                    </div>
+                    <div class="flex-1">
+                        <div class="text-xs font-semibold" style="color:#a855f7;">Fasting</div>
+                        <div class="font-mono font-bold text-lg" style="color:#f0f0f2;" id="d-fast-elapsed">0h 0m</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs" style="color:#5c5c6b;">Target</div>
+                        <div class="font-mono text-sm" style="color:#9898a6;" id="d-fast-target">16h</div>
+                    </div>
+                    <div style="width:60px;height:60px;" class="flex-shrink-0">
+                        <svg width="60" height="60" style="transform:rotate(-90deg);">
+                            <circle cx="30" cy="30" r="24" stroke="#2a2a2e" stroke-width="5" fill="none"/>
+                            <circle id="d-fast-ring" cx="30" cy="30" r="24" stroke="#a855f7" stroke-width="5" fill="none" stroke-linecap="round" stroke-dasharray="150.8" stroke-dashoffset="150.8"/>
+                        </svg>
+                    </div>
+                </div>
+
                 <!-- Quick stats — passive, compact -->
                 <div class="grid grid-cols-2 gap-2 mb-5">
                     <div class="rounded-xl p-3 flex items-center gap-3" style="background:#1c1c20;border:1px solid #2a2a2e;">
                         <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(20,184,166,0.12);">
                             <svg class="w-4 h-4" fill="none" stroke="#14b8a6" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
                         </div>
-                        <div>
+                        <div class="flex-1">
                             <div class="font-mono font-semibold text-base" style="color:#f0f0f2;" id="s-sober">0d</div>
-                            <div class="text-xs" style="color:#5c5c6b;">Sober streak</div>
+                            <div class="text-xs" style="color:#5c5c6b;" id="s-sober-label">Sober streak</div>
+                        </div>
+                        <div id="s-sober-progress" class="hidden text-right">
+                            <div class="text-xs font-mono" style="color:#14b8a6;" id="s-sober-remaining"></div>
+                            <div class="h-1.5 w-16 rounded-full mt-1" style="background:#2a2a2e;">
+                                <div id="s-sober-bar" class="h-full rounded-full" style="background:#14b8a6;width:0%;transition:width 0.6s;"></div>
+                            </div>
                         </div>
                     </div>
                     <div class="rounded-xl p-3 flex items-center gap-3" style="background:#1c1c20;border:1px solid #2a2a2e;">
@@ -5605,17 +5632,20 @@
         }
     }
 
+    var _dashRefreshInterval = null;
+    var _fastStartTime = null;
+    var _fastTargetHours = 16;
+
     async function loadStats() {
         const s = await api('/stats');
         if(!s) return;
-        
+
         $('#s-xp').textContent = s.total_xp.toLocaleString();
         $('#s-level').textContent = s.level;
-        
+
         // Load challenges for sober counter and dashboard widget
         const challenges = await api('/challenges/active');
         if(challenges && challenges.length > 0) {
-            // Show best challenge streak in the sober slot
             const topChallenge = challenges.reduce((a, b) => a.streak_days > b.streak_days ? a : b);
             $('#s-sober').textContent = topChallenge.streak_days + 'd';
 
@@ -5639,21 +5669,93 @@
             $('#s-sober').textContent = s.sobriety_days + 'd';
             $('#dash-challenges-section').classList.add('hidden');
         }
-        
+
         // Calculate best habit streak for display
         const habits = await api('/habits');
-        if(habits) {
+        if(habits && Array.isArray(habits)) {
             const maxStreak = Math.max(0, ...habits.map(h => h.streak || 0));
             const streakEl = $('#s-streak');
             if(streakEl) streakEl.textContent = maxStreak;
         }
-        
+
         // Nav displays
         $('#mobile-xp').textContent = s.total_xp.toLocaleString();
         $('#nav-xp').textContent = s.total_xp.toLocaleString() + ' XP';
         $('#nav-level').textContent = `Level ${s.level} • ${s.level_name}`;
         $('#desk-xp').textContent = s.total_xp.toLocaleString() + ' XP';
         $('#desk-level').textContent = `Level ${s.level} • ${s.level_name}`;
+
+        // Load live dashboard data (fasting, sobriety with target)
+        loadDashboardLive();
+
+        // Auto-refresh every 30 seconds
+        if(!_dashRefreshInterval) {
+            _dashRefreshInterval = setInterval(function() {
+                _updateFastingTimer();
+                // Full refresh every 5 minutes
+            }, 1000);
+            // Refresh live data every 2 minutes
+            setInterval(loadDashboardLive, 120000);
+        }
+    }
+
+    async function loadDashboardLive() {
+        try {
+            var data = await api('/dashboard/live');
+            if(!data) return;
+
+            // Fasting timer
+            var ftEl = document.getElementById('d-fasting-timer');
+            if(data.active_fast) {
+                _fastStartTime = new Date(data.active_fast.start_at);
+                _fastTargetHours = data.active_fast.target_hours || 16;
+                if(ftEl) ftEl.classList.remove('hidden');
+                var tgtEl = document.getElementById('d-fast-target');
+                if(tgtEl) tgtEl.textContent = _fastTargetHours + 'h';
+                _updateFastingTimer();
+            } else {
+                _fastStartTime = null;
+                if(ftEl) ftEl.classList.add('hidden');
+            }
+
+            // Sobriety with target
+            if(data.sobriety) {
+                var sob = data.sobriety;
+                var soberEl = document.getElementById('s-sober');
+                var labelEl = document.getElementById('s-sober-label');
+                var progressEl = document.getElementById('s-sober-progress');
+                var remainEl = document.getElementById('s-sober-remaining');
+                var barEl = document.getElementById('s-sober-bar');
+                if(soberEl) soberEl.textContent = sob.days + 'd';
+                if(labelEl) labelEl.textContent = 'Sober streak';
+                if(progressEl && remainEl && barEl) {
+                    progressEl.classList.remove('hidden');
+                    remainEl.textContent = sob.remaining > 0 ? sob.remaining + 'd left' : 'Goal reached!';
+                    var pct = Math.min(100, Math.round(sob.days / sob.target * 100));
+                    barEl.style.width = pct + '%';
+                    barEl.style.background = pct >= 100 ? '#22c55e' : '#14b8a6';
+                }
+            }
+        } catch(e) {}
+    }
+
+    function _updateFastingTimer() {
+        if(!_fastStartTime) return;
+        var now = new Date();
+        var elapsedMs = now - _fastStartTime;
+        var elapsedH = Math.floor(elapsedMs / 3600000);
+        var elapsedM = Math.floor((elapsedMs % 3600000) / 60000);
+        var elapsedS = Math.floor((elapsedMs % 60000) / 1000);
+        var el = document.getElementById('d-fast-elapsed');
+        if(el) el.textContent = elapsedH + 'h ' + elapsedM + 'm ' + elapsedS + 's';
+        // Update ring
+        var ring = document.getElementById('d-fast-ring');
+        if(ring) {
+            var pct = Math.min(1, (elapsedMs / 3600000) / _fastTargetHours);
+            var circumference = 150.8;
+            ring.style.strokeDashoffset = circumference - (circumference * pct);
+            ring.style.stroke = pct >= 1 ? '#22c55e' : '#a855f7';
+        }
     }
 
     async function loadInsights() {
@@ -5849,6 +5951,7 @@
                     + '</button>'
                     // name
                     + '<span class="text-sm flex-shrink-0 truncate" style="min-width:0;max-width:7rem;color:' + (dhx.completed ? '#5c5c6b' : '#f0f0f2') + ';text-decoration:' + (dhx.completed ? 'line-through' : 'none') + ';">' + dhx.name + '</span>'
+                    + (dhx.scheduled_time ? '<span class="text-xs font-mono flex-shrink-0" style="color:#5c5c6b;">' + dhx.scheduled_time + '</span>' : '')
                     // mini strength bar
                     + '<div class="mini-strength-track">'
                     + '<div class="mini-strength-fill" style="width:' + dhPct + '%;background:' + dhGrad + ';"></div>'
@@ -6788,6 +6891,11 @@
             + '</div>'
             + '</div>'
             + '<div>'
+            + '<label class="field-label">Scheduled Time <span style="color:#5c5c6b;font-weight:400;">(optional)</span></label>'
+            + '<input id="nh-time" type="time" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="e.g. 07:00">'
+            + '<div class="text-xs mt-1" style="color:#5c5c6b;">Set a daily time to build discipline</div>'
+            + '</div>'
+            + '<div>'
             + '<label class="field-label">Micro-tasks <span style="color:#5c5c6b;font-weight:400;">(optional)</span></label>'
             + '<div id="nh-tasks-list" class="space-y-1.5"></div>'
             + '<button onclick="addNewHabitTask()" class="text-xs mt-2 px-2 py-1 rounded" style="color:#4f80ff;background:rgba(79,128,255,0.1);">+ Add micro-task</button>'
@@ -6992,10 +7100,12 @@
             await api('/habits/create-from-plan', 'POST', plan);
         } else {
             // Simple habit, no tasks
+            var timeEl = document.getElementById('nh-time');
             await api('/habits', 'POST', {
                 name: name,
                 category: catEl ? catEl.value : 'health',
-                difficulty: diffEl ? +diffEl.value : 1
+                difficulty: diffEl ? +diffEl.value : 1,
+                scheduled_time: timeEl ? timeEl.value : ''
             });
         }
         _newHabitTasks = [];
