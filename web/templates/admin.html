@@ -447,6 +447,7 @@
             color: var(--dim);
             font-size: 0.875rem;
         }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         /* ------------------------------------------------------------------ */
         /* System info cards                                                    */
@@ -791,134 +792,66 @@
             <div id="disk-card"></div>
         </div>
 
-        <!-- AI Configuration Section — Card-based design -->
+        <!-- AI Configuration Section — Select & Configure -->
         <div class="section" id="section-aiconfig" style="display:none;">
-            <div class="section-heading">AI Providers</div>
-            <p style="color:#5c5c6b;font-size:13px;margin-bottom:20px;">Configure which AI powers LifeHack OS for all users. Each provider is a card — enable the ones you have accounts for.</p>
-
-            <!-- Active Provider indicator -->
-            <div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.15);border-radius:12px;padding:14px 16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;">
-                <div style="display:flex;align-items:center;gap:10px;">
-                    <div style="width:8px;height:8px;border-radius:50%;background:#22c55e;"></div>
-                    <span style="font-size:13px;color:#f0f0f2;">Active Provider:</span>
-                    <select id="aicfg-default" style="padding:6px 10px;background:#141416;border:1px solid #2a2a2e;border-radius:6px;color:#22c55e;font-size:13px;font-weight:600;">
-                        <option value="">None (AI disabled)</option>
-                        <option value="openai">OpenAI</option>
-                        <option value="anthropic">Anthropic</option>
-                        <option value="ollama">Ollama</option>
-                        <option value="minimax">MiniMax</option>
-                        <option value="chatgpt_oauth">ChatGPT Account</option>
-                    </select>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+                <div>
+                    <div class="section-heading" style="margin-bottom:2px;">AI Providers</div>
+                    <p style="color:#5c5c6b;font-size:12px;margin:0;">Select a provider to configure, then set it as active.</p>
                 </div>
-                <div style="display:flex;gap:6px;">
-                    <button onclick="testAIConfig()" style="padding:6px 14px;background:rgba(79,128,255,0.12);border:1px solid rgba(79,128,255,0.2);border-radius:6px;color:#4f80ff;cursor:pointer;font-size:12px;font-weight:500;">Test</button>
-                    <button onclick="saveAIConfig()" style="padding:6px 14px;background:#ef4444;border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:12px;font-weight:600;">Save All</button>
+                <div style="display:flex;gap:8px;">
+                    <button onclick="testAIConfig()" style="padding:9px 16px;background:#1c1c20;border:1px solid #2a2a2e;border-radius:8px;color:#4f80ff;cursor:pointer;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;font-family:inherit;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        Test
+                    </button>
+                    <button onclick="saveAIConfig()" style="padding:9px 16px;background:#4f80ff;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;">Save All</button>
                 </div>
             </div>
+
             <div id="aicfg-status" style="margin-bottom:12px;"></div>
 
-            <!-- Provider Cards — 2 column grid -->
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+            <!-- Provider picker cards -->
+            <div id="aicfg-picker" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:16px;"></div>
 
-                <!-- ChatGPT OAuth -->
-                <div style="background:#1c1c20;border:1px solid #2a2a2e;border-radius:12px;padding:16px;">
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-                        <div style="width:32px;height:32px;border-radius:8px;background:rgba(34,197,94,0.12);display:flex;align-items:center;justify-content:center;font-size:16px;">🤖</div>
+            <!-- Config panel for selected provider -->
+            <div id="aicfg-panel" style="background:#1c1c20;border:1px solid #2a2a2e;border-radius:14px;margin-bottom:16px;display:none;overflow:hidden;">
+                <!-- Panel header -->
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.04);">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <div id="aicfg-panel-icon" style="width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;"></div>
                         <div>
-                            <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:13px;font-weight:600;color:#f0f0f2;">ChatGPT Account</span><span id="aicfg-status-chatgpt_oauth"></span></div>
-                            <div style="font-size:10px;color:#5c5c6b;">Your Pro/Max subscription</div>
+                            <div id="aicfg-panel-name" style="font-size:14px;font-weight:600;color:#f0f0f2;"></div>
+                            <div id="aicfg-panel-desc" style="font-size:11px;color:#5c5c6b;"></div>
                         </div>
                     </div>
-                    <div style="margin-bottom:8px;">
-                        <label style="font-size:11px;color:#5c5c6b;">OAuth Token</label>
-                        <input id="aicfg-oauth-token" type="password" placeholder="Paste token..." style="width:100%;padding:8px 10px;background:#141416;border:1px solid #2a2a2e;border-radius:6px;color:#f0f0f2;font-size:12px;margin-top:4px;">
-                    </div>
-                    <div>
-                        <label style="font-size:11px;color:#5c5c6b;">Model</label>
-                        <input id="aicfg-chatgpt-model" placeholder="gpt-5.4" style="width:100%;padding:8px 10px;background:#141416;border:1px solid #2a2a2e;border-radius:6px;color:#f0f0f2;font-size:12px;margin-top:4px;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span id="aicfg-panel-status"></span>
+                        <button id="aicfg-activate-btn" onclick="activateSelectedProvider()" style="padding:6px 14px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;border:1px solid #2a2a2e;background:#141416;color:#9898a6;display:none;">Set as Active</button>
                     </div>
                 </div>
-
-                <!-- OpenAI API -->
-                <div style="background:#1c1c20;border:1px solid #2a2a2e;border-radius:12px;padding:16px;">
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-                        <div style="width:32px;height:32px;border-radius:8px;background:rgba(79,128,255,0.12);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#4f80ff;">AI</div>
-                        <div>
-                            <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:13px;font-weight:600;color:#f0f0f2;">OpenAI API</span><span id="aicfg-status-openai"></span></div>
-                            <div style="font-size:10px;color:#5c5c6b;">GPT models via API key</div>
-                        </div>
-                    </div>
-                    <div style="margin-bottom:8px;">
-                        <label style="font-size:11px;color:#5c5c6b;">API Key</label>
-                        <input id="aicfg-openai-key" type="password" placeholder="sk-..." style="width:100%;padding:8px 10px;background:#141416;border:1px solid #2a2a2e;border-radius:6px;color:#f0f0f2;font-size:12px;margin-top:4px;">
-                    </div>
-                    <div style="display:flex;gap:6px;">
-                        <div style="flex:1;"><label style="font-size:11px;color:#5c5c6b;">Model</label><input id="aicfg-openai-model" placeholder="gpt-4o-mini" style="width:100%;padding:8px 10px;background:#141416;border:1px solid #2a2a2e;border-radius:6px;color:#f0f0f2;font-size:12px;margin-top:4px;"></div>
-                        <div style="flex:1;"><label style="font-size:11px;color:#5c5c6b;">Base URL</label><input id="aicfg-openai-url" placeholder="api.openai.com" style="width:100%;padding:8px 10px;background:#141416;border:1px solid #2a2a2e;border-radius:6px;color:#f0f0f2;font-size:12px;margin-top:4px;"></div>
-                    </div>
-                </div>
-
-                <!-- Anthropic -->
-                <div style="background:#1c1c20;border:1px solid #2a2a2e;border-radius:12px;padding:16px;">
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-                        <div style="width:32px;height:32px;border-radius:8px;background:rgba(139,92,246,0.12);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#8b5cf6;">C</div>
-                        <div>
-                            <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:13px;font-weight:600;color:#f0f0f2;">Anthropic</span><span id="aicfg-status-anthropic"></span></div>
-                            <div style="font-size:10px;color:#5c5c6b;">Claude models</div>
-                        </div>
-                    </div>
-                    <div style="margin-bottom:8px;">
-                        <label style="font-size:11px;color:#5c5c6b;">API Key</label>
-                        <input id="aicfg-anthropic-key" type="password" placeholder="sk-ant-..." style="width:100%;padding:8px 10px;background:#141416;border:1px solid #2a2a2e;border-radius:6px;color:#f0f0f2;font-size:12px;margin-top:4px;">
-                    </div>
-                    <div>
-                        <label style="font-size:11px;color:#5c5c6b;">Model</label>
-                        <input id="aicfg-anthropic-model" placeholder="claude-sonnet-4-20250514" style="width:100%;padding:8px 10px;background:#141416;border:1px solid #2a2a2e;border-radius:6px;color:#f0f0f2;font-size:12px;margin-top:4px;">
-                    </div>
-                </div>
-
-                <!-- MiniMax -->
-                <div style="background:#1c1c20;border:1px solid #2a2a2e;border-radius:12px;padding:16px;">
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-                        <div style="width:32px;height:32px;border-radius:8px;background:rgba(245,158,11,0.12);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#f59e0b;">M</div>
-                        <div>
-                            <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:13px;font-weight:600;color:#f0f0f2;">MiniMax</span><span id="aicfg-status-minimax"></span></div>
-                            <div style="font-size:10px;color:#5c5c6b;">MiniMax M2 model</div>
-                        </div>
-                    </div>
-                    <div style="margin-bottom:8px;">
-                        <label style="font-size:11px;color:#5c5c6b;">API Key</label>
-                        <input id="aicfg-minimax-key" type="password" placeholder="API key" style="width:100%;padding:8px 10px;background:#141416;border:1px solid #2a2a2e;border-radius:6px;color:#f0f0f2;font-size:12px;margin-top:4px;">
-                    </div>
-                    <div>
-                        <label style="font-size:11px;color:#5c5c6b;">Model</label>
-                        <input id="aicfg-minimax-model" placeholder="MiniMax-M2" style="width:100%;padding:8px 10px;background:#141416;border:1px solid #2a2a2e;border-radius:6px;color:#f0f0f2;font-size:12px;margin-top:4px;">
-                    </div>
-                </div>
-
-                <!-- Ollama -->
-                <div style="background:#1c1c20;border:1px solid #2a2a2e;border-radius:12px;padding:16px;grid-column:span 2;">
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-                        <div style="width:32px;height:32px;border-radius:8px;background:rgba(20,184,166,0.12);display:flex;align-items:center;justify-content:center;font-size:16px;">🦙</div>
-                        <div>
-                            <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:13px;font-weight:600;color:#f0f0f2;">Ollama</span><span id="aicfg-status-ollama"></span></div>
-                            <div style="font-size:10px;color:#5c5c6b;">Local LLM — free, private, runs on your machine</div>
-                        </div>
-                    </div>
-                    <div style="display:flex;gap:8px;">
-                        <div style="flex:1;"><label style="font-size:11px;color:#5c5c6b;">Server URL</label><input id="aicfg-ollama-url" placeholder="http://localhost:11434" style="width:100%;padding:8px 10px;background:#141416;border:1px solid #2a2a2e;border-radius:6px;color:#f0f0f2;font-size:12px;margin-top:4px;"></div>
-                        <div style="flex:1;"><label style="font-size:11px;color:#5c5c6b;">Model</label><input id="aicfg-ollama-model" placeholder="llama3" style="width:100%;padding:8px 10px;background:#141416;border:1px solid #2a2a2e;border-radius:6px;color:#f0f0f2;font-size:12px;margin-top:4px;"></div>
-                    </div>
+                <!-- Panel body -->
+                <div style="padding:20px;">
+                    <div id="aicfg-panel-fields" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;"></div>
                 </div>
             </div>
 
-            <!-- Task Routing -->
-            <div style="background:#1c1c20;border:1px solid #2a2a2e;border-radius:12px;padding:16px;">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-                    <div style="font-size:11px;font-weight:600;color:#5c5c6b;letter-spacing:0.8px;">TASK ROUTING</div>
-                    <div style="font-size:10px;color:#5c5c6b;">— assign different providers to specific AI tasks</div>
+            <!-- Task routing -->
+            <div style="background:#1c1c20;border:1px solid #2a2a2e;border-radius:14px;padding:20px;margin-bottom:16px;">
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;">
+                    <svg width="14" height="14" fill="none" stroke="#5c5c6b" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                    <span style="font-size:11px;font-weight:600;color:#5c5c6b;letter-spacing:0.8px;">TASK ROUTING</span>
                 </div>
+                <p style="font-size:11px;color:#5c5c6b;margin-bottom:12px;">Override the active provider for specific tasks. Leave as "System Default" to use the active provider.</p>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;" id="aicfg-tasks"></div>
+            </div>
+
+            <!-- Hidden inputs for save/load -->
+            <div style="display:none;">
+                <input id="aicfg-default"><input id="aicfg-openai-key"><input id="aicfg-openai-model"><input id="aicfg-openai-url">
+                <input id="aicfg-oauth-token"><input id="aicfg-chatgpt-model">
+                <input id="aicfg-anthropic-key"><input id="aicfg-anthropic-model">
+                <input id="aicfg-minimax-key"><input id="aicfg-minimax-model">
+                <input id="aicfg-ollama-url"><input id="aicfg-ollama-model">
             </div>
         </div>
 
@@ -1410,54 +1343,185 @@ const TASK_ASSIGNMENTS = [
 
 const PROVIDER_OPTIONS = '<option value="">System Default</option><option value="openai">OpenAI</option><option value="anthropic">Anthropic</option><option value="ollama">Ollama</option><option value="minimax">MiniMax</option><option value="chatgpt_oauth">ChatGPT Account</option>';
 
+const PROVIDER_INFO = {
+    chatgpt_oauth: { name: 'ChatGPT Account', desc: 'Your Pro/Max subscription', icon: '🤖', color: '#22c55e', fields: [
+        { id: 'aicfg-oauth-token', key: 'openai_oauth_token', label: 'OAuth Token', type: 'password', placeholder: 'Paste OAuth token...' },
+        { id: 'aicfg-chatgpt-model', key: 'ai_chatgpt_model', label: 'Model', type: 'text', placeholder: 'gpt-5.4' },
+    ]},
+    openai: { name: 'OpenAI API', desc: 'GPT models via API key', icon: 'AI', color: '#4f80ff', fields: [
+        { id: 'aicfg-openai-key', key: 'ai_openai_key', label: 'API Key', type: 'password', placeholder: 'sk-...' },
+        { id: 'aicfg-openai-model', key: 'ai_openai_model', label: 'Model', type: 'text', placeholder: 'gpt-4o-mini' },
+        { id: 'aicfg-openai-url', key: 'ai_openai_url', label: 'Base URL (optional)', type: 'text', placeholder: 'https://api.openai.com/v1' },
+    ]},
+    anthropic: { name: 'Anthropic', desc: 'Claude models', icon: 'C', color: '#8b5cf6', fields: [
+        { id: 'aicfg-anthropic-key', key: 'ai_anthropic_key', label: 'API Key', type: 'password', placeholder: 'sk-ant-...' },
+        { id: 'aicfg-anthropic-model', key: 'ai_anthropic_model', label: 'Model', type: 'text', placeholder: 'claude-sonnet-4-20250514' },
+    ]},
+    minimax: { name: 'MiniMax', desc: 'MiniMax M2 model', icon: 'M', color: '#f59e0b', fields: [
+        { id: 'aicfg-minimax-key', key: 'ai_minimax_key', label: 'API Key', type: 'password', placeholder: 'API key' },
+        { id: 'aicfg-minimax-model', key: 'ai_minimax_model', label: 'Model', type: 'text', placeholder: 'MiniMax-M2' },
+    ]},
+    ollama: { name: 'Ollama', desc: 'Local LLM — free & private', icon: '🦙', color: '#14b8a6', fields: [
+        { id: 'aicfg-ollama-url', key: 'ai_ollama_url', label: 'Server URL', type: 'text', placeholder: 'http://localhost:11434' },
+        { id: 'aicfg-ollama-model', key: 'ai_ollama_model', label: 'Model', type: 'text', placeholder: 'llama3' },
+    ]},
+};
+
+let _aiCfgData = {};
+let _activeProvider = '';
+let _selectedProvider = '';
+
+function _isProviderConfigured(id) {
+    const p = PROVIDER_INFO[id];
+    if (!p) return false;
+    const keyField = p.fields[0]?.key || '';
+    return _aiCfgData[keyField + '_set'] || (_aiCfgData[keyField] && _aiCfgData[keyField].length > 3);
+}
+
+function renderPickerCards() {
+    const picker = document.getElementById('aicfg-picker');
+    if (!picker) return;
+
+    picker.innerHTML = Object.entries(PROVIDER_INFO).map(([id, p]) => {
+        const isActive = id === _activeProvider;
+        const isSelected = id === _selectedProvider;
+        const isConfigured = _isProviderConfigured(id);
+
+        // Status
+        let statusDot, statusText, statusColor;
+        if (isActive) {
+            statusDot = '#22c55e'; statusText = 'Active'; statusColor = '#22c55e';
+        } else if (isConfigured) {
+            statusDot = '#4f80ff'; statusText = 'Configured'; statusColor = '#4f80ff';
+        } else {
+            statusDot = '#5c5c6b'; statusText = 'Not set up'; statusColor = '#5c5c6b';
+        }
+
+        const borderColor = isSelected ? p.color : (isActive ? 'rgba(34,197,94,0.4)' : '#2a2a2e');
+        const bg = isSelected ? p.color + '0a' : (isActive ? 'rgba(34,197,94,0.04)' : '#141416');
+        const shadow = isSelected ? `0 0 0 1px ${p.color}40` : 'none';
+
+        return `<button onclick="selectAIProvider('${id}')" style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:12px;border:1.5px solid ${borderColor};background:${bg};cursor:pointer;text-align:left;font-family:inherit;box-shadow:${shadow};transition:all 0.15s ease;">
+            <div style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:${p.color}15;flex-shrink:0;">
+                <span style="font-size:${p.icon.length > 2 ? '16px' : '14px'};font-weight:700;color:${p.color};">${p.icon}</span>
+            </div>
+            <div style="flex:1;min-width:0;">
+                <div style="font-size:13px;font-weight:600;color:#f0f0f2;margin-bottom:2px;">${p.name}</div>
+                <div style="display:flex;align-items:center;gap:4px;">
+                    <span style="width:6px;height:6px;border-radius:50%;background:${statusDot};flex-shrink:0;"></span>
+                    <span style="font-size:10px;color:${statusColor};font-weight:500;">${statusText}</span>
+                </div>
+            </div>
+        </button>`;
+    }).join('');
+}
+
 async function loadAIConfig() {
     try {
         const res = await fetch('/admin/ai-config');
-        const cfg = await res.json();
+        _aiCfgData = await res.json();
 
-        // Set field values
+        // Set hidden input values
         Object.entries(AI_FIELD_MAP).forEach(([elId, cfgKey]) => {
             const el = document.getElementById(elId);
-            if (el) {
-                el.value = cfg[cfgKey] || '';
-            }
+            if (el) el.value = _aiCfgData[cfgKey] || '';
         });
 
-        // Show connection status on each provider card
-        const providers = {
-            'chatgpt_oauth': { keyField: 'openai_oauth_token', label: 'ChatGPT' },
-            'openai': { keyField: 'ai_openai_key', label: 'OpenAI' },
-            'anthropic': { keyField: 'ai_anthropic_key', label: 'Anthropic' },
-            'minimax': { keyField: 'ai_minimax_key', label: 'MiniMax' },
-            'ollama': { keyField: 'ai_ollama_url', label: 'Ollama' },
-        };
-        Object.entries(providers).forEach(([id, p]) => {
-            const isConfigured = cfg[p.keyField + '_set'] || (cfg[p.keyField] && cfg[p.keyField].length > 3);
-            const statusEl = document.getElementById('aicfg-status-' + id);
-            if (statusEl) {
-                statusEl.innerHTML = isConfigured
-                    ? '<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:rgba(34,197,94,0.12);color:#22c55e;font-weight:600;">Connected</span>'
-                    : '<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:rgba(100,100,120,0.12);color:#5c5c6b;">Not configured</span>';
-            }
-        });
+        _activeProvider = _aiCfgData['ai_provider_default'] || _aiCfgData['ai_provider'] || '';
 
-        // Highlight active provider
-        const activeProvider = cfg['ai_provider_default'] || cfg['ai_provider'] || '';
-        const defaultEl = document.getElementById('aicfg-default');
-        if (defaultEl) defaultEl.value = activeProvider;
+        // Render picker
+        renderPickerCards();
+
+        // Auto-select active provider or first one
+        const toSelect = _activeProvider || Object.keys(PROVIDER_INFO)[0];
+        if (toSelect) selectAIProvider(toSelect);
 
         // Task assignments
         const tasksEl = document.getElementById('aicfg-tasks');
         if (tasksEl) {
             tasksEl.innerHTML = TASK_ASSIGNMENTS.map(t => {
-                const current = cfg[t.key] || '';
+                const current = _aiCfgData[t.key] || '';
                 const opts = PROVIDER_OPTIONS.replace(`value="${current}"`, `value="${current}" selected`);
-                return `<div><label style="font-size:11px;color:#9898a6;margin-bottom:4px;display:block;">${t.label}</label><select id="aicfg-task-${t.key}" style="width:100%;padding:8px;background:#141416;border:1px solid #2a2a2e;border-radius:6px;color:#f0f0f2;font-size:12px;">${opts}</select></div>`;
+                return `<div><label style="font-size:11px;color:#9898a6;margin-bottom:4px;display:block;">${t.label}</label><select id="aicfg-task-${t.key}" style="width:100%;padding:8px 10px;background:#141416;border:1px solid #2a2a2e;border-radius:8px;color:#f0f0f2;font-size:12px;font-family:inherit;">${opts}</select></div>`;
             }).join('');
         }
     } catch (e) {
         console.error('Failed to load AI config:', e);
     }
+}
+
+function selectAIProvider(id) {
+    _selectedProvider = id;
+    const p = PROVIDER_INFO[id];
+    if (!p) return;
+
+    // Update picker visually (no re-fetch!)
+    renderPickerCards();
+
+    // Show panel
+    const panel = document.getElementById('aicfg-panel');
+    if (panel) {
+        panel.style.display = '';
+        panel.style.borderColor = p.color + '30';
+    }
+
+    // Header
+    const iconEl = document.getElementById('aicfg-panel-icon');
+    iconEl.innerHTML = `<span style="font-size:${p.icon.length > 2 ? '20px' : '16px'};font-weight:700;color:${p.color};">${p.icon}</span>`;
+    iconEl.style.background = p.color + '15';
+    document.getElementById('aicfg-panel-name').textContent = p.name;
+    document.getElementById('aicfg-panel-desc').textContent = p.desc;
+
+    // Status badge
+    const isConfigured = _isProviderConfigured(id);
+    const isActive = id === _activeProvider;
+    let statusHtml;
+    if (isActive && isConfigured) {
+        statusHtml = '<span style="font-size:11px;padding:4px 12px;border-radius:20px;background:rgba(34,197,94,0.12);color:#22c55e;font-weight:600;display:flex;align-items:center;gap:4px;"><span style="width:6px;height:6px;border-radius:50%;background:#22c55e;"></span>Active</span>';
+    } else if (isConfigured) {
+        statusHtml = '<span style="font-size:11px;padding:4px 12px;border-radius:20px;background:rgba(79,128,255,0.1);color:#4f80ff;font-weight:600;">Configured</span>';
+    } else {
+        statusHtml = '<span style="font-size:11px;padding:4px 12px;border-radius:20px;background:rgba(100,100,120,0.1);color:#5c5c6b;">Not configured</span>';
+    }
+    document.getElementById('aicfg-panel-status').innerHTML = statusHtml;
+
+    // Activate button
+    const activateBtn = document.getElementById('aicfg-activate-btn');
+    if (isActive) {
+        activateBtn.style.display = 'none';
+    } else {
+        activateBtn.style.display = '';
+        activateBtn.style.background = p.color + '15';
+        activateBtn.style.color = p.color;
+        activateBtn.style.borderColor = p.color + '30';
+        activateBtn.textContent = 'Set as Active';
+    }
+
+    // Fields
+    const fieldsEl = document.getElementById('aicfg-panel-fields');
+    fieldsEl.innerHTML = p.fields.map(f => {
+        const val = _aiCfgData[f.key] || '';
+        const hasValue = val && val.length > 3;
+        return `<div>
+            <label style="font-size:11px;color:#9898a6;display:block;margin-bottom:5px;font-weight:500;">${f.label}</label>
+            <div style="position:relative;">
+                <input id="aicfg-live-${f.key}" type="${f.type}" value="${val}" placeholder="${f.placeholder}"
+                    style="width:100%;padding:10px 12px;background:#141416;border:1px solid ${hasValue ? 'rgba(34,197,94,0.2)' : '#2a2a2e'};border-radius:10px;color:#f0f0f2;font-size:13px;font-family:inherit;box-sizing:border-box;"
+                    oninput="document.getElementById('${f.id}').value=this.value">
+                ${hasValue ? '<span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);width:6px;height:6px;border-radius:50%;background:#22c55e;"></span>' : ''}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function activateSelectedProvider() {
+    if (!_selectedProvider) return;
+    _activeProvider = _selectedProvider;
+    const defaultEl = document.getElementById('aicfg-default');
+    if (defaultEl) defaultEl.value = _selectedProvider;
+    // Re-render picker and panel to reflect new active state
+    renderPickerCards();
+    selectAIProvider(_selectedProvider);
 }
 
 async function saveAIConfig() {
@@ -1484,9 +1548,11 @@ async function saveAIConfig() {
         const result = await res.json();
         const statusEl = document.getElementById('aicfg-status');
         if (result.success) {
-            statusEl.innerHTML = '<div style="padding:10px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);border-radius:8px;color:#22c55e;font-size:13px;">Configuration saved successfully.</div>';
+            statusEl.innerHTML = '<div style="padding:10px 14px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:10px;color:#22c55e;font-size:13px;display:flex;align-items:center;gap:6px;"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" d="M5 13l4 4L19 7"/></svg>Configuration saved.</div>';
+            // Reload to get updated masked values
+            await loadAIConfig();
         } else {
-            statusEl.innerHTML = '<div style="padding:10px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:8px;color:#ef4444;font-size:13px;">Failed to save.</div>';
+            statusEl.innerHTML = '<div style="padding:10px 14px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:10px;color:#ef4444;font-size:13px;">Failed to save configuration.</div>';
         }
         setTimeout(() => { statusEl.innerHTML = ''; }, 3000);
     } catch (e) {
@@ -1496,17 +1562,17 @@ async function saveAIConfig() {
 
 async function testAIConfig() {
     const statusEl = document.getElementById('aicfg-status');
-    statusEl.innerHTML = '<div style="padding:10px;color:#9898a6;">Testing connection...</div>';
+    statusEl.innerHTML = '<div style="padding:10px 14px;background:rgba(79,128,255,0.08);border:1px solid rgba(79,128,255,0.15);border-radius:10px;color:#4f80ff;font-size:13px;display:flex;align-items:center;gap:6px;"><span class="loading-spinner" style="width:14px;height:14px;border:2px solid rgba(79,128,255,0.2);border-top-color:#4f80ff;border-radius:50%;animation:spin 0.6s linear infinite;flex-shrink:0;"></span>Testing connection...</div>';
     try {
         const res = await fetch('/admin/ai-config/test', { method: 'POST' });
         const result = await res.json();
         if (result.available) {
-            statusEl.innerHTML = `<div style="padding:10px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);border-radius:8px;color:#22c55e;font-size:13px;">✅ Connected — ${result.provider} (${result.model})</div>`;
+            statusEl.innerHTML = `<div style="padding:10px 14px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:10px;color:#22c55e;font-size:13px;display:flex;align-items:center;gap:6px;"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" d="M5 13l4 4L19 7"/></svg>Connected — ${result.provider} (${result.model})</div>`;
         } else {
-            statusEl.innerHTML = '<div style="padding:10px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:8px;color:#ef4444;font-size:13px;">❌ Provider not available. Check your keys.</div>';
+            statusEl.innerHTML = '<div style="padding:10px 14px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:10px;color:#ef4444;font-size:13px;">Provider not available. Check your keys and try again.</div>';
         }
     } catch (e) {
-        statusEl.innerHTML = '<div style="padding:10px;color:#ef4444;">Test failed.</div>';
+        statusEl.innerHTML = '<div style="padding:10px;color:#ef4444;">Test failed — network error.</div>';
     }
     setTimeout(() => { statusEl.innerHTML = ''; }, 5000);
 }
