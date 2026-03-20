@@ -9679,12 +9679,6 @@
 
     // Stubs for code that references old floating chat functions
     function showChatTyping() {}
-        var el = document.getElementById('chat-typing');
-        if (el) el.style.display = 'flex';
-        var container = document.getElementById('chat-messages');
-        if (container) container.scrollTop = container.scrollHeight;
-    }
-
     function hideChatTyping() {}
     function chatInputAutoResize(el) { if(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; } }
 
