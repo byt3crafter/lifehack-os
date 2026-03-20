@@ -698,6 +698,36 @@ def init_database() -> None:
         CREATE INDEX IF NOT EXISTS idx_water_logs_user ON water_logs(user_id);
         CREATE INDEX IF NOT EXISTS idx_sleep_logs_user ON sleep_logs(user_id);
         CREATE INDEX IF NOT EXISTS idx_sleep_logs_date ON sleep_logs(date);
+
+        -- Subscriptions
+        CREATE TABLE IF NOT EXISTS subscriptions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER REFERENCES users(id),
+            name TEXT NOT NULL,
+            cost REAL NOT NULL,
+            currency TEXT DEFAULT 'USD',
+            billing_cycle TEXT DEFAULT 'monthly',
+            next_billing TEXT,
+            category TEXT DEFAULT '',
+            worth_it INTEGER DEFAULT 3,
+            active INTEGER DEFAULT 1,
+            notes TEXT DEFAULT '',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id);
+
+        -- Income entries
+        CREATE TABLE IF NOT EXISTS income_entries (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER REFERENCES users(id),
+            source TEXT NOT NULL,
+            amount REAL NOT NULL,
+            date TEXT NOT NULL,
+            recurring INTEGER DEFAULT 0,
+            notes TEXT DEFAULT '',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_income_entries_user ON income_entries(user_id);
     """)
 
     conn.commit()

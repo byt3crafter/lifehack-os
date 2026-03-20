@@ -95,6 +95,28 @@ def list_folders():
 
 
 # ---------------------------------------------------------------------------
+# GET /api/notes/random  (must be defined BEFORE /<int:note_id>)
+# ---------------------------------------------------------------------------
+
+@notes_bp.route('/random')
+@login_required
+def get_random_note():
+    """Return a single random non-archived note for the user.
+
+    Returns 404 if the user has no non-archived notes.
+    """
+    uid = current_user_id()
+    conn = get_connection()
+    row = conn.execute(
+        "SELECT * FROM notes WHERE user_id = ? AND archived = 0 ORDER BY RANDOM() LIMIT 1",
+        (uid,),
+    ).fetchone()
+    if not row:
+        return jsonify({'error': 'No notes found'}), 404
+    return jsonify(_serialize(row))
+
+
+# ---------------------------------------------------------------------------
 # GET /api/notes/<id>
 # ---------------------------------------------------------------------------
 

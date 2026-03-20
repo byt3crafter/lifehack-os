@@ -2330,6 +2330,25 @@
                     </div>
                     <div id="fin-transactions" class="space-y-2"></div>
                 </div>
+
+                <!-- Subscriptions -->
+                <div id="fin-subscriptions-wrap" class="mt-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="section-label">Subscriptions</span>
+                        <button onclick="addSubscriptionModal()" class="text-xs font-medium" style="color:#4f80ff;background:none;border:none;cursor:pointer;font-family:inherit;">+ Add</button>
+                    </div>
+                    <div id="fin-subs-list" class="space-y-2"></div>
+                    <div id="fin-subs-total" class="mt-2 p-3 rounded-xl hidden" style="background:#1c1c20;border:1px solid #2a2a2e;"></div>
+                </div>
+
+                <!-- Income -->
+                <div id="fin-income-wrap" class="mt-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="section-label">Income This Month</span>
+                        <button onclick="addIncomeModal()" class="text-xs font-medium" style="color:#4f80ff;background:none;border:none;cursor:pointer;font-family:inherit;">+ Log Income</button>
+                    </div>
+                    <div id="fin-income-list" class="space-y-2"></div>
+                </div>
             </div>
 
             <!-- DISCOVER -->
@@ -2541,10 +2560,28 @@
                     <button onclick="loadBooks('to-read')" id="btab-to-read" class="flex-1 py-1.5 rounded-lg text-sm font-medium" style="background:transparent;color:#9898a6;">To Read</button>
                     <button onclick="loadBooks('finished')" id="btab-finished" class="flex-1 py-1.5 rounded-lg text-sm font-medium" style="background:transparent;color:#9898a6;">Done</button>
                 </div>
+                <!-- Yearly Challenge -->
+                <div id="books-challenge" class="mb-4 p-3 rounded-xl hidden" style="background:linear-gradient(135deg,#141a1c,#141e1a);border:1px solid rgba(34,197,94,0.15);">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-semibold" style="color:#22c55e;">Yearly Reading Challenge</span>
+                        <button onclick="setReadingChallengeModal()" class="text-xs" style="color:#4f80ff;background:none;border:none;cursor:pointer;font-family:inherit;">Set Goal</button>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="font-mono font-bold text-lg" style="color:#f0f0f2;" id="bc-count">0</span>
+                        <span class="text-xs" style="color:#5c5c6b;">of <span id="bc-target">12</span> books</span>
+                        <div class="flex-1 h-2 rounded-full" style="background:rgba(255,255,255,0.06);">
+                            <div id="bc-bar" class="h-full rounded-full" style="background:#22c55e;width:0%;transition:width 0.4s;"></div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Book list -->
                 <div id="books-list" class="space-y-2"></div>
                 <!-- Stats -->
-                <div id="books-stats" class="mt-5 hidden"></div>
+                <div id="books-stats" class="mt-5">
+                    <div class="section-label mb-3">Reading Stats</div>
+                    <div class="grid grid-cols-3 gap-2" id="books-stats-grid"></div>
+                </div>
             </div>
 
             <!-- NOTES -->
@@ -2559,12 +2596,13 @@
                         New Note
                     </button>
                 </div>
-                <!-- Folder filter + search -->
+                <!-- Folder filter + search + random -->
                 <div class="flex gap-2 mb-4">
                     <select id="notes-folder-filter" class="px-3 py-2 rounded-lg border text-sm flex-shrink-0" onchange="loadNotes()" style="min-width:100px;">
                         <option value="">All Folders</option>
                     </select>
                     <input id="notes-search" type="search" class="flex-1 px-3 py-2 rounded-lg border text-sm" placeholder="Search notes..." oninput="loadNotes()">
+                    <button onclick="randomNote()" class="px-3 py-2 rounded-lg text-sm flex-shrink-0" style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.15);color:#f59e0b;cursor:pointer;font-family:inherit;" title="Random note">&#127922;</button>
                 </div>
                 <!-- Notes list -->
                 <div id="notes-list" class="space-y-2"></div>
@@ -8002,6 +8040,10 @@
 
         if(_finCardSettings.digest !== false) loadFinanceDigest(cur);
         else _finHide('fin-digest-card');
+
+        // Sprint 2: subscriptions + income
+        loadSubscriptions();
+        loadIncome();
     }
 
     var _finAmountsHidden = false;
@@ -9337,6 +9379,7 @@
                 + '<button onclick="editBookModal(' + b.id + ')" class="text-xs px-2 py-0.5 rounded" style="color:#9898a6;background:rgba(255,255,255,0.04);border:none;cursor:pointer;font-family:inherit;">Edit</button>'
                 + '</div></div>';
         }).join('');
+        loadBookStats();
     }
 
     function addBookModal() {
@@ -9513,6 +9556,161 @@
 
     async function toggleNotePin(id) { await api('/notes/' + id + '/pin', 'POST'); hideModal(); loadNotes(); }
     async function deleteNote(id) { await api('/notes/' + id, 'DELETE'); hideModal(); showToast('Note deleted', 'info'); loadNotes(); }
+
+    async function randomNote() {
+        try {
+            var n = await api('/notes/random');
+            if(n && n.title) {
+                viewNoteModal(n.id);
+            } else {
+                showToast('No notes to discover', 'info');
+            }
+        } catch(e) { showToast('No notes yet', 'info'); }
+    }
+
+    // ── Subscriptions (Finance) ──────────────────────────────────
+    async function loadSubscriptions() {
+        try {
+            var data = await api('/finance/subscriptions');
+            var el = document.getElementById('fin-subs-list');
+            if(!el) return;
+            if(!data || !data.length) {
+                el.innerHTML = '<div class="text-xs" style="color:#5c5c6b;">No subscriptions tracked yet.</div>';
+                return;
+            }
+            var cycleLabels = {monthly:'/mo', weekly:'/wk', yearly:'/yr'};
+            el.innerHTML = data.map(function(s) {
+                var stars = '';
+                for(var i=0;i<5;i++) stars += i < (s.worth_it||3) ? '&#9733;' : '&#9734;';
+                return '<div class="card p-3 rounded-xl flex items-center gap-3" style="border:1px solid #2a2a2e;">'
+                    + '<div class="flex-1 min-w-0">'
+                    + '<div class="text-sm font-medium" style="color:#f0f0f2;">' + s.name + '</div>'
+                    + '<div class="text-xs" style="color:#5c5c6b;">' + (s.category||'') + ' <span style="color:#eab308;">' + stars + '</span></div>'
+                    + '</div>'
+                    + '<div class="text-right flex-shrink-0">'
+                    + '<div class="font-mono text-sm font-semibold" style="color:#f59e0b;">' + formatMoney(s.cost, _finCurrency) + '<span class="text-xs" style="color:#5c5c6b;">' + (cycleLabels[s.billing_cycle]||'/mo') + '</span></div>'
+                    + '</div>'
+                    + '<button onclick="deleteSubscription(' + s.id + ')" class="text-xs" style="color:#5c5c6b;background:none;border:none;cursor:pointer;">&#10005;</button>'
+                    + '</div>';
+            }).join('');
+
+            // Summary
+            var summary = await api('/finance/subscriptions/summary');
+            var totalEl = document.getElementById('fin-subs-total');
+            if(summary && totalEl) {
+                totalEl.classList.remove('hidden');
+                totalEl.innerHTML = '<div class="flex justify-between"><span class="text-xs" style="color:#9898a6;">Monthly total</span><span class="font-mono font-semibold" style="color:#f59e0b;">' + formatMoney(summary.monthly_total||0, _finCurrency) + '</span></div>';
+            }
+        } catch(e) {}
+    }
+
+    function addSubscriptionModal() {
+        showModal('Add Subscription', '<div class="space-y-3">'
+            + '<div><label class="field-label">Name</label><input id="sub-name" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="e.g. Netflix, Spotify"></div>'
+            + '<div class="grid grid-cols-2 gap-3">'
+            + '<div><label class="field-label">Cost</label><input id="sub-cost" type="number" step="0.01" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="9.99"></div>'
+            + '<div><label class="field-label">Billing</label><select id="sub-cycle" class="w-full px-3 py-2.5 rounded-lg border text-sm"><option value="monthly">Monthly</option><option value="weekly">Weekly</option><option value="yearly">Yearly</option></select></div>'
+            + '</div>'
+            + '<div class="grid grid-cols-2 gap-3">'
+            + '<div><label class="field-label">Category</label><input id="sub-cat" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="e.g. Streaming"></div>'
+            + '<div><label class="field-label">Worth it? (1-5)</label><input id="sub-worth" type="range" min="1" max="5" value="3" class="w-full mt-2"></div>'
+            + '</div>'
+            + '<div class="flex gap-2 pt-1"><button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button><button onclick="saveSubscription()" class="btn-primary flex-1 py-2.5">Add</button></div></div>');
+    }
+
+    async function saveSubscription() {
+        var g = function(id) { return (document.getElementById(id)||{}).value||''; };
+        var r = await api('/finance/subscriptions', 'POST', {
+            name: g('sub-name'), cost: parseFloat(g('sub-cost'))||0,
+            billing_cycle: g('sub-cycle'), category: g('sub-cat'),
+            worth_it: parseInt(g('sub-worth'))||3
+        });
+        hideModal(); showToast('Subscription added', 'success'); loadSubscriptions();
+    }
+
+    async function deleteSubscription(id) {
+        await api('/finance/subscriptions/' + id, 'DELETE');
+        showToast('Removed', 'info'); loadSubscriptions();
+    }
+
+    // ── Income (Finance) ─────────────────────────────────────────
+    async function loadIncome() {
+        try {
+            var data = await api('/finance/income');
+            var el = document.getElementById('fin-income-list');
+            if(!el) return;
+            if(!data || !data.length) {
+                el.innerHTML = '<div class="text-xs" style="color:#5c5c6b;">No income logged this month.</div>';
+                return;
+            }
+            el.innerHTML = data.map(function(i) {
+                var dateStr = '';
+                try { dateStr = new Date(i.date + 'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}); } catch(e) {}
+                return '<div class="card p-3 rounded-xl flex items-center gap-3" style="border:1px solid #2a2a2e;">'
+                    + '<div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(34,197,94,0.1);"><span style="color:#22c55e;">&#128176;</span></div>'
+                    + '<div class="flex-1 min-w-0"><div class="text-sm font-medium" style="color:#f0f0f2;">' + i.source + '</div><div class="text-xs" style="color:#5c5c6b;">' + dateStr + '</div></div>'
+                    + '<span class="font-mono text-sm font-semibold" style="color:#22c55e;">+' + formatMoney(i.amount, _finCurrency) + '</span>'
+                    + '</div>';
+            }).join('');
+        } catch(e) {}
+    }
+
+    function addIncomeModal() {
+        var today = new Date().toISOString().split('T')[0];
+        showModal('Log Income', '<div class="space-y-3">'
+            + '<div><label class="field-label">Source</label><input id="inc-source" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="e.g. Salary, Freelance"></div>'
+            + '<div class="grid grid-cols-2 gap-3">'
+            + '<div><label class="field-label">Amount</label><input id="inc-amount" type="number" step="0.01" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="0.00"></div>'
+            + '<div><label class="field-label">Date</label><input id="inc-date" type="date" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="' + today + '"></div>'
+            + '</div>'
+            + '<div class="flex gap-2 pt-1"><button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button><button onclick="saveIncome()" class="btn-primary flex-1 py-2.5">Log</button></div></div>');
+    }
+
+    async function saveIncome() {
+        var g = function(id) { return (document.getElementById(id)||{}).value||''; };
+        await api('/finance/income', 'POST', {
+            source: g('inc-source'), amount: parseFloat(g('inc-amount'))||0, date: g('inc-date')
+        });
+        hideModal(); showToast('Income logged', 'success'); loadIncome();
+    }
+
+    // ── Book Stats + Challenge ───────────────────────────────────
+    async function loadBookStats() {
+        try {
+            var stats = await api('/books/stats');
+            var grid = document.getElementById('books-stats-grid');
+            if(grid && stats) {
+                grid.innerHTML = '<div class="rounded-xl p-3" style="background:#1c1c20;border:1px solid #2a2a2e;"><div class="font-mono font-bold text-lg" style="color:#f0f0f2;">' + (stats.books_finished_this_year||0) + '</div><div class="text-xs" style="color:#5c5c6b;">Books this year</div></div>'
+                    + '<div class="rounded-xl p-3" style="background:#1c1c20;border:1px solid #2a2a2e;"><div class="font-mono font-bold text-lg" style="color:#f0f0f2;">' + (stats.total_pages_read||0) + '</div><div class="text-xs" style="color:#5c5c6b;">Pages read</div></div>'
+                    + '<div class="rounded-xl p-3" style="background:#1c1c20;border:1px solid #2a2a2e;"><div class="font-mono font-bold text-lg" style="color:#f0f0f2;">' + (stats.reading_streak||0) + 'd</div><div class="text-xs" style="color:#5c5c6b;">Reading streak</div></div>';
+            }
+        } catch(e) {}
+
+        // Challenge
+        try {
+            var ch = await api('/books/challenge');
+            var chEl = document.getElementById('books-challenge');
+            if(ch && ch.target && chEl) {
+                chEl.classList.remove('hidden');
+                document.getElementById('bc-count').textContent = ch.completed || 0;
+                document.getElementById('bc-target').textContent = ch.target;
+                var pct = Math.min(100, Math.round((ch.completed||0) / ch.target * 100));
+                document.getElementById('bc-bar').style.width = pct + '%';
+            }
+        } catch(e) {}
+    }
+
+    function setReadingChallengeModal() {
+        showModal('Reading Challenge', '<div class="space-y-3">'
+            + '<div><label class="field-label">Books to read this year</label><input id="rc-target" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="12" min="1"></div>'
+            + '<div class="flex gap-2 pt-1"><button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button><button onclick="saveReadingChallenge()" class="btn-primary flex-1 py-2.5">Set Goal</button></div></div>');
+    }
+
+    async function saveReadingChallenge() {
+        var target = parseInt((document.getElementById('rc-target')||{}).value)||12;
+        await api('/books/challenge', 'PUT', {target: target});
+        hideModal(); showToast('Challenge set!', 'success'); loadBookStats();
+    }
 
     // ── Discover ──────────────────────────────────────────────────
     var _discoverActiveTab = 'want';

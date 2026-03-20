@@ -208,6 +208,30 @@ TOOL_DEFINITIONS = [
             "quality": "integer 1-5",
         },
     },
+    # ── Finance — subscriptions & income ────────────────────────────────────
+    {
+        "name": "add_subscription",
+        "description": "Track a recurring subscription (Netflix, Spotify, SaaS tools, etc.)",
+        "parameters": {
+            "name": "string (required) — name of the service or product",
+            "cost": "number (required) — cost per billing period",
+            "billing_cycle": "string — monthly/weekly/yearly (default: monthly)",
+            "category": "string (optional) — e.g. entertainment, software, fitness",
+            "currency": "string (optional, default: USD)",
+            "worth_it": "integer 1-5 (optional, default: 3) — subjective value rating",
+            "next_billing": "YYYY-MM-DD (optional) — next billing date",
+        },
+    },
+    {
+        "name": "log_income",
+        "description": "Log income received (salary, freelance, dividends, etc.)",
+        "parameters": {
+            "source": "string (required) — where the income came from",
+            "amount": "number (required) — amount received",
+            "date": "YYYY-MM-DD (optional, defaults to today)",
+            "recurring": "boolean (optional, default: false) — is this recurring income?",
+        },
+    },
     # ── Notes ────────────────────────────────────────────────────────────────
     {
         "name": "create_note",

@@ -38,6 +38,8 @@ def execute_tool(tool_name: str, args: dict, conn, user_id: int) -> dict:
         "end_fast": _end_fast,
         "log_transaction": _log_transaction,
         "add_budget_rule": _add_budget_rule,
+        "add_subscription": _add_subscription,
+        "log_income": _log_income,
         "create_challenge": _create_challenge,
         "add_discovery": _add_discovery,
         "create_dw_project": _create_dw_project,
@@ -511,6 +513,98 @@ def _add_budget_rule(args: dict, conn, user_id: int) -> dict:
     return {
         "success": True,
         "message": f"{action} budget rule: {category} = {monthly_limit:.2f}/month",
+    }
+
+
+def _add_subscription(args: dict, conn, user_id: int) -> dict:
+    name = (args.get("name") or "").strip()
+    if not name:
+        return {"error": "name is required"}
+
+    cost = args.get("cost")
+    if cost is None:
+        return {"error": "cost is required"}
+    try:
+        cost = float(cost)
+        if cost < 0:
+            raise ValueError
+    except (TypeError, ValueError):
+        return {"error": "cost must be a non-negative number"}
+
+    billing_cycle = (args.get("billing_cycle") or "monthly").strip().lower()
+    if billing_cycle not in ("monthly", "weekly", "yearly"):
+        billing_cycle = "monthly"
+
+    category = (args.get("category") or "").strip()
+    currency = (args.get("currency") or "USD").strip().upper()
+    next_billing = (args.get("next_billing") or "").strip() or None
+
+    worth_it = args.get("worth_it", 3)
+    try:
+        worth_it = max(1, min(5, int(worth_it)))
+    except (TypeError, ValueError):
+        worth_it = 3
+
+    cursor = conn.execute(
+        """INSERT INTO subscriptions
+               (user_id, name, cost, currency, billing_cycle, next_billing, category, worth_it)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+        (user_id, name, cost, currency, billing_cycle, next_billing, category, worth_it),
+    )
+    conn.commit()
+
+    # Compute monthly cost for the confirmation message
+    if billing_cycle == "weekly":
+        monthly = round(cost * 52 / 12, 2)
+    elif billing_cycle == "yearly":
+        monthly = round(cost / 12, 2)
+    else:
+        monthly = round(cost, 2)
+
+    return {
+        "success": True,
+        "subscription_id": cursor.lastrowid,
+        "message": (
+            f'Tracking "{name}" — {currency} {cost:.2f}/{billing_cycle} '
+            f'(~{currency} {monthly:.2f}/month)'
+        ),
+    }
+
+
+def _log_income(args: dict, conn, user_id: int) -> dict:
+    source = (args.get("source") or "").strip()
+    if not source:
+        return {"error": "source is required"}
+
+    amount = args.get("amount")
+    if amount is None:
+        return {"error": "amount is required"}
+    try:
+        amount = float(amount)
+        if amount <= 0:
+            raise ValueError
+    except (TypeError, ValueError):
+        return {"error": "amount must be a positive number"}
+
+    income_date = (args.get("date") or date.today().isoformat()).strip()
+    try:
+        datetime.fromisoformat(income_date)
+    except (ValueError, TypeError):
+        income_date = date.today().isoformat()
+
+    recurring = 1 if args.get("recurring") else 0
+
+    cursor = conn.execute(
+        """INSERT INTO income_entries (user_id, source, amount, date, recurring)
+           VALUES (?, ?, ?, ?, ?)""",
+        (user_id, source, amount, income_date, recurring),
+    )
+    conn.commit()
+
+    return {
+        "success": True,
+        "entry_id": cursor.lastrowid,
+        "message": f"Logged income: {amount:.2f} from {source} on {income_date}",
     }
 
 

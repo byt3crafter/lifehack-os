@@ -1100,6 +1100,340 @@ def get_digest():
     })
 
 
+# ---------------------------------------------------------------------------
+# Subscription manager
+# ---------------------------------------------------------------------------
+
+def _monthly_cost(cost: float, billing_cycle: str) -> float:
+    """Normalise a subscription cost to its monthly equivalent."""
+    if billing_cycle == 'weekly':
+        return round(cost * 52 / 12, 2)
+    if billing_cycle == 'yearly':
+        return round(cost / 12, 2)
+    return round(cost, 2)  # monthly (default)
+
+
+def _serialize_subscription(r) -> dict:
+    mc = _monthly_cost(r['cost'], r['billing_cycle'] or 'monthly')
+    return {
+        'id': r['id'],
+        'name': r['name'],
+        'cost': r['cost'],
+        'currency': r['currency'],
+        'billing_cycle': r['billing_cycle'],
+        'next_billing': r['next_billing'],
+        'category': r['category'],
+        'worth_it': r['worth_it'],
+        'active': bool(r['active']),
+        'notes': r['notes'],
+        'monthly_cost': mc,
+        'created_at': r['created_at'],
+    }
+
+
+@finance_bp.route('/subscriptions')
+@login_required
+def list_subscriptions():
+    """List active subscriptions for the user, with computed monthly_cost."""
+    uid = current_user_id()
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT * FROM subscriptions WHERE user_id = ? AND active = 1 ORDER BY name",
+        (uid,),
+    ).fetchall()
+    return jsonify([_serialize_subscription(r) for r in rows])
+
+
+@finance_bp.route('/subscriptions/summary')
+@login_required
+def subscriptions_summary():
+    """Total monthly cost, count, and top categories across active subscriptions."""
+    uid = current_user_id()
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT * FROM subscriptions WHERE user_id = ? AND active = 1",
+        (uid,),
+    ).fetchall()
+
+    total_monthly = 0.0
+    category_totals: dict = defaultdict(float)
+
+    for r in rows:
+        mc = _monthly_cost(r['cost'], r['billing_cycle'] or 'monthly')
+        total_monthly += mc
+        cat = r['category'] or 'Uncategorized'
+        category_totals[cat] += mc
+
+    top_categories = sorted(
+        [{'category': k, 'monthly_cost': round(v, 2)} for k, v in category_totals.items()],
+        key=lambda x: x['monthly_cost'],
+        reverse=True,
+    )
+
+    return jsonify({
+        'total_monthly_cost': round(total_monthly, 2),
+        'total_yearly_cost': round(total_monthly * 12, 2),
+        'count': len(rows),
+        'top_categories': top_categories,
+    })
+
+
+@finance_bp.route('/subscriptions', methods=['POST'])
+@login_required
+def create_subscription():
+    """Create a subscription.
+
+    Body: {name, cost, currency?, billing_cycle?, next_billing?, category?, worth_it?, notes?}
+    """
+    uid = current_user_id()
+    data = request.json or {}
+    name = (data.get('name') or '').strip()
+    cost = data.get('cost')
+
+    if not name:
+        return jsonify({'error': 'name is required'}), 400
+    if cost is None:
+        return jsonify({'error': 'cost is required'}), 400
+    try:
+        cost = float(cost)
+        if cost < 0:
+            raise ValueError
+    except (TypeError, ValueError):
+        return jsonify({'error': 'cost must be a non-negative number'}), 400
+
+    billing_cycle = (data.get('billing_cycle') or 'monthly').strip().lower()
+    if billing_cycle not in ('monthly', 'weekly', 'yearly'):
+        return jsonify({'error': 'billing_cycle must be monthly, weekly, or yearly'}), 400
+
+    currency = (data.get('currency') or 'USD').strip().upper()
+    next_billing = (data.get('next_billing') or '').strip() or None
+    category = (data.get('category') or '').strip()
+    worth_it = data.get('worth_it', 3)
+    try:
+        worth_it = max(1, min(5, int(worth_it)))
+    except (TypeError, ValueError):
+        worth_it = 3
+    notes = (data.get('notes') or '').strip()
+
+    conn = get_connection()
+    cursor = conn.execute(
+        """INSERT INTO subscriptions
+               (user_id, name, cost, currency, billing_cycle, next_billing, category, worth_it, notes)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (uid, name, cost, currency, billing_cycle, next_billing, category, worth_it, notes),
+    )
+    conn.commit()
+
+    row = conn.execute(
+        "SELECT * FROM subscriptions WHERE id = ? AND user_id = ?", (cursor.lastrowid, uid)
+    ).fetchone()
+    return jsonify(_serialize_subscription(row)), 201
+
+
+@finance_bp.route('/subscriptions/<int:sub_id>', methods=['PUT'])
+@login_required
+def update_subscription(sub_id: int):
+    """Update a subscription."""
+    uid = current_user_id()
+    conn = get_connection()
+    row = conn.execute(
+        "SELECT * FROM subscriptions WHERE id = ? AND user_id = ?", (sub_id, uid)
+    ).fetchone()
+    if not row:
+        return jsonify({'error': 'Subscription not found'}), 404
+
+    data = request.json or {}
+
+    name = (data.get('name') or row['name']).strip()
+    cost = row['cost']
+    if 'cost' in data:
+        try:
+            cost = float(data['cost'])
+            if cost < 0:
+                raise ValueError
+        except (TypeError, ValueError):
+            return jsonify({'error': 'cost must be a non-negative number'}), 400
+
+    billing_cycle = (data.get('billing_cycle') or row['billing_cycle'] or 'monthly').strip().lower()
+    if billing_cycle not in ('monthly', 'weekly', 'yearly'):
+        return jsonify({'error': 'billing_cycle must be monthly, weekly, or yearly'}), 400
+
+    currency = (data.get('currency') or row['currency'] or 'USD').strip().upper()
+    next_billing = data.get('next_billing', row['next_billing'])
+    if next_billing is not None:
+        next_billing = str(next_billing).strip() or None
+    category = (data.get('category') if 'category' in data else row['category']) or ''
+    active = data.get('active', bool(row['active']))
+    notes = (data.get('notes') if 'notes' in data else row['notes']) or ''
+
+    worth_it = row['worth_it']
+    if 'worth_it' in data:
+        try:
+            worth_it = max(1, min(5, int(data['worth_it'])))
+        except (TypeError, ValueError):
+            pass
+
+    conn.execute(
+        """UPDATE subscriptions
+           SET name = ?, cost = ?, currency = ?, billing_cycle = ?, next_billing = ?,
+               category = ?, worth_it = ?, active = ?, notes = ?
+           WHERE id = ? AND user_id = ?""",
+        (name, cost, currency, billing_cycle, next_billing,
+         category, worth_it, 1 if active else 0, notes, sub_id, uid),
+    )
+    conn.commit()
+
+    updated = conn.execute(
+        "SELECT * FROM subscriptions WHERE id = ? AND user_id = ?", (sub_id, uid)
+    ).fetchone()
+    return jsonify(_serialize_subscription(updated))
+
+
+@finance_bp.route('/subscriptions/<int:sub_id>', methods=['DELETE'])
+@login_required
+def delete_subscription(sub_id: int):
+    """Delete a subscription."""
+    uid = current_user_id()
+    conn = get_connection()
+    row = conn.execute(
+        "SELECT id FROM subscriptions WHERE id = ? AND user_id = ?", (sub_id, uid)
+    ).fetchone()
+    if not row:
+        return jsonify({'error': 'Subscription not found'}), 404
+
+    conn.execute("DELETE FROM subscriptions WHERE id = ? AND user_id = ?", (sub_id, uid))
+    conn.commit()
+    return '', 204
+
+
+# ---------------------------------------------------------------------------
+# Income tracking
+# ---------------------------------------------------------------------------
+
+def _serialize_income(r) -> dict:
+    return {
+        'id': r['id'],
+        'source': r['source'],
+        'amount': r['amount'],
+        'date': r['date'],
+        'recurring': bool(r['recurring']),
+        'notes': r['notes'],
+        'created_at': r['created_at'],
+    }
+
+
+@finance_bp.route('/income')
+@login_required
+def list_income():
+    """List income entries, optionally filtered by ?month=YYYY-MM."""
+    uid = current_user_id()
+    month = (request.args.get('month') or '').strip()
+
+    conn = get_connection()
+    if month:
+        try:
+            year, mon = map(int, month.split('-'))
+            start = date(year, mon, 1).isoformat()
+            end = date(year + 1, 1, 1).isoformat() if mon == 12 else date(year, mon + 1, 1).isoformat()
+        except (ValueError, AttributeError):
+            return jsonify({'error': 'month must be YYYY-MM'}), 400
+        rows = conn.execute(
+            "SELECT * FROM income_entries WHERE user_id = ? AND date >= ? AND date < ? ORDER BY date DESC",
+            (uid, start, end),
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT * FROM income_entries WHERE user_id = ? ORDER BY date DESC",
+            (uid,),
+        ).fetchall()
+
+    return jsonify([_serialize_income(r) for r in rows])
+
+
+@finance_bp.route('/income/summary')
+@login_required
+def income_summary():
+    """Total income this month, broken down by source."""
+    uid = current_user_id()
+    conn = get_connection()
+
+    rows = conn.execute(
+        """SELECT source, SUM(amount) AS total
+           FROM income_entries
+           WHERE user_id = ? AND strftime('%Y-%m', date) = strftime('%Y-%m', 'now')
+           GROUP BY source
+           ORDER BY total DESC""",
+        (uid,),
+    ).fetchall()
+
+    by_source = [{'source': r['source'], 'total': round(r['total'], 2)} for r in rows]
+    total = round(sum(r['total'] for r in rows), 2)
+
+    return jsonify({
+        'month': date.today().strftime('%Y-%m'),
+        'total': total,
+        'by_source': by_source,
+    })
+
+
+@finance_bp.route('/income', methods=['POST'])
+@login_required
+def log_income():
+    """Log an income entry.
+
+    Body: {source, amount, date?, recurring?, notes?}
+    """
+    uid = current_user_id()
+    data = request.json or {}
+    source = (data.get('source') or '').strip()
+    amount = data.get('amount')
+    income_date = (data.get('date') or date.today().isoformat()).strip()
+
+    if not source:
+        return jsonify({'error': 'source is required'}), 400
+    if amount is None:
+        return jsonify({'error': 'amount is required'}), 400
+    try:
+        amount = float(amount)
+        if amount <= 0:
+            raise ValueError
+    except (TypeError, ValueError):
+        return jsonify({'error': 'amount must be a positive number'}), 400
+
+    recurring = 1 if data.get('recurring') else 0
+    notes = (data.get('notes') or '').strip()
+
+    conn = get_connection()
+    cursor = conn.execute(
+        """INSERT INTO income_entries (user_id, source, amount, date, recurring, notes)
+           VALUES (?, ?, ?, ?, ?, ?)""",
+        (uid, source, amount, income_date, recurring, notes),
+    )
+    conn.commit()
+
+    row = conn.execute(
+        "SELECT * FROM income_entries WHERE id = ? AND user_id = ?", (cursor.lastrowid, uid)
+    ).fetchone()
+    return jsonify(_serialize_income(row)), 201
+
+
+@finance_bp.route('/income/<int:entry_id>', methods=['DELETE'])
+@login_required
+def delete_income(entry_id: int):
+    """Delete an income entry."""
+    uid = current_user_id()
+    conn = get_connection()
+    row = conn.execute(
+        "SELECT id FROM income_entries WHERE id = ? AND user_id = ?", (entry_id, uid)
+    ).fetchone()
+    if not row:
+        return jsonify({'error': 'Income entry not found'}), 404
+
+    conn.execute("DELETE FROM income_entries WHERE id = ? AND user_id = ?", (entry_id, uid))
+    conn.commit()
+    return '', 204
+
+
 @finance_bp.route('/digest/generate', methods=['POST'])
 @login_required
 def generate_digest():

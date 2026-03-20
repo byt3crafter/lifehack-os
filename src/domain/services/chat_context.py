@@ -119,6 +119,16 @@ def assemble_context(conn, user_id: int) -> dict:
         (user_id, today),
     )
 
+    # Finance — subscriptions (active)
+    context['subscriptions'] = _safe_query(conn,
+        "SELECT name, cost, billing_cycle, category, worth_it FROM subscriptions WHERE user_id = ? AND active = 1",
+        (user_id,))
+
+    # Finance — income this month
+    context['income_this_month'] = _safe_query(conn,
+        "SELECT source, amount, date FROM income_entries WHERE user_id = ? AND strftime('%Y-%m', date) = strftime('%Y-%m', 'now')",
+        (user_id,))
+
     # Finance — budget rules
     context['budget_rules'] = _safe_query(
         conn,
