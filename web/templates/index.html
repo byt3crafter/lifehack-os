@@ -5647,7 +5647,23 @@
         const challenges = await api('/challenges/active');
         if(challenges && challenges.length > 0) {
             const topChallenge = challenges.reduce((a, b) => a.streak_days > b.streak_days ? a : b);
-            $('#s-sober').textContent = topChallenge.streak_days + 'd';
+            var soberDays = topChallenge.streak_days || 0;
+            var soberTarget = topChallenge.target_days || 0;
+            var soberRemaining = Math.max(0, soberTarget - soberDays);
+            $('#s-sober').textContent = soberDays + 'd';
+            // Show countdown from challenge target
+            if(soberTarget > 0) {
+                var progressEl = document.getElementById('s-sober-progress');
+                var remainEl = document.getElementById('s-sober-remaining');
+                var barEl = document.getElementById('s-sober-bar');
+                if(progressEl && remainEl && barEl) {
+                    progressEl.classList.remove('hidden');
+                    remainEl.textContent = soberRemaining > 0 ? soberRemaining + 'd left' : 'Goal reached!';
+                    var pct = Math.min(100, Math.round(soberDays / soberTarget * 100));
+                    barEl.style.width = pct + '%';
+                    barEl.style.background = pct >= 100 ? '#22c55e' : '#14b8a6';
+                }
+            }
 
             // Show challenges widget on dashboard
             $('#dash-challenges-section').classList.remove('hidden');
@@ -5658,7 +5674,7 @@
                     <div class="font-mono font-bold text-lg flex-shrink-0" style="color:${catColor};min-width:2rem;text-align:center;">${c.streak_days}</div>
                     <div class="flex-1 min-w-0">
                         <div class="text-sm font-medium truncate" style="color:#f0f0f2;">${c.name}</div>
-                        <div class="text-xs" style="color:#5c5c6b;">${c.target_days ? Math.round(c.progress) + '% to goal' : 'Ongoing'}</div>
+                        <div class="text-xs" style="color:#5c5c6b;">${c.target_days ? (c.streak_days + ' of ' + c.target_days + ' days \u2014 ' + Math.max(0, c.target_days - c.streak_days) + ' to go') : 'Ongoing'}</div>
                     </div>
                     ${c.needs_checkin
                         ? '<span class="text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0" style="background:rgba(245,158,11,0.12);color:#f59e0b;">Check-in</span>'

@@ -415,7 +415,8 @@ def get_daily_summary():
     tips = []
     if today_stats['habits_pct'] < 50:
         pending = today_stats['habits_total'] - today_stats['habits_completed']
-        tips.append(f"💪 {pending} habits left today — pick one to knock out now")
+        word = 'habit' if pending == 1 else 'habits'
+        tips.append(f"💪 {pending} {word} left today — pick one to knock out now")
     if not today_stats['checkin_done']:
         tips.append("📝 Don't forget your daily check-in")
     if today_stats['food_logged'] == 0:
