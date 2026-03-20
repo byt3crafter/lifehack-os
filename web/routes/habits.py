@@ -239,7 +239,7 @@ def get_habits():
         # Micro-tasks for the current phase with live verification status
         micro_tasks = []
         if current_phase:
-            micro_tasks = verify_phase_tasks(current_phase['id'], conn)
+            micro_tasks = verify_phase_tasks(current_phase['id'], conn, uid)
 
         total_phases = phase_counts['total'] or 0
         done_phases = phase_counts['done'] or 0
@@ -316,8 +316,8 @@ def complete_habit(habit_id):
         task_count = conn.execute(
             "SELECT COUNT(*) FROM habit_micro_tasks WHERE phase_id = ?", (phase_id,)
         ).fetchone()[0]
-        if task_count > 0 and not are_all_tasks_complete(phase_id, conn):
-            tasks = verify_phase_tasks(phase_id, conn)
+        if task_count > 0 and not are_all_tasks_complete(phase_id, conn, uid):
+            tasks = verify_phase_tasks(phase_id, conn, uid)
             pending = [t['name'] for t in tasks if not t['verified']]
             return jsonify({
                 'error': 'Not all micro-tasks are complete',
@@ -1023,7 +1023,7 @@ def verify_tasks(habit_id):
 
     phase_id = current_phase['id']
     target_date = request.args.get('date', date.today().isoformat())
-    tasks = verify_phase_tasks(phase_id, conn, target_date)
+    tasks = verify_phase_tasks(phase_id, conn, uid, target_date)
     all_complete = all(t['verified'] for t in tasks) if tasks else True
 
     return jsonify({

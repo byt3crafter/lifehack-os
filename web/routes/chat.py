@@ -36,7 +36,7 @@ def _strip_think_tags(text: str) -> str:
     return _THINK_PATTERN.sub('', text).strip()
 
 
-def _parse_and_execute_tools(ai_response: str, conn) -> tuple[str, list]:
+def _parse_and_execute_tools(ai_response: str, conn, user_id: int) -> tuple[str, list]:
     """Find [TOOL: ...] calls in *ai_response*, execute them, return results.
 
     Returns:
@@ -55,7 +55,7 @@ def _parse_and_execute_tools(ai_response: str, conn) -> tuple[str, list]:
             logger.warning("Could not parse tool args JSON for '%s': %s", tool_name, args_json)
             args = {}
 
-        result = execute_tool(tool_name, args, conn)
+        result = execute_tool(tool_name, args, conn, user_id)
         logger.info("Tool '%s' executed — result: %s", tool_name, result)
         results.append({"tool": tool_name, "args": args, "result": result})
 
@@ -90,7 +90,7 @@ def send_message():
 
     # Assemble live context from all modules
     try:
-        context = assemble_context(conn)
+        context = assemble_context(conn, uid)
     except Exception as exc:
         logger.error("Context assembly failed: %s", exc, exc_info=True)
         context = {}
@@ -169,7 +169,7 @@ def send_message():
     ai_response = _strip_think_tags(ai_response)
 
     # ── Tool execution ───────────────────────────────────────────────────────
-    clean_response, tool_results = _parse_and_execute_tools(ai_response, conn)
+    clean_response, tool_results = _parse_and_execute_tools(ai_response, conn, uid)
 
     if tool_results:
         # Feed tool results back to the AI for a concise user-facing summary

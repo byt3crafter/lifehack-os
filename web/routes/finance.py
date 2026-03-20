@@ -956,7 +956,7 @@ def detect_recurring_expenses():
         conn = get_connection()
 
         from src.domain.services.finance_recurring import detect_recurring
-        results = detect_recurring(txns, conn)
+        results = detect_recurring(txns, conn, uid)
 
         return jsonify({
             'detected': len(results),
@@ -1024,7 +1024,7 @@ def scan_anomalies():
         conn = get_connection()
 
         from src.domain.services.finance_anomalies import detect_anomalies
-        results = detect_anomalies(txns, conn)
+        results = detect_anomalies(txns, conn, uid)
 
         return jsonify({
             'detected': len(results),
@@ -1125,7 +1125,7 @@ def generate_digest():
             pass
 
         from src.domain.services.finance_digest import generate_digest as gen
-        result = gen(txns, budgets, conn, ai_provider)
+        result = gen(txns, budgets, conn, uid, ai_provider)
 
         return jsonify(result)
     except Exception:
