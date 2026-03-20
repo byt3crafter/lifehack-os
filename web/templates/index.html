@@ -8981,9 +8981,27 @@
     async function logWaterQuick() {
         var r = await api('/wellness/water', 'POST', {glasses: 1});
         if(r && !r.error) {
+            var logId = r.id || r.log_id;
+            // Show toast with undo button
             showToast('+1 glass logged', 'success');
+            if(logId) {
+                // Create undo notification
+                var undoEl = document.createElement('div');
+                undoEl.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;background:#1c1c20;border:1px solid #2a2a2e;border-radius:12px;padding:10px 16px;display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,0.4);';
+                undoEl.innerHTML = '<span class="text-sm" style="color:#f0f0f2;">+1 glass logged</span>'
+                    + '<button onclick="undoWater(' + logId + ',this.parentNode)" style="color:#4f80ff;background:none;border:none;cursor:pointer;font-family:inherit;font-size:0.8125rem;font-weight:600;">Undo</button>';
+                document.body.appendChild(undoEl);
+                setTimeout(function() { if(undoEl.parentNode) undoEl.remove(); }, 5000);
+            }
             loadDashboardWellness();
         }
+    }
+
+    async function undoWater(logId, toastEl) {
+        await api('/wellness/water/' + logId, 'DELETE');
+        if(toastEl) toastEl.remove();
+        showToast('Water log undone', 'info');
+        loadDashboardWellness();
     }
 
     async function loadDashboardWellness() {
