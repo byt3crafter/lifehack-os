@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Admin Panel — Life Hack OS</title>
+    <link rel="icon" type="image/svg+xml" href="/static/icon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #0c0c0e;
+            font-family: 'DM Sans', system-ui, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            color: #f0f0f2;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(239,68,68,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(239,68,68,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+        }
+
+        .container { width: 100%; max-width: 360px; position: relative; }
+
+        .brand {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .brand-mark {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #ef4444, #b91c1c);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            box-shadow: 0 0 32px rgba(239,68,68,0.3);
+        }
+        .brand h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #f0f0f2;
+            letter-spacing: -0.02em;
+        }
+        .brand p {
+            font-size: 0.8125rem;
+            color: #5c5c6b;
+            margin-top: 0.25rem;
+        }
+
+        .badge {
+            display: inline-block;
+            margin-top: 0.5rem;
+            padding: 0.2rem 0.6rem;
+            background: rgba(239,68,68,0.1);
+            border: 1px solid rgba(239,68,68,0.25);
+            border-radius: 6px;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            color: #ef4444;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .card {
+            background: #141416;
+            border: 1px solid #2a2a2e;
+            border-radius: 16px;
+            padding: 1.75rem;
+        }
+
+        .error-banner {
+            background: rgba(239,68,68,0.08);
+            border: 1px solid rgba(239,68,68,0.2);
+            color: #fca5a5;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            font-size: 0.8125rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .field { margin-bottom: 1rem; }
+        .field label {
+            display: block;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: #9898a6;
+            margin-bottom: 0.5rem;
+        }
+        .field input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: #0c0c0e;
+            border: 1px solid #2a2a2e;
+            border-radius: 10px;
+            color: #f0f0f2;
+            font-family: 'DM Sans', system-ui, sans-serif;
+            font-size: 0.9375rem;
+            transition: border-color 0.15s, box-shadow 0.15s;
+            outline: none;
+        }
+        .field input:focus {
+            border-color: #ef4444;
+            box-shadow: 0 0 0 3px rgba(239,68,68,0.15);
+        }
+        .field input::placeholder { color: #3a3a48; }
+
+        .submit-btn {
+            width: 100%;
+            padding: 0.8125rem;
+            background: #ef4444;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-family: 'DM Sans', system-ui, sans-serif;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s;
+            margin-top: 0.5rem;
+        }
+        .submit-btn:hover { background: #f87171; }
+        .submit-btn:active { transform: scale(0.98); }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 1.25rem;
+            color: #5c5c6b;
+            font-size: 0.8125rem;
+            text-decoration: none;
+        }
+        .back-link:hover { color: #9898a6; }
+
+        .footer {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #3a3a48;
+            margin-top: 1.5rem;
+            letter-spacing: 0.04em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="brand">
+            <div class="brand-mark">
+                <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2.2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                </svg>
+            </div>
+            <h1>Admin Panel</h1>
+            <p>LifeHack OS Administration</p>
+            <span class="badge">Restricted Access</span>
+        </div>
+
+        <div class="card">
+            {% if error %}
+            <div class="error-banner">{{ error }}</div>
+            {% endif %}
+
+            <form method="POST">
+                <div class="field">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required autofocus
+                           autocomplete="username" placeholder="admin username">
+                </div>
+                <div class="field" style="margin-bottom:1.5rem;">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required
+                           autocomplete="current-password" placeholder="••••••••">
+                </div>
+                <button type="submit" class="submit-btn">Sign in to Admin</button>
+            </form>
+        </div>
+
+        <a href="/" class="back-link">Back to LifeHack OS</a>
+        <p class="footer">Admin access is logged and audited</p>
+    </div>
+</body>
+</html>
