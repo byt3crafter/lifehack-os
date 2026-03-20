@@ -602,6 +602,30 @@
             </svg>
             System
         </button>
+
+        <span class="nav-label">Analytics</span>
+        <button class="nav-link" data-section="modules">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            Module Usage
+        </button>
+        <button class="nav-link" data-section="ai">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+            AI Usage
+        </button>
+        <button class="nav-link" data-section="storage">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7"/><path d="M16 3H8L5 7h14l-3-4z"/></svg>
+            Storage
+        </button>
+
+        <span class="nav-label">Tools</span>
+        <button class="nav-link" data-section="announcements">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>
+            Announcements
+        </button>
+        <button class="nav-link" data-section="backup">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a2 2 0 002 2h14a2 2 0 002-2v-3"/></svg>
+            Backup
+        </button>
     </div>
 
     <div class="sidebar-footer">
@@ -761,6 +785,51 @@
             <div id="disk-card"></div>
         </div>
 
+        <!-- Module Usage Section -->
+        <div class="section" id="section-modules" style="display:none;">
+            <div class="section-heading">Module Usage</div>
+            <div id="module-usage-grid" class="info-grid">
+                <div class="loading">Loading...</div>
+            </div>
+        </div>
+
+        <!-- AI Usage Section -->
+        <div class="section" id="section-ai" style="display:none;">
+            <div class="section-heading">AI Provider Usage</div>
+            <div id="ai-providers-table"></div>
+            <div class="section-heading" style="margin-top:24px;">Recent AI Calls</div>
+            <div id="ai-recent-table"></div>
+        </div>
+
+        <!-- Storage Section -->
+        <div class="section" id="section-storage" style="display:none;">
+            <div class="section-heading">Storage Usage</div>
+            <div id="storage-info" class="info-grid">
+                <div class="loading">Loading...</div>
+            </div>
+        </div>
+
+        <!-- Announcements Section -->
+        <div class="section" id="section-announcements" style="display:none;">
+            <div class="section-heading">Announcements</div>
+            <div style="display:flex;gap:8px;margin-bottom:16px;">
+                <input type="text" id="announcement-input" placeholder="Type an announcement for all users..." style="flex:1;padding:10px 14px;background:#1c1c20;border:1px solid #2a2a2e;border-radius:8px;color:#f0f0f2;font-size:14px;">
+                <button onclick="postAnnouncement()" style="padding:10px 20px;background:#ef4444;border:none;border-radius:8px;color:#fff;font-weight:600;cursor:pointer;">Post</button>
+            </div>
+            <div id="announcements-list"></div>
+        </div>
+
+        <!-- Backup Section -->
+        <div class="section" id="section-backup" style="display:none;">
+            <div class="section-heading">Database Backup</div>
+            <div style="background:#1c1c20;border:1px solid #2a2a2e;border-radius:12px;padding:24px;text-align:center;">
+                <div style="font-size:2rem;margin-bottom:8px;">💾</div>
+                <div style="color:#f0f0f2;font-weight:600;margin-bottom:4px;">Download Database Backup</div>
+                <div style="color:#5c5c6b;font-size:13px;margin-bottom:16px;">Downloads the entire SQLite database file. Store it safely.</div>
+                <a href="/admin/backup" style="display:inline-block;padding:12px 24px;background:#ef4444;border-radius:8px;color:#fff;font-weight:600;text-decoration:none;">Download Backup</a>
+            </div>
+        </div>
+
     </div><!-- /content -->
 </div><!-- /main -->
 
@@ -794,7 +863,7 @@ let _systemLoaded = false;
 // =========================================================================
 // Navigation
 // =========================================================================
-const SECTIONS = ['dashboard', 'users', 'invites', 'apikeys', 'logs', 'system'];
+const SECTIONS = ['dashboard', 'users', 'invites', 'apikeys', 'logs', 'system', 'modules', 'ai', 'storage', 'announcements', 'backup'];
 const SECTION_TITLES = {
     dashboard: 'Dashboard',
     users: 'Users',
@@ -802,11 +871,17 @@ const SECTION_TITLES = {
     apikeys: 'API Keys',
     logs: 'Application Logs',
     system: 'System Information',
+    modules: 'Module Usage',
+    ai: 'AI Usage',
+    storage: 'Storage',
+    announcements: 'Announcements',
+    backup: 'Backup',
 };
 
 function showSection(name) {
     SECTIONS.forEach(s => {
-        document.getElementById('section-' + s).classList.toggle('active', s === name);
+        var el = document.getElementById('section-' + s);
+        if(el) { el.style.display = (s === name) ? '' : 'none'; el.classList.toggle('active', s === name); }
     });
     document.querySelectorAll('.nav-link[data-section]').forEach(el => {
         el.classList.toggle('active', el.dataset.section === name);
@@ -819,6 +894,10 @@ function showSection(name) {
     if (name === 'apikeys' && !_apikeysLoaded) loadApiKeys();
     if (name === 'logs' && !_logsLoaded) loadLogs();
     if (name === 'system' && !_systemLoaded) loadSystem();
+    if (name === 'modules') loadModuleUsage();
+    if (name === 'ai') loadAIUsage();
+    if (name === 'storage') loadStorage();
+    if (name === 'announcements') loadAnnouncements();
 }
 
 document.querySelectorAll('.nav-link[data-section]').forEach(btn => {
@@ -1162,6 +1241,96 @@ async function loadSystem() {
     } catch (e) {
         container.innerHTML = '<div class="empty-state">Failed to load system info.</div>';
     }
+}
+
+// =========================================================================
+// Module Usage
+// =========================================================================
+async function loadModuleUsage() {
+    const container = document.getElementById('module-usage-grid');
+    try {
+        const res = await fetch('/admin/module-usage');
+        const data = await res.json();
+        container.innerHTML = Object.entries(data).map(([name, stats]) => `
+            <div class="info-card">
+                <div class="info-card-value">${stats.entries}</div>
+                <div class="info-card-label">${name}</div>
+                <div style="font-size:0.75rem;color:var(--dim);margin-top:4px;">${stats.users} user${stats.users !== 1 ? 's' : ''}</div>
+            </div>
+        `).join('');
+    } catch (e) { container.innerHTML = '<div class="empty-state">Failed to load.</div>'; }
+}
+
+// =========================================================================
+// AI Usage
+// =========================================================================
+async function loadAIUsage() {
+    try {
+        const res = await fetch('/admin/ai-usage');
+        const data = await res.json();
+
+        // Providers table
+        const pt = document.getElementById('ai-providers-table');
+        if (data.providers && data.providers.length) {
+            pt.innerHTML = `<table class="data-table"><thead><tr><th>Provider</th><th>Model</th><th>Calls</th><th>Tokens</th><th>Cost</th><th>Failures</th><th>Avg ms</th></tr></thead><tbody>${data.providers.map(p => `<tr><td>${p.provider}</td><td style="font-family:monospace;font-size:0.75rem;">${p.model || '—'}</td><td>${p.calls}</td><td>${(p.tokens||0).toLocaleString()}</td><td>$${(p.cost||0).toFixed(4)}</td><td style="color:${p.failures > 0 ? 'var(--red)' : 'var(--dim)'};">${p.failures}</td><td>${Math.round(p.avg_ms||0)}</td></tr>`).join('')}</tbody></table>`;
+        } else { pt.innerHTML = '<div class="empty-state">No AI usage data.</div>'; }
+
+        // Recent calls
+        const rt = document.getElementById('ai-recent-table');
+        if (data.recent && data.recent.length) {
+            rt.innerHTML = `<table class="data-table"><thead><tr><th>Time</th><th>Provider</th><th>Action</th><th>Tokens</th><th>Status</th></tr></thead><tbody>${data.recent.map(r => `<tr><td style="font-size:0.75rem;">${r.timestamp?.slice(0, 16) || ''}</td><td>${r.provider}</td><td>${r.action}</td><td>${r.total_tokens}</td><td>${r.success ? '<span style="color:var(--green);">OK</span>' : '<span style="color:var(--red);">FAIL</span>'}</td></tr>`).join('')}</tbody></table>`;
+        } else { rt.innerHTML = '<div class="empty-state">No recent calls.</div>'; }
+    } catch (e) {
+        document.getElementById('ai-providers-table').innerHTML = '<div class="empty-state">Failed to load.</div>';
+    }
+}
+
+// =========================================================================
+// Storage
+// =========================================================================
+async function loadStorage() {
+    const container = document.getElementById('storage-info');
+    try {
+        const res = await fetch('/admin/storage');
+        const data = await res.json();
+        let html = `<div class="info-card"><div class="info-card-value">${data.total_files}</div><div class="info-card-label">Total Files</div></div>`;
+        html += `<div class="info-card"><div class="info-card-value">${data.total_size_mb} MB</div><div class="info-card-label">Total Size</div></div>`;
+        Object.entries(data.directories || {}).forEach(([dir, info]) => {
+            html += `<div class="info-card"><div class="info-card-value">${info.files}</div><div class="info-card-label">${dir}</div><div style="font-size:0.75rem;color:var(--dim);">${info.size_mb} MB</div></div>`;
+        });
+        container.innerHTML = html;
+    } catch (e) { container.innerHTML = '<div class="empty-state">Failed to load.</div>'; }
+}
+
+// =========================================================================
+// Announcements
+// =========================================================================
+async function loadAnnouncements() {
+    const container = document.getElementById('announcements-list');
+    try {
+        const res = await fetch('/admin/announcements');
+        const data = await res.json();
+        if (!data.length) { container.innerHTML = '<div class="empty-state">No announcements.</div>'; return; }
+        container.innerHTML = data.map(a => `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:#1c1c20;border:1px solid #2a2a2e;border-radius:8px;margin-bottom:8px;">
+                <span style="color:#f0f0f2;font-size:14px;">${a.message}</span>
+                <button onclick="deleteAnnouncement('${a.key}')" style="background:none;border:none;color:#5c5c6b;cursor:pointer;padding:4px;">✕</button>
+            </div>
+        `).join('');
+    } catch (e) { container.innerHTML = '<div class="empty-state">Failed to load.</div>'; }
+}
+
+async function postAnnouncement() {
+    const input = document.getElementById('announcement-input');
+    if (!input || !input.value.trim()) return;
+    await fetch('/admin/announcements', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ message: input.value.trim() }) });
+    input.value = '';
+    loadAnnouncements();
+}
+
+async function deleteAnnouncement(key) {
+    await fetch('/admin/announcements/' + key, { method: 'DELETE' });
+    loadAnnouncements();
 }
 
 // =========================================================================

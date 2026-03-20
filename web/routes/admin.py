@@ -177,13 +177,20 @@ def admin_list_users():
                u.id, u.username, u.display_name, u.is_admin,
                u.created_at, u.last_login,
                p.email,
-               s.xp, s.level
+               s.total_xp as xp, s.level
            FROM users u
            LEFT JOIN user_profiles p ON p.user_id = u.id
            LEFT JOIN user_stats s ON s.user_id = u.id
            ORDER BY u.id"""
     ).fetchall()
-    return jsonify([dict(r) for r in rows])
+
+    users = []
+    for r in rows:
+        try:
+            users.append(dict(r))
+        except Exception:
+            users.append({'id': r[0], 'username': r[1], 'display_name': r[2], 'is_admin': r[3], 'created_at': r[4], 'last_login': r[5]})
+    return jsonify(users)
 
 
 @admin_bp.route('/users/<int:user_id>/toggle-admin', methods=['POST'])
@@ -419,6 +426,194 @@ def admin_system():
         'disk_usage': disk_usage,
         'platform': platform.system(),
     })
+
+
+# ---------------------------------------------------------------------------
+# Tier 2: Module Usage, AI Usage, Storage
+# ---------------------------------------------------------------------------
+
+@admin_bp.route('/module-usage')
+def admin_module_usage():
+    """Per-module usage stats across all users."""
+    guard = _require_admin()
+    if guard:
+        return guard
+
+    conn = get_connection()
+    modules = {}
+    try:
+        tables = {
+            'habits': 'habits', 'food': 'food_logs', 'fasting': 'fasting_logs',
+            'journal': 'journal_entries', 'books': 'books', 'notes': 'notes',
+            'challenges': 'challenges', 'contacts': 'contacts', 'finance': 'finance_log',
+            'wellness_water': 'water_logs', 'wellness_sleep': 'sleep_logs',
+            'deep_work': 'deep_work_sessions', 'discover': 'wishlist',
+            'subscriptions': 'subscriptions', 'income': 'income_entries',
+        }
+        for name, table in tables.items():
+            try:
+                row = conn.execute(f"SELECT COUNT(*) as cnt, COUNT(DISTINCT user_id) as users FROM {table}").fetchone()
+                modules[name] = {'entries': row['cnt'], 'users': row['users']}
+            except Exception:
+                modules[name] = {'entries': 0, 'users': 0}
+    except Exception:
+        pass
+
+    return jsonify(modules)
+
+
+@admin_bp.route('/ai-usage')
+def admin_ai_usage():
+    """AI provider usage stats — tokens, costs, calls per provider."""
+    guard = _require_admin()
+    if guard:
+        return guard
+
+    conn = get_connection()
+    try:
+        # Per-provider stats
+        providers = conn.execute(
+            """SELECT provider, model,
+                      COUNT(*) as calls,
+                      SUM(total_tokens) as tokens,
+                      SUM(cost_usd) as cost,
+                      SUM(CASE WHEN success = 0 THEN 1 ELSE 0 END) as failures,
+                      AVG(duration_ms) as avg_ms
+               FROM ai_usage_log
+               GROUP BY provider, model
+               ORDER BY calls DESC"""
+        ).fetchall()
+
+        # Recent calls
+        recent = conn.execute(
+            """SELECT timestamp, provider, model, action, total_tokens, cost_usd, success, duration_ms
+               FROM ai_usage_log
+               ORDER BY timestamp DESC LIMIT 20"""
+        ).fetchall()
+
+        # Daily totals (last 7 days)
+        daily = conn.execute(
+            """SELECT date(timestamp) as day, COUNT(*) as calls, SUM(total_tokens) as tokens, SUM(cost_usd) as cost
+               FROM ai_usage_log
+               WHERE timestamp >= date('now', '-7 days')
+               GROUP BY day ORDER BY day"""
+        ).fetchall()
+
+        return jsonify({
+            'providers': [dict(r) for r in providers],
+            'recent': [dict(r) for r in recent],
+            'daily': [dict(r) for r in daily],
+        })
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
+
+
+@admin_bp.route('/storage')
+def admin_storage():
+    """Storage usage — uploads per directory, total size."""
+    guard = _require_admin()
+    if guard:
+        return guard
+
+    import os
+    upload_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'data', 'uploads')
+    dirs = {}
+    total_size = 0
+    total_files = 0
+
+    if os.path.exists(upload_dir):
+        for dirpath, dirnames, filenames in os.walk(upload_dir):
+            rel = os.path.relpath(dirpath, upload_dir)
+            if rel == '.':
+                rel = 'root'
+            dir_size = sum(os.path.getsize(os.path.join(dirpath, f)) for f in filenames)
+            dirs[rel] = {'files': len(filenames), 'size_mb': round(dir_size / (1024 * 1024), 2)}
+            total_size += dir_size
+            total_files += len(filenames)
+
+    return jsonify({
+        'total_files': total_files,
+        'total_size_mb': round(total_size / (1024 * 1024), 2),
+        'directories': dirs,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Tier 3: Announcements, Backup
+# ---------------------------------------------------------------------------
+
+@admin_bp.route('/announcements', methods=['GET'])
+def admin_get_announcements():
+    guard = _require_admin()
+    if guard:
+        return guard
+
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            "SELECT key, value FROM app_settings WHERE key LIKE 'announcement_%' ORDER BY key DESC"
+        ).fetchall()
+        announcements = []
+        for r in rows:
+            announcements.append({'key': r['key'], 'message': r['value']})
+        return jsonify(announcements)
+    except Exception:
+        return jsonify([])
+
+
+@admin_bp.route('/announcements', methods=['POST'])
+def admin_post_announcement():
+    guard = _require_admin()
+    if guard:
+        return guard
+
+    data = request.get_json(silent=True) or {}
+    message = (data.get('message') or '').strip()
+    if not message:
+        return jsonify({'error': 'Message required'}), 400
+
+    conn = get_connection()
+    key = f"announcement_{_now_utc().strftime('%Y%m%d%H%M%S')}"
+    conn.execute(
+        """INSERT INTO app_settings (key, value, updated_at)
+           VALUES (?, ?, CURRENT_TIMESTAMP)
+           ON CONFLICT(key) DO UPDATE SET value = excluded.value""",
+        (key, message),
+    )
+    conn.commit()
+    return jsonify({'success': True, 'key': key})
+
+
+@admin_bp.route('/announcements/<key>', methods=['DELETE'])
+def admin_delete_announcement(key: str):
+    guard = _require_admin()
+    if guard:
+        return guard
+
+    conn = get_connection()
+    conn.execute("DELETE FROM app_settings WHERE key = ?", (key,))
+    conn.commit()
+    return '', 204
+
+
+@admin_bp.route('/backup')
+def admin_backup():
+    """Download the entire SQLite database as a backup."""
+    guard = _require_admin()
+    if guard:
+        return guard
+
+    from flask import send_file
+    db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'data', 'lifehack.db')
+    if not os.path.exists(db_path):
+        return jsonify({'error': 'Database not found'}), 404
+
+    return send_file(
+        db_path,
+        as_attachment=True,
+        download_name=f"lifehack_backup_{_now_utc().strftime('%Y%m%d_%H%M%S')}.db",
+        mimetype='application/x-sqlite3',
+    )
 
 
 def _format_uptime(seconds: int) -> str:
