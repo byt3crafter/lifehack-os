@@ -31,7 +31,9 @@ def assemble_context(conn, user_id: int) -> dict:
         conn,
         """SELECT u.display_name, up.bio, up.age, up.timezone,
                   up.health_goals, up.fitness_level, up.dietary_preferences,
-                  up.work_type, up.work_hours
+                  up.work_type, up.work_hours,
+                  up.height_cm, up.weight_kg, up.gender,
+                  up.target_weight_kg, up.preferred_name
            FROM users u
            LEFT JOIN user_profiles up ON up.user_id = u.id
            WHERE u.id = ?""",
@@ -240,6 +242,52 @@ def assemble_context(conn, user_id: int) -> dict:
 def build_system_prompt(context: dict, tools: list | None = None) -> str:
     """Build the AI system prompt with full module data and optional tool list."""
 
+    # --- Resolve user name for personalised addressing ---
+    user_name = None
+    profile_list = context.get('user_profile')
+    if profile_list:
+        profile = profile_list[0] if isinstance(profile_list, list) else profile_list
+        user_name = (profile.get('preferred_name') or '').strip() or \
+                    (profile.get('display_name') or '').strip() or None
+
+    name_directive = ""
+    if user_name:
+        name_directive = f'- Address the user as \'{user_name}\'. Use their name naturally.'
+
+    # --- Build a concise user profile summary ---
+    profile_summary_lines = []
+    if profile_list:
+        profile = profile_list[0] if isinstance(profile_list, list) else profile_list
+        if profile.get('age'):
+            profile_summary_lines.append(f"Age: {profile['age']}")
+        if profile.get('gender'):
+            profile_summary_lines.append(f"Gender: {profile['gender']}")
+        if profile.get('height_cm'):
+            profile_summary_lines.append(f"Height: {profile['height_cm']} cm")
+        if profile.get('weight_kg'):
+            profile_summary_lines.append(f"Weight: {profile['weight_kg']} kg")
+            if profile.get('height_cm') and profile['height_cm'] > 0:
+                bmi = round(profile['weight_kg'] / (profile['height_cm'] / 100) ** 2, 1)
+                profile_summary_lines.append(f"BMI: {bmi}")
+        if profile.get('target_weight_kg'):
+            profile_summary_lines.append(f"Target weight: {profile['target_weight_kg']} kg")
+        if profile.get('fitness_level'):
+            profile_summary_lines.append(f"Fitness level: {profile['fitness_level']}")
+        if profile.get('health_goals'):
+            profile_summary_lines.append(f"Health goals: {profile['health_goals']}")
+        if profile.get('dietary_preferences'):
+            profile_summary_lines.append(f"Dietary preferences: {profile['dietary_preferences']}")
+        if profile.get('work_type'):
+            profile_summary_lines.append(f"Work type: {profile['work_type']}")
+        if profile.get('timezone'):
+            profile_summary_lines.append(f"Timezone: {profile['timezone']}")
+
+    profile_summary_section = ""
+    if profile_summary_lines:
+        profile_summary_section = "\n## User Profile Summary\n" + "\n".join(
+            f"- {line}" for line in profile_summary_lines
+        ) + "\n"
+
     tools_section = ""
     if tools:
         tool_lines = []
@@ -276,7 +324,8 @@ Rules for tool use:
 - Data-driven — cite actual numbers from the data below.
 - Proactive — suggest actions, don't just answer.
 - Keep responses concise (2-4 sentences) unless asked for detail.
-
+{name_directive}
+{profile_summary_section}
 ## The User's Complete Data (live from database)
 {json.dumps(context, indent=2, default=str)}
 

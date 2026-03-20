@@ -612,3 +612,23 @@ def run_migrations(conn) -> None:
         )
         conn.commit()
         print("  Migration 15: User registration, profiles, invite codes")
+
+    # Migration 16: Add body metrics and preferred_name to user_profiles
+    current = get_current_version(conn)
+    if current < 16:
+        profile_cols = [r[1] for r in conn.execute("PRAGMA table_info(user_profiles)").fetchall()]
+        new_profile_cols = [
+            ("height_cm",        "REAL"),
+            ("weight_kg",        "REAL"),
+            ("gender",           "TEXT DEFAULT ''"),
+            ("target_weight_kg", "REAL"),
+            ("preferred_name",   "TEXT DEFAULT ''"),
+        ]
+        for col_name, col_def in new_profile_cols:
+            if col_name not in profile_cols:
+                conn.execute(f"ALTER TABLE user_profiles ADD COLUMN {col_name} {col_def}")
+        conn.execute(
+            "INSERT OR IGNORE INTO schema_version (version, description) VALUES (16, 'Add body metrics and preferred_name to user_profiles')"
+        )
+        conn.commit()
+        print("  Migration 16: Add body metrics and preferred_name to user_profiles")

@@ -358,6 +358,11 @@ def init_database() -> None:
             work_type TEXT DEFAULT '',
             work_hours TEXT DEFAULT '',
             photo_path TEXT DEFAULT '',
+            height_cm REAL,
+            weight_kg REAL,
+            gender TEXT DEFAULT '',
+            target_weight_kg REAL,
+            preferred_name TEXT DEFAULT '',
             updated_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
 

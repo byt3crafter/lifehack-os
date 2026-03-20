@@ -526,7 +526,9 @@ def get_profile():
         """SELECT
                u.id, u.username, u.display_name, u.is_admin, u.created_at, u.last_login,
                p.bio, p.age, p.timezone, p.health_goals, p.fitness_level,
-               p.dietary_preferences, p.work_type, p.work_hours, p.photo_path, p.updated_at
+               p.dietary_preferences, p.work_type, p.work_hours, p.photo_path,
+               p.height_cm, p.weight_kg, p.gender, p.target_weight_kg, p.preferred_name,
+               p.updated_at
            FROM users u
            LEFT JOIN user_profiles p ON p.user_id = u.id
            WHERE u.id = ?""",
@@ -536,7 +538,17 @@ def get_profile():
     if not row:
         return jsonify({'error': 'User not found'}), 404
 
-    return jsonify(dict(row))
+    result = dict(row)
+
+    # Compute BMI if both height and weight are present
+    height_cm = result.get('height_cm')
+    weight_kg = result.get('weight_kg')
+    if height_cm and weight_kg and height_cm > 0:
+        result['bmi'] = round(weight_kg / (height_cm / 100) ** 2, 1)
+    else:
+        result['bmi'] = None
+
+    return jsonify(result)
 
 
 @auth_bp.route('/api/profile', methods=['PUT'])
@@ -553,6 +565,7 @@ def update_profile():
     profile_fields = [
         'bio', 'age', 'timezone', 'health_goals',
         'fitness_level', 'dietary_preferences', 'work_type', 'work_hours',
+        'height_cm', 'weight_kg', 'gender', 'target_weight_kg', 'preferred_name',
     ]
 
     conn = get_connection()
@@ -605,11 +618,23 @@ def update_profile():
         """SELECT
                u.id, u.username, u.display_name, u.is_admin, u.created_at, u.last_login,
                p.bio, p.age, p.timezone, p.health_goals, p.fitness_level,
-               p.dietary_preferences, p.work_type, p.work_hours, p.photo_path, p.updated_at
+               p.dietary_preferences, p.work_type, p.work_hours, p.photo_path,
+               p.height_cm, p.weight_kg, p.gender, p.target_weight_kg, p.preferred_name,
+               p.updated_at
            FROM users u
            LEFT JOIN user_profiles p ON p.user_id = u.id
            WHERE u.id = ?""",
         (uid,),
     ).fetchone()
 
-    return jsonify(dict(row))
+    result = dict(row)
+
+    # Compute BMI if both height and weight are present
+    height_cm = result.get('height_cm')
+    weight_kg = result.get('weight_kg')
+    if height_cm and weight_kg and height_cm > 0:
+        result['bmi'] = round(weight_kg / (height_cm / 100) ** 2, 1)
+    else:
+        result['bmi'] = None
+
+    return jsonify(result)

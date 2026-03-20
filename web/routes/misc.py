@@ -88,6 +88,179 @@ def dismiss_insight(insight_id):
     return jsonify({'success': True})
 
 
+def _get_todays_insight(conn, uid: int):
+    """Return today's daily_briefing insight row for the user, or None."""
+    return conn.execute(
+        """SELECT id, insight_type, title, content, created_at
+           FROM ai_insights
+           WHERE user_id = ? AND insight_type = 'daily_briefing'
+             AND date(created_at) = date('now')
+           ORDER BY created_at DESC LIMIT 1""",
+        (uid,),
+    ).fetchone()
+
+
+def _build_insight_context(conn, uid: int) -> str:
+    """Gather key data points and return a concise context string for the AI."""
+    today = date.today().isoformat()
+
+    # Habit completions today vs total
+    total_habits = conn.execute(
+        "SELECT COUNT(*) as c FROM habits WHERE user_id = ? AND active = 1", (uid,)
+    ).fetchone()['c']
+    completed_habits = conn.execute(
+        "SELECT COUNT(*) as c FROM habit_completions WHERE user_id = ? AND date(completed_at) = ?",
+        (uid, today),
+    ).fetchone()['c']
+
+    # Top streaks
+    streaks_rows = conn.execute(
+        """SELECT hs.strength, hs.total_completions, h.name
+           FROM habit_strength hs
+           JOIN habits h ON h.id = hs.habit_id
+           WHERE h.user_id = ? AND h.active = 1
+           ORDER BY hs.strength DESC LIMIT 3""",
+        (uid,),
+    ).fetchall()
+    streaks_info = "; ".join(
+        f"{r['name']} ({r['strength']:.0f}% strength, {r['total_completions']} completions)"
+        for r in streaks_rows
+    ) if streaks_rows else "no habit data"
+
+    # Calorie total today
+    cal_row = conn.execute(
+        "SELECT SUM(calories) as total FROM food_logs WHERE user_id = ? AND date(logged_at) = ?",
+        (uid, today),
+    ).fetchone()
+    calories_today = int(cal_row['total'] or 0)
+
+    # Active fast
+    active_fast = conn.execute(
+        "SELECT start_at, target_hours FROM fasting_logs WHERE user_id = ? AND status = 'active' ORDER BY start_at DESC LIMIT 1",
+        (uid,),
+    ).fetchone()
+    fast_info = (
+        f"active fast started {active_fast['start_at'][:16]}, target {active_fast['target_hours']}h"
+        if active_fast else "no active fast"
+    )
+
+    # Budget over-spend (local finance_log vs finance_rules)
+    over_budget = conn.execute(
+        """SELECT fr.category, fr.monthly_limit, SUM(fl.amount) as spent
+           FROM finance_rules fr
+           LEFT JOIN finance_log fl
+             ON fl.category = fr.category
+            AND fl.user_id = fr.user_id
+            AND strftime('%Y-%m', fl.date) = strftime('%Y-%m', 'now')
+           WHERE fr.user_id = ? AND fr.active = 1
+           GROUP BY fr.category, fr.monthly_limit
+           HAVING spent > fr.monthly_limit""",
+        (uid,),
+    ).fetchall()
+    budget_info = (
+        "; ".join(f"{r['category']} over by {r['spent'] - r['monthly_limit']:.2f}" for r in over_budget)
+        if over_budget else "all budgets on track"
+    )
+
+    # Recent mood trend (last 3 check-ins)
+    mood_rows = conn.execute(
+        "SELECT mood, energy, date FROM daily_checkins WHERE user_id = ? ORDER BY date DESC LIMIT 3",
+        (uid,),
+    ).fetchall()
+    mood_info = "; ".join(
+        f"{r['date']}: mood={r['mood']}, energy={r['energy']}"
+        for r in mood_rows
+    ) if mood_rows else "no mood data"
+
+    return (
+        f"Habits today: {completed_habits}/{total_habits} completed. "
+        f"Top habits: {streaks_info}. "
+        f"Calories today: {calories_today} kcal. "
+        f"Fasting: {fast_info}. "
+        f"Budget: {budget_info}. "
+        f"Recent mood: {mood_info}."
+    )
+
+
+@misc_bp.route('/insights/generate', methods=['POST'])
+@login_required
+def generate_insight():
+    """Generate a daily AI briefing insight if one hasn't been created today."""
+    uid = current_user_id()
+    conn = get_connection()
+
+    # Return existing insight if already generated today
+    existing = _get_todays_insight(conn, uid)
+    if existing:
+        return jsonify({
+            'id': existing['id'],
+            'type': existing['insight_type'],
+            'title': existing['title'],
+            'content': existing['content'],
+            'created_at': existing['created_at'],
+            'generated': False,
+        })
+
+    # Gather context and call AI
+    context_str = _build_insight_context(conn, uid)
+
+    try:
+        from src.infrastructure.ai import get_ai_provider
+        provider = get_ai_provider('insights', user_id=uid)
+    except Exception:
+        return jsonify({'error': 'AI provider not available'}), 503
+
+    if not provider or not provider.is_available():
+        return jsonify({'error': 'AI provider not configured'}), 503
+
+    try:
+        insight = provider.generate_insight({'summary': context_str, 'type': 'daily_briefing'})
+    except Exception as exc:
+        return jsonify({'error': f'AI generation failed: {exc}'}), 500
+
+    if not insight:
+        return jsonify({'error': 'AI returned no insight'}), 500
+
+    cursor = conn.execute(
+        """INSERT INTO ai_insights (user_id, insight_type, title, content, priority)
+           VALUES (?, 'daily_briefing', ?, ?, 1)""",
+        (uid, insight.title, insight.content),
+    )
+    conn.commit()
+    insight_id = cursor.lastrowid
+
+    return jsonify({
+        'id': insight_id,
+        'type': 'daily_briefing',
+        'title': insight.title,
+        'content': insight.content,
+        'created_at': datetime.utcnow().isoformat(),
+        'generated': True,
+    }), 201
+
+
+@misc_bp.route('/insights/today', methods=['GET'])
+@login_required
+def get_todays_insight():
+    """Return today's daily briefing, generating it on the fly if absent."""
+    uid = current_user_id()
+    conn = get_connection()
+
+    existing = _get_todays_insight(conn, uid)
+    if existing:
+        return jsonify({
+            'id': existing['id'],
+            'type': existing['insight_type'],
+            'title': existing['title'],
+            'content': existing['content'],
+            'created_at': existing['created_at'],
+            'generated': False,
+        })
+
+    # No insight yet today — trigger generation
+    return generate_insight()
+
+
 # ============== CATEGORIES ==============
 @misc_bp.route('/categories')
 @login_required
