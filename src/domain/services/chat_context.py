@@ -223,6 +223,21 @@ def assemble_context(conn, user_id: int) -> dict:
         "SELECT title, body, tags_json, folder FROM notes WHERE user_id = ? AND pinned = 1 AND archived = 0 LIMIT 10",
         (user_id,))
 
+    # Contacts CRM — overdue contacts and upcoming birthdays
+    context['contacts_overdue'] = _safe_query(conn,
+        """SELECT name, relationship, last_contact_date, reach_out_frequency
+           FROM contacts WHERE user_id = ? AND last_contact_date IS NOT NULL
+           ORDER BY last_contact_date ASC LIMIT 5""",
+        (user_id,))
+
+    context['upcoming_birthdays'] = _safe_query(conn,
+        """SELECT name, birthday FROM contacts
+           WHERE user_id = ? AND birthday IS NOT NULL
+           AND (CAST(strftime('%j', birthday) AS INTEGER) - CAST(strftime('%j', 'now') AS INTEGER) + 366) % 366 <= 30
+           ORDER BY (CAST(strftime('%j', birthday) AS INTEGER) - CAST(strftime('%j', 'now') AS INTEGER) + 366) % 366
+           LIMIT 5""",
+        (user_id,))
+
     # Firefly III data (if connected)
     try:
         from src.infrastructure.plugins import plugin_registry

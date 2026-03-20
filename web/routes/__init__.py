@@ -33,6 +33,7 @@ from .journal import journal_bp
 from .books import books_bp
 from .notes import notes_bp
 from .wellness import wellness_bp
+from .contacts import contacts_bp
 
 __all__ = [
     'auth_bp',
@@ -64,4 +65,5 @@ __all__ = [
     'books_bp',
     'notes_bp',
     'wellness_bp',
+    'contacts_bp',
 ]

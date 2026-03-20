@@ -1301,6 +1301,9 @@
             <button onclick="nav('discover')" data-v="discover" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Discover">
                 <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-discover"/></svg>Discover
             </button>
+            <button onclick="nav('contacts')" data-v="contacts" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Contacts">
+                <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.6"><circle cx="10" cy="7" r="3"/><path d="M3 18c0-3.3 2.7-6 7-6s7 2.7 7 6"/></svg>Contacts
+            </button>
             <button onclick="nav('wellness')" data-v="wellness" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Wellness">
                 <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.6"><path d="M10 2C5.6 2 2 5.6 2 10s3.6 8 8 8 8-3.6 8-8S14.4 2 10 2z"/><path d="M7 10l2 2 4-4"/></svg>Wellness
             </button>
@@ -1371,6 +1374,9 @@
                 </button>
                 <button onclick="desktopNav('discover')" data-v="discover" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Discover">
                     <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-discover"/></svg>Discover
+                </button>
+                <button onclick="desktopNav('contacts')" data-v="contacts" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Contacts">
+                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.6"><circle cx="10" cy="7" r="3"/><path d="M3 18c0-3.3 2.7-6 7-6s7 2.7 7 6"/></svg>Contacts
                 </button>
                 <button onclick="desktopNav('wellness')" data-v="wellness" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Wellness">
                     <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.6"><path d="M10 2C5.6 2 2 5.6 2 10s3.6 8 8 8 8-3.6 8-8S14.4 2 10 2z"/><path d="M7 10l2 2 4-4"/></svg>Wellness
@@ -2466,6 +2472,43 @@
                 </div>
             </div>
 
+            <!-- CONTACTS CRM -->
+            <div id="v-contacts" class="view hidden">
+                <div class="view-header">
+                    <div>
+                        <h2 class="view-title">Contacts</h2>
+                        <p class="text-xs mt-0.5" style="color:#5c5c6b;">Nurture your relationships</p>
+                    </div>
+                    <button onclick="addContactModal()" class="btn-primary flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 4v12M4 10h12"/></svg>
+                        Add Contact
+                    </button>
+                </div>
+
+                <!-- Overdue reach-outs -->
+                <div id="contacts-overdue" class="hidden mb-4 p-3 rounded-xl" style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.12);">
+                    <div class="text-xs font-semibold mb-2" style="color:#f59e0b;">Overdue Reach-outs</div>
+                    <div id="contacts-overdue-list" class="space-y-1.5"></div>
+                </div>
+
+                <!-- Upcoming birthdays -->
+                <div id="contacts-birthdays" class="hidden mb-4 p-3 rounded-xl" style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.12);">
+                    <div class="text-xs font-semibold mb-2" style="color:#fca5a5;">Upcoming Birthdays</div>
+                    <div id="contacts-birthday-list" class="space-y-1.5"></div>
+                </div>
+
+                <!-- Search + filter -->
+                <div class="flex gap-2 mb-4">
+                    <select id="contacts-group-filter" class="px-3 py-2 rounded-lg border text-sm flex-shrink-0" onchange="loadContacts()" style="min-width:100px;">
+                        <option value="">All Groups</option>
+                    </select>
+                    <input id="contacts-search" type="search" class="flex-1 px-3 py-2 rounded-lg border text-sm" placeholder="Search contacts..." oninput="loadContacts()">
+                </div>
+
+                <!-- Contact list -->
+                <div id="contacts-list" class="space-y-2"></div>
+            </div>
+
             <!-- WELLNESS -->
             <div id="v-wellness" class="view hidden">
                 <div class="view-header">
@@ -3216,6 +3259,7 @@
         else if(v==='challenges') await loadChallenges();
         else if(v==='finance') await loadFinance();
         else if(v==='discover') await loadDiscover();
+        else if(v==='contacts') await loadContacts();
         else if(v==='wellness') await loadWellness();
         else if(v==='journal') await loadJournal();
         else if(v==='books') await loadBooks();
@@ -9018,6 +9062,184 @@
             sendChatModeMessage();
         }
     });
+
+    // ── Contacts CRM ──────────────────────────────────────────────
+    async function loadContacts() {
+        var group = (document.getElementById('contacts-group-filter')||{}).value||'';
+        var search = (document.getElementById('contacts-search')||{}).value||'';
+        var params = '?';
+        if(group) params += 'group=' + encodeURIComponent(group) + '&';
+        if(search) params += 'search=' + encodeURIComponent(search);
+
+        var data = await api('/contacts' + params);
+        var el = document.getElementById('contacts-list');
+        if(!el) return;
+
+        if(!data || !data.length) {
+            el.innerHTML = '<div class="empty-state"><p>No contacts yet. Add someone you want to stay in touch with.</p></div>';
+        } else {
+            // Build group filter options
+            var groups = new Set();
+            data.forEach(function(c) { if(c.group_name) groups.add(c.group_name); });
+            var sel = document.getElementById('contacts-group-filter');
+            if(sel) {
+                var opts = '<option value="">All Groups</option>';
+                groups.forEach(function(g) { opts += '<option value="' + g + '"' + (g === group ? ' selected' : '') + '>' + g + '</option>'; });
+                sel.innerHTML = opts;
+            }
+
+            el.innerHTML = data.map(function(c) {
+                var daysSince = c.days_since_contact;
+                var overdue = c.overdue;
+                var initial = (c.name||'?')[0].toUpperCase();
+                var relColors = {family:'#ef4444', friend:'#4f80ff', colleague:'#f59e0b', mentor:'#8b5cf6', acquaintance:'#9898a6'};
+                var relColor = relColors[c.relationship] || '#9898a6';
+                var lastStr = daysSince !== null && daysSince !== undefined ? daysSince + 'd ago' : 'Never';
+                var lastColor = overdue ? '#ef4444' : '#5c5c6b';
+
+                return '<div class="card p-3 rounded-xl flex items-center gap-3" style="border:1px solid ' + (overdue ? 'rgba(239,68,68,0.2)' : '#2a2a2e') + ';cursor:pointer;" onclick="viewContact(' + c.id + ')">'
+                    + '<div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 font-semibold" style="background:' + relColor + '20;color:' + relColor + ';">' + initial + '</div>'
+                    + '<div class="flex-1 min-w-0">'
+                    + '<div class="text-sm font-medium truncate" style="color:#f0f0f2;">' + c.name + '</div>'
+                    + '<div class="text-xs flex gap-2" style="color:#5c5c6b;">'
+                    + (c.relationship ? '<span style="color:' + relColor + ';">' + c.relationship + '</span>' : '')
+                    + (c.group_name ? '<span>' + c.group_name + '</span>' : '')
+                    + '</div></div>'
+                    + '<div class="text-right flex-shrink-0">'
+                    + '<div class="text-xs font-mono" style="color:' + lastColor + ';">' + lastStr + '</div>'
+                    + (overdue ? '<div class="text-xs" style="color:#ef4444;">Overdue</div>' : '')
+                    + '</div></div>';
+            }).join('');
+        }
+
+        // Load dashboard data (overdue + birthdays)
+        try {
+            var dash = await api('/contacts/dashboard');
+            if(dash) {
+                var odEl = document.getElementById('contacts-overdue');
+                var odList = document.getElementById('contacts-overdue-list');
+                if(dash.overdue_contacts && dash.overdue_contacts.length && odEl && odList) {
+                    odEl.classList.remove('hidden');
+                    odList.innerHTML = dash.overdue_contacts.map(function(c) {
+                        return '<div class="flex items-center justify-between"><span class="text-sm" style="color:#f0f0f2;">' + c.name + '</span>'
+                            + '<button onclick="event.stopPropagation();logInteractionModal(' + c.id + ',\'' + c.name.replace(/'/g,"\\'") + '\')" class="text-xs px-2 py-0.5 rounded" style="background:rgba(79,128,255,0.1);color:#4f80ff;border:none;cursor:pointer;font-family:inherit;">Reach out</button></div>';
+                    }).join('');
+                } else if(odEl) { odEl.classList.add('hidden'); }
+
+                var bdEl = document.getElementById('contacts-birthdays');
+                var bdList = document.getElementById('contacts-birthday-list');
+                if(dash.upcoming_birthdays && dash.upcoming_birthdays.length && bdEl && bdList) {
+                    bdEl.classList.remove('hidden');
+                    bdList.innerHTML = dash.upcoming_birthdays.map(function(c) {
+                        var bday = '';
+                        try { bday = new Date(c.birthday + 'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}); } catch(e) {}
+                        return '<div class="flex items-center justify-between"><span class="text-sm" style="color:#f0f0f2;">' + c.name + '</span><span class="text-xs" style="color:#5c5c6b;">' + bday + '</span></div>';
+                    }).join('');
+                } else if(bdEl) { bdEl.classList.add('hidden'); }
+            }
+        } catch(e) {}
+    }
+
+    function addContactModal() {
+        showModal('Add Contact', '<div class="space-y-3">'
+            + '<div><label class="field-label">Name</label><input id="ac-name" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="Full name"></div>'
+            + '<div class="grid grid-cols-2 gap-3">'
+            + '<div><label class="field-label">Relationship</label><select id="ac-rel" class="w-full px-3 py-2.5 rounded-lg border text-sm"><option value="">Select...</option><option value="family">Family</option><option value="friend">Friend</option><option value="colleague">Colleague</option><option value="mentor">Mentor</option><option value="acquaintance">Acquaintance</option></select></div>'
+            + '<div><label class="field-label">Group</label><input id="ac-group" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="e.g. Close friends"></div>'
+            + '</div>'
+            + '<div class="grid grid-cols-2 gap-3">'
+            + '<div><label class="field-label">Phone</label><input id="ac-phone" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="+1 555..."></div>'
+            + '<div><label class="field-label">Email</label><input id="ac-email" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="email@..."></div>'
+            + '</div>'
+            + '<div class="grid grid-cols-2 gap-3">'
+            + '<div><label class="field-label">Birthday</label><input id="ac-bday" type="date" class="w-full px-3 py-2.5 rounded-lg border text-sm"></div>'
+            + '<div><label class="field-label">Reach out</label><select id="ac-freq" class="w-full px-3 py-2.5 rounded-lg border text-sm"><option value="weekly">Weekly</option><option value="biweekly">Biweekly</option><option value="monthly" selected>Monthly</option><option value="quarterly">Quarterly</option><option value="yearly">Yearly</option></select></div>'
+            + '</div>'
+            + '<div><label class="field-label">Notes</label><textarea id="ac-notes" class="w-full px-3 py-2.5 rounded-lg border text-sm" rows="2" placeholder="Things to remember..."></textarea></div>'
+            + '<div class="flex gap-2 pt-1"><button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button><button onclick="saveContact()" class="btn-primary flex-1 py-2.5">Add</button></div></div>');
+    }
+
+    async function saveContact(editId) {
+        var g = function(id) { return (document.getElementById(id)||{}).value||''; };
+        var payload = {name:g('ac-name'), relationship:g('ac-rel'), group_name:g('ac-group'), phone:g('ac-phone'), email:g('ac-email'), birthday:g('ac-bday'), reach_out_frequency:g('ac-freq'), notes:g('ac-notes')};
+        if(!payload.name) return showToast('Name required','error');
+        var url = editId ? '/contacts/' + editId : '/contacts';
+        await api(url, editId ? 'PUT' : 'POST', payload);
+        hideModal(); showToast('Contact saved','success'); loadContacts();
+    }
+
+    async function viewContact(id) {
+        var c = await api('/contacts/' + id);
+        if(!c) return;
+        var relColors = {family:'#ef4444',friend:'#4f80ff',colleague:'#f59e0b',mentor:'#8b5cf6',acquaintance:'#9898a6'};
+        var relColor = relColors[c.relationship]||'#9898a6';
+        var initial = (c.name||'?')[0].toUpperCase();
+
+        var html = '<div class="space-y-3">';
+        // Header
+        html += '<div class="flex items-center gap-3">'
+            + '<div class="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg" style="background:' + relColor + '20;color:' + relColor + ';">' + initial + '</div>'
+            + '<div><div class="text-base font-semibold" style="color:#f0f0f2;">' + c.name + '</div>'
+            + '<div class="text-xs" style="color:' + relColor + ';">' + (c.relationship||'') + (c.group_name ? ' &middot; ' + c.group_name : '') + '</div></div></div>';
+
+        // Info
+        if(c.phone) html += '<div class="text-sm" style="color:#9898a6;">&#128222; ' + c.phone + '</div>';
+        if(c.email) html += '<div class="text-sm" style="color:#9898a6;">&#9993; ' + c.email + '</div>';
+        if(c.birthday) { var bd=''; try{bd=new Date(c.birthday+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric'});}catch(e){} html += '<div class="text-sm" style="color:#9898a6;">&#127874; ' + bd + '</div>'; }
+        if(c.notes) html += '<div class="p-2 rounded-lg text-sm" style="background:rgba(255,255,255,0.02);color:#9898a6;border:1px solid #2a2a2e;">' + c.notes + '</div>';
+
+        // Recent interactions
+        if(c.interactions && c.interactions.length) {
+            html += '<div class="text-xs font-semibold mt-2" style="color:#9898a6;">Recent Interactions</div>';
+            c.interactions.slice(0,5).forEach(function(i) {
+                var d=''; try{d=new Date(i.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});}catch(e){}
+                html += '<div class="flex items-center gap-2 py-1" style="border-bottom:1px solid #242428;"><span class="text-xs px-1.5 py-0.5 rounded" style="background:rgba(79,128,255,0.1);color:#4f80ff;">' + i.type + '</span><span class="text-xs" style="color:#5c5c6b;">' + d + '</span>' + (i.notes ? '<span class="text-xs truncate" style="color:#9898a6;">' + i.notes + '</span>' : '') + '</div>';
+            });
+        }
+
+        // Gift ideas
+        if(c.gift_ideas && c.gift_ideas.length) {
+            html += '<div class="text-xs font-semibold mt-2" style="color:#9898a6;">Gift Ideas</div>';
+            c.gift_ideas.forEach(function(g) {
+                html += '<div class="flex items-center gap-2 py-1"><span class="text-sm" style="color:#f0f0f2;">' + g.idea + '</span>' + (g.price ? '<span class="text-xs font-mono" style="color:#5c5c6b;">$' + g.price + '</span>' : '') + '</div>';
+            });
+        }
+
+        // Actions
+        html += '<div class="flex gap-2 pt-2">'
+            + '<button onclick="hideModal();logInteractionModal(' + id + ',\'' + c.name.replace(/'/g,"\\'") + '\')" class="btn-primary flex-1 py-2.5">Log Interaction</button>'
+            + '<button onclick="hideModal();editContact(' + id + ')" class="btn-ghost flex-1 py-2.5">Edit</button>'
+            + '</div>';
+        html += '</div>';
+        showModal(c.name, html);
+    }
+
+    async function editContact(id) {
+        var c = await api('/contacts/' + id);
+        if(!c) return;
+        addContactModal();
+        setTimeout(function() {
+            var f = function(eid,val) { var el = document.getElementById(eid); if(el) el.value = val||''; };
+            f('ac-name',c.name); f('ac-rel',c.relationship); f('ac-group',c.group_name); f('ac-phone',c.phone); f('ac-email',c.email); f('ac-bday',c.birthday); f('ac-freq',c.reach_out_frequency); f('ac-notes',c.notes);
+            var btn = document.querySelector('#modal-body .btn-primary');
+            if(btn) { btn.textContent = 'Update'; btn.setAttribute('onclick','saveContact(' + id + ')'); }
+        }, 100);
+    }
+
+    function logInteractionModal(contactId, contactName) {
+        var today = new Date().toISOString().split('T')[0];
+        showModal('Log: ' + contactName, '<div class="space-y-3">'
+            + '<div><label class="field-label">Type</label><select id="li-type" class="w-full px-3 py-2.5 rounded-lg border text-sm"><option value="call">Call</option><option value="text">Text</option><option value="meeting">Meeting</option><option value="coffee">Coffee</option><option value="email">Email</option><option value="other">Other</option></select></div>'
+            + '<div><label class="field-label">Date</label><input id="li-date" type="date" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="' + today + '"></div>'
+            + '<div><label class="field-label">Notes</label><input id="li-notes" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="What did you talk about?"></div>'
+            + '<div class="flex gap-2 pt-1"><button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button><button onclick="submitInteraction(' + contactId + ')" class="btn-primary flex-1 py-2.5">Log</button></div></div>');
+    }
+
+    async function submitInteraction(contactId) {
+        var g = function(id) { return (document.getElementById(id)||{}).value||''; };
+        await api('/contacts/' + contactId + '/interactions', 'POST', {type:g('li-type'), date:g('li-date'), notes:g('li-notes')});
+        hideModal(); showToast('Interaction logged','success'); loadContacts();
+    }
 
     // ── Water + Sleep + Wellness ────────────────────────────────
     async function logWaterQuick() {

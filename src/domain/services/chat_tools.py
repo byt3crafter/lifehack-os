@@ -243,6 +243,28 @@ TOOL_DEFINITIONS = [
             "folder": "string",
         },
     },
+    # ── Contacts CRM ─────────────────────────────────────────────────────────
+    {
+        "name": "add_contact",
+        "description": "Add a contact to your personal CRM",
+        "parameters": {
+            "name": "string (required)",
+            "relationship": "family/friend/colleague/mentor/acquaintance",
+            "phone": "string",
+            "email": "string",
+            "birthday": "YYYY-MM-DD",
+            "reach_out_frequency": "weekly/biweekly/monthly/quarterly/yearly",
+        },
+    },
+    {
+        "name": "log_interaction",
+        "description": "Log that you contacted someone",
+        "parameters": {
+            "contact_name": "string (required, partial match)",
+            "type": "call/text/meeting/coffee/email/other",
+            "notes": "string",
+        },
+    },
 ]
 
 __all__ = ["TOOL_DEFINITIONS"]

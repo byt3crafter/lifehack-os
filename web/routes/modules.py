@@ -22,6 +22,7 @@ MODULE_DEFS = {
     'books':      {'name': 'Books',       'description': 'Book tracker with reading sessions and yearly challenge', 'default': False},
     'notes':      {'name': 'Notes',       'description': 'Quick capture notes with folders and search',            'default': False},
     'wellness':   {'name': 'Wellness',    'description': 'Water intake, sleep tracking, and wellness score',        'default': False},
+    'contacts':   {'name': 'Contacts',   'description': 'Personal CRM — nurture relationships intentionally',        'default': False},
 }
 
 _SETTING_KEY = 'enabled_modules'

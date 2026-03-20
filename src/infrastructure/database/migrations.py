@@ -697,6 +697,56 @@ def run_migrations(conn) -> None:
         conn.commit()
         print("  Migration 21: Finance Sprint 2 — subscriptions and income_entries")
 
+    # Migration 22: Contacts CRM
+    current = get_current_version(conn)
+    if current < 22:
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS contacts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER REFERENCES users(id),
+                name TEXT NOT NULL,
+                relationship TEXT DEFAULT '',
+                birthday TEXT,
+                email TEXT DEFAULT '',
+                phone TEXT DEFAULT '',
+                photo_url TEXT DEFAULT '',
+                notes TEXT DEFAULT '',
+                reach_out_frequency TEXT DEFAULT 'monthly',
+                last_contact_date TEXT,
+                group_name TEXT DEFAULT '',
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_contacts_user ON contacts(user_id);
+
+            CREATE TABLE IF NOT EXISTS contact_interactions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER REFERENCES users(id),
+                contact_id INTEGER NOT NULL REFERENCES contacts(id) ON DELETE CASCADE,
+                type TEXT DEFAULT 'other',
+                notes TEXT DEFAULT '',
+                date TEXT NOT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_contact_interactions_contact ON contact_interactions(contact_id);
+
+            CREATE TABLE IF NOT EXISTS gift_ideas (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER REFERENCES users(id),
+                contact_id INTEGER NOT NULL REFERENCES contacts(id) ON DELETE CASCADE,
+                idea TEXT NOT NULL,
+                link TEXT DEFAULT '',
+                price REAL,
+                purchased INTEGER DEFAULT 0,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_gift_ideas_contact ON gift_ideas(contact_id);
+        """)
+        conn.execute(
+            "INSERT OR IGNORE INTO schema_version (version, description) VALUES (22, 'Contacts CRM: contacts, contact_interactions, gift_ideas')"
+        )
+        conn.commit()
+        print("  Migration 22: Contacts CRM — contacts, contact_interactions, gift_ideas")
+
     # Migration 20: Wellness — water_logs and sleep_logs
     current = get_current_version(conn)
     if current < 20:

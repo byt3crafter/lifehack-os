@@ -53,6 +53,8 @@ def execute_tool(tool_name: str, args: dict, conn, user_id: int) -> dict:
         "create_note": _create_note,
         "log_water": _log_water,
         "log_sleep": _log_sleep,
+        "add_contact": _add_contact,
+        "log_interaction": _log_interaction,
     }
 
     handler = handlers.get(tool_name)
@@ -1180,5 +1182,94 @@ def _log_sleep(args: dict, conn, user_id: int) -> dict:
         "quality": quality,
         "message": ", ".join(msg_parts),
     }
+
+# ---------------------------------------------------------------------------
+# Contacts CRM
+# ---------------------------------------------------------------------------
+
+def _add_contact(args: dict, conn, user_id: int) -> dict:
+    name = (args.get("name") or "").strip()
+    if not name:
+        return {"error": "name is required"}
+
+    relationship = (args.get("relationship") or "").strip()
+    phone = (args.get("phone") or "").strip()
+    email = (args.get("email") or "").strip()
+    birthday = (args.get("birthday") or "").strip() or None
+    reach_out_frequency = (args.get("reach_out_frequency") or "monthly").strip()
+
+    valid_frequencies = {"weekly", "biweekly", "monthly", "quarterly", "yearly"}
+    if reach_out_frequency not in valid_frequencies:
+        reach_out_frequency = "monthly"
+
+    cursor = conn.execute(
+        """INSERT INTO contacts
+               (user_id, name, relationship, phone, email, birthday, reach_out_frequency)
+           VALUES (?, ?, ?, ?, ?, ?, ?)""",
+        (user_id, name, relationship, phone, email, birthday, reach_out_frequency),
+    )
+    conn.commit()
+
+    details = []
+    if relationship:
+        details.append(relationship)
+    if reach_out_frequency:
+        details.append(f"reach out {reach_out_frequency}")
+    suffix = f" ({', '.join(details)})" if details else ""
+
+    return {
+        "success": True,
+        "contact_id": cursor.lastrowid,
+        "message": f'Added contact "{name}"{suffix}',
+    }
+
+
+def _log_interaction(args: dict, conn, user_id: int) -> dict:
+    contact_name = (args.get("contact_name") or "").strip()
+    if not contact_name:
+        return {"error": "contact_name is required"}
+
+    interaction_type = (args.get("type") or "other").strip().lower()
+    valid_types = {"call", "text", "meeting", "coffee", "email", "other"}
+    if interaction_type not in valid_types:
+        interaction_type = "other"
+
+    notes = (args.get("notes") or "").strip()
+    interaction_date = date.today().isoformat()
+
+    # Find contact by LIKE match on name
+    contact = conn.execute(
+        "SELECT id, name FROM contacts WHERE user_id = ? AND name LIKE ? ORDER BY name LIMIT 1",
+        (user_id, f"%{contact_name}%"),
+    ).fetchone()
+
+    if not contact:
+        return {"error": f'No contact found matching "{contact_name}"'}
+
+    contact_id = contact["id"]
+    matched_name = contact["name"]
+
+    conn.execute(
+        """INSERT INTO contact_interactions (user_id, contact_id, type, notes, date)
+           VALUES (?, ?, ?, ?, ?)""",
+        (user_id, contact_id, interaction_type, notes, interaction_date),
+    )
+
+    # Update last_contact_date if this is more recent
+    conn.execute(
+        """UPDATE contacts
+           SET last_contact_date = ?
+           WHERE id = ? AND user_id = ?
+             AND (last_contact_date IS NULL OR last_contact_date < ?)""",
+        (interaction_date, contact_id, user_id, interaction_date),
+    )
+    conn.commit()
+
+    return {
+        "success": True,
+        "contact_id": contact_id,
+        "message": f'Logged {interaction_type} with {matched_name} on {interaction_date}',
+    }
+
 
 __all__ = ["execute_tool"]
