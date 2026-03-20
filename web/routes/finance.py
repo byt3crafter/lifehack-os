@@ -119,15 +119,15 @@ def get_dashboard():
         days_in_month = calendar.monthrange(today.year, today.month)[1]
         day_of_month = today.day
 
-        connected = firefly_service.is_connected()
+        connected = firefly_service.is_connected(uid)
 
         # -- Accounts & net worth (Firefly) ----------------------------------
-        accounts = firefly_service.get_accounts() if connected else []
+        accounts = firefly_service.get_accounts(uid) if connected else []
         net_worth = round(sum(a['balance'] for a in accounts), 2)
-        currency = firefly_service.get_default_currency() if connected else {'code': 'USD', 'symbol': '$'}
+        currency = firefly_service.get_default_currency(uid) if connected else {'code': 'USD', 'symbol': '$'}
 
         # -- Monthly spending (Firefly) ---------------------------------------
-        monthly_data = firefly_service.get_monthly_spending() if connected else {'categories': {}, 'total': 0.0, 'currency': currency['code']}
+        monthly_data = firefly_service.get_monthly_spending(uid) if connected else {'categories': {}, 'total': 0.0, 'currency': currency['code']}
         total_spent = monthly_data['total']
 
         # Linear projection: if we've spent X in D days, month-end = X / D * days_in_month
@@ -145,7 +145,7 @@ def get_dashboard():
         }
 
         # -- Budgets (Firefly budgets merged with local rules) ----------------
-        firefly_budgets = firefly_service.get_budgets() if connected else []
+        firefly_budgets = firefly_service.get_budgets(uid) if connected else []
         firefly_budget_names = {b['name'] for b in firefly_budgets}
 
         # Local rules act as budgets when Firefly has no matching budget
@@ -188,7 +188,7 @@ def get_dashboard():
 
         # -- Recent transactions (Firefly, fallback to local log) ------------
         if connected:
-            recent_txns = firefly_service.get_transactions(days=30, limit=10)
+            recent_txns = firefly_service.get_transactions(days=30, limit=10, user_id=uid)
         else:
             rows = conn.execute(
                 "SELECT * FROM finance_log WHERE user_id = ? ORDER BY date DESC, id DESC LIMIT 10",
@@ -253,10 +253,10 @@ def get_transactions():
         return jsonify({'error': 'Invalid query parameters'}), 400
 
     uid = current_user_id()
-    connected = firefly_service.is_connected()
+    connected = firefly_service.is_connected(uid)
 
     if connected:
-        txns = firefly_service.get_transactions(days=days, limit=limit)
+        txns = firefly_service.get_transactions(days=days, limit=limit, user_id=uid)
     else:
         # Fallback to local finance_log
         from datetime import timedelta
@@ -298,8 +298,8 @@ def list_goals():
         (uid,),
     ).fetchall()
 
-    connected = firefly_service.is_connected()
-    accounts = firefly_service.get_accounts() if connected else []
+    connected = firefly_service.is_connected(uid)
+    accounts = firefly_service.get_accounts(uid) if connected else []
 
     goals = []
     for g in rows:
@@ -827,23 +827,23 @@ def get_insights():
     """Spending insights: top categories, month-over-month, daily avg, biggest tx."""
     try:
         uid = current_user_id()
-        connected = firefly_service.is_connected()
+        connected = firefly_service.is_connected(uid)
         if not connected:
             return jsonify({'error': 'Firefly not connected'}), 503
 
-        currency = firefly_service.get_default_currency()
+        currency = firefly_service.get_default_currency(uid)
         today = date.today()
 
         # Current month transactions
         cur_start = today.replace(day=1)
-        cur_txns = firefly_service.get_transactions(days=today.day, limit=500)
+        cur_txns = firefly_service.get_transactions(days=today.day, limit=500, user_id=uid)
         cur_withdrawals = [t for t in cur_txns if t.get('type') == 'withdrawal']
 
         # Previous month transactions
         prev_end = cur_start - timedelta(days=1)
         prev_start = prev_end.replace(day=1)
         prev_days = (today - prev_start).days
-        all_txns = firefly_service.get_transactions(days=prev_days, limit=500)
+        all_txns = firefly_service.get_transactions(days=prev_days, limit=500, user_id=uid)
         prev_withdrawals = [
             t for t in all_txns
             if t.get('type') == 'withdrawal'
@@ -948,11 +948,11 @@ def detect_recurring_expenses():
     """Trigger recurring expense detection from the last 90 days."""
     try:
         uid = current_user_id()
-        connected = firefly_service.is_connected()
+        connected = firefly_service.is_connected(uid)
         if not connected:
             return jsonify({'error': 'Firefly not connected'}), 503
 
-        txns = firefly_service.get_transactions(days=90, limit=500)
+        txns = firefly_service.get_transactions(days=90, limit=500, user_id=uid)
         conn = get_connection()
 
         from src.domain.services.finance_recurring import detect_recurring
@@ -1016,11 +1016,11 @@ def scan_anomalies():
     """Trigger anomaly detection on recent transactions."""
     try:
         uid = current_user_id()
-        connected = firefly_service.is_connected()
+        connected = firefly_service.is_connected(uid)
         if not connected:
             return jsonify({'error': 'Firefly not connected'}), 503
 
-        txns = firefly_service.get_transactions(days=90, limit=500)
+        txns = firefly_service.get_transactions(days=90, limit=500, user_id=uid)
         conn = get_connection()
 
         from src.domain.services.finance_anomalies import detect_anomalies
@@ -1106,12 +1106,12 @@ def generate_digest():
     """Generate a weekly digest for the most recent complete week."""
     try:
         uid = current_user_id()
-        connected = firefly_service.is_connected()
+        connected = firefly_service.is_connected(uid)
         if not connected:
             return jsonify({'error': 'Firefly not connected'}), 503
 
-        txns = firefly_service.get_transactions(days=30, limit=500)
-        budgets = firefly_service.get_budgets()
+        txns = firefly_service.get_transactions(days=30, limit=500, user_id=uid)
+        budgets = firefly_service.get_budgets(uid)
         conn = get_connection()
 
         # Try to get AI provider for narrative summary
