@@ -1464,15 +1464,7 @@
                 </div>
 
                 <!-- Tips -->
-                <div id="d-tips" class="mb-4 px-4 py-3 rounded-xl hidden" style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.2);">
-                    <div class="flex items-start gap-2.5">
-                        <svg class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="#8b5cf6" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M10 2a6 6 0 00-3 11.2V15a1 1 0 001 1h4a1 1 0 001-1v-1.8A6 6 0 0010 2z"/><path stroke-linecap="round" stroke-linejoin="round" d="M8 17h4"/></svg>
-                        <div id="d-tips-text" class="text-sm" style="color:#c4b5fd;"></div>
-                    </div>
-                </div>
-
-                <!-- AI Insights -->
-                <div id="insights-container" class="mb-5 space-y-2"></div>
+                <!-- Tips and insights handled by d-ai-insight card above -->
 
                 <!-- Live fasting timer (shown only when actively fasting) -->
                 <div id="d-fasting-timer" class="hidden mb-4 p-4 rounded-xl flex items-center gap-3" style="background:linear-gradient(135deg,#1a1820 0%,#201828 100%);border:1px solid rgba(168,85,247,0.2);">
@@ -5972,13 +5964,7 @@
                 $('#d-points-delta').textContent = pointsDelta > 0 ? `(+${pointsDelta})` : `(${pointsDelta})`;
             }
             
-            // Tips
-            if(daily.tips && daily.tips.length > 0) {
-                $('#d-tips').classList.remove('hidden');
-                $('#d-tips-text').textContent = daily.tips[0];
-            } else {
-                $('#d-tips').classList.add('hidden');
-            }
+            // Tips now handled by d-ai-insight card
         }
         
         // Load daily history
@@ -6021,7 +6007,6 @@
         }
         
         await loadStats();
-        await loadInsights();
         const h = await api('/habits');
         const p = await api('/projects');
         const cal = await api('/calendar/events?days=1');
