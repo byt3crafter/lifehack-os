@@ -2299,7 +2299,7 @@
                     .cm-msg { max-width:720px; margin:0 auto; width:100%; padding:16px 24px; }
                     .cm-msg-user { background:rgba(255,255,255,0.02); }
                     .cm-msg-ai { background:transparent; }
-                    #chatmode-messages { display:flex; flex-direction:column; justify-content:flex-end; min-height:100%; }
+                    #chatmode-messages { display:flex; flex-direction:column; justify-content:flex-end; }
                     #chatmode-input:focus { outline:none !important; box-shadow:none !important; border:none !important; }
                     .cm-input-wrap:focus-within { border-color:#3a3a48 !important; }
                     .cm-avatar { width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px; }
@@ -2341,7 +2341,7 @@
                 </div>
 
                 <!-- Messages area -->
-                <div id="chatmode-messages" style="flex:1;overflow-y:auto;" aria-live="polite"></div>
+                <div id="chatmode-messages" style="flex:1;overflow-y:auto;min-height:0;padding-top:48px;" aria-live="polite"></div>
 
                 <!-- Image preview -->
                 <div id="chatmode-img-preview" style="display:none;max-width:720px;margin:0 auto;width:100%;padding:0 24px;">
