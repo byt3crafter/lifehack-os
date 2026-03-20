@@ -7378,7 +7378,10 @@
     async function loadDailyInsight() {
         try {
             var data = await api('/insights/today');
-            if(data && data.title && data.content) {
+            if(data && data.title && data.content && !data.error) {
+                // Skip stale/useless insights
+                var lower = (data.content || '').toLowerCase();
+                if(lower.indexOf('no data yet') !== -1 || lower.indexOf('you have no data') !== -1) return;
                 var el = document.getElementById('d-ai-insight');
                 var titleEl = document.getElementById('d-insight-title');
                 var contentEl = document.getElementById('d-insight-content');
