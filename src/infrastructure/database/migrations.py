@@ -556,3 +556,59 @@ def run_migrations(conn) -> None:
         )
         conn.commit()
         print("  Migration 14: Multi-user data isolation — done")
+
+    # Migration 15: User registration, profiles, invite codes, password reset
+    current = get_current_version(conn)
+    if current < 15:
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS invite_codes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                code TEXT NOT NULL UNIQUE,
+                created_by INTEGER NOT NULL REFERENCES users(id),
+                used_by INTEGER,
+                max_uses INTEGER DEFAULT 1,
+                use_count INTEGER DEFAULT 0,
+                expires_at TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_invite_codes_code ON invite_codes(code);
+
+            CREATE TABLE IF NOT EXISTS user_profiles (
+                user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+                bio TEXT DEFAULT '',
+                age INTEGER,
+                timezone TEXT DEFAULT '',
+                health_goals TEXT DEFAULT '',
+                fitness_level TEXT DEFAULT '',
+                dietary_preferences TEXT DEFAULT '',
+                work_type TEXT DEFAULT '',
+                work_hours TEXT DEFAULT '',
+                photo_path TEXT DEFAULT '',
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                token TEXT NOT NULL UNIQUE,
+                expires_at TEXT NOT NULL,
+                used_at TEXT,
+                created_by INTEGER NOT NULL REFERENCES users(id),
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_reset_tokens_token ON password_reset_tokens(token);
+        """)
+
+        # Initialize profile rows for all existing users
+        all_users = conn.execute("SELECT id FROM users").fetchall()
+        for u in all_users:
+            conn.execute(
+                "INSERT OR IGNORE INTO user_profiles (user_id) VALUES (?)",
+                (u['id'],),
+            )
+
+        conn.execute(
+            "INSERT OR IGNORE INTO schema_version (version, description) VALUES (15, 'User registration, profiles, invite codes')"
+        )
+        conn.commit()
+        print("  Migration 15: User registration, profiles, invite codes")

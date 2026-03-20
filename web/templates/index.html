@@ -2227,6 +2227,10 @@
                          id="settings-tabs"
                          class="hidden md:flex"
                          style="flex-shrink:0; width:176px; flex-direction:column; gap:2px; position:sticky; top:1.5rem;">
+                        <button onclick="settingsTab('profile')"    id="stab-profile"      class="settings-tab-btn" aria-selected="false" style="display:flex;align-items:center;gap:0.625rem;width:100%;text-align:left;padding:0.5rem 0.75rem;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-size:0.8125rem;font-weight:500;transition:background 0.12s,color 0.12s;background:transparent;color:#9898a6;">
+                            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" viewBox="0 0 20 20"><circle cx="10" cy="7" r="3"/><path d="M3 18c0-3.3 2.7-6 7-6s7 2.7 7 6"/></svg>
+                            Profile
+                        </button>
                         <button onclick="settingsTab('modules')"    id="stab-modules"      class="settings-tab-btn" aria-selected="true"  style="display:flex;align-items:center;gap:0.625rem;width:100%;text-align:left;padding:0.5rem 0.75rem;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-size:0.8125rem;font-weight:500;transition:background 0.12s,color 0.12s;background:rgba(79,128,255,0.15);color:#f0f0f2;">
                             <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;color:#4f80ff;" viewBox="0 0 20 20"><rect x="2" y="2" width="7" height="7" rx="1.5"/><rect x="11" y="2" width="7" height="7" rx="1.5"/><rect x="2" y="11" width="7" height="7" rx="1.5"/><rect x="11" y="11" width="7" height="7" rx="1.5"/></svg>
                             Modules
@@ -2258,12 +2262,64 @@
 
                         <!-- Mobile-only horizontal tab strip (visible only on small screens) -->
                         <div class="md:hidden mb-4" style="display:flex;gap:4px;overflow-x:auto;padding-bottom:2px;">
+                            <button onclick="settingsTab('profile')"       id="stab-m-profile"      style="flex-shrink:0;padding:0.375rem 0.875rem;border-radius:100px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;transition:background 0.12s,color 0.12s,border-color 0.12s;background:transparent;color:#9898a6;">Profile</button>
                             <button onclick="settingsTab('modules')"      id="stab-m-modules"      style="flex-shrink:0;padding:0.375rem 0.875rem;border-radius:100px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;transition:background 0.12s,color 0.12s,border-color 0.12s;background:rgba(79,128,255,0.15);color:#f0f0f2;border-color:rgba(79,128,255,0.3);">Modules</button>
                             <button onclick="settingsTab('ai')"           id="stab-m-ai"           style="flex-shrink:0;padding:0.375rem 0.875rem;border-radius:100px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;transition:background 0.12s,color 0.12s,border-color 0.12s;background:transparent;color:#9898a6;">AI Provider</button>
                             <button onclick="settingsTab('openclaw')"     id="stab-m-openclaw"     style="flex-shrink:0;padding:0.375rem 0.875rem;border-radius:100px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;transition:background 0.12s,color 0.12s,border-color 0.12s;background:transparent;color:#9898a6;">AI Agent</button>
                             <button onclick="settingsTab('integrations')" id="stab-m-integrations" style="flex-shrink:0;padding:0.375rem 0.875rem;border-radius:100px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;transition:background 0.12s,color 0.12s,border-color 0.12s;background:transparent;color:#9898a6;">Integrations</button>
                             <button onclick="settingsTab('about')"        id="stab-m-about"        style="flex-shrink:0;padding:0.375rem 0.875rem;border-radius:100px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;transition:background 0.12s,color 0.12s,border-color 0.12s;background:transparent;color:#9898a6;">About</button>
                             <button onclick="settingsTab('debug')"        id="stab-m-debug"        style="flex-shrink:0;padding:0.375rem 0.875rem;border-radius:100px;border:1px solid #2a2a2e;font-size:0.75rem;font-weight:500;font-family:inherit;cursor:pointer;transition:background 0.12s,color 0.12s,border-color 0.12s;background:transparent;color:#9898a6;">Debug Log</button>
+                        </div>
+
+                        <!-- ── PROFILE panel ────────────────────────────── -->
+                        <div id="spanel-profile" style="display:none;">
+                            <h3 class="text-base font-semibold mb-1" style="color:#f0f0f2;">Your Profile</h3>
+                            <p class="text-xs mb-5" style="color:#5c5c6b;">Personal info that helps the AI understand you</p>
+
+                            <div class="space-y-3" id="profile-form">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div><label class="field-label">Display Name</label><input id="pf-display-name" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="Your name"></div>
+                                    <div><label class="field-label">Age</label><input id="pf-age" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="25"></div>
+                                </div>
+                                <div><label class="field-label">Bio / About You</label><textarea id="pf-bio" class="w-full px-3 py-2.5 rounded-lg border text-sm" rows="2" placeholder="A bit about yourself..."></textarea></div>
+                                <div><label class="field-label">Timezone</label><input id="pf-timezone" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="America/New_York"></div>
+                                <div><label class="field-label">Health Goals</label><input id="pf-health-goals" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="e.g. Lose weight, build muscle, quit smoking"></div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div><label class="field-label">Fitness Level</label>
+                                        <select id="pf-fitness" class="w-full px-3 py-2.5 rounded-lg border text-sm">
+                                            <option value="">Select...</option>
+                                            <option value="beginner">Beginner</option>
+                                            <option value="intermediate">Intermediate</option>
+                                            <option value="advanced">Advanced</option>
+                                        </select>
+                                    </div>
+                                    <div><label class="field-label">Work Type</label><input id="pf-work-type" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="e.g. Software Engineer"></div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div><label class="field-label">Work Hours</label><input id="pf-work-hours" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="e.g. 9am-5pm"></div>
+                                    <div><label class="field-label">Dietary Preferences</label><input id="pf-dietary" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="e.g. Vegetarian, Keto"></div>
+                                </div>
+                                <button onclick="saveProfile()" class="btn-primary w-full py-2.5">Save Profile</button>
+                            </div>
+
+                            <!-- Change Password -->
+                            <div class="mt-6 pt-5" style="border-top:1px solid #2a2a2e;">
+                                <h4 class="text-sm font-semibold mb-3" style="color:#f0f0f2;">Change Password</h4>
+                                <div class="space-y-3">
+                                    <div><input id="pf-new-pw" type="password" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="New password"></div>
+                                    <div><input id="pf-confirm-pw" type="password" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="Confirm password"></div>
+                                    <button onclick="changeProfilePassword()" class="btn-ghost w-full py-2.5">Update Password</button>
+                                </div>
+                            </div>
+
+                            <!-- Invite Friends -->
+                            <div class="mt-6 pt-5" style="border-top:1px solid #2a2a2e;">
+                                <h4 class="text-sm font-semibold mb-3" style="color:#f0f0f2;">Invite Friends & Family</h4>
+                                <div class="flex gap-2 mb-3">
+                                    <button onclick="generateInviteCode()" class="btn-primary flex-1 py-2.5">Generate Invite Link</button>
+                                </div>
+                                <div id="invite-codes-list" class="space-y-2"></div>
+                            </div>
                         </div>
 
                         <!-- ── MODULES panel ─────────────────────────────── -->
@@ -4572,7 +4628,7 @@
     var _debugLogActiveFilter = 'all';
 
     function settingsTab(tab) {
-        const panels = ['modules','ai','openclaw','integrations','about','debug'];
+        const panels = ['profile','modules','ai','openclaw','integrations','about','debug'];
         panels.forEach(p => {
             const panel = $(`#spanel-${p}`);
             if(panel) panel.style.display = (p === tab) ? '' : 'none';
@@ -4609,12 +4665,107 @@
                 btn.style.borderColor = '#2a2a2e';
             }
         });
+        // Load profile data when profile tab is selected
+        if(tab === 'profile') loadProfile();
         // Start/stop debug log auto-refresh
         if(_debugLogInterval) { clearInterval(_debugLogInterval); _debugLogInterval = null; }
         if(tab === 'debug') {
             loadDebugLogs();
             _debugLogInterval = setInterval(loadDebugLogs, 10000);
         }
+    }
+
+    // ── Profile ──────────────────────────────────────────────────
+    async function loadProfile() {
+        try {
+            var data = await api('/profile');
+            if(!data || data.error) return;
+            var f = function(id, val) { var el = document.getElementById(id); if(el) el.value = val || ''; };
+            f('pf-display-name', data.display_name);
+            f('pf-age', data.age);
+            f('pf-bio', data.bio);
+            f('pf-timezone', data.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone);
+            f('pf-health-goals', data.health_goals);
+            f('pf-fitness', data.fitness_level);
+            f('pf-work-type', data.work_type);
+            f('pf-work-hours', data.work_hours);
+            f('pf-dietary', data.dietary_preferences);
+        } catch(e) {}
+        loadInviteCodes();
+    }
+
+    async function saveProfile() {
+        var g = function(id) { return (document.getElementById(id) || {}).value || ''; };
+        var data = {
+            display_name: g('pf-display-name'),
+            age: parseInt(g('pf-age')) || null,
+            bio: g('pf-bio'),
+            timezone: g('pf-timezone'),
+            health_goals: g('pf-health-goals'),
+            fitness_level: g('pf-fitness'),
+            work_type: g('pf-work-type'),
+            work_hours: g('pf-work-hours'),
+            dietary_preferences: g('pf-dietary'),
+        };
+        var r = await api('/profile', 'PUT', data);
+        if(r && !r.error) showToast('Profile saved', 'success');
+        else showToast(r?.error || 'Save failed', 'error');
+    }
+
+    async function changeProfilePassword() {
+        var pw = (document.getElementById('pf-new-pw') || {}).value || '';
+        var confirm = (document.getElementById('pf-confirm-pw') || {}).value || '';
+        if(!pw || pw.length < 6) return showToast('Password must be at least 6 characters', 'error');
+        if(pw !== confirm) return showToast('Passwords do not match', 'error');
+        // Get current user_id from a quick API call
+        var profile = await api('/profile');
+        if(!profile) return showToast('Could not load profile', 'error');
+        var r = await api('/users/' + profile.user_id + '/password', 'PUT', {new_password: pw});
+        if(r && r.status === 'ok') {
+            showToast('Password updated', 'success');
+            document.getElementById('pf-new-pw').value = '';
+            document.getElementById('pf-confirm-pw').value = '';
+        } else showToast(r?.error || 'Update failed', 'error');
+    }
+
+    async function generateInviteCode() {
+        var r = await api('/invite-codes', 'POST', {max_uses: 5, expires_in_days: 30});
+        if(r && r.code) {
+            showToast('Invite link created!', 'success');
+            loadInviteCodes();
+        } else showToast(r?.error || 'Failed', 'error');
+    }
+
+    async function loadInviteCodes() {
+        var listEl = document.getElementById('invite-codes-list');
+        if(!listEl) return;
+        try {
+            var codes = await api('/invite-codes');
+            if(!codes || !Array.isArray(codes) || !codes.length) {
+                listEl.innerHTML = '<p class="text-xs" style="color:#5c5c6b;">No invite codes yet. Generate one to share.</p>';
+                return;
+            }
+            listEl.innerHTML = codes.map(function(c) {
+                var url = location.origin + '/register?code=' + c.code;
+                var expired = c.expires_at && new Date(c.expires_at) < new Date();
+                var full = c.max_uses > 0 && c.use_count >= c.max_uses;
+                var status = expired ? '<span style="color:#ef4444;">Expired</span>' : (full ? '<span style="color:#f59e0b;">Used up</span>' : '<span style="color:#22c55e;">Active</span>');
+                return '<div class="card p-3 flex items-center justify-between" style="border:1px solid #2a2a2e;">'
+                    + '<div class="min-w-0 flex-1">'
+                    + '<div class="text-sm font-mono truncate" style="color:#f0f0f2;">' + c.code + '</div>'
+                    + '<div class="text-xs mt-0.5" style="color:#5c5c6b;">' + status + ' &middot; Used ' + c.use_count + '/' + (c.max_uses || '&infin;') + '</div>'
+                    + '</div>'
+                    + '<div class="flex gap-1.5">'
+                    + '<button onclick="navigator.clipboard.writeText(\'' + url + '\');showToast(\'Link copied!\',\'success\')" class="text-xs px-2 py-1 rounded" style="background:rgba(79,128,255,0.12);color:#4f80ff;border:none;cursor:pointer;font-family:inherit;">Copy Link</button>'
+                    + '<button onclick="deleteInviteCode(' + c.id + ')" class="text-xs px-2 py-1 rounded" style="background:rgba(239,68,68,0.1);color:#fca5a5;border:none;cursor:pointer;font-family:inherit;">Delete</button>'
+                    + '</div></div>';
+            }).join('');
+        } catch(e) { listEl.innerHTML = ''; }
+    }
+
+    async function deleteInviteCode(id) {
+        await api('/invite-codes/' + id, 'DELETE');
+        loadInviteCodes();
     }
 
     function debugLogFilter(level) {

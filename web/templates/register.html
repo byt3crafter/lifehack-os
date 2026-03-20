@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign in — Life Hack OS</title>
+    <title>Join — Life Hack OS</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -79,6 +79,16 @@
             margin-bottom: 1.25rem;
         }
 
+        .success-banner {
+            background: rgba(34,197,94,0.08);
+            border: 1px solid rgba(34,197,94,0.2);
+            color: #86efac;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            font-size: 0.8125rem;
+            margin-bottom: 1.25rem;
+        }
+
         .field { margin-bottom: 1rem; }
         .field label {
             display: block;
@@ -104,6 +114,21 @@
             box-shadow: 0 0 0 3px rgba(79,128,255,0.15);
         }
         .field input::placeholder { color: #3a3a48; }
+        .field input.input-error {
+            border-color: rgba(239,68,68,0.5);
+        }
+        .field input.input-error:focus {
+            border-color: rgba(239,68,68,0.7);
+            box-shadow: 0 0 0 3px rgba(239,68,68,0.1);
+        }
+
+        .inline-error {
+            font-size: 0.75rem;
+            color: #fca5a5;
+            margin-top: 0.375rem;
+            display: none;
+        }
+        .inline-error.visible { display: block; }
 
         .submit-btn {
             width: 100%;
@@ -129,6 +154,19 @@
             margin-top: 1.5rem;
             letter-spacing: 0.04em;
         }
+
+        .signin-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.8125rem;
+            color: #5c5c6b;
+        }
+        .signin-link a {
+            color: #4f80ff;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .signin-link a:hover { color: #6b96ff; }
     </style>
 </head>
 <body>
@@ -148,25 +186,69 @@
             <div class="error-banner">{{ error }}</div>
             {% endif %}
 
-            <form method="POST">
+            {% if success %}
+            <div class="success-banner">{{ success }}</div>
+            {% endif %}
+
+            <form method="POST" action="/register" id="register-form" novalidate>
+                <input type="hidden" name="invite_code" value="{{ code }}">
+
                 <div class="field">
                     <label for="username">Username</label>
                     <input type="text" id="username" name="username" required autofocus
-                           autocomplete="username" placeholder="your username">
+                           autocomplete="username" placeholder="yourhandle">
                 </div>
-                <div class="field" style="margin-bottom:1.5rem;">
+
+                <div class="field">
+                    <label for="display_name">What should we call you?</label>
+                    <input type="text" id="display_name" name="display_name" required
+                           autocomplete="name" placeholder="Your name">
+                </div>
+
+                <div class="field">
                     <label for="password">Password</label>
                     <input type="password" id="password" name="password" required
-                           autocomplete="current-password" placeholder="••••••••">
+                           autocomplete="new-password" placeholder="••••••••">
                 </div>
-                <button type="submit" class="submit-btn">Sign in</button>
+
+                <div class="field" style="margin-bottom:1.5rem;">
+                    <label for="confirm_password">Confirm password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" required
+                           autocomplete="new-password" placeholder="••••••••">
+                    <p class="inline-error" id="password-mismatch" role="alert">Passwords do not match.</p>
+                </div>
+
+                <button type="submit" class="submit-btn">Create Account</button>
             </form>
         </div>
 
-        <p style="text-align:center;margin-top:1.25rem;">
-            <a href="/register" style="color:#4f80ff;font-size:0.8125rem;text-decoration:none;">Have an invite code? Create an account</a>
-        </p>
-        <p class="footer">Discipline · Clarity · Progress</p>
+        <p class="signin-link">Already have an account? <a href="/login">Sign in</a></p>
+        <p class="footer" style="margin-top:1rem;">Discipline &middot; Clarity &middot; Progress</p>
     </div>
+
+    <script>
+        const form = document.getElementById('register-form');
+        const passwordInput = document.getElementById('password');
+        const confirmInput = document.getElementById('confirm_password');
+        const mismatchMsg = document.getElementById('password-mismatch');
+
+        function checkMatch() {
+            const mismatch = confirmInput.value.length > 0 && passwordInput.value !== confirmInput.value;
+            mismatchMsg.classList.toggle('visible', mismatch);
+            confirmInput.classList.toggle('input-error', mismatch);
+        }
+
+        passwordInput.addEventListener('input', checkMatch);
+        confirmInput.addEventListener('input', checkMatch);
+
+        form.addEventListener('submit', function (e) {
+            if (passwordInput.value !== confirmInput.value) {
+                e.preventDefault();
+                mismatchMsg.classList.add('visible');
+                confirmInput.classList.add('input-error');
+                confirmInput.focus();
+            }
+        });
+    </script>
 </body>
 </html>

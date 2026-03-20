@@ -334,6 +334,44 @@ def init_database() -> None:
             UNIQUE(user_id, integration_name)
         );
 
+        -- Invite codes (any user can create)
+        CREATE TABLE IF NOT EXISTS invite_codes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            code TEXT NOT NULL UNIQUE,
+            created_by INTEGER NOT NULL REFERENCES users(id),
+            used_by INTEGER,
+            max_uses INTEGER DEFAULT 1,
+            use_count INTEGER DEFAULT 0,
+            expires_at TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
+        -- User profiles (AI personalization context)
+        CREATE TABLE IF NOT EXISTS user_profiles (
+            user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+            bio TEXT DEFAULT '',
+            age INTEGER,
+            timezone TEXT DEFAULT '',
+            health_goals TEXT DEFAULT '',
+            fitness_level TEXT DEFAULT '',
+            dietary_preferences TEXT DEFAULT '',
+            work_type TEXT DEFAULT '',
+            work_hours TEXT DEFAULT '',
+            photo_path TEXT DEFAULT '',
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
+        -- Password reset tokens
+        CREATE TABLE IF NOT EXISTS password_reset_tokens (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            token TEXT NOT NULL UNIQUE,
+            expires_at TEXT NOT NULL,
+            used_at TEXT,
+            created_by INTEGER NOT NULL REFERENCES users(id),
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
         -- OpenClaw Connection Log (GLOBAL)
         CREATE TABLE IF NOT EXISTS openclaw_log (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

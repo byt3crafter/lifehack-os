@@ -26,6 +26,18 @@ def assemble_context(conn, user_id: int) -> dict:
 
     context = {}
 
+    # User profile (for AI personalization)
+    context['user_profile'] = _safe_query(
+        conn,
+        """SELECT u.display_name, up.bio, up.age, up.timezone,
+                  up.health_goals, up.fitness_level, up.dietary_preferences,
+                  up.work_type, up.work_hours
+           FROM users u
+           LEFT JOIN user_profiles up ON up.user_id = u.id
+           WHERE u.id = ?""",
+        (user_id,),
+    )
+
     # User stats
     context['user_stats'] = _safe_query(
         conn, "SELECT * FROM user_stats WHERE user_id = ?", (user_id,)
