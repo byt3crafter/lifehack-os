@@ -119,6 +119,12 @@ def create_app():
         upload_dir = Path(__file__).parent.parent / 'data' / 'uploads'
         return send_from_directory(str(upload_dir), filename)
 
+    # Favicon — serve icon.svg so browsers don't get a 500
+    @app.route('/favicon.ico')
+    def favicon():
+        from flask import send_from_directory
+        return send_from_directory(str(Path(__file__).parent / 'static'), 'icon.svg', mimetype='image/svg+xml')
+
     # Health check endpoint (used by Docker HEALTHCHECK)
     @app.route('/health')
     def health():
