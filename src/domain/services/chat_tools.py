@@ -192,6 +192,22 @@ TOOL_DEFINITIONS = [
             "review": "string",
         },
     },
+    # ── Wellness ─────────────────────────────────────────────────────────────
+    {
+        "name": "log_water",
+        "description": "Log water intake (glasses)",
+        "parameters": {"glasses": "integer (default 1)"},
+    },
+    {
+        "name": "log_sleep",
+        "description": "Log sleep data",
+        "parameters": {
+            "date": "YYYY-MM-DD (defaults to today)",
+            "bedtime": "HH:MM (e.g. 23:00)",
+            "wake_time": "HH:MM (e.g. 07:00)",
+            "quality": "integer 1-5",
+        },
+    },
     # ── Notes ────────────────────────────────────────────────────────────────
     {
         "name": "create_note",

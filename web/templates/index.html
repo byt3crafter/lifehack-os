@@ -1301,6 +1301,9 @@
             <button onclick="nav('discover')" data-v="discover" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Discover">
                 <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-discover"/></svg>Discover
             </button>
+            <button onclick="nav('wellness')" data-v="wellness" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Wellness">
+                <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.6"><path d="M10 2C5.6 2 2 5.6 2 10s3.6 8 8 8 8-3.6 8-8S14.4 2 10 2z"/><path d="M7 10l2 2 4-4"/></svg>Wellness
+            </button>
             <button onclick="nav('journal')" data-v="journal" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Journal">
                 <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-journal"/></svg>Journal
             </button>
@@ -1369,6 +1372,9 @@
                 <button onclick="desktopNav('discover')" data-v="discover" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Discover">
                     <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-discover"/></svg>Discover
                 </button>
+                <button onclick="desktopNav('wellness')" data-v="wellness" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Wellness">
+                    <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.6"><path d="M10 2C5.6 2 2 5.6 2 10s3.6 8 8 8 8-3.6 8-8S14.4 2 10 2z"/><path d="M7 10l2 2 4-4"/></svg>Wellness
+                </button>
                 <button onclick="desktopNav('journal')" data-v="journal" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Journal">
                     <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-journal"/></svg>Journal
                 </button>
@@ -1420,6 +1426,61 @@
                             <div class="text-sm" style="color:#e0dce8;line-height:1.5;" id="d-insight-content"></div>
                         </div>
                         <button onclick="dismissDailyInsight()" class="flex-shrink-0 text-xs" style="color:#5c5c6b;background:none;border:none;cursor:pointer;">&#10005;</button>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="flex flex-wrap gap-2 mb-4" id="d-quick-actions">
+                    <button onclick="_switchView('chatmode')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium" style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.2);color:#c4b5fd;cursor:pointer;font-family:inherit;">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M7 16l-3 3V5a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H7z"/></svg>
+                        Ask AI
+                    </button>
+                    <button onclick="addTransactionModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium" style="background:rgba(79,128,255,0.08);border:1px solid rgba(79,128,255,0.15);color:#4f80ff;cursor:pointer;font-family:inherit;">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path d="M10 3v14M6 7h6a2 2 0 010 4H7a2 2 0 000 4h7"/></svg>
+                        Log Expense
+                    </button>
+                    <button onclick="newJournalEntry()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium" style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.15);color:#f59e0b;cursor:pointer;font-family:inherit;">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path d="M4 3h12a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z"/><path d="M7 7h6M7 10h6M7 13h4"/></svg>
+                        Journal
+                    </button>
+                    <button onclick="logWaterQuick()" id="d-water-btn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium" style="background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.15);color:#38bdf8;cursor:pointer;font-family:inherit;">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path d="M12 2.5S7 7 7 11.5a5 5 0 0010 0C17 7 12 2.5 12 2.5z"/></svg>
+                        <span id="d-water-count">0</span>/8 Water
+                    </button>
+                    <button onclick="newNoteModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium" style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.15);color:#22c55e;cursor:pointer;font-family:inherit;">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path d="M14 3H6a1 1 0 00-1 1v12a1 1 0 001 1h8a1 1 0 001-1V7z"/><path d="M14 3v4h-4"/></svg>
+                        Quick Note
+                    </button>
+                </div>
+
+                <!-- Water + Sleep + Wellness row -->
+                <div id="d-wellness-row" class="grid grid-cols-3 gap-2 mb-4">
+                    <div class="rounded-xl p-3" style="background:#1c1c20;border:1px solid #2a2a2e;">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span style="font-size:0.9rem;">&#128167;</span>
+                            <span class="text-xs font-semibold" style="color:#38bdf8;">Water</span>
+                        </div>
+                        <div class="font-mono font-bold text-lg" style="color:#f0f0f2;" id="d-water-total">0</div>
+                        <div class="text-xs" style="color:#5c5c6b;">of <span id="d-water-goal">8</span> glasses</div>
+                        <div class="h-1.5 rounded-full mt-1.5" style="background:rgba(255,255,255,0.06);">
+                            <div id="d-water-bar" class="h-full rounded-full" style="background:#38bdf8;width:0%;transition:width 0.4s;"></div>
+                        </div>
+                    </div>
+                    <div class="rounded-xl p-3" style="background:#1c1c20;border:1px solid #2a2a2e;">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span style="font-size:0.9rem;">&#128164;</span>
+                            <span class="text-xs font-semibold" style="color:#a78bfa;">Sleep</span>
+                        </div>
+                        <div class="font-mono font-bold text-lg" style="color:#f0f0f2;" id="d-sleep-hours">--</div>
+                        <div class="text-xs" style="color:#5c5c6b;" id="d-sleep-quality">Not logged</div>
+                    </div>
+                    <div class="rounded-xl p-3" style="background:#1c1c20;border:1px solid #2a2a2e;">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span style="font-size:0.9rem;">&#10024;</span>
+                            <span class="text-xs font-semibold" style="color:#22c55e;">Wellness</span>
+                        </div>
+                        <div class="font-mono font-bold text-lg" style="color:#f0f0f2;" id="d-wellness-score">--</div>
+                        <div class="text-xs" style="color:#5c5c6b;" id="d-wellness-label">Score</div>
                     </div>
                 </div>
 
@@ -2386,6 +2447,56 @@
                 </div>
             </div>
 
+            <!-- WELLNESS -->
+            <div id="v-wellness" class="view hidden">
+                <div class="view-header">
+                    <div>
+                        <h2 class="view-title">Wellness</h2>
+                        <p class="text-xs mt-0.5" style="color:#5c5c6b;">Water, sleep, and wellness tracking</p>
+                    </div>
+                </div>
+
+                <!-- Wellness Score -->
+                <div class="mb-5 p-4 rounded-2xl" style="background:linear-gradient(135deg,#141a1c 0%,#141e1a 100%);border:1px solid rgba(34,197,94,0.2);">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-semibold" style="color:#9898a6;letter-spacing:0.06em;text-transform:uppercase;">Wellness Score</span>
+                        <span class="font-mono font-bold text-2xl" style="color:#22c55e;" id="w-score">--</span>
+                    </div>
+                    <div class="space-y-2" id="w-breakdown"></div>
+                </div>
+
+                <!-- Water Tracking -->
+                <div class="mb-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="section-label">Water Intake</span>
+                        <button onclick="setWaterGoalModal()" class="text-xs" style="color:#4f80ff;background:none;border:none;cursor:pointer;font-family:inherit;">Set Goal</button>
+                    </div>
+                    <div class="p-4 rounded-xl" style="background:#1c1c20;border:1px solid #2a2a2e;">
+                        <div class="flex items-center justify-between mb-3">
+                            <div>
+                                <span class="font-mono font-bold text-2xl" style="color:#38bdf8;" id="w-water-total">0</span>
+                                <span class="text-sm" style="color:#5c5c6b;"> / <span id="w-water-goal">8</span> glasses</span>
+                            </div>
+                            <button onclick="logWaterQuick()" class="px-4 py-2 rounded-lg text-sm font-medium" style="background:rgba(56,189,248,0.12);color:#38bdf8;border:1px solid rgba(56,189,248,0.2);cursor:pointer;font-family:inherit;">
+                                + 1 Glass
+                            </button>
+                        </div>
+                        <div class="h-2 rounded-full" style="background:rgba(255,255,255,0.06);">
+                            <div id="w-water-bar" class="h-full rounded-full" style="background:#38bdf8;width:0%;transition:width 0.4s;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sleep Log -->
+                <div class="mb-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="section-label">Sleep</span>
+                        <button onclick="logSleepModal()" class="text-xs font-medium" style="color:#4f80ff;background:none;border:none;cursor:pointer;font-family:inherit;">+ Log Sleep</button>
+                    </div>
+                    <div id="w-sleep-list" class="space-y-2"></div>
+                </div>
+            </div>
+
             <!-- JOURNAL -->
             <div id="v-journal" class="view hidden">
                 <div class="view-header">
@@ -3067,6 +3178,7 @@
         else if(v==='challenges') await loadChallenges();
         else if(v==='finance') await loadFinance();
         else if(v==='discover') await loadDiscover();
+        else if(v==='wellness') await loadWellness();
         else if(v==='journal') await loadJournal();
         else if(v==='books') await loadBooks();
         else if(v==='notes') await loadNotes();
@@ -6061,8 +6173,9 @@
         $('#desk-xp').textContent = s.total_xp.toLocaleString() + ' XP';
         $('#desk-level').textContent = `Level ${s.level} • ${s.level_name}`;
 
-        // Load live dashboard data (fasting, sobriety with target)
+        // Load live dashboard data (fasting, sobriety, water, sleep, wellness)
         loadDashboardLive();
+        loadDashboardWellness();
 
         // Auto-refresh every 30 seconds
         if(!_dashRefreshInterval) {
@@ -8863,6 +8976,141 @@
             sendChatModeMessage();
         }
     });
+
+    // ── Water + Sleep + Wellness ────────────────────────────────
+    async function logWaterQuick() {
+        var r = await api('/wellness/water', 'POST', {glasses: 1});
+        if(r && !r.error) {
+            showToast('+1 glass logged', 'success');
+            loadDashboardWellness();
+        }
+    }
+
+    async function loadDashboardWellness() {
+        // Water
+        try {
+            var w = await api('/wellness/water/today');
+            if(w) {
+                var total = w.total_glasses || 0;
+                var goal = w.goal || 8;
+                var pct = Math.min(100, Math.round(total / goal * 100));
+                var els = ['d-water-total', 'd-water-count', 'w-water-total'];
+                els.forEach(function(id) { var el = document.getElementById(id); if(el) el.textContent = total; });
+                var goalEls = ['d-water-goal', 'w-water-goal'];
+                goalEls.forEach(function(id) { var el = document.getElementById(id); if(el) el.textContent = goal; });
+                var barEls = ['d-water-bar', 'w-water-bar'];
+                barEls.forEach(function(id) { var el = document.getElementById(id); if(el) el.style.width = pct + '%'; });
+                var btnCount = document.getElementById('d-water-count');
+                if(btnCount) btnCount.textContent = total;
+            }
+        } catch(e) {}
+
+        // Sleep
+        try {
+            var s = await api('/wellness/sleep/today');
+            var hEl = document.getElementById('d-sleep-hours');
+            var qEl = document.getElementById('d-sleep-quality');
+            if(s && s.hours) {
+                if(hEl) hEl.textContent = s.hours.toFixed(1) + 'h';
+                if(qEl) qEl.textContent = 'Quality ' + (s.quality || 3) + '/5';
+            } else {
+                if(hEl) hEl.textContent = '--';
+                if(qEl) qEl.textContent = 'Not logged';
+            }
+        } catch(e) {}
+
+        // Wellness score
+        try {
+            var ws = await api('/wellness/score');
+            if(ws && ws.score !== undefined) {
+                var scoreEls = ['d-wellness-score', 'w-score'];
+                scoreEls.forEach(function(id) { var el = document.getElementById(id); if(el) el.textContent = ws.score; });
+                var labelEl = document.getElementById('d-wellness-label');
+                if(labelEl) labelEl.textContent = ws.score >= 80 ? 'Great!' : (ws.score >= 50 ? 'Good' : 'Needs work');
+                // Breakdown
+                var bd = document.getElementById('w-breakdown');
+                if(bd && ws.breakdown) {
+                    var items = [
+                        {name: 'Habits', val: ws.breakdown.habits, max: 25, color: '#22c55e'},
+                        {name: 'Water', val: ws.breakdown.water, max: 25, color: '#38bdf8'},
+                        {name: 'Sleep', val: ws.breakdown.sleep, max: 25, color: '#a78bfa'},
+                        {name: 'Food', val: ws.breakdown.food, max: 25, color: '#f59e0b'},
+                    ];
+                    bd.innerHTML = items.map(function(it) {
+                        var pct = Math.round(it.val / it.max * 100);
+                        return '<div class="flex items-center gap-2"><span class="text-xs w-12" style="color:#9898a6;">' + it.name + '</span>'
+                            + '<div class="flex-1 h-1.5 rounded-full" style="background:rgba(255,255,255,0.06);"><div class="h-full rounded-full" style="width:' + pct + '%;background:' + it.color + ';"></div></div>'
+                            + '<span class="text-xs font-mono w-6 text-right" style="color:#5c5c6b;">' + Math.round(it.val) + '</span></div>';
+                    }).join('');
+                }
+            }
+        } catch(e) {}
+    }
+
+    async function loadWellness() {
+        await loadDashboardWellness();
+        // Load sleep history
+        try {
+            var sleepData = await api('/wellness/sleep?days=7');
+            var el = document.getElementById('w-sleep-list');
+            if(!el) return;
+            if(!sleepData || !sleepData.length) {
+                el.innerHTML = '<div class="empty-state"><p>No sleep data yet. Log your first night.</p></div>';
+                return;
+            }
+            el.innerHTML = sleepData.map(function(s) {
+                var stars = '';
+                for(var i=0;i<5;i++) stars += i < (s.quality||0) ? '&#9733;' : '&#9734;';
+                var dateStr = '';
+                try { dateStr = new Date(s.date + 'T12:00:00').toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'}); } catch(e) {}
+                return '<div class="card p-3 rounded-xl flex items-center gap-3" style="border:1px solid #2a2a2e;">'
+                    + '<div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(167,139,250,0.1);font-size:1.1rem;">&#128164;</div>'
+                    + '<div class="flex-1 min-w-0">'
+                    + '<div class="text-sm font-medium" style="color:#f0f0f2;">' + (s.hours ? s.hours.toFixed(1) + 'h sleep' : 'No duration') + '</div>'
+                    + '<div class="text-xs" style="color:#5c5c6b;">' + dateStr + (s.bedtime ? ' &middot; ' + s.bedtime + ' - ' + s.wake_time : '') + '</div>'
+                    + '</div>'
+                    + '<div class="text-xs" style="color:#eab308;">' + stars + '</div>'
+                    + '</div>';
+            }).join('');
+        } catch(e) {}
+    }
+
+    function logSleepModal() {
+        var today = new Date().toISOString().split('T')[0];
+        showModal('Log Sleep', '<div class="space-y-3">'
+            + '<div><label class="field-label">Date</label><input id="sl-date" type="date" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="' + today + '"></div>'
+            + '<div class="grid grid-cols-2 gap-3">'
+            + '<div><label class="field-label">Bedtime</label><input id="sl-bedtime" type="time" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="23:00"></div>'
+            + '<div><label class="field-label">Wake Time</label><input id="sl-wake" type="time" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="07:00"></div>'
+            + '</div>'
+            + '<div><label class="field-label">Quality (1-5)</label><input id="sl-quality" type="range" min="1" max="5" value="3" class="w-full"></div>'
+            + '<div class="flex gap-2 pt-1"><button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button><button onclick="saveSleep()" class="btn-primary flex-1 py-2.5">Log Sleep</button></div>'
+            + '</div>');
+    }
+
+    async function saveSleep() {
+        var g = function(id) { return (document.getElementById(id)||{}).value||''; };
+        await api('/wellness/sleep', 'POST', {
+            date: g('sl-date'), bedtime: g('sl-bedtime'),
+            wake_time: g('sl-wake'), quality: parseInt(g('sl-quality'))||3
+        });
+        hideModal(); showToast('Sleep logged', 'success');
+        loadDashboardWellness(); loadWellness();
+    }
+
+    function setWaterGoalModal() {
+        showModal('Water Goal', '<div class="space-y-3">'
+            + '<div><label class="field-label">Daily goal (glasses)</label><input id="wg-goal" type="number" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="8" min="1" max="20"></div>'
+            + '<div class="flex gap-2 pt-1"><button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button><button onclick="saveWaterGoal()" class="btn-primary flex-1 py-2.5">Save</button></div>'
+            + '</div>');
+    }
+
+    async function saveWaterGoal() {
+        var goal = parseInt((document.getElementById('wg-goal')||{}).value)||8;
+        await api('/wellness/water/goal', 'PUT', {goal: goal});
+        hideModal(); showToast('Goal set to ' + goal + ' glasses', 'success');
+        loadDashboardWellness();
+    }
 
     // ── Journal ──────────────────────────────────────────────────
     async function loadJournal(search) {

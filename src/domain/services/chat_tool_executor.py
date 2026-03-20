@@ -49,6 +49,8 @@ def execute_tool(tool_name: str, args: dict, conn, user_id: int) -> dict:
         "log_journal": _log_journal,
         "log_book": _log_book,
         "create_note": _create_note,
+        "log_water": _log_water,
+        "log_sleep": _log_sleep,
     }
 
     handler = handlers.get(tool_name)
@@ -987,5 +989,102 @@ def _create_note(args: dict, conn, user_id: int) -> dict:
 
     return {"status": "ok", "note_id": cursor.lastrowid, "title": title}
 
+
+# ---------------------------------------------------------------------------
+# Wellness — Water
+# ---------------------------------------------------------------------------
+
+def _log_water(args: dict, conn, user_id: int) -> dict:
+    try:
+        glasses = int(args.get("glasses", 1))
+    except (TypeError, ValueError):
+        glasses = 1
+    glasses = max(1, glasses)
+
+    conn.execute(
+        "INSERT INTO water_logs (user_id, glasses) VALUES (?, ?)",
+        (user_id, glasses),
+    )
+    conn.commit()
+
+    total_row = conn.execute(
+        "SELECT COALESCE(SUM(glasses), 0) as total FROM water_logs WHERE user_id = ? AND date(logged_at) = date('now')",
+        (user_id,),
+    ).fetchone()
+
+    return {
+        "status": "ok",
+        "glasses": glasses,
+        "total_today": total_row["total"],
+        "message": f"Logged {glasses} glass(es) of water. Total today: {total_row['total']}",
+    }
+
+
+# ---------------------------------------------------------------------------
+# Wellness — Sleep
+# ---------------------------------------------------------------------------
+
+def _log_sleep(args: dict, conn, user_id: int) -> dict:
+    from datetime import date as _date, datetime as _datetime, timedelta as _timedelta
+
+    sleep_date = (args.get("date") or _date.today().isoformat()).strip()
+    bedtime = (args.get("bedtime") or "").strip() or None
+    wake_time = (args.get("wake_time") or "").strip() or None
+
+    try:
+        quality = int(args.get("quality", 3))
+        quality = max(1, min(5, quality))
+    except (TypeError, ValueError):
+        quality = 3
+
+    # Calculate hours if both times provided
+    hours = None
+    if bedtime and wake_time:
+        try:
+            bed = _datetime.strptime(bedtime, "%H:%M")
+            wake = _datetime.strptime(wake_time, "%H:%M")
+            delta = wake - bed
+            if delta.total_seconds() < 0:
+                delta += _timedelta(days=1)
+            hours = round(delta.total_seconds() / 3600, 2)
+        except ValueError:
+            pass
+
+    existing = conn.execute(
+        "SELECT id FROM sleep_logs WHERE user_id = ? AND date = ?",
+        (user_id, sleep_date),
+    ).fetchone()
+
+    if existing:
+        conn.execute(
+            """UPDATE sleep_logs
+               SET bedtime = ?, wake_time = ?, hours = ?, quality = ?
+               WHERE id = ? AND user_id = ?""",
+            (bedtime, wake_time, hours, quality, existing["id"], user_id),
+        )
+        log_id = existing["id"]
+    else:
+        cursor = conn.execute(
+            """INSERT INTO sleep_logs (user_id, date, bedtime, wake_time, hours, quality)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (user_id, sleep_date, bedtime, wake_time, hours, quality),
+        )
+        log_id = cursor.lastrowid
+
+    conn.commit()
+
+    msg_parts = [f"Sleep logged for {sleep_date}"]
+    if hours is not None:
+        msg_parts.append(f"{hours}h sleep")
+    msg_parts.append(f"quality {quality}/5")
+
+    return {
+        "status": "ok",
+        "log_id": log_id,
+        "date": sleep_date,
+        "hours": hours,
+        "quality": quality,
+        "message": ", ".join(msg_parts),
+    }
 
 __all__ = ["execute_tool"]

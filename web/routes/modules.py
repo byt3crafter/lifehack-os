@@ -21,6 +21,7 @@ MODULE_DEFS = {
     'journal':    {'name': 'Journal',     'description': 'Daily journaling with gratitude, wins, and reflections', 'default': False},
     'books':      {'name': 'Books',       'description': 'Book tracker with reading sessions and yearly challenge', 'default': False},
     'notes':      {'name': 'Notes',       'description': 'Quick capture notes with folders and search',            'default': False},
+    'wellness':   {'name': 'Wellness',    'description': 'Water intake, sleep tracking, and wellness score',        'default': False},
 }
 
 _SETTING_KEY = 'enabled_modules'

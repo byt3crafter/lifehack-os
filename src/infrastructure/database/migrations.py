@@ -659,6 +659,38 @@ def run_migrations(conn) -> None:
         conn.commit()
         print("  Migration 19: Add email and use_gravatar to user_profiles")
 
+    # Migration 20: Wellness — water_logs and sleep_logs
+    current = get_current_version(conn)
+    if current < 20:
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS water_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER REFERENCES users(id),
+                glasses INTEGER NOT NULL DEFAULT 1,
+                logged_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_water_logs_user ON water_logs(user_id);
+
+            CREATE TABLE IF NOT EXISTS sleep_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER REFERENCES users(id),
+                date TEXT NOT NULL,
+                bedtime TEXT,
+                wake_time TEXT,
+                hours REAL,
+                quality INTEGER DEFAULT 3,
+                notes TEXT DEFAULT '',
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_sleep_logs_user ON sleep_logs(user_id);
+            CREATE INDEX IF NOT EXISTS idx_sleep_logs_date ON sleep_logs(date);
+        """)
+        conn.execute(
+            "INSERT OR IGNORE INTO schema_version (version, description) VALUES (20, 'Wellness: water_logs and sleep_logs')"
+        )
+        conn.commit()
+        print("  Migration 20: Wellness — water_logs and sleep_logs")
+
     # Migration 18: Journal, Books, Notes modules
     current = get_current_version(conn)
     if current < 18:

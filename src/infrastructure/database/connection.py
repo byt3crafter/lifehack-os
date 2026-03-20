@@ -591,6 +591,26 @@ def init_database() -> None:
             UNIQUE(user_id, week_start)
         );
 
+        -- Wellness
+        CREATE TABLE IF NOT EXISTS water_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER REFERENCES users(id),
+            glasses INTEGER NOT NULL DEFAULT 1,
+            logged_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS sleep_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER REFERENCES users(id),
+            date TEXT NOT NULL,
+            bedtime TEXT,
+            wake_time TEXT,
+            hours REAL,
+            quality INTEGER DEFAULT 3,
+            notes TEXT DEFAULT '',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
         -- Indexes
         CREATE INDEX IF NOT EXISTS idx_habit_completions_date ON habit_completions(completed_at);
         CREATE INDEX IF NOT EXISTS idx_checkins_date ON daily_checkins(date);
@@ -675,6 +695,9 @@ def init_database() -> None:
         );
         CREATE INDEX IF NOT EXISTS idx_notes_user ON notes(user_id);
         CREATE INDEX IF NOT EXISTS idx_notes_pinned ON notes(pinned);
+        CREATE INDEX IF NOT EXISTS idx_water_logs_user ON water_logs(user_id);
+        CREATE INDEX IF NOT EXISTS idx_sleep_logs_user ON sleep_logs(user_id);
+        CREATE INDEX IF NOT EXISTS idx_sleep_logs_date ON sleep_logs(date);
     """)
 
     conn.commit()

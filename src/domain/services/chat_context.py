@@ -146,6 +146,16 @@ def assemble_context(conn, user_id: int) -> dict:
         (user_id,),
     )
 
+    # Water intake today
+    context['water_today'] = _safe_query(conn,
+        "SELECT COALESCE(SUM(glasses), 0) as total FROM water_logs WHERE user_id = ? AND date(logged_at) = ?",
+        (user_id, today))
+
+    # Sleep last night
+    context['sleep_last'] = _safe_query(conn,
+        "SELECT date, bedtime, wake_time, hours, quality FROM sleep_logs WHERE user_id = ? ORDER BY date DESC LIMIT 1",
+        (user_id,))
+
     # Discover items
     context['discover_items'] = _safe_query(
         conn,
