@@ -804,6 +804,28 @@ def run_migrations(conn) -> None:
         conn.commit()
         print("  Migration 20: Wellness — water_logs and sleep_logs")
 
+    # Migration 24: Add images_json to food_logs for multiple images
+    current = get_current_version(conn)
+    if current < 24:
+        fl_cols = [r[1] for r in conn.execute("PRAGMA table_info(food_logs)").fetchall()]
+        if 'images_json' not in fl_cols:
+            conn.execute("ALTER TABLE food_logs ADD COLUMN images_json TEXT DEFAULT '[]'")
+        # Migrate existing image_path values into images_json
+        rows = conn.execute(
+            "SELECT id, image_path FROM food_logs WHERE image_path IS NOT NULL AND image_path != ''"
+        ).fetchall()
+        for r in rows:
+            import json as _json
+            conn.execute(
+                "UPDATE food_logs SET images_json = ? WHERE id = ?",
+                (_json.dumps([r['image_path']]), r['id'])
+            )
+        conn.execute(
+            "INSERT OR IGNORE INTO schema_version (version, description) VALUES (24, 'Add images_json to food_logs')"
+        )
+        conn.commit()
+        print("  Migration 24: Add images_json to food_logs")
+
     # Migration 18: Journal, Books, Notes modules
     current = get_current_version(conn)
     if current < 18:

@@ -1,5 +1,6 @@
 """Food/nutrition routes."""
 import base64
+import json
 import traceback
 import uuid
 from datetime import datetime
@@ -35,6 +36,14 @@ def _format_logged_at(raw: str) -> str:
 
 def _serialize_log(r) -> dict:
     """Serialize a food_logs row to a dict."""
+    images = []
+    try:
+        images = json.loads(r['images_json'] or '[]')
+    except (json.JSONDecodeError, TypeError, KeyError):
+        # Fallback to single image_path for rows predating images_json
+        if r.get('image_path'):
+            images = [r['image_path']]
+
     return {
         'id': r['id'],
         'logged_at': r['logged_at'],
@@ -45,7 +54,8 @@ def _serialize_log(r) -> dict:
         'protein_g': r['protein_g'],
         'carbs_g': r['carbs_g'],
         'fat_g': r['fat_g'],
-        'image_path': r['image_path'],
+        'images': images,
+        'image_path': images[0] if images else r.get('image_path'),  # backward compat
         'ai_analysis': r['ai_analysis'],
         'notes': r['notes'] if 'notes' in r.keys() else '',
         'rating': r['rating'] if 'rating' in r.keys() else None,
@@ -197,17 +207,17 @@ def upload_food_image(food_id):
     """Upload a new image for an existing food log entry.
 
     Accepts multipart/form-data with an ``image`` file field.
-    Saves the file to static/uploads/ and updates the food_logs row.
+    Saves the file to static/uploads/ and appends to images_json.
 
     Returns:
-        {"success": true, "image_path": "/uploads/<filename>"}
+        {"success": true, "image_path": "/uploads/<filename>", "images": [...]}
     """
     uid = current_user_id()
     _ensure_upload_dir()
 
     conn = get_connection()
     row = conn.execute(
-        "SELECT id FROM food_logs WHERE id = ? AND user_id = ?", (food_id, uid)
+        "SELECT id, images_json FROM food_logs WHERE id = ? AND user_id = ?", (food_id, uid)
     ).fetchone()
     if not row:
         return jsonify({'success': False, 'error': 'Food entry not found'}), 404
@@ -243,16 +253,81 @@ def upload_food_image(food_id):
         image_url = f"/uploads/{filename}"
         full_url = image_url
 
+    # Append to images_json; keep image_path as the first image (backward compat)
+    existing = []
+    try:
+        existing = json.loads(row['images_json'] or '[]')
+    except (json.JSONDecodeError, TypeError):
+        pass
+    existing.append(image_url)
+
     conn.execute(
-        "UPDATE food_logs SET image_path = ? WHERE id = ? AND user_id = ?",
-        (image_url, food_id, uid)
+        "UPDATE food_logs SET image_path = ?, images_json = ? WHERE id = ? AND user_id = ?",
+        (existing[0], json.dumps(existing), food_id, uid)
     )
     conn.commit()
 
     from .app_log import log_event
     log_event('info', 'food', f'Image updated for food #{food_id}', image_url)
 
-    return jsonify({'success': True, 'image_path': image_url, 'full_path': full_url})
+    return jsonify({'success': True, 'image_path': image_url, 'full_path': full_url, 'images': existing})
+
+
+@food_bp.route('/<int:food_id>/add-image', methods=['POST'])
+@login_required
+def add_food_image(food_id):
+    """Add an additional image to an existing food log entry (does not replace existing images)."""
+    uid = current_user_id()
+    _ensure_upload_dir()
+
+    conn = get_connection()
+    row = conn.execute(
+        "SELECT id, images_json FROM food_logs WHERE id = ? AND user_id = ?", (food_id, uid)
+    ).fetchone()
+    if not row:
+        return jsonify({'error': 'Not found'}), 404
+
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image file'}), 400
+
+    file = request.files['image']
+    if not file or not file.filename:
+        return jsonify({'error': 'Empty file'}), 400
+
+    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+    if ext not in _ALLOWED_EXTENSIONS:
+        return jsonify({'error': 'Unsupported file type'}), 400
+
+    # Process with image service (compress + thumbnail)
+    from src.infrastructure.services.image_service import process_upload
+    base_name = uuid.uuid4().hex
+    results = process_upload(file, str(_UPLOAD_DIR.parent), 'food', base_name, sizes=['full', 'thumb'], quality=75)
+
+    if results.get('thumb'):
+        new_url = f"/uploads/{results['thumb']}"
+    else:
+        # Fallback if Pillow not available
+        filename = f"{base_name}.{ext}"
+        file.seek(0)
+        (_UPLOAD_DIR / filename).parent.mkdir(parents=True, exist_ok=True)
+        file.save(str(_UPLOAD_DIR / filename))
+        new_url = f"/uploads/{filename}"
+
+    # Append to images_json
+    existing = []
+    try:
+        existing = json.loads(row['images_json'] or '[]')
+    except (json.JSONDecodeError, TypeError):
+        pass
+    existing.append(new_url)
+
+    conn.execute(
+        "UPDATE food_logs SET images_json = ?, image_path = ? WHERE id = ? AND user_id = ?",
+        (json.dumps(existing), existing[0], food_id, uid)
+    )
+    conn.commit()
+
+    return jsonify({'success': True, 'images': existing})
 
 
 @food_bp.route('/identify', methods=['POST'])

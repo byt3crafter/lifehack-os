@@ -43,10 +43,10 @@ TOOL_DEFINITIONS = [
     # ── Food ────────────────────────────────────────────────────────────────
     {
         "name": "log_food",
-        "description": "Log a meal or food entry with optional nutrition data",
+        "description": "Log a meal or drink with nutrition info",
         "parameters": {
-            "description": "string (required) — what was eaten",
-            "meal_type": "string — breakfast/lunch/dinner/snack/meal (default: meal)",
+            "description": "string (required) — what you ate or drank",
+            "meal_type": "string — breakfast/lunch/dinner/snack/drink/coffee/smoothie/tea/alcohol/juice/water/meal (default: meal)",
             "calories": "number (optional)",
             "protein_g": "number (optional)",
             "carbs_g": "number (optional)",

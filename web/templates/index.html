@@ -4218,10 +4218,17 @@
         }
 
         const mealMeta = {
-            breakfast: {label:'Breakfast', color:'#f59e0b', bg:'rgba(245,158,11,0.12)'},
-            lunch:     {label:'Lunch',     color:'#22c55e', bg:'rgba(34,197,94,0.12)'},
-            dinner:    {label:'Dinner',    color:'#4f80ff', bg:'rgba(79,128,255,0.12)'},
-            snack:     {label:'Snack',     color:'#8b5cf6', bg:'rgba(139,92,246,0.12)'},
+            breakfast: {label:'Breakfast', color:'#f59e0b', bg:'rgba(245,158,11,0.12)', icon:'&#127749;'},
+            lunch:     {label:'Lunch',     color:'#22c55e', bg:'rgba(34,197,94,0.12)', icon:'&#127858;'},
+            dinner:    {label:'Dinner',    color:'#4f80ff', bg:'rgba(79,128,255,0.12)', icon:'&#127869;'},
+            snack:     {label:'Snack',     color:'#8b5cf6', bg:'rgba(139,92,246,0.12)', icon:'&#127852;'},
+            drink:     {label:'Drink',     color:'#38bdf8', bg:'rgba(56,189,248,0.12)', icon:'&#129380;'},
+            coffee:    {label:'Coffee',    color:'#a16207', bg:'rgba(161,98,7,0.12)', icon:'&#9749;'},
+            tea:       {label:'Tea',       color:'#14b8a6', bg:'rgba(20,184,166,0.12)', icon:'&#127861;'},
+            smoothie:  {label:'Smoothie',  color:'#ec4899', bg:'rgba(236,72,153,0.12)', icon:'&#129382;'},
+            juice:     {label:'Juice',     color:'#f97316', bg:'rgba(249,115,22,0.12)', icon:'&#127863;'},
+            alcohol:   {label:'Alcohol',   color:'#ef4444', bg:'rgba(239,68,68,0.12)', icon:'&#127866;'},
+            meal:      {label:'Meal',      color:'#9898a6', bg:'rgba(152,152,166,0.12)', icon:'&#127860;'},
         };
 
         // Group logs by date
@@ -4235,15 +4242,23 @@
 
         const renderCard = m => {
             const time = m.logged_at ? new Date(m.logged_at.replace(' ','T')).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
-            const meta = mealMeta[m.meal_type] || mealMeta.snack;
+            const meta = mealMeta[m.meal_type] || mealMeta.meal || mealMeta.snack;
             const hasNutrition = m.protein_g || m.carbs_g || m.fat_g;
             const maxMacro = Math.max(m.protein_g||0, m.carbs_g||0, m.fat_g||0, 1);
             const safeDesc = (m.description||'').replace(/'/g, '&#39;').replace(/"/g, '&quot;');
-            const imgSrc = m.image_path || '';
+            const images = m.images || (m.image_path ? [m.image_path] : []);
+            const imgSrc = images[0] || m.image_path || '';
 
-            const thumb = imgSrc
-                ? '<img src="' + imgSrc + '" alt="" class="w-12 h-12 rounded-lg object-cover flex-shrink-0">'
-                : '<div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold" style="background:' + meta.bg + ';color:' + meta.color + ';">' + meta.label.charAt(0) + '</div>';
+            let thumb = '';
+            if(images.length > 1) {
+                thumb = '<div class="flex gap-1 flex-shrink-0">' + images.slice(0,3).map(function(src) {
+                    return '<img src="' + src + '" alt="" style="width:40px;height:40px;border-radius:8px;object-fit:cover;">';
+                }).join('') + (images.length > 3 ? '<div style="width:40px;height:40px;border-radius:8px;background:#1c1c20;display:flex;align-items:center;justify-content:center;font-size:0.7rem;color:#5c5c6b;">+' + (images.length-3) + '</div>' : '') + '</div>';
+            } else if(imgSrc) {
+                thumb = '<img src="' + imgSrc + '" alt="" class="w-12 h-12 rounded-lg object-cover flex-shrink-0">';
+            } else {
+                thumb = '<div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background:' + meta.bg + ';color:' + meta.color + ';font-size:1.1rem;">' + (meta.icon || meta.label.charAt(0)) + '</div>';
+            }
 
             const mealBadge = '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium" style="background:' + meta.bg + ';color:' + meta.color + ';">' + meta.label + '</span>';
 
@@ -4264,7 +4279,7 @@
                 barsHtml += '</div>';
             }
 
-            return '<div class="card rounded-xl p-3" style="border:1px solid #2a2a2e;">'
+            return '<div class="card rounded-xl p-3" style="border:1px solid #2a2a2e;position:relative;">'
                 + '<div class="flex items-start gap-3">'
                 + thumb
                 + '<div class="flex-1 min-w-0">'
@@ -4287,9 +4302,11 @@
                     + '</div>' : '')
                 + '</div>'
                 + '</div>'
-                + '<div class="flex items-center gap-1 mt-2.5 pt-2.5" style="border-top:1px solid #242428;">'
-                + '<button onclick="window._efRating=' + (m.rating||0) + '; window._efMoodAfter=' + (m.mood_after||0) + '; editFoodModal(' + m.id + ', \'' + (m.meal_type||'snack') + '\', \'' + safeDesc + '\', ' + (m.calories||0) + ', ' + (m.protein_g||0) + ', ' + (m.carbs_g||0) + ', ' + (m.fat_g||0) + ', \'' + imgSrc + '\', \'' + (m.notes||'').replace(/'/g,'&#39;') + '\')" class="action-link">Edit</button>'
-                + '<button onclick="deleteFood(' + m.id + ')" class="action-link-danger">Delete</button>'
+                + '</div>'
+                // Subtle action icons — top right corner
+                + '<div class="flex gap-1 flex-shrink-0 mt-0.5" style="opacity:0.4;transition:opacity 0.15s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.4">'
+                + '<button onclick="window._efRating=' + (m.rating||0) + '; window._efMoodAfter=' + (m.mood_after||0) + '; editFoodModal(' + m.id + ', \'' + (m.meal_type||'snack') + '\', \'' + safeDesc + '\', ' + (m.calories||0) + ', ' + (m.protein_g||0) + ', ' + (m.carbs_g||0) + ', ' + (m.fat_g||0) + ', \'' + imgSrc + '\', \'' + (m.notes||'').replace(/'/g,'&#39;') + '\')" style="background:none;border:none;cursor:pointer;padding:4px;color:#5c5c6b;" title="Edit"><svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M14.5 3.5l2 2L7 15H5v-2L14.5 3.5z"/></svg></button>'
+                + '<button onclick="deleteFood(' + m.id + ')" style="background:none;border:none;cursor:pointer;padding:4px;color:#5c5c6b;" title="Delete"><svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5l10 10M15 5L5 15"/></svg></button>'
                 + '</div>'
                 + '</div>';
         };
@@ -4320,7 +4337,7 @@
 
     function addFoodModal() {
         _pendingFoodImage = null;
-        showModal('Log Meal',
+        showModal('Log Meal / Drink',
             // Compact horizontal layout: photo left, description right
             '<div class="flex gap-3 items-start">'
             + '<div style="width:100px;flex-shrink:0;">'
@@ -4337,7 +4354,8 @@
             + '<div class="flex-1">'
             + '<textarea id="nf-desc" class="w-full px-3 py-2 rounded-lg border text-sm" rows="3" placeholder="What did you eat?"></textarea>'
             + '<select id="nf-type" class="w-full px-3 py-2 rounded-lg border text-sm mt-2">'
-            + '<option value="breakfast">Breakfast</option><option value="lunch">Lunch</option><option value="dinner">Dinner</option><option value="snack">Snack</option>'
+            + '<optgroup label="Meals"><option value="breakfast">Breakfast</option><option value="lunch">Lunch</option><option value="dinner">Dinner</option><option value="snack">Snack</option></optgroup>'
+            + '<optgroup label="Drinks"><option value="drink">Drink</option><option value="coffee">Coffee</option><option value="tea">Tea</option><option value="smoothie">Smoothie</option><option value="juice">Juice</option><option value="alcohol">Alcohol</option></optgroup>'
             + '</select>'
             + '</div>'
             + '</div>'

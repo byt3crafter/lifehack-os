@@ -204,7 +204,8 @@ def init_database() -> None:
             ai_analysis TEXT,
             notes TEXT DEFAULT '',
             rating INTEGER,
-            mood_after INTEGER
+            mood_after INTEGER,
+            images_json TEXT DEFAULT '[]'
         );
 
         -- Fasting Logs
