@@ -223,11 +223,25 @@ def upload_food_image(food_id):
     if ext not in _ALLOWED_EXTENSIONS:
         return jsonify({'success': False, 'error': 'Unsupported file type'}), 400
 
-    filename = f"{uuid.uuid4().hex}.{ext}"
-    save_path = _UPLOAD_DIR / filename
-    file.save(str(save_path))
+    # Compress + create thumbnail
+    from src.infrastructure.services.image_service import process_upload
+    base_name = uuid.uuid4().hex
+    results = process_upload(
+        file, str(_UPLOAD_DIR.parent), 'food', base_name,
+        sizes=['full', 'thumb'], quality=75
+    )
 
-    image_url = f"/uploads/{filename}"
+    if results.get('thumb'):
+        image_url = f"/uploads/{results['thumb']}"
+        full_url = f"/uploads/{results.get('full', results['thumb'])}"
+    else:
+        # Fallback if Pillow not available
+        filename = f"{base_name}.{ext}"
+        save_path = _UPLOAD_DIR / filename
+        file.seek(0)
+        file.save(str(save_path))
+        image_url = f"/uploads/{filename}"
+        full_url = image_url
 
     conn.execute(
         "UPDATE food_logs SET image_path = ? WHERE id = ? AND user_id = ?",
@@ -238,7 +252,7 @@ def upload_food_image(food_id):
     from .app_log import log_event
     log_event('info', 'food', f'Image updated for food #{food_id}', image_url)
 
-    return jsonify({'success': True, 'image_path': image_url})
+    return jsonify({'success': True, 'image_path': image_url, 'full_path': full_url})
 
 
 @food_bp.route('/identify', methods=['POST'])

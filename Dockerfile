@@ -36,7 +36,8 @@ RUN pip install --no-cache-dir --upgrade pip \
         "flask-cors>=4.0.0" \
         "requests>=2.31.0" \
         "python-dotenv>=1.0.0" \
-        "toml>=0.10.2"
+        "toml>=0.10.2" \
+        "Pillow>=10.0.0"
 
 # -------------------------------------------------------------------
 # Copy source code

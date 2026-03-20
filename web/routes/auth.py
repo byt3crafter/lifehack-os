@@ -599,13 +599,23 @@ def update_profile():
     if photo_file and photo_file.filename:
         if not _allowed_image(photo_file.filename):
             return jsonify({'error': 'Unsupported image format'}), 400
-        os.makedirs(_UPLOAD_DIR, exist_ok=True)
-        ext = photo_file.filename.rsplit('.', 1)[1].lower()
-        filename = f"{uid}.{ext}"
-        save_path = os.path.join(_UPLOAD_DIR, filename)
-        photo_file.save(save_path)
-        # Store as relative path from data/uploads/ so /uploads/{photo_path} resolves correctly
-        photo_path = f"profiles/{filename}"
+        from src.infrastructure.services.image_service import process_upload
+        from pathlib import Path as P
+        upload_base = str(P(_UPLOAD_DIR).parent)
+        results = process_upload(
+            photo_file, upload_base, 'profiles', str(uid),
+            sizes=['thumb', 'micro'], quality=80
+        )
+        if results.get('thumb'):
+            photo_path = results['thumb']
+        else:
+            os.makedirs(_UPLOAD_DIR, exist_ok=True)
+            ext = photo_file.filename.rsplit('.', 1)[1].lower()
+            filename = f"{uid}.{ext}"
+            save_path = os.path.join(_UPLOAD_DIR, filename)
+            photo_file.seek(0)
+            photo_file.save(save_path)
+            photo_path = f"profiles/{filename}"
 
     # --- Update display_name on users table if provided ---
     display_name = (data.get('display_name') or '').strip()
