@@ -773,13 +773,26 @@ def _list_dw_projects(args: dict, conn, user_id: int) -> dict:
 
 def _start_deep_work(args: dict, conn, user_id: int) -> dict:
     project_id = args.get("project_id")
+    project_name = (args.get("project_name") or "").strip()
     notes = (args.get("notes") or "").strip()
 
+    # Resolve project by name if no ID given
     if project_id is not None:
         try:
             project_id = int(project_id)
         except (TypeError, ValueError):
+            # Could be a Vikunja project name passed as ID — try name lookup
+            if not project_name:
+                project_name = str(project_id)
             project_id = None
+
+    if not project_id and project_name:
+        row = conn.execute(
+            "SELECT id FROM deep_work_projects WHERE LOWER(name) LIKE ? AND user_id = ? AND active = 1",
+            (f"%{project_name.lower()}%", user_id),
+        ).fetchone()
+        if row:
+            project_id = row["id"]
 
     # End any active session for this user first
     conn.execute(
