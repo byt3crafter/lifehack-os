@@ -398,8 +398,9 @@ Available tools:
 {tools_text}
 
 Rules for tool use:
-- Only call a tool when the user explicitly asks you to take an action.
-- For questions, advice, or analysis — just answer; do NOT call tools.
+- Call a tool when the user asks you to DO something (create, log, add, delete, record, show, list, check).
+- "Show me my accounts", "list my transactions", "what did I spend" — these require tools to get fresh data. Use the appropriate firefly_* or list_* tool.
+- For general advice or analysis of data already in context — just answer without tools.
 - You may call multiple tools in one response — put each on its own line.
 - After the tool results are fed back to you, summarise what happened in 1-2 sentences.
 - Never invent habit_id or challenge_id values. Look them up in the context data above.

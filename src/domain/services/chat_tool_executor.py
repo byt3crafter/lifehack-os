@@ -479,6 +479,25 @@ def _log_transaction(args: dict, conn, user_id: int) -> dict:
     category = (args.get("category") or "").strip()
     tx_date = date.today().isoformat()
 
+    # Also sync to Firefly III if connected
+    firefly_result = None
+    try:
+        from src.infrastructure.services.firefly_service import firefly_service
+        if firefly_service.is_connected(user_id):
+            firefly_result = firefly_service.create_transaction(
+                description=description,
+                amount=amount,
+                tx_type=tx_type,
+                category=category,
+                date_str=tx_date,
+                destination_name=args.get("destination_name"),
+                notes=args.get("notes"),
+                user_id=user_id,
+            )
+    except Exception:
+        pass
+
+    # Always log locally as well
     cursor = conn.execute(
         """INSERT INTO finance_log (date, amount, description, category, type, source, user_id)
            VALUES (?, ?, ?, ?, ?, 'chat', ?)""",
@@ -487,10 +506,15 @@ def _log_transaction(args: dict, conn, user_id: int) -> dict:
     conn.commit()
 
     sign = "+" if tx_type == "deposit" else "-"
+    msg = f"Logged {tx_type}: {sign}{amount:.2f} — {description}"
+    if firefly_result:
+        msg += f" (synced to Firefly III #{firefly_result['id']})"
+
     return {
         "success": True,
         "transaction_id": cursor.lastrowid,
-        "message": f"Logged {tx_type}: {sign}{amount:.2f} — {description}",
+        "firefly_id": firefly_result['id'] if firefly_result else None,
+        "message": msg,
     }
 
 
