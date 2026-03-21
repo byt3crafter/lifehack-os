@@ -6169,13 +6169,11 @@
 
     async function toggleVikunja(enabled) {
         if(enabled) {
-            // Try re-enabling with saved credentials first
-            var r = await api('/integrations/vikunja', 'POST', {enabled: true});
-            if(r && r.success) {
-                showToast('Vikunja re-enabled!', 'success');
-                loadSettings();
-                return;
-            }
+            // Try re-enabling with saved credentials (silent — no error toast)
+            try {
+                var resp = await fetch('/api/integrations/vikunja', {method:'POST', headers:{'Content-Type':'application/json'}, credentials:'same-origin', body: JSON.stringify({enabled: true})});
+                if(resp.ok) { showToast('Vikunja re-enabled!', 'success'); loadSettings(); return; }
+            } catch(_) {}
             // No saved credentials — show connect modal
             showModal('Connect Vikunja', '<div class="space-y-3">'
                 + '<div><label class="text-xs text-gray-400">API URL</label>'
