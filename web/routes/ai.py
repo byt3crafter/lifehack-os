@@ -37,32 +37,53 @@ _TASK_SETTING_KEYS = {
 def ai_usage():
     """Return recent AI usage log with aggregate totals.
 
-    ai_usage_log is global (not user-scoped) — it tracks provider-level
-    usage across the whole installation.
+    Non-admin users only see their own usage (filtered by user_id).
+    Admins see all usage across the installation.
 
     Query parameters:
         limit  — number of recent entries to return (default 100)
     """
     limit = request.args.get('limit', 100, type=int)
+    uid = current_user_id()
     conn = get_connection()
 
+    # Non-admin users only see their own usage
+    user = conn.execute(
+        "SELECT is_admin FROM users WHERE id = ?", (uid,)
+    ).fetchone()
+    is_admin = user and user['is_admin']
+
+    if is_admin:
+        where_clause = ""
+        params = (limit,)
+        totals_where = ""
+        totals_params = ()
+    else:
+        where_clause = "WHERE user_id = ?"
+        params = (uid, limit)
+        totals_where = "WHERE user_id = ?"
+        totals_params = (uid,)
+
     rows = conn.execute(
-        """SELECT timestamp, provider, model, action,
+        f"""SELECT timestamp, provider, model, action,
                   input_tokens, output_tokens, total_tokens,
                   cost_usd, success, error_message, duration_ms
            FROM ai_usage_log
+           {where_clause}
            ORDER BY timestamp DESC
            LIMIT ?""",
-        (limit,),
+        params,
     ).fetchall()
 
     totals_row = conn.execute(
-        """SELECT
+        f"""SELECT
                COUNT(*) AS total_calls,
                SUM(total_tokens) AS total_tokens,
                SUM(cost_usd) AS total_cost_usd,
                SUM(success) AS success_count
-           FROM ai_usage_log"""
+           FROM ai_usage_log
+           {totals_where}""",
+        totals_params,
     ).fetchone()
 
     total_calls = totals_row['total_calls'] or 0
