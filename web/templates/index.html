@@ -2738,7 +2738,9 @@
                     .cm-msg { max-width:720px; margin:0 auto; width:100%; padding:16px 24px; }
                     .cm-msg-user { background:rgba(255,255,255,0.02); }
                     .cm-msg-ai { background:transparent; }
-                    #chatmode-messages { display:flex; flex-direction:column; justify-content:flex-end; }
+                    #chatmode-messages { display:flex; flex-direction:column; }
+                    #chatmode-messages-spacer { flex:1; }
+                    #chatmode-messages-inner { flex-shrink:0; }
                     #chatmode-input:focus { outline:none !important; box-shadow:none !important; border:none !important; }
                     .cm-input-wrap:focus-within { border-color:#3a3a48 !important; }
                     .cm-avatar { width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px; }
@@ -5897,7 +5899,9 @@
             // Profile photo preview in settings panel
             _updateProfilePhotoPreview(data.photo_url, data.display_name || data.username);
 
-            // Update sidebar avatars
+            // Update sidebar avatars + store globally for chat
+            window._userPhotoUrl = data.photo_url || '';
+            window._userDisplayName = data.display_name || data.username || '';
             _updateSidebarAvatar(data.photo_url, data.display_name || data.username);
         } catch(e) {}
         loadInviteCodes();
@@ -9638,16 +9642,23 @@
     function renderChatModeMessages() {
         var container = document.getElementById('chatmode-messages');
         if (!container) return;
+
+        // User avatar — Gravatar or fallback
+        var userAvatar;
+        if (window._userPhotoUrl) {
+            userAvatar = '<div class="cm-avatar" style="overflow:hidden;border-radius:50%;"><img src="' + window._userPhotoUrl + '" style="width:100%;height:100%;object-fit:cover;" alt=""></div>';
+        } else {
+            var initial = (window._userDisplayName || 'U').charAt(0).toUpperCase();
+            userAvatar = '<div class="cm-avatar" style="background:rgba(79,128,255,0.15);border-radius:50%;font-size:0.75rem;font-weight:600;color:#4f80ff;">' + initial + '</div>';
+        }
+        var aiAvatar = '<div class="cm-avatar" style="background:linear-gradient(135deg,#4f80ff,#8b5cf6);border-radius:50%;"><svg width="14" height="14" fill="none" stroke="#fff" viewBox="0 0 24 24" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>';
+
         var html = '';
         for (var i = 0; i < _chatModeMessages.length; i++) {
             var m = _chatModeMessages[i];
             var isUser = m.role === 'user';
             var msgClass = isUser ? 'cm-msg cm-msg-user' : 'cm-msg cm-msg-ai';
-
-            // Avatar
-            var avatar = isUser
-                ? '<div class="cm-avatar" style="background:rgba(79,128,255,0.15);"><svg width="14" height="14" fill="none" stroke="#4f80ff" viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></div>'
-                : '<div class="cm-avatar" style="background:linear-gradient(135deg,#4f80ff,#8b5cf6);"><svg width="14" height="14" fill="none" stroke="#fff" viewBox="0 0 24 24" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>';
+            var avatar = isUser ? userAvatar : aiAvatar;
 
             var imgBadge = (m.has_image && isUser) ? '<div class="cm-img-badge">&#128247; Image attached</div>' : '';
 
@@ -9666,7 +9677,8 @@
                 + '</div>'
                 + '</div></div>';
         }
-        container.innerHTML = html;
+        // Spacer pushes messages to bottom when few, scrollable when many
+        container.innerHTML = '<div id="chatmode-messages-spacer"></div><div id="chatmode-messages-inner">' + html + '</div>';
         container.scrollTop = container.scrollHeight;
     }
 
