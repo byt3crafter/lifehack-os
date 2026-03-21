@@ -153,6 +153,37 @@ TOOL_DEFINITIONS = [
         "description": "End the current deep-work session and record its duration",
         "parameters": {},
     },
+    # ── Vikunja (Task Management Integration) ─────────────────────────────
+    {
+        "name": "list_vikunja_projects",
+        "description": "List all projects from the connected Vikunja task manager",
+        "parameters": {},
+    },
+    {
+        "name": "list_vikunja_tasks",
+        "description": "List tasks from a Vikunja project",
+        "parameters": {
+            "project_id": "string (required) — Vikunja project ID",
+        },
+    },
+    {
+        "name": "create_vikunja_task",
+        "description": "Create a new task in Vikunja",
+        "parameters": {
+            "project_id": "string (required) — Vikunja project ID",
+            "title": "string (required) — task title",
+            "description": "string (optional) — task details",
+            "priority": "integer 0-4 (optional, 0=none, 1=low, 2=medium, 3=high, 4=urgent)",
+            "due_date": "string (optional) — ISO date e.g. 2026-03-25",
+        },
+    },
+    {
+        "name": "complete_vikunja_task",
+        "description": "Mark a Vikunja task as done",
+        "parameters": {
+            "task_id": "string (required) — Vikunja task ID",
+        },
+    },
     # ── Mood / Check-in ─────────────────────────────────────────────────────
     {
         "name": "log_mood",

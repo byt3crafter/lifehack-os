@@ -119,6 +119,21 @@ def assemble_context(conn, user_id: int) -> dict:
         (user_id, today),
     )
 
+    # Vikunja integration — projects and recent tasks
+    try:
+        from src.infrastructure.plugins import plugin_registry
+        stored = plugin_registry.get_config("vikunja", user_id)
+        if stored.get("enabled"):
+            plugin = plugin_registry.get("vikunja")
+            provider = plugin.get_provider(stored.get("config", {}))
+            vk_projects = provider.get_projects()
+            context['vikunja_projects'] = [
+                {"id": p.id, "title": p.title, "task_count": p.task_count}
+                for p in vk_projects
+            ]
+    except Exception:
+        pass
+
     # Finance — subscriptions (active)
     context['subscriptions'] = _safe_query(conn,
         "SELECT name, cost, billing_cycle, category, worth_it FROM subscriptions WHERE user_id = ? AND active = 1",

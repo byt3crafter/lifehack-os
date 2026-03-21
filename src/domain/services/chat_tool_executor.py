@@ -55,6 +55,10 @@ def execute_tool(tool_name: str, args: dict, conn, user_id: int) -> dict:
         "log_sleep": _log_sleep,
         "add_contact": _add_contact,
         "log_interaction": _log_interaction,
+        "list_vikunja_projects": _list_vikunja_projects,
+        "list_vikunja_tasks": _list_vikunja_tasks,
+        "create_vikunja_task": _create_vikunja_task,
+        "complete_vikunja_task": _complete_vikunja_task,
     }
 
     handler = handlers.get(tool_name)
@@ -1287,6 +1291,101 @@ def _log_interaction(args: dict, conn, user_id: int) -> dict:
         "success": True,
         "contact_id": contact_id,
         "message": f'Logged {interaction_type} with {matched_name} on {interaction_date}',
+    }
+
+
+# ---------------------------------------------------------------------------
+# Vikunja (Task Management Integration)
+# ---------------------------------------------------------------------------
+
+def _get_vikunja(user_id: int):
+    """Return (provider, error_dict) — provider is None on failure."""
+    try:
+        from src.infrastructure.plugins import plugin_registry
+        if not plugin_registry.has("vikunja"):
+            return None, {"error": "Vikunja integration is not available"}
+        stored = plugin_registry.get_config("vikunja", user_id)
+        if not stored.get("enabled"):
+            return None, {"error": "Vikunja is not connected. Enable it in Settings > Integrations."}
+        plugin = plugin_registry.get("vikunja")
+        provider = plugin.get_provider(stored.get("config", {}))
+        return provider, None
+    except Exception as exc:
+        return None, {"error": f"Could not connect to Vikunja: {exc}"}
+
+
+def _list_vikunja_projects(args: dict, conn, user_id: int) -> dict:
+    provider, err = _get_vikunja(user_id)
+    if err:
+        return err
+    projects = provider.get_projects()
+    return {
+        "success": True,
+        "projects": [
+            {"id": p.id, "title": p.title, "description": p.description or "", "task_count": p.task_count}
+            for p in projects
+        ],
+        "message": f"Found {len(projects)} Vikunja projects",
+    }
+
+
+def _list_vikunja_tasks(args: dict, conn, user_id: int) -> dict:
+    provider, err = _get_vikunja(user_id)
+    if err:
+        return err
+    project_id = args.get("project_id")
+    if not project_id:
+        return {"error": "project_id is required"}
+    tasks = provider.get_tasks(project_id=str(project_id))
+    open_tasks = [t for t in tasks if not t.done]
+    done_tasks = [t for t in tasks if t.done]
+    return {
+        "success": True,
+        "tasks": [
+            {"id": t.id, "title": t.title, "done": t.done, "priority": t.priority,
+             "due_date": t.due_date.isoformat() if t.due_date else None}
+            for t in tasks
+        ],
+        "message": f"{len(open_tasks)} open, {len(done_tasks)} completed tasks",
+    }
+
+
+def _create_vikunja_task(args: dict, conn, user_id: int) -> dict:
+    provider, err = _get_vikunja(user_id)
+    if err:
+        return err
+    project_id = args.get("project_id")
+    title = (args.get("title") or "").strip()
+    if not project_id or not title:
+        return {"error": "project_id and title are required"}
+    description = args.get("description", "")
+    priority = int(args.get("priority", 0))
+    due_date = None
+    if args.get("due_date"):
+        from datetime import datetime
+        try:
+            due_date = datetime.fromisoformat(args["due_date"])
+        except ValueError:
+            pass
+    task = provider.create_task(str(project_id), title, description, due_date, priority)
+    return {
+        "success": True,
+        "task_id": task.id,
+        "message": f'Created task "{title}" in Vikunja',
+    }
+
+
+def _complete_vikunja_task(args: dict, conn, user_id: int) -> dict:
+    provider, err = _get_vikunja(user_id)
+    if err:
+        return err
+    task_id = args.get("task_id")
+    if not task_id:
+        return {"error": "task_id is required"}
+    task = provider.complete_task(str(task_id))
+    return {
+        "success": True,
+        "message": f'Marked task "{task.title}" as done',
     }
 
 
