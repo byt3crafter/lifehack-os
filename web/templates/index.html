@@ -1857,7 +1857,7 @@
                 <!-- Tips and insights handled by d-ai-insight card above -->
 
                 <!-- Live fasting timer (shown only when actively fasting) -->
-                <div id="d-fasting-timer" class="hidden mb-4 p-4 rounded-xl flex flex-wrap items-center gap-3" style="background:linear-gradient(135deg,#1a1820 0%,#201828 100%);border:1px solid rgba(168,85,247,0.2);">
+                <div id="d-fasting-timer" class="hidden mb-4 p-4 rounded-xl flex items-center gap-3" style="background:linear-gradient(135deg,#1a1820 0%,#201828 100%);border:1px solid rgba(168,85,247,0.2);overflow:hidden;">
                     <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(168,85,247,0.15);">
                         <svg class="w-5 h-5" fill="none" stroke="#a855f7" viewBox="0 0 20 20" stroke-width="1.8"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l2.5 2.5"/></svg>
                     </div>
@@ -7060,13 +7060,16 @@
         var elapsedM = Math.floor((elapsedMs % 3600000) / 60000);
         var elapsedS = Math.floor((elapsedMs % 60000) / 1000);
         var el = document.getElementById('d-fast-elapsed');
-        if(el) el.textContent = elapsedH + 'h ' + elapsedM + 'm ' + elapsedS + 's';
-        // Update ring
+        var p2 = function(n) { return n < 10 ? '0' + n : '' + n; };
+        if(el) el.textContent = p2(elapsedH) + ':' + p2(elapsedM) + ':' + p2(elapsedS);
+        // Update ring (only when percentage actually changes to avoid repaints)
         var ring = document.getElementById('d-fast-ring');
         if(ring) {
             var pct = Math.min(1, (elapsedMs / 3600000) / _fastTargetHours);
             var circumference = 150.8;
-            ring.style.strokeDashoffset = circumference - (circumference * pct);
+            var newOffset = circumference - (circumference * pct);
+            if(Math.abs(parseFloat(ring.style.strokeDashoffset || circumference) - newOffset) > 0.01)
+                ring.style.strokeDashoffset = newOffset;
             ring.style.stroke = pct >= 1 ? '#22c55e' : '#a855f7';
         }
     }
