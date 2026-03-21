@@ -22,6 +22,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -2768,8 +2769,44 @@
                     .cm-typing span:nth-child(2) { animation-delay:0.2s; }
                     .cm-typing span:nth-child(3) { animation-delay:0.4s; }
                     .cm-input-wrap { max-width:720px; margin:0 auto; width:100%; }
+                    /* ── Rich Data: Tables ── */
+                    .cm-content table { width:100%; border-collapse:collapse; margin:10px 0; font-size:0.85em; overflow-x:auto; display:block; }
+                    .cm-content thead { background:#1c1c20; }
+                    .cm-content th { color:#c4b5fd; font-weight:600; text-align:left; padding:8px 12px; border-bottom:2px solid #4f80ff; white-space:nowrap; }
+                    .cm-content td { padding:6px 12px; border-bottom:1px solid #2a2a2e; color:#d0d0d8; }
+                    .cm-content tr:hover td { background:rgba(79,128,255,0.05); }
+
+                    /* ── Rich Data: Metric Cards ── */
+                    .cm-metrics-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(130px,1fr)); gap:10px; margin:10px 0; }
+                    .cm-metric-card { background:#141416; border:1px solid #2a2a2e; border-radius:10px; padding:14px 16px; text-align:center; }
+                    .cm-metric-icon { font-size:1.4em; margin-bottom:4px; }
+                    .cm-metric-value { font-size:1.5em; font-weight:700; color:#f0f0f2; line-height:1.2; }
+                    .cm-metric-label { font-size:0.7em; color:#9898a6; margin-top:4px; text-transform:uppercase; letter-spacing:0.05em; }
+                    .cm-metric-delta { font-size:0.7em; margin-top:2px; }
+                    .cm-metric-delta.positive { color:#22c55e; }
+                    .cm-metric-delta.negative { color:#ef4444; }
+                    .cm-metric-delta.neutral { color:#9898a6; }
+
+                    /* ── Rich Data: Progress Bars ── */
+                    .cm-progress-list { display:flex; flex-direction:column; gap:8px; margin:10px 0; }
+                    .cm-progress-item { background:#141416; border:1px solid #2a2a2e; border-radius:8px; padding:10px 14px; }
+                    .cm-progress-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:0.85em; }
+                    .cm-progress-label { color:#f0f0f2; font-weight:500; }
+                    .cm-progress-pct { color:#9898a6; font-weight:600; }
+                    .cm-progress-track { height:8px; background:#1c1c20; border-radius:4px; overflow:hidden; }
+                    .cm-progress-fill { height:100%; border-radius:4px; transition:width 0.8s cubic-bezier(0.4,0,0.2,1); }
+                    .cm-progress-fill.green { background:linear-gradient(90deg,#22c55e,#16a34a); }
+                    .cm-progress-fill.blue { background:linear-gradient(90deg,#4f80ff,#8b5cf6); }
+                    .cm-progress-fill.red { background:linear-gradient(90deg,#ef4444,#dc2626); }
+                    .cm-progress-fill.yellow { background:linear-gradient(90deg,#eab308,#ca8a04); }
+
+                    /* ── Rich Data: Charts ── */
+                    .cm-chart-wrap { background:#141416; border:1px solid #2a2a2e; border-radius:10px; padding:16px; margin:10px 0; position:relative; }
+                    .cm-chart-wrap canvas { max-height:280px; width:100% !important; }
+
                     @media (max-width:768px) {
                         .cm-msg { padding:14px 16px; }
+                        .cm-metrics-grid { grid-template-columns:repeat(2, 1fr); }
                     }
                 </style>
 
@@ -9680,6 +9717,20 @@
         // Spacer pushes messages to bottom when few, scrollable when many
         container.innerHTML = '<div id="chatmode-messages-spacer"></div><div id="chatmode-messages-inner">' + html + '</div>';
         container.scrollTop = container.scrollHeight;
+        // Initialize any Chart.js canvases rendered by chatFormatMsg
+        if (typeof Chart !== 'undefined') {
+            container.querySelectorAll('canvas[data-chart-config]').forEach(function(canvas) {
+                try {
+                    var cfg = JSON.parse(canvas.getAttribute('data-chart-config'));
+                    canvas.removeAttribute('data-chart-config');
+                    // Apply dark theme defaults
+                    cfg.options = cfg.options || {};
+                    cfg.options.responsive = true;
+                    cfg.options.maintainAspectRatio = false;
+                    new Chart(canvas, cfg);
+                } catch(e) { console.warn('Chart render error:', e); }
+            });
+        }
     }
 
     async function sendChatModeMessage() {
@@ -11282,15 +11333,77 @@
         }
     }
 
+    // ── Rich block renderers ──
+    var _chartCounter = 0;
+
+    function _renderMetricsBlock(body) {
+        var lines = body.split('\n').filter(function(l) { return l.trim(); });
+        var cards = lines.map(function(line) {
+            var m = line.match(/^(.+?):\s*(.+?)(?:\s*\(([^)]+)\))?$/);
+            if (!m) return '';
+            var label = m[1].trim(), value = m[2].trim(), delta = m[3] ? m[3].trim() : '';
+            var cls = delta.startsWith('+') ? 'positive' : delta.startsWith('-') ? 'negative' : 'neutral';
+            var deltaHtml = delta ? '<div class="cm-metric-delta ' + cls + '">' + delta + '</div>' : '';
+            return '<div class="cm-metric-card">'
+                + '<div class="cm-metric-value">' + value + '</div>'
+                + '<div class="cm-metric-label">' + label + '</div>'
+                + deltaHtml + '</div>';
+        }).join('');
+        return '<div class="cm-metrics-grid">' + cards + '</div>';
+    }
+
+    function _renderProgressBlock(body) {
+        var lines = body.split('\n').filter(function(l) { return l.trim(); });
+        var colors = ['blue', 'green', 'yellow', 'red'];
+        var items = lines.map(function(line, idx) {
+            var m = line.match(/^(.+?):\s*(\d+(?:\.\d+)?)(?:\s*\/\s*(\d+(?:\.\d+)?))?/);
+            if (!m) return '';
+            var label = m[1].trim();
+            var pct = m[3] ? Math.round((parseFloat(m[2]) / parseFloat(m[3])) * 100) : Math.round(parseFloat(m[2]));
+            pct = Math.max(0, Math.min(100, pct));
+            var color = colors[idx % colors.length];
+            return '<div class="cm-progress-item">'
+                + '<div class="cm-progress-header"><span class="cm-progress-label">' + label + '</span><span class="cm-progress-pct">' + pct + '%</span></div>'
+                + '<div class="cm-progress-track"><div class="cm-progress-fill ' + color + '" style="width:' + pct + '%"></div></div>'
+                + '</div>';
+        }).join('');
+        return '<div class="cm-progress-list">' + items + '</div>';
+    }
+
+    function _renderChartBlock(body) {
+        var id = 'cm-chart-' + Date.now() + '-' + (++_chartCounter);
+        var escaped = body.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+        return '<div class="cm-chart-wrap"><canvas id="' + id + '" data-chart-config="' + escaped + '"></canvas></div>';
+    }
+
     function chatFormatMsg(text) {
-        // Simple markdown renderer
+        // 1. Extract rich blocks BEFORE escaping (their content needs raw parsing)
+        var richBlocks = [];
+        text = text.replace(/```(chart|metrics|progress)\n([\s\S]*?)```/g, function(match, type, body) {
+            richBlocks.push({ type: type, body: body.trim() });
+            return '__RICH_BLOCK_' + (richBlocks.length - 1) + '__';
+        });
+
+        // 2. HTML-escape
         var s = text
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;');
-        // Code blocks (``` ... ```)
+
+        // 3. Code blocks (``` ... ```)
         s = s.replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
-        // Inline code
+
+        // 4. Markdown tables: header | sep | body rows
+        s = s.replace(/^(\|.+\|)\n(\|[\s\-:\| ]+\|)\n((?:\|.+\|\n?)+)/gm, function(match, headerRow, sepRow, bodyRows) {
+            var ths = headerRow.split('|').filter(function(c) { return c.trim(); }).map(function(c) { return '<th>' + c.trim() + '</th>'; }).join('');
+            var trs = bodyRows.trim().split('\n').map(function(row) {
+                var tds = row.split('|').filter(function(c) { return c.trim(); }).map(function(c) { return '<td>' + c.trim() + '</td>'; }).join('');
+                return '<tr>' + tds + '</tr>';
+            }).join('');
+            return '<table><thead><tr>' + ths + '</tr></thead><tbody>' + trs + '</tbody></table>';
+        });
+
+        // 5. Inline code
         s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
         // Bold
         s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
@@ -11316,9 +11429,20 @@
         // Single newlines
         s = s.replace(/\n/g, '<br>');
         // Wrap in paragraph
-        if (!s.startsWith('<h') && !s.startsWith('<pre') && !s.startsWith('<ul') && !s.startsWith('<ol')) {
+        if (!s.startsWith('<h') && !s.startsWith('<pre') && !s.startsWith('<ul') && !s.startsWith('<ol') && !s.startsWith('<table')) {
             s = '<p>' + s + '</p>';
         }
+
+        // 6. Replace rich block placeholders
+        for (var i = 0; i < richBlocks.length; i++) {
+            var block = richBlocks[i];
+            var html = '';
+            if (block.type === 'metrics') html = _renderMetricsBlock(block.body);
+            else if (block.type === 'progress') html = _renderProgressBlock(block.body);
+            else if (block.type === 'chart') html = _renderChartBlock(block.body);
+            s = s.replace('__RICH_BLOCK_' + i + '__', html);
+        }
+
         return s;
     }
 
