@@ -233,9 +233,12 @@ def assemble_context(conn, user_id: int) -> dict:
         "SELECT title, author, rating, finished_at FROM books WHERE user_id = ? AND status = 'finished' ORDER BY finished_at DESC LIMIT 5",
         (user_id,))
 
-    # Pinned notes
-    context['pinned_notes'] = _safe_query(conn,
-        "SELECT title, body, tags_json, folder FROM notes WHERE user_id = ? AND pinned = 1 AND archived = 0 LIMIT 10",
+    # Notes — all recent non-archived notes with full content so AI can read them
+    context['notes'] = _safe_query(conn,
+        """SELECT id, title, body, tags_json, folder, pinned,
+                  created_at, updated_at
+           FROM notes WHERE user_id = ? AND archived = 0
+           ORDER BY pinned DESC, updated_at DESC LIMIT 30""",
         (user_id,))
 
     # Contacts CRM — overdue contacts and upcoming birthdays

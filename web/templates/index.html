@@ -3642,7 +3642,7 @@
 
     <!-- Modal -->
     <div id="modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.75);backdrop-filter:blur(3px);" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-        <div class="w-full max-w-sm max-h-[85vh] overflow-y-auto rounded-2xl" style="background:#1c1c20;border:1px solid #333338;padding:1.25rem;">
+        <div id="modal-panel" class="w-full max-w-sm max-h-[85vh] overflow-y-auto rounded-2xl" style="background:#1c1c20;border:1px solid #333338;padding:1.25rem;">
             <div class="flex items-center justify-between mb-4">
                 <h3 id="modal-title" class="font-semibold text-base" style="color:#f0f0f2;"></h3>
                 <button onclick="hideModal()" aria-label="Close" class="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/5 transition-colors text-lg leading-none" style="color:#5c5c6b;">&times;</button>
@@ -3759,10 +3759,15 @@
     }
 
     // ── Modal ────────────────────────────────────────────────────
-    function showModal(title, content) {
+    function showModal(title, content, opts) {
+        opts = opts || {};
         const modal = $('#modal');
+        const panel = $('#modal-panel');
         $('#modal-title').textContent = title;
         $('#modal-body').innerHTML = content;
+        // Allow wide modals (e.g. note view)
+        if(opts.wide) { panel.classList.remove('max-w-sm'); panel.classList.add('max-w-lg'); }
+        else { panel.classList.remove('max-w-lg'); panel.classList.add('max-w-sm'); }
         modal.style.display = 'flex';
         modal.classList.remove('hidden');
         // Focus first input
@@ -10536,21 +10541,23 @@
         }
         el.innerHTML = data.map(function(n) {
             var tags = []; try { tags = JSON.parse(n.tags_json||'[]'); } catch(x) {}
-            var tagHtml = tags.map(function(t) { return '<span class="text-xs px-1.5 py-0.5 rounded" style="background:rgba(79,128,255,0.1);color:#4f80ff;">' + t + '</span>'; }).join(' ');
+            var tagHtml = tags.map(function(t) { return '<span class="text-xs px-2 py-0.5 rounded-md" style="background:rgba(79,128,255,0.08);color:#4f80ff;border:1px solid rgba(79,128,255,0.1);">' + t + '</span>'; }).join(' ');
             var timeAgo = '';
             try { var d = new Date(n.updated_at); timeAgo = d.toLocaleDateString('en-US', {month:'short',day:'numeric'}); } catch(x) {}
-            return '<div class="card p-3 rounded-xl" style="border:1px solid #2a2a2e;cursor:pointer;" onclick="viewNoteModal(' + n.id + ')">'
-                + '<div class="flex items-start justify-between mb-1">'
-                + '<div class="flex items-center gap-2">'
-                + (n.pinned ? '<span style="color:#eab308;font-size:0.75rem;">&#128204;</span>' : '')
-                + '<span class="text-sm font-medium" style="color:#f0f0f2;">' + n.title + '</span>'
+            // Clean preview: strip === and --- dividers, trim
+            var preview = (n.body||'').replace(/^[=\-]{3,}$/gm, '').replace(/\n{2,}/g, ' ').trim().substring(0, 140);
+            return '<div class="rounded-xl" style="background:#1c1c20;border:1px solid #2a2a2e;padding:14px 16px;cursor:pointer;transition:border-color 0.15s,background 0.15s;" onmouseover="this.style.borderColor=\'#3a3a48\';this.style.background=\'#1e1e24\'" onmouseout="this.style.borderColor=\'#2a2a2e\';this.style.background=\'#1c1c20\'" onclick="viewNoteModal(' + n.id + ')">'
+                + '<div class="flex items-start justify-between mb-1.5">'
+                + '<div class="flex items-center gap-2" style="min-width:0;">'
+                + (n.pinned ? '<span style="color:#eab308;font-size:0.8rem;flex-shrink:0;">&#128204;</span>' : '<span style="color:#5c5c6b;font-size:0.8rem;flex-shrink:0;">&#128196;</span>')
+                + '<span class="text-sm font-semibold" style="color:#f0f0f2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + n.title + '</span>'
                 + '</div>'
-                + '<div class="flex items-center gap-2 flex-shrink-0">'
-                + (n.folder ? '<span class="text-xs px-1.5 py-0.5 rounded" style="background:rgba(255,255,255,0.04);color:#5c5c6b;">' + n.folder + '</span>' : '')
+                + '<div class="flex items-center gap-2 flex-shrink-0 ml-3">'
+                + (n.folder ? '<span class="text-xs px-2 py-0.5 rounded-md font-medium" style="background:rgba(139,92,246,0.1);color:#a78bfa;">' + n.folder + '</span>' : '')
                 + '<span class="text-xs" style="color:#5c5c6b;">' + timeAgo + '</span>'
                 + '</div></div>'
-                + (n.body ? '<p class="text-xs mb-1.5" style="color:#9898a6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">' + n.body.substring(0,120) + '</p>' : '')
-                + (tagHtml ? '<div class="flex flex-wrap gap-1">' + tagHtml + '</div>' : '')
+                + (preview ? '<p class="text-xs" style="color:#9898a6;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:' + (tagHtml ? '8px' : '0') + ';">' + preview + '</p>' : '')
+                + (tagHtml ? '<div class="flex flex-wrap gap-1.5">' + tagHtml + '</div>' : '')
                 + '</div>';
         }).join('');
     }
@@ -10558,13 +10565,13 @@
     function newNoteModal() {
         showModal('New Note', '<div class="space-y-3">'
             + '<div><label class="field-label">Title</label><input id="nn-title" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="Note title"></div>'
-            + '<div><label class="field-label">Content</label><textarea id="nn-body" class="w-full px-3 py-2.5 rounded-lg border text-sm" rows="6" placeholder="Write your note... (supports markdown)"></textarea></div>'
+            + '<div><label class="field-label">Content</label><textarea id="nn-body" class="w-full px-3 py-2.5 rounded-lg border text-sm" rows="10" placeholder="Write your note... (supports markdown)" style="min-height:200px;resize:vertical;line-height:1.7;"></textarea></div>'
             + '<div class="grid grid-cols-2 gap-3">'
             + '<div><label class="field-label">Folder</label><input id="nn-folder" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="e.g. Ideas, Work"></div>'
             + '<div><label class="field-label">Tags</label><input id="nn-tags" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="tag1, tag2"></div>'
             + '</div>'
             + '<div class="flex gap-2 pt-1"><button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button><button onclick="saveNote()" class="btn-primary flex-1 py-2.5">Save Note</button></div>'
-            + '</div>');
+            + '</div>', {wide: true});
     }
 
     async function saveNote(editId) {
@@ -10577,6 +10584,34 @@
         hideModal(); showToast('Note saved', 'success'); loadNotes();
     }
 
+    function _formatNoteBody(text) {
+        // Light markdown for note display
+        var s = text
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        // Section dividers (=== or ---)
+        s = s.replace(/^[=]{3,}$/gm, '<hr style="border-color:#333338;margin:16px 0;">');
+        s = s.replace(/^[-]{3,}$/gm, '<hr style="border-color:#2a2a2e;margin:12px 0;">');
+        // Section headers (ALL CAPS lines, or lines ending with :)
+        s = s.replace(/^([A-Z][A-Z\s\d&\-\/()]+(?::|$))/gm, '<div style="color:#c4b5fd;font-weight:600;font-size:0.8125rem;letter-spacing:0.04em;margin:12px 0 4px;">$1</div>');
+        // Markdown headings
+        s = s.replace(/^### (.+)$/gm, '<div style="color:#f0f0f2;font-weight:600;font-size:0.875rem;margin:10px 0 4px;">$1</div>');
+        s = s.replace(/^## (.+)$/gm, '<div style="color:#f0f0f2;font-weight:600;font-size:0.9375rem;margin:12px 0 4px;">$1</div>');
+        s = s.replace(/^# (.+)$/gm, '<div style="color:#f0f0f2;font-weight:700;font-size:1rem;margin:14px 0 6px;">$1</div>');
+        // Numbered items (e.g. "1. SHIRTS (FOUNDATION)")
+        s = s.replace(/^(\d+)\.\s+(.+)$/gm, '<div style="color:#4f80ff;font-weight:600;font-size:0.8125rem;margin:14px 0 4px;"><span style="color:#8b5cf6;">$1.</span> $2</div>');
+        // Bold
+        s = s.replace(/\*\*(.+?)\*\*/g, '<strong style="color:#f0f0f2;">$1</strong>');
+        // Bullet points with dash
+        s = s.replace(/^[-–]\s+(.+)$/gm, '<div style="padding-left:12px;position:relative;margin:2px 0;"><span style="position:absolute;left:0;color:#4f80ff;">&#8226;</span><span style="color:#d0d0d8;">$1</span></div>');
+        // Inline labels like "Spec:", "Fit:", "Fix:" etc.
+        s = s.replace(/^([A-Za-z][A-Za-z\s]+):\s*/gm, '<span style="color:#9898a6;font-weight:500;">$1:</span> ');
+        // Double newlines → spacing
+        s = s.replace(/\n\n/g, '<div style="height:10px;"></div>');
+        // Single newlines
+        s = s.replace(/\n/g, '<br>');
+        return s;
+    }
+
     async function viewNoteModal(id) {
         var n = await api('/notes/' + id);
         if(!n) return;
@@ -10585,35 +10620,35 @@
         try { timeStr = new Date(n.updated_at).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit'}); } catch(x) {}
 
         var html = '<div class="space-y-3">';
-        // Meta
-        html += '<div class="flex items-center justify-between">'
+        // Meta bar
+        html += '<div class="flex items-center justify-between" style="padding-bottom:8px;border-bottom:1px solid #2a2a2e;">'
             + '<div class="flex items-center gap-2">'
-            + (n.pinned ? '<span style="color:#eab308;">&#128204;</span>' : '')
-            + (n.folder ? '<span class="text-xs px-2 py-0.5 rounded" style="background:rgba(255,255,255,0.04);color:#9898a6;">' + n.folder + '</span>' : '')
+            + (n.pinned ? '<span style="color:#eab308;font-size:0.875rem;">&#128204;</span>' : '')
+            + (n.folder ? '<span class="text-xs px-2.5 py-1 rounded-md font-medium" style="background:rgba(139,92,246,0.1);color:#a78bfa;border:1px solid rgba(139,92,246,0.15);">' + n.folder + '</span>' : '')
             + '</div>'
             + '<span class="text-xs" style="color:#5c5c6b;">' + timeStr + '</span>'
             + '</div>';
         // Body
         if(n.body) {
-            html += '<div class="p-4 rounded-lg" style="background:rgba(255,255,255,0.02);border:1px solid #2a2a2e;">'
-                + '<div class="text-sm" style="color:#f0f0f2;white-space:pre-wrap;line-height:1.7;">' + n.body + '</div></div>';
+            html += '<div style="padding:16px;border-radius:10px;background:rgba(255,255,255,0.015);border:1px solid #2a2a2e;max-height:50vh;overflow-y:auto;">'
+                + '<div class="text-sm" style="color:#f0f0f2;line-height:1.75;">' + _formatNoteBody(n.body) + '</div></div>';
         } else {
-            html += '<div class="text-sm" style="color:#5c5c6b;font-style:italic;">No content</div>';
+            html += '<div class="text-sm" style="color:#5c5c6b;font-style:italic;padding:16px 0;">No content yet — click Edit to add some.</div>';
         }
         // Tags
         if(tags.length) {
-            html += '<div class="flex flex-wrap gap-1">';
-            tags.forEach(function(t) { html += '<span class="text-xs px-2 py-0.5 rounded" style="background:rgba(79,128,255,0.1);color:#4f80ff;">' + t + '</span>'; });
+            html += '<div class="flex flex-wrap gap-1.5">';
+            tags.forEach(function(t) { html += '<span class="text-xs px-2.5 py-1 rounded-md" style="background:rgba(79,128,255,0.08);color:#4f80ff;border:1px solid rgba(79,128,255,0.12);">' + t + '</span>'; });
             html += '</div>';
         }
         // Actions
-        html += '<div class="flex gap-2 pt-2">'
-            + '<button onclick="hideModal();editNoteModal(' + id + ')" class="btn-primary flex-1 py-2.5">Edit</button>'
-            + '<button onclick="toggleNotePin(' + id + ')" class="btn-ghost flex-1 py-2.5">' + (n.pinned ? 'Unpin' : 'Pin') + '</button>'
-            + '<button onclick="deleteNote(' + id + ')" class="flex-1 py-2.5 rounded-lg text-sm font-medium" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);cursor:pointer;font-family:inherit;">Delete</button>'
+        html += '<div class="flex gap-2 pt-2" style="border-top:1px solid #2a2a2e;padding-top:12px;">'
+            + '<button onclick="hideModal();editNoteModal(' + id + ')" class="btn-primary flex-1 py-2.5 flex items-center justify-center gap-1.5"><svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>Edit</button>'
+            + '<button onclick="toggleNotePin(' + id + ')" class="btn-ghost flex-1 py-2.5 flex items-center justify-center gap-1.5">' + (n.pinned ? '<svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a1 1 0 01-.707-.293l-4-4a1 1 0 010-1.414l8-8a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-8 8A1 1 0 0110 18z"/></svg>Unpin' : '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>Pin') + '</button>'
+            + '<button onclick="if(confirm(\'Delete this note?\'))deleteNote(' + id + ')" class="flex-1 py-2.5 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5" style="background:rgba(239,68,68,0.08);color:#ef4444;border:1px solid rgba(239,68,68,0.15);cursor:pointer;font-family:inherit;"><svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>Delete</button>'
             + '</div>';
         html += '</div>';
-        showModal(n.title, html);
+        showModal(n.title, html, {wide: true});
     }
 
     async function editNoteModal(id) {
