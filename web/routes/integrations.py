@@ -92,7 +92,15 @@ def configure_vikunja():
     api_url   = data.get("api_url", "")
     api_token = data.get("api_token", "")
 
+    # If no new credentials provided, try re-enabling with saved config
     if not api_token:
+        stored = plugin_registry.get_config("vikunja", uid)
+        saved_config = stored.get("config", {})
+        if saved_config.get("api_token"):
+            ok = plugin_registry.enable("vikunja", saved_config, uid)
+            if ok:
+                return jsonify({"success": True, "enabled": True, "connected": True})
+            return jsonify({"error": "Connection test failed with saved credentials"}), 400
         return jsonify({"error": "API token required"}), 400
 
     config = {"api_url": api_url, "api_token": api_token}
