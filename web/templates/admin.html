@@ -320,6 +320,7 @@
         }
         .pill-admin { background: rgba(239,68,68,0.12); color: var(--red); }
         .pill-user  { background: rgba(152,152,166,0.1); color: var(--muted); }
+        .pill-byok  { background: rgba(79,128,255,0.12); color: var(--blue); }
         .pill-error { background: rgba(239,68,68,0.12); color: #fca5a5; }
         .pill-warn  { background: rgba(234,179,8,0.12);  color: #fde047; }
         .pill-info  { background: rgba(79,128,255,0.12); color: #93b4ff; }
@@ -1034,11 +1035,13 @@ function renderUsersTable(data) {
             <td>${esc(u.display_name) || '—'}</td>
             <td>${esc(u.email) || '—'}</td>
             <td><span class="pill ${u.is_admin ? 'pill-admin' : 'pill-user'}">${u.is_admin ? 'Admin' : 'User'}</span></td>
+            <td>${u.byok_enabled ? '<span class="pill pill-byok">BYOK</span>' : '<span style="color:#5c5c6b;">—</span>'}</td>
             <td>${fmtDate(u.last_login)}</td>
             <td>${esc(u.xp) || 0} / Lvl ${esc(u.level) || 1}</td>
             <td>
                 <div class="action-group">
                     <button class="btn btn-ghost" onclick="toggleAdmin(${u.id})">${u.is_admin ? 'Revoke Admin' : 'Make Admin'}</button>
+                    <button class="btn ${u.byok_enabled ? 'btn-warn' : 'btn-ghost'}" onclick="toggleByok(${u.id})">${u.byok_enabled ? 'Disable BYOK' : 'Enable BYOK'}</button>
                     <button class="btn btn-warn" onclick="resetPassword(${u.id})">Reset PW</button>
                     <button class="btn btn-danger" onclick="deleteUser(${u.id}, '${esc(u.username)}')">Delete</button>
                 </div>
@@ -1050,7 +1053,7 @@ function renderUsersTable(data) {
         <table>
             <thead><tr>
                 <th>ID</th><th>Username</th><th>Display Name</th><th>Email</th>
-                <th>Role</th><th>Last Login</th><th>XP / Level</th><th>Actions</th>
+                <th>Role</th><th>BYOK</th><th>Last Login</th><th>XP / Level</th><th>Actions</th>
             </tr></thead>
             <tbody>${rows}</tbody>
         </table>
@@ -1075,6 +1078,16 @@ async function toggleAdmin(userId) {
     } else {
         const data = await res.json().catch(() => ({}));
         alert(data.error || 'Failed to toggle admin status');
+    }
+}
+
+async function toggleByok(userId) {
+    const res = await apiCall(`/admin/users/${userId}/byok`, 'POST');
+    if (res.ok) {
+        loadUsers();
+    } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || 'Failed to toggle BYOK');
     }
 }
 
