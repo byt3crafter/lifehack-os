@@ -1698,17 +1698,17 @@
         </aside>
 
         <!-- Main -->
-        <main class="flex-1 md:ml-56 pt-14 md:pt-0 pb-8 px-4 md:px-8">
+        <main class="flex-1 md:ml-56 pt-14 md:pt-0 pb-8 px-4 md:px-8 overflow-x-hidden max-w-full">
             <!-- DASHBOARD -->
-            <div id="v-dashboard" class="view">
+            <div id="v-dashboard" class="view overflow-x-hidden">
                 <!-- Today's Header -->
-                <div class="mt-6 mb-5 flex items-end justify-between">
-                    <div>
+                <div class="mt-6 mb-5 flex flex-wrap items-end justify-between gap-2">
+                    <div class="min-w-0">
                         <div class="section-label mb-1" id="d-date-label">Today</div>
-                        <h2 class="text-2xl font-semibold tracking-tight" style="color:#f0f0f2;" id="d-date">Wednesday, March 18</h2>
+                        <h2 class="text-xl sm:text-2xl font-semibold tracking-tight" style="color:#f0f0f2;" id="d-date">Wednesday, March 18</h2>
                     </div>
                     <!-- Inline stat pills -->
-                    <div class="flex items-center gap-2 pb-0.5">
+                    <div class="flex items-center gap-2 pb-0.5 flex-shrink-0">
                         <span class="text-xs font-mono font-medium px-2 py-1 rounded-lg" style="background:#1c1c20;border:1px solid #2a2a2e;color:#eab308;" id="s-xp">0 XP</span>
                         <span class="text-xs font-medium px-2 py-1 rounded-lg" style="background:#1c1c20;border:1px solid #2a2a2e;color:#9898a6;">Lv <span id="s-level">1</span></span>
                     </div>
@@ -1788,10 +1788,10 @@
 
                 <!-- Daily Score Card — hero element -->
                 <div class="mb-5 p-4 rounded-2xl" style="background:linear-gradient(135deg,#171728 0%,#141e30 100%);border:1px solid #2a3560;">
-                    <div class="flex items-center gap-5">
+                    <div class="flex items-center gap-3 sm:gap-5">
                         <!-- Score Circle -->
-                        <div class="relative flex-shrink-0" style="width:88px;height:88px;">
-                            <svg width="88" height="88" style="transform:rotate(-90deg);" role="img" aria-label="Daily score ring">
+                        <div class="relative flex-shrink-0 w-16 h-16 sm:w-[88px] sm:h-[88px]">
+                            <svg viewBox="0 0 88 88" class="w-full h-full" style="transform:rotate(-90deg);" role="img" aria-label="Daily score ring">
                                 <circle cx="44" cy="44" r="36" stroke="#1e2440" stroke-width="7" fill="none"/>
                                 <circle id="d-score-ring" cx="44" cy="44" r="36"
                                     stroke="url(#scoreGrad)" stroke-width="7" fill="none"
@@ -1805,7 +1805,7 @@
                                 </defs>
                             </svg>
                             <div class="absolute inset-0 flex items-center justify-center">
-                                <span id="d-score" class="text-xl font-bold font-mono" style="color:#f0f0f2;">0%</span>
+                                <span id="d-score" class="text-base sm:text-xl font-bold font-mono" style="color:#f0f0f2;">0%</span>
                             </div>
                         </div>
 
@@ -1857,7 +1857,7 @@
                 <!-- Tips and insights handled by d-ai-insight card above -->
 
                 <!-- Live fasting timer (shown only when actively fasting) -->
-                <div id="d-fasting-timer" class="hidden mb-4 p-4 rounded-xl flex items-center gap-3" style="background:linear-gradient(135deg,#1a1820 0%,#201828 100%);border:1px solid rgba(168,85,247,0.2);">
+                <div id="d-fasting-timer" class="hidden mb-4 p-4 rounded-xl flex flex-wrap items-center gap-3" style="background:linear-gradient(135deg,#1a1820 0%,#201828 100%);border:1px solid rgba(168,85,247,0.2);">
                     <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(168,85,247,0.15);">
                         <svg class="w-5 h-5" fill="none" stroke="#a855f7" viewBox="0 0 20 20" stroke-width="1.8"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l2.5 2.5"/></svg>
                     </div>
