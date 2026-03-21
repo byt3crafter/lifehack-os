@@ -332,6 +332,51 @@ TOOL_DEFINITIONS = [
             "folder": "string",
         },
     },
+    # ── Firefly III (Finance Integration) ─────────────────────────────────────
+    {
+        "name": "firefly_create_transaction",
+        "description": "Create a transaction in Firefly III (the connected finance system). Use this for ALL financial transactions — spending, income, transfers.",
+        "parameters": {
+            "description": "string (required) — what the transaction is for",
+            "amount": "number (required) — positive number",
+            "type": "string — withdrawal/deposit/transfer (default: withdrawal)",
+            "category": "string (optional) — e.g. Food, Transport, Entertainment, Rent",
+            "date": "YYYY-MM-DD (optional, defaults to today)",
+            "source_name": "string (optional) — source account name (for withdrawals, defaults to main account)",
+            "destination_name": "string (optional) — destination name (for withdrawals: store/payee name)",
+            "notes": "string (optional) — extra details",
+        },
+    },
+    {
+        "name": "firefly_list_transactions",
+        "description": "List recent transactions from Firefly III",
+        "parameters": {
+            "days": "number — how many days back to look (default: 30)",
+            "limit": "number — max transactions to return (default: 20)",
+        },
+    },
+    {
+        "name": "firefly_list_accounts",
+        "description": "List all accounts from Firefly III with current balances",
+        "parameters": {},
+    },
+    {
+        "name": "firefly_get_spending",
+        "description": "Get this month's spending breakdown by category from Firefly III",
+        "parameters": {},
+    },
+    {
+        "name": "firefly_get_budgets",
+        "description": "Get budget status from Firefly III — limits and how much is spent",
+        "parameters": {},
+    },
+    {
+        "name": "firefly_delete_transaction",
+        "description": "Delete a transaction from Firefly III by ID",
+        "parameters": {
+            "transaction_id": "string (required) — the Firefly transaction ID",
+        },
+    },
     # ── Contacts CRM ─────────────────────────────────────────────────────────
     {
         "name": "add_contact",

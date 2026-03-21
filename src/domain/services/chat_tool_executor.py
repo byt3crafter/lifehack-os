@@ -66,6 +66,12 @@ def execute_tool(tool_name: str, args: dict, conn, user_id: int) -> dict:
         "label_vikunja_task": _label_vikunja_task,
         "set_vikunja_progress": _set_vikunja_progress,
         "create_vikunja_project": _create_vikunja_project,
+        "firefly_create_transaction": _firefly_create_transaction,
+        "firefly_list_transactions": _firefly_list_transactions,
+        "firefly_list_accounts": _firefly_list_accounts,
+        "firefly_get_spending": _firefly_get_spending,
+        "firefly_get_budgets": _firefly_get_budgets,
+        "firefly_delete_transaction": _firefly_delete_transaction,
     }
 
     handler = handlers.get(tool_name)
@@ -1523,6 +1529,153 @@ def _create_vikunja_project(args: dict, conn, user_id: int) -> dict:
         "project_id": project.id,
         "message": f'Created Vikunja project "{title}"',
     }
+
+
+# ── Firefly III (Finance Integration) ────────────────────────────────────────
+
+def _get_firefly(user_id: int):
+    """Return (firefly_service, error_dict)."""
+    try:
+        from src.infrastructure.services.firefly_service import firefly_service
+        if not firefly_service.is_connected(user_id):
+            return None, {"error": "Firefly III is not connected. Go to Settings > Integrations to set it up."}
+        return firefly_service, None
+    except Exception as exc:
+        return None, {"error": f"Could not connect to Firefly III: {exc}"}
+
+
+def _firefly_create_transaction(args: dict, conn, user_id: int) -> dict:
+    svc, err = _get_firefly(user_id)
+    if err:
+        return err
+
+    description = (args.get("description") or "").strip()
+    amount = args.get("amount")
+    if not description:
+        return {"error": "description is required"}
+    if amount is None:
+        return {"error": "amount is required"}
+    try:
+        amount = float(amount)
+    except (TypeError, ValueError):
+        return {"error": "amount must be a number"}
+
+    tx_type = (args.get("type") or "withdrawal").strip().lower()
+    if tx_type not in ("withdrawal", "deposit", "transfer"):
+        tx_type = "withdrawal"
+
+    result = svc.create_transaction(
+        description=description,
+        amount=amount,
+        tx_type=tx_type,
+        category=args.get("category"),
+        date_str=args.get("date"),
+        source_name=args.get("source_name"),
+        destination_name=args.get("destination_name"),
+        notes=args.get("notes"),
+        user_id=user_id,
+    )
+
+    if result:
+        sign = "+" if tx_type == "deposit" else "-"
+        return {
+            "success": True,
+            "firefly_id": result['id'],
+            "message": (
+                f"Created {tx_type} in Firefly III: {sign}{amount:.2f} — {description}"
+                + (f" [{result.get('category')}]" if result.get('category') else "")
+            ),
+        }
+    return {"error": "Failed to create transaction in Firefly III. Check your connection and try again."}
+
+
+def _firefly_list_transactions(args: dict, conn, user_id: int) -> dict:
+    svc, err = _get_firefly(user_id)
+    if err:
+        return err
+
+    days = int(args.get("days", 30))
+    limit = int(args.get("limit", 20))
+    txns = svc.get_transactions(days=days, limit=limit, user_id=user_id)
+
+    if not txns:
+        return {"success": True, "transactions": [], "message": f"No transactions found in the last {days} days."}
+
+    return {
+        "success": True,
+        "count": len(txns),
+        "transactions": txns,
+        "message": f"Found {len(txns)} transactions in the last {days} days.",
+    }
+
+
+def _firefly_list_accounts(args: dict, conn, user_id: int) -> dict:
+    svc, err = _get_firefly(user_id)
+    if err:
+        return err
+
+    accounts = svc.get_accounts(user_id=user_id)
+    if not accounts:
+        return {"success": True, "accounts": [], "message": "No accounts found in Firefly III."}
+
+    total = sum(a['balance'] for a in accounts)
+    currency = accounts[0].get('currency_symbol', '$') if accounts else '$'
+    return {
+        "success": True,
+        "accounts": accounts,
+        "net_worth": round(total, 2),
+        "message": f"Found {len(accounts)} accounts. Net worth: {currency}{total:,.2f}",
+    }
+
+
+def _firefly_get_spending(args: dict, conn, user_id: int) -> dict:
+    svc, err = _get_firefly(user_id)
+    if err:
+        return err
+
+    spending = svc.get_monthly_spending(user_id=user_id)
+    categories = spending.get('categories', {})
+    total = spending.get('total', 0)
+    currency = spending.get('currency', 'USD')
+
+    return {
+        "success": True,
+        "categories": categories,
+        "total": total,
+        "currency": currency,
+        "message": f"This month's spending: {currency} {total:,.2f} across {len(categories)} categories.",
+    }
+
+
+def _firefly_get_budgets(args: dict, conn, user_id: int) -> dict:
+    svc, err = _get_firefly(user_id)
+    if err:
+        return err
+
+    budgets = svc.get_budgets(user_id=user_id)
+    if not budgets:
+        return {"success": True, "budgets": [], "message": "No budgets set up in Firefly III."}
+
+    return {
+        "success": True,
+        "budgets": budgets,
+        "message": f"Found {len(budgets)} active budgets.",
+    }
+
+
+def _firefly_delete_transaction(args: dict, conn, user_id: int) -> dict:
+    svc, err = _get_firefly(user_id)
+    if err:
+        return err
+
+    tx_id = args.get("transaction_id")
+    if not tx_id:
+        return {"error": "transaction_id is required"}
+
+    success = svc.delete_transaction(str(tx_id), user_id=user_id)
+    if success:
+        return {"success": True, "message": f"Deleted transaction #{tx_id} from Firefly III."}
+    return {"error": f"Failed to delete transaction #{tx_id}. It may not exist or you don't have permission."}
 
 
 __all__ = ["execute_tool"]

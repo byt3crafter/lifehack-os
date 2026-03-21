@@ -129,6 +129,166 @@ class FireflyService:
             logger.warning("Firefly API request failed for %s", endpoint, exc_info=True)
             return None
 
+    def _api_post(self, endpoint: str, payload: dict,
+                  user_id: Optional[int] = None) -> Optional[dict]:
+        """Make a POST request to the Firefly III API.
+
+        Returns the parsed JSON body on HTTP 200/201, or None on error.
+        Invalidates cached data for this user after a successful write.
+        """
+        base_url, token = self._get_config(user_id)
+        if not base_url or not token:
+            return None
+
+        try:
+            headers = {
+                'Authorization': f'Bearer {token}',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            }
+            resp = requests.post(
+                f'{base_url}/api/v1{endpoint}',
+                headers=headers,
+                json=payload,
+                timeout=15,
+            )
+            if resp.status_code in (200, 201):
+                self.invalidate_cache(user_id)
+                return resp.json()
+            logger.warning(
+                "Firefly API POST %s returned HTTP %s: %s",
+                endpoint, resp.status_code, resp.text[:300],
+            )
+            return None
+        except requests.RequestException:
+            logger.warning("Firefly API POST failed for %s", endpoint, exc_info=True)
+            return None
+
+    def _api_delete(self, endpoint: str,
+                    user_id: Optional[int] = None) -> bool:
+        """Make a DELETE request. Returns True on success."""
+        base_url, token = self._get_config(user_id)
+        if not base_url or not token:
+            return False
+
+        try:
+            headers = {
+                'Authorization': f'Bearer {token}',
+                'Accept': 'application/json',
+            }
+            resp = requests.delete(
+                f'{base_url}/api/v1{endpoint}',
+                headers=headers,
+                timeout=15,
+            )
+            if resp.status_code in (200, 204):
+                self.invalidate_cache(user_id)
+                return True
+            logger.warning(
+                "Firefly API DELETE %s returned HTTP %s", endpoint, resp.status_code,
+            )
+            return False
+        except requests.RequestException:
+            logger.warning("Firefly API DELETE failed for %s", endpoint, exc_info=True)
+            return False
+
+    # ------------------------------------------------------------------
+    # Write operations
+    # ------------------------------------------------------------------
+
+    def create_transaction(
+        self,
+        description: str,
+        amount: float,
+        tx_type: str = 'withdrawal',
+        source_name: Optional[str] = None,
+        destination_name: Optional[str] = None,
+        source_id: Optional[str] = None,
+        destination_id: Optional[str] = None,
+        category: Optional[str] = None,
+        date_str: Optional[str] = None,
+        notes: Optional[str] = None,
+        user_id: Optional[int] = None,
+    ) -> Optional[dict]:
+        """Create a transaction in Firefly III.
+
+        Returns the created transaction data or None on failure.
+        """
+        tx: dict[str, Any] = {
+            'type': tx_type,
+            'description': description,
+            'amount': str(round(abs(amount), 2)),
+            'date': date_str or date.today().isoformat(),
+        }
+        if source_name:
+            tx['source_name'] = source_name
+        if source_id:
+            tx['source_id'] = str(source_id)
+        if destination_name:
+            tx['destination_name'] = destination_name
+        if destination_id:
+            tx['destination_id'] = str(destination_id)
+        if category:
+            tx['category_name'] = category
+        if notes:
+            tx['notes'] = notes
+
+        # Defaults: use default account for the user
+        if tx_type == 'withdrawal' and not source_id and not source_name:
+            config = self._get_default_account_id(user_id)
+            if config:
+                tx['source_id'] = config
+        elif tx_type == 'deposit' and not destination_id and not destination_name:
+            config = self._get_default_account_id(user_id)
+            if config:
+                tx['destination_id'] = config
+
+        payload = {
+            'error_if_duplicate_hash': False,
+            'transactions': [tx],
+        }
+
+        result = self._api_post('/transactions', payload, user_id)
+        if result and result.get('data'):
+            attrs = result['data'].get('attributes', {})
+            created_tx = attrs.get('transactions', [{}])[0]
+            return {
+                'id': result['data']['id'],
+                'description': created_tx.get('description', description),
+                'amount': float(created_tx.get('amount', amount)),
+                'type': created_tx.get('type', tx_type),
+                'date': (created_tx.get('date') or '')[:10],
+                'category': created_tx.get('category_name', ''),
+                'source': created_tx.get('source_name', ''),
+                'destination': created_tx.get('destination_name', ''),
+            }
+        return None
+
+    def delete_transaction(self, transaction_id: str,
+                           user_id: Optional[int] = None) -> bool:
+        """Delete a transaction by ID."""
+        return self._api_delete(f'/transactions/{transaction_id}', user_id)
+
+    def _get_default_account_id(self, user_id: Optional[int] = None) -> Optional[str]:
+        """Return the default account ID from config, or None."""
+        try:
+            from src.infrastructure.database import get_connection
+            conn = get_connection()
+            if user_id is not None:
+                row = conn.execute(
+                    "SELECT config_json FROM user_integrations "
+                    "WHERE user_id = ? AND integration_name = 'firefly'",
+                    (user_id,),
+                ).fetchone()
+                if row:
+                    config = json.loads(row['config_json'] or '{}')
+                    aid = config.get('default_account_id')
+                    if aid:
+                        return str(aid)
+        except Exception:
+            pass
+        return None
+
     def is_connected(self, user_id: Optional[int] = None) -> bool:
         """Return True if the Firefly plugin is enabled and credentials are present."""
         base_url, token = self._get_config(user_id)

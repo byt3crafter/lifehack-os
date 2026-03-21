@@ -171,6 +171,21 @@ def assemble_context(conn, user_id: int) -> dict:
         (user_id,),
     )
 
+    # Finance — Firefly III (if connected)
+    try:
+        from src.infrastructure.services.firefly_service import firefly_service
+        if firefly_service.is_connected(user_id):
+            context['firefly_connected'] = True
+            context['firefly_accounts'] = firefly_service.get_accounts(user_id)
+            context['firefly_recent_transactions'] = firefly_service.get_transactions(
+                days=14, limit=15, user_id=user_id)
+            context['firefly_monthly_spending'] = firefly_service.get_monthly_spending(user_id)
+            context['firefly_budgets'] = firefly_service.get_budgets(user_id)
+        else:
+            context['firefly_connected'] = False
+    except Exception:
+        context['firefly_connected'] = False
+
     # Water intake today
     context['water_today'] = _safe_query(conn,
         "SELECT COALESCE(SUM(glasses), 0) as total FROM water_logs WHERE user_id = ? AND date(logged_at) = ?",
@@ -408,6 +423,7 @@ Rules for tool use:
 ## Rules
 - NEVER make up data. Only reference what's in the data above.
 - For finance: always check actual balances and budgets before advising.
+- If Firefly III is connected (firefly_connected=true), ALWAYS use firefly_create_transaction instead of log_transaction for recording spending/income. Use firefly_list_accounts and firefly_get_spending for financial data. The local log_transaction is only a fallback when Firefly is not connected.
 - For food: reference actual meals logged, not generic advice.
 - For habits: reference actual strength percentages and phase progress.
 - If data is empty for a module, say "I don't see any data for that yet."
