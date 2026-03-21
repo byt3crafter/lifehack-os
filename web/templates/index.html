@@ -351,6 +351,7 @@
             position: relative;
             width: 200px;
             height: 200px;
+            contain: layout style paint;
         }
         .fast-timer-ring-wrap .glow-ring {
             position: absolute;
@@ -359,6 +360,7 @@
             background: conic-gradient(from 0deg, transparent 0%, rgba(79,128,255,0.08) 25%, rgba(139,92,246,0.08) 50%, rgba(34,197,94,0.08) 75%, transparent 100%);
             animation: fast-ring-rotate 12s linear infinite;
             will-change: transform;
+            transform: translateZ(0);
         }
         .fast-timer-ring-wrap .pulse-glow {
             position: absolute;
@@ -367,6 +369,7 @@
             background: radial-gradient(circle, rgba(79,128,255,0.06) 0%, transparent 70%);
             animation: fast-pulse-glow 3s ease-in-out infinite;
             will-change: opacity;
+            transform: translateZ(0);
         }
         #fast-ring-fill {
             will-change: stroke-dashoffset;
@@ -4499,46 +4502,102 @@
         return FASTING_STAGES.length - 1;
     }
 
+    // Track last rendered stage index so we only touch the DOM when the active stage changes
+    var _fastLastRenderedStageIdx = -2; // -2 = never rendered
+
     function renderFastStages(elapsedHours) {
         var stageIdx = getFastStageIdx(elapsedHours);
-        var html = '';
-        for (var i = 0; i < FASTING_STAGES.length; i++) {
-            var s = FASTING_STAGES[i];
-            var isDone = i < stageIdx;
-            var isCurrent = i === stageIdx;
-            var isLocked = i > stageIdx;
-
-            // Connector line between stages
-            if (i > 0) {
-                var lineColor = isDone || isCurrent ? s.color : 'rgba(255,255,255,0.05)';
-                html += '<div class="fast-stage-connector" style="position:relative;width:2px;height:6px;margin-left:23px;background:' + lineColor + ';"></div>';
-            }
-
-            var rowClass = 'fast-stage-row' + (isCurrent ? ' current' : '') + (isLocked ? ' locked' : '');
-            html += '<div id="fast-stage-' + i + '" class="' + rowClass + '" onclick="toggleFastStage(' + i + ')" style="animation:fast-stage-enter 0.3s ease ' + (i * 0.05) + 's both;">';
-
-            // Icon
-            var iconBg = isDone ? 'rgba(34,197,94,0.15)' : (isCurrent ? s.color + '15' : 'rgba(255,255,255,0.04)');
-            var iconBorder = isCurrent ? '1px solid ' + s.color + '30' : '1px solid transparent';
-            var iconContent = isDone
-                ? '<svg width="12" height="12" fill="none" stroke="#22c55e" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>'
-                : '<span>' + s.icon + '</span>';
-            html += '<div class="fast-stage-dot" style="background:' + iconBg + ';border:' + iconBorder + ';">' + iconContent + '</div>';
-
-            html += '<span class="fast-stage-name" style="color:' + (isLocked ? '#5c5c6b' : (isCurrent ? '#f0f0f2' : '#c8c8d0')) + ';font-weight:' + (isCurrent ? '600' : '500') + ';">' + s.name + '</span>';
-
-            if (isCurrent) {
-                html += '<span class="fast-stage-now" style="color:' + s.color + ';background:' + s.color + '18;">NOW</span>';
-            }
-
-            html += '<span class="fast-stage-range">' + s.start + '-' + s.end + 'h</span>';
-            html += '</div>';
-
-            // Expandable description
-            html += '<div class="fast-stage-desc">' + s.desc + '</div>';
-        }
         var el = document.getElementById('fast-stages-timeline');
-        if (el) el.innerHTML = html;
+        if (!el) return;
+
+        var needsFullRebuild = _fastLastRenderedStageIdx === -2 || el.children.length === 0;
+
+        if (needsFullRebuild) {
+            // First render: build the full skeleton once (no animation on connector/desc, animate rows once)
+            var html = '';
+            for (var i = 0; i < FASTING_STAGES.length; i++) {
+                var s = FASTING_STAGES[i];
+                var isDone = i < stageIdx;
+                var isCurrent = i === stageIdx;
+                var isLocked = i > stageIdx;
+
+                if (i > 0) {
+                    var lineColor = isDone || isCurrent ? s.color : 'rgba(255,255,255,0.05)';
+                    html += '<div id="fast-connector-' + i + '" class="fast-stage-connector" style="position:relative;width:2px;height:6px;margin-left:23px;background:' + lineColor + ';"></div>';
+                }
+
+                var rowClass = 'fast-stage-row' + (isCurrent ? ' current' : '') + (isLocked ? ' locked' : '');
+                var iconBg = isDone ? 'rgba(34,197,94,0.15)' : (isCurrent ? s.color + '15' : 'rgba(255,255,255,0.04)');
+                var iconBorder = isCurrent ? '1px solid ' + s.color + '30' : '1px solid transparent';
+                var iconContent = isDone
+                    ? '<svg width="12" height="12" fill="none" stroke="#22c55e" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>'
+                    : '<span>' + s.icon + '</span>';
+                var nowBadge = isCurrent ? '<span class="fast-stage-now" style="color:' + s.color + ';background:' + s.color + '18;">NOW</span>' : '';
+                html += '<div id="fast-stage-' + i + '" class="' + rowClass + '" onclick="toggleFastStage(' + i + ')">';
+                html += '<div id="fast-stage-dot-' + i + '" class="fast-stage-dot" style="background:' + iconBg + ';border:' + iconBorder + ';">' + iconContent + '</div>';
+                html += '<span id="fast-stage-name-' + i + '" class="fast-stage-name" style="color:' + (isLocked ? '#5c5c6b' : (isCurrent ? '#f0f0f2' : '#c8c8d0')) + ';font-weight:' + (isCurrent ? '600' : '500') + ';">' + s.name + '</span>';
+                html += '<span id="fast-stage-now-' + i + '"' + (isCurrent ? ' class="fast-stage-now" style="color:' + s.color + ';background:' + s.color + '18;"' : ' class="fast-stage-now" style="display:none;"') + '>NOW</span>';
+                html += '<span class="fast-stage-range">' + s.start + '-' + s.end + 'h</span>';
+                html += '</div>';
+                html += '<div class="fast-stage-desc">' + s.desc + '</div>';
+            }
+            el.innerHTML = html;
+            _fastLastRenderedStageIdx = stageIdx;
+            return;
+        }
+
+        // Subsequent renders: only patch the rows whose state changed
+        if (stageIdx === _fastLastRenderedStageIdx) return; // nothing to do
+
+        var prevIdx = _fastLastRenderedStageIdx;
+        _fastLastRenderedStageIdx = stageIdx;
+
+        for (var j = 0; j < FASTING_STAGES.length; j++) {
+            var st = FASTING_STAGES[j];
+            var wasDone = j < prevIdx;
+            var wasCurrent = j === prevIdx;
+            var isDoneNow = j < stageIdx;
+            var isCurrentNow = j === stageIdx;
+            var isLockedNow = j > stageIdx;
+
+            // Skip rows that haven't changed state
+            if (wasDone === isDoneNow && wasCurrent === isCurrentNow) continue;
+
+            var rowEl = document.getElementById('fast-stage-' + j);
+            var dotEl = document.getElementById('fast-stage-dot-' + j);
+            var nameEl = document.getElementById('fast-stage-name-' + j);
+            var nowEl = document.getElementById('fast-stage-now-' + j);
+            var connEl = j > 0 ? document.getElementById('fast-connector-' + j) : null;
+            if (!rowEl) continue;
+
+            rowEl.className = 'fast-stage-row' + (isCurrentNow ? ' current' : '') + (isLockedNow ? ' locked' : '');
+
+            if (dotEl) {
+                var newIconBg = isDoneNow ? 'rgba(34,197,94,0.15)' : (isCurrentNow ? st.color + '15' : 'rgba(255,255,255,0.04)');
+                var newIconBorder = isCurrentNow ? '1px solid ' + st.color + '30' : '1px solid transparent';
+                dotEl.style.background = newIconBg;
+                dotEl.style.border = newIconBorder;
+                dotEl.innerHTML = isDoneNow
+                    ? '<svg width="12" height="12" fill="none" stroke="#22c55e" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>'
+                    : '<span>' + st.icon + '</span>';
+            }
+            if (nameEl) {
+                nameEl.style.color = isLockedNow ? '#5c5c6b' : (isCurrentNow ? '#f0f0f2' : '#c8c8d0');
+                nameEl.style.fontWeight = isCurrentNow ? '600' : '500';
+            }
+            if (nowEl) {
+                if (isCurrentNow) {
+                    nowEl.style.display = '';
+                    nowEl.style.color = st.color;
+                    nowEl.style.background = st.color + '18';
+                } else {
+                    nowEl.style.display = 'none';
+                }
+            }
+            if (connEl) {
+                connEl.style.background = isDoneNow || isCurrentNow ? st.color : 'rgba(255,255,255,0.05)';
+            }
+        }
     }
 
     function toggleFastStage(idx) {
@@ -4547,11 +4606,18 @@
         el.classList.toggle('expanded');
     }
 
+    var _fastLastHydrationRuleIdx = -1;
+
     function renderHydration(elapsedHours) {
-        var rule = HYDRATION_RULES[HYDRATION_RULES.length - 1];
+        var ruleIdx = HYDRATION_RULES.length - 1;
         for (var i = 0; i < HYDRATION_RULES.length; i++) {
-            if (elapsedHours < HYDRATION_RULES[i].maxH) { rule = HYDRATION_RULES[i]; break; }
+            if (elapsedHours < HYDRATION_RULES[i].maxH) { ruleIdx = i; break; }
         }
+        // Only rewrite DOM if the rule actually changed
+        if (ruleIdx === _fastLastHydrationRuleIdx) return;
+        _fastLastHydrationRuleIdx = ruleIdx;
+
+        var rule = HYDRATION_RULES[ruleIdx];
         var html = '';
         for (var j = 0; j < rule.items.length; j++) {
             html += '<div class="fast-hydration-item"><span>' + rule.items[j].icon + '</span><span>' + rule.items[j].text + '</span></div>';
@@ -4659,6 +4725,8 @@
 
         clearInterval(fastInterval);
         _fastLastStageIdx = -1;
+        _fastLastRenderedStageIdx = -2; // force full DOM rebuild on next render
+        _fastLastHydrationRuleIdx = -1;
 
         var streakCount = calcFastingStreak(f.history);
         var streakBadge = document.getElementById('fast-streak-badge');
@@ -7008,11 +7076,14 @@
         loadDashboardLive();
         loadDashboardWellness();
 
-        // Auto-refresh every 30 seconds
+        // Auto-refresh: only tick the dashboard fasting timer when the dashboard view is active,
+        // so it doesn't compete with the dedicated fasting-page interval.
         if(!_dashRefreshInterval) {
             _dashRefreshInterval = setInterval(function() {
-                _updateFastingTimer();
-                // Full refresh every 5 minutes
+                var dashView = document.getElementById('v-dashboard');
+                if(dashView && !dashView.classList.contains('hidden')) {
+                    _updateFastingTimer();
+                }
             }, 1000);
             // Refresh live data every 2 minutes
             setInterval(loadDashboardLive, 120000);
