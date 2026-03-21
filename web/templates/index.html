@@ -2457,9 +2457,9 @@
                             </div>
                             <!-- Vikunja task selector (shown when Vikunja project is selected) -->
                             <div id="dw-vikunja-tasks" class="hidden">
-                                <label class="field-label">Task (optional)</label>
+                                <label class="field-label">Working on task (optional)</label>
                                 <select id="dw-task-id" class="w-full p-3 rounded-lg border text-sm">
-                                    <option value="">None</option>
+                                    <option value="">None — general focus</option>
                                 </select>
                             </div>
                             <button onclick="startDeepWork()"
@@ -2468,6 +2468,32 @@
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="1.8"><circle cx="10" cy="10" r="7"/><path stroke-linecap="round" stroke-linejoin="round" d="M10 6v4l2.5 2.5"/></svg>
                                 Enter Deep Work
                             </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vikunja Task Panel (shown when Vikunja project selected) -->
+                <div id="dw-task-panel" class="hidden mb-5">
+                    <div class="card overflow-hidden" style="border:1px solid rgba(139,92,246,0.15);">
+                        <div class="flex items-center justify-between px-4 py-3" style="border-bottom:1px solid #2a2a2e;">
+                            <div class="flex items-center gap-2">
+                                <svg width="14" height="14" fill="none" stroke="#8b5cf6" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                                <span class="text-xs font-semibold" style="color:#9898a6;letter-spacing:0.06em;text-transform:uppercase;">Tasks</span>
+                                <span id="dw-task-count" class="text-xs font-mono" style="color:#5c5c6b;"></span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="dwAskAI()" class="flex items-center gap-1 px-2 py-1 rounded-md text-xs" style="background:rgba(79,128,255,0.1);color:#4f80ff;border:none;cursor:pointer;font-family:inherit;font-weight:500;" title="Ask AI to help plan tasks">
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                                    AI
+                                </button>
+                                <button onclick="dwAddTaskModal()" class="flex items-center gap-1 px-2 py-1 rounded-md text-xs" style="background:rgba(139,92,246,0.1);color:#8b5cf6;border:none;cursor:pointer;font-family:inherit;font-weight:500;">
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2.5"><path stroke-linecap="round" d="M10 4v12M4 10h12"/></svg>
+                                    Add
+                                </button>
+                            </div>
+                        </div>
+                        <div id="dw-task-list" class="p-2" style="max-height:400px;overflow-y:auto;">
+                            <div class="text-xs text-center py-4" style="color:#5c5c6b;">Loading tasks...</div>
                         </div>
                     </div>
                 </div>
@@ -3863,12 +3889,14 @@
         if(dot) dot.style.background = sel ? dwProjectColor(sel) : '#8b5cf6';
         updateDWStartCard();
 
-        // If Vikunja project: try to load tasks
+        // If Vikunja project: load tasks panel
         if(sel && sel.source === 'vikunja') {
             loadDWVikunjaTasks(sel.id);
         } else {
             var tv = document.getElementById('dw-vikunja-tasks');
             if(tv) tv.classList.add('hidden');
+            var tp = document.getElementById('dw-task-panel');
+            if(tp) tp.classList.add('hidden');
         }
     }
 
@@ -3890,20 +3918,169 @@
     }
 
     async function loadDWVikunjaTasks(projectId) {
+        // Strip the vk_ prefix for the API call
+        var rawId = String(projectId).replace(/^vk_/, '');
+
+        // Show the task selector dropdown
         var tv = document.getElementById('dw-vikunja-tasks');
         var ts = document.getElementById('dw-task-id');
-        if(!tv || !ts) return;
-        tv.classList.remove('hidden');
-        ts.innerHTML = '<option value="">Loading...</option>';
-        var tasks = await api('/vikunja/tasks?project_id=' + projectId);
-        if(tasks && tasks.length) {
-            ts.innerHTML = '<option value="">None</option>';
-            for(var i = 0; i < tasks.length; i++) {
-                ts.innerHTML += '<option value="' + tasks[i].id + '">' + (tasks[i].title || tasks[i].name) + '</option>';
+        if(tv) tv.classList.remove('hidden');
+        if(ts) ts.innerHTML = '<option value="">Loading...</option>';
+
+        // Show the task panel
+        var panel = document.getElementById('dw-task-panel');
+        if(panel) panel.classList.remove('hidden');
+
+        var resp = await api('/deepwork/vikunja-tasks?project_id=' + rawId);
+        var tasks = (resp && resp.tasks) ? resp.tasks : (Array.isArray(resp) ? resp : []);
+        window._dwVikunjaTasks = tasks;
+        window._dwVikunjaProjectId = rawId;
+
+        // Populate task selector
+        if(ts) {
+            if(tasks.length) {
+                var openTasks = tasks.filter(function(t) { return !t.done; });
+                ts.innerHTML = '<option value="">None — general focus</option>';
+                for(var i = 0; i < openTasks.length; i++) {
+                    var pLabel = openTasks[i].priority > 0 ? ' ★' : '';
+                    ts.innerHTML += '<option value="' + openTasks[i].id + '">' + (openTasks[i].title || '') + pLabel + '</option>';
+                }
+            } else {
+                ts.innerHTML = '<option value="">No tasks yet</option>';
             }
-        } else {
-            ts.innerHTML = '<option value="">No tasks found</option>';
         }
+
+        // Render task list
+        renderDWTaskList(tasks);
+    }
+
+    function renderDWTaskList(tasks) {
+        var el = document.getElementById('dw-task-list');
+        var countEl = document.getElementById('dw-task-count');
+        if(!el) return;
+
+        if(!tasks || !tasks.length) {
+            el.innerHTML = '<div class="text-xs text-center py-6" style="color:#5c5c6b;">No tasks yet. Click <strong>+ Add</strong> to create one.</div>';
+            if(countEl) countEl.textContent = '';
+            return;
+        }
+
+        var open = tasks.filter(function(t) { return !t.done; });
+        var done = tasks.filter(function(t) { return t.done; });
+        if(countEl) countEl.textContent = open.length + ' open' + (done.length ? ', ' + done.length + ' done' : '');
+
+        var html = '';
+        // Open tasks first
+        for(var i = 0; i < open.length; i++) html += dwTaskRow(open[i]);
+        // Done tasks collapsed
+        if(done.length) {
+            html += '<div style="margin-top:4px;">';
+            html += '<button onclick="this.nextElementSibling.classList.toggle(\'hidden\');this.querySelector(\'svg\').style.transform=this.nextElementSibling.classList.contains(\'hidden\')?\'rotate(-90deg)\':\'rotate(0)\'" class="flex items-center gap-1.5 w-full px-2 py-1.5 rounded-md text-xs" style="color:#5c5c6b;background:none;border:none;cursor:pointer;font-family:inherit;">';
+            html += '<svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2" style="transition:transform 0.15s;transform:rotate(-90deg);"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8l5 5 5-5"/></svg>';
+            html += 'Completed (' + done.length + ')</button>';
+            html += '<div class="hidden">';
+            for(var j = 0; j < done.length; j++) html += dwTaskRow(done[j]);
+            html += '</div></div>';
+        }
+
+        el.innerHTML = html;
+    }
+
+    function dwTaskRow(t) {
+        var priorityColors = {0:'transparent', 1:'#22c55e', 2:'#f59e0b', 3:'#ef4444', 4:'#ef4444', 5:'#ef4444'};
+        var pColor = priorityColors[t.priority] || 'transparent';
+        var dueStr = '';
+        if(t.due_date) {
+            var d = new Date(t.due_date);
+            var today = new Date(); today.setHours(0,0,0,0);
+            var diff = Math.floor((d - today) / 86400000);
+            if(diff < 0) dueStr = '<span style="color:#ef4444;font-size:0.625rem;">overdue</span>';
+            else if(diff === 0) dueStr = '<span style="color:#f59e0b;font-size:0.625rem;">today</span>';
+            else if(diff === 1) dueStr = '<span style="color:#9898a6;font-size:0.625rem;">tomorrow</span>';
+            else dueStr = '<span style="color:#5c5c6b;font-size:0.625rem;">' + d.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + '</span>';
+        }
+        var checkIcon = t.done
+            ? '<svg width="16" height="16" fill="none" stroke="#22c55e" viewBox="0 0 24 24" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="4" fill="rgba(34,197,94,0.12)"/><path stroke-linecap="round" d="M8 12l3 3 5-5"/></svg>'
+            : '<svg width="16" height="16" fill="none" stroke="#5c5c6b" viewBox="0 0 24 24" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="4"/></svg>';
+
+        return '<div class="flex items-center gap-2 px-2 py-2 rounded-lg" style="' + (t.done ? 'opacity:0.5;' : '') + 'border-left:2px solid ' + pColor + ';">'
+            + '<button onclick="dwToggleTask(\'' + t.id + '\')" style="background:none;border:none;cursor:pointer;padding:0;flex-shrink:0;display:flex;" title="' + (t.done ? 'Mark undone' : 'Mark done') + '">' + checkIcon + '</button>'
+            + '<div class="flex-1 min-w-0">'
+            + '<div class="text-xs font-medium truncate" style="color:' + (t.done ? '#5c5c6b' : '#f0f0f2') + ';' + (t.done ? 'text-decoration:line-through;' : '') + '">' + (t.title || '') + '</div>'
+            + (dueStr ? '<div class="mt-0.5">' + dueStr + '</div>' : '')
+            + '</div>'
+            + '<button onclick="dwDeleteTask(\'' + t.id + '\')" class="flex-shrink-0 p-1 rounded" style="background:none;border:none;cursor:pointer;color:#5c5c6b;" title="Delete" onmouseover="this.style.color=\'#ef4444\'" onmouseout="this.style.color=\'#5c5c6b\'">'
+            + '<svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 20 20" stroke-width="2"><path stroke-linecap="round" d="M6 6l8 8M14 6l-8 8"/></svg>'
+            + '</button></div>';
+    }
+
+    async function dwToggleTask(taskId) {
+        await api('/deepwork/vikunja-tasks/' + taskId + '/toggle', 'POST');
+        loadDWVikunjaTasks(window._dwVikunjaProjectId ? 'vk_' + window._dwVikunjaProjectId : '');
+    }
+
+    async function dwDeleteTask(taskId) {
+        await api('/deepwork/vikunja-tasks/' + taskId, 'DELETE');
+        loadDWVikunjaTasks(window._dwVikunjaProjectId ? 'vk_' + window._dwVikunjaProjectId : '');
+    }
+
+    function dwAddTaskModal() {
+        var pid = window._dwVikunjaProjectId || '';
+        showModal('New Task', '<div class="space-y-3">'
+            + '<div><label class="field-label">Title</label>'
+            + '<input id="dwt-title" class="w-full px-3 py-2.5 rounded-lg border text-sm" placeholder="What needs to be done?"></div>'
+            + '<div><label class="field-label">Description (optional)</label>'
+            + '<textarea id="dwt-desc" class="w-full px-3 py-2.5 rounded-lg border text-sm" rows="2" placeholder="Details..."></textarea></div>'
+            + '<div class="grid grid-cols-2 gap-3">'
+            + '<div><label class="field-label">Priority</label>'
+            + '<select id="dwt-priority" class="w-full px-3 py-2.5 rounded-lg border text-sm">'
+            + '<option value="0">None</option><option value="1">Low</option><option value="2">Medium</option><option value="3">High</option><option value="4">Urgent</option>'
+            + '</select></div>'
+            + '<div><label class="field-label">Due date</label>'
+            + '<input id="dwt-due" type="date" class="w-full px-3 py-2.5 rounded-lg border text-sm"></div>'
+            + '</div>'
+            + '<div class="flex gap-2 pt-1">'
+            + '<button onclick="hideModal()" class="btn-ghost flex-1 py-2.5">Cancel</button>'
+            + '<button onclick="dwCreateTask()" class="btn-primary flex-1 py-2.5">Create Task</button>'
+            + '</div></div>'
+        );
+    }
+
+    async function dwCreateTask() {
+        var title = ($('#dwt-title') || {}).value;
+        if(!title || !title.trim()) return showToast('Title required', 'error');
+        var data = {
+            project_id: window._dwVikunjaProjectId || '',
+            title: title.trim(),
+            description: ($('#dwt-desc') || {}).value || '',
+            priority: +($('#dwt-priority') || {}).value || 0,
+            due_date: ($('#dwt-due') || {}).value || null
+        };
+        var r = await api('/deepwork/vikunja-tasks', 'POST', data);
+        hideModal();
+        if(r && !r.error) {
+            showToast('Task created!', 'success');
+            loadDWVikunjaTasks(window._dwVikunjaProjectId ? 'vk_' + window._dwVikunjaProjectId : '');
+        } else {
+            showToast('Failed: ' + (r?.error || 'Unknown error'), 'error');
+        }
+    }
+
+    function dwAskAI() {
+        var sel = window._dwSelectedProject;
+        var projectName = sel ? (sel.name || 'this project') : 'my project';
+        var tasks = window._dwVikunjaTasks || [];
+        var openTasks = tasks.filter(function(t) { return !t.done; });
+        var taskList = openTasks.map(function(t) { return '- ' + t.title + (t.due_date ? ' (due: ' + t.due_date.split('T')[0] + ')' : ''); }).join('\n');
+        var prompt = 'I\'m working on "' + projectName + '" in Deep Work mode.';
+        if(taskList) prompt += ' My open tasks:\n' + taskList + '\n\nHelp me prioritize these tasks and suggest what to focus on first.';
+        else prompt += ' I have no tasks yet. Help me break this project down into actionable tasks.';
+        // Navigate to chat with this prompt
+        nav('chat');
+        setTimeout(function() {
+            var input = document.getElementById('chat-input');
+            if(input) { input.value = prompt; input.focus(); }
+        }, 300);
     }
 
     function createDWProject() {

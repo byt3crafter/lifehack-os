@@ -231,7 +231,7 @@ def start_session():
     )
 
     local_project_id = data.get("project_id")
-    vikunja_task_id  = data.get("vikunja_task_id")
+    vikunja_task_id  = data.get("vikunja_task_id") or data.get("task_id")
     notes            = (data.get("notes") or "").strip()
     description      = (data.get("description") or "").strip()
 
@@ -429,3 +429,107 @@ def vikunja_tasks():
             for t in tasks
         ],
     })
+
+
+@deepwork_bp.route("/vikunja-tasks", methods=["POST"])
+@login_required
+def create_vikunja_task():
+    """Create a new task in Vikunja.
+
+    Body:
+        project_id   int    — Vikunja project to create the task in (required)
+        title        str    — task title (required)
+        description  str
+        priority     int
+        due_date     str    — ISO 8601 date string, e.g. "2026-04-01"
+    """
+    provider = _get_vikunja_provider()
+    if not provider:
+        return jsonify({"error": "Vikunja is not enabled"}), 503
+
+    data = request.json or {}
+    project_id = data.get("project_id")
+    title = (data.get("title") or "").strip()
+
+    if not project_id:
+        return jsonify({"error": "project_id is required"}), 400
+    if not title:
+        return jsonify({"error": "title is required"}), 400
+
+    description = (data.get("description") or "").strip()
+    priority    = data.get("priority")
+
+    due_date = None
+    raw_due = data.get("due_date")
+    if raw_due:
+        try:
+            due_date = datetime.fromisoformat(raw_due)
+        except ValueError:
+            return jsonify({"error": "due_date must be a valid ISO 8601 date string"}), 400
+
+    try:
+        task = provider.create_task(project_id, title, description, due_date, priority)
+    except Exception:
+        logger.warning("Failed to create Vikunja task", exc_info=True)
+        return jsonify({"error": "Could not create task in Vikunja"}), 502
+
+    return jsonify({
+        "id":          task.id,
+        "title":       task.title,
+        "done":        task.done,
+        "priority":    task.priority,
+        "description": task.description or "",
+        "due_date":    task.due_date.isoformat() if task.due_date else None,
+        "project_id":  task.project_id,
+    }), 201
+
+
+@deepwork_bp.route("/vikunja-tasks/<int:task_id>/toggle", methods=["POST"])
+@login_required
+def toggle_vikunja_task(task_id):
+    """Toggle a Vikunja task between done and undone."""
+    provider = _get_vikunja_provider()
+    if not provider:
+        return jsonify({"error": "Vikunja is not enabled"}), 503
+
+    try:
+        task = provider.get_task(task_id)
+    except Exception:
+        logger.warning("Failed to fetch Vikunja task %s", task_id, exc_info=True)
+        return jsonify({"error": "Could not fetch task from Vikunja"}), 502
+
+    try:
+        if task.done:
+            task = provider.uncomplete_task(task_id)
+        else:
+            task = provider.complete_task(task_id)
+    except Exception:
+        logger.warning("Failed to toggle Vikunja task %s", task_id, exc_info=True)
+        return jsonify({"error": "Could not toggle task in Vikunja"}), 502
+
+    return jsonify({
+        "id":          task.id,
+        "title":       task.title,
+        "done":        task.done,
+        "priority":    task.priority,
+        "description": task.description or "",
+        "due_date":    task.due_date.isoformat() if task.due_date else None,
+        "project_id":  task.project_id,
+    })
+
+
+@deepwork_bp.route("/vikunja-tasks/<int:task_id>", methods=["DELETE"])
+@login_required
+def delete_vikunja_task(task_id):
+    """Delete a Vikunja task by ID."""
+    provider = _get_vikunja_provider()
+    if not provider:
+        return jsonify({"error": "Vikunja is not enabled"}), 503
+
+    try:
+        provider.delete_task(task_id)
+    except Exception:
+        logger.warning("Failed to delete Vikunja task %s", task_id, exc_info=True)
+        return jsonify({"error": "Could not delete task in Vikunja"}), 502
+
+    return jsonify({"success": True})
