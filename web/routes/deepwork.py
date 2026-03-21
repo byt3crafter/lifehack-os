@@ -18,12 +18,13 @@ deepwork_bp = Blueprint("deepwork", __name__, url_prefix="/api/deepwork")
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _get_vikunja_provider():
+def _get_vikunja_provider(user_id: int = None):
     """Return a ready VikunjaTaskProvider when the plugin is enabled, else None."""
     try:
         if not plugin_registry.has("vikunja"):
             return None
-        stored = plugin_registry.get_config("vikunja")
+        uid = user_id or current_user_id()
+        stored = plugin_registry.get_config("vikunja", uid)
         if not stored.get("enabled"):
             return None
         plugin = plugin_registry.get("vikunja")
