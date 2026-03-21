@@ -32,8 +32,7 @@ _USER_SETTING_KEYS = {
 }
 
 # Truly global keys (admin-managed, stored in app_settings)
-_GLOBAL_SETTING_KEYS = {
-}
+_GLOBAL_SETTING_KEYS = set()
 
 # All recognised setting keys
 _SETTING_KEYS = _USER_SETTING_KEYS | _GLOBAL_SETTING_KEYS
