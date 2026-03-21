@@ -880,7 +880,7 @@
         }
 
         /* ── Fasting ring ────────────────────────────── */
-        #fast-ring-fill { transition: stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1); }
+        #fast-ring-fill { will-change: stroke-dashoffset; }
 
         /* ── Fasting stages timeline ─────────────────── */
         .fast-stage {
@@ -4575,30 +4575,35 @@
         var stageIdx = getFastStageIdx(elapsedHours);
         var stage = FASTING_STAGES[stageIdx];
 
+        // Only update stage label and next-stage when stage actually changes (not every tick)
         var stageLbl = document.getElementById('fast-stage-label');
-        if (stageLbl) {
+        var progressLbl = document.getElementById('fast-progress-label');
+        var nextLbl = document.getElementById('fast-next-label');
+
+        if (stageLbl && stageIdx !== _fastLastStageIdx) {
             stageLbl.innerHTML = '<span style="font-size:1rem;">' + stage.icon + '</span> ' + stage.name;
             stageLbl.style.color = stage.color;
         }
 
-        var progressLbl = document.getElementById('fast-progress-label');
-        if (progressLbl) progressLbl.textContent = Math.round(pct) + '% through your ' + targetHours + 'h fast';
+        if (progressLbl) {
+            var newProgress = Math.round(pct) + '% through your ' + targetHours + 'h fast';
+            if (progressLbl.textContent !== newProgress) progressLbl.textContent = newProgress;
+        }
 
-        var nextLbl = document.getElementById('fast-next-label');
         if (nextLbl) {
+            var nextText = '';
             if (stageIdx < FASTING_STAGES.length - 1) {
                 var nextStage = FASTING_STAGES[stageIdx + 1];
                 var msToNext = (nextStage.start * 3600000) - elapsed;
                 if (msToNext > 0) {
                     var nH = Math.floor(msToNext / 3600000);
                     var nM = Math.floor((msToNext % 3600000) / 60000);
-                    nextLbl.textContent = nextStage.icon + ' ' + nextStage.name + ' in ' + (nH > 0 ? nH + 'h ' : '') + nM + 'm';
-                } else {
-                    nextLbl.textContent = '';
+                    nextText = nextStage.icon + ' ' + nextStage.name + ' in ' + (nH > 0 ? nH + 'h ' : '') + nM + 'm';
                 }
             } else {
-                nextLbl.textContent = '\u2728 Maximum fast zone reached!';
+                nextText = '\u2728 Maximum fast zone reached!';
             }
+            if (nextLbl.textContent !== nextText) nextLbl.textContent = nextText;
         }
 
         if (stageIdx !== _fastLastStageIdx && _fastLastStageIdx !== -1) {
