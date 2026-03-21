@@ -177,6 +177,7 @@ def admin_list_users():
         """SELECT
                u.id, u.username, u.display_name, u.is_admin,
                COALESCE(u.byok_enabled, 0) as byok_enabled,
+               COALESCE(u.plan, 'free') as plan,
                u.created_at, u.last_login,
                p.email,
                s.total_xp as xp, s.level

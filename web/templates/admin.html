@@ -1035,6 +1035,14 @@ function renderUsersTable(data) {
             <td>${esc(u.display_name) || '—'}</td>
             <td>${esc(u.email) || '—'}</td>
             <td><span class="pill ${u.is_admin ? 'pill-admin' : 'pill-user'}">${u.is_admin ? 'Admin' : 'User'}</span></td>
+            <td>
+                <select class="plan-select" onchange="changePlan(${u.id}, this.value)" style="background:#141416;border:1px solid #2a2a2e;color:#f0f0f2;padding:4px 8px;border-radius:6px;font-size:0.75rem;font-family:inherit;">
+                    <option value="free" ${u.plan === 'free' ? 'selected' : ''}>Free (10/day)</option>
+                    <option value="personal" ${u.plan === 'personal' ? 'selected' : ''}>Personal (100/day)</option>
+                    <option value="pro" ${u.plan === 'pro' ? 'selected' : ''}>Pro (1k/day)</option>
+                    <option value="unlimited" ${u.plan === 'unlimited' ? 'selected' : ''}>Unlimited</option>
+                </select>
+            </td>
             <td>${u.byok_enabled ? '<span class="pill pill-byok">BYOK</span>' : '<span style="color:#5c5c6b;">—</span>'}</td>
             <td>${fmtDate(u.last_login)}</td>
             <td>${esc(u.xp) || 0} / Lvl ${esc(u.level) || 1}</td>
@@ -1053,7 +1061,7 @@ function renderUsersTable(data) {
         <table>
             <thead><tr>
                 <th>ID</th><th>Username</th><th>Display Name</th><th>Email</th>
-                <th>Role</th><th>BYOK</th><th>Last Login</th><th>XP / Level</th><th>Actions</th>
+                <th>Role</th><th>Plan</th><th>BYOK</th><th>Last Login</th><th>XP / Level</th><th>Actions</th>
             </tr></thead>
             <tbody>${rows}</tbody>
         </table>
@@ -1088,6 +1096,15 @@ async function toggleByok(userId) {
     } else {
         const data = await res.json().catch(() => ({}));
         alert(data.error || 'Failed to toggle BYOK');
+    }
+}
+
+async function changePlan(userId, plan) {
+    const res = await apiCall(`/admin/users/${userId}/plan`, 'POST', { plan });
+    if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || 'Failed to change plan');
+        loadUsers();
     }
 }
 
