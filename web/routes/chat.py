@@ -224,6 +224,25 @@ def send_message():
     )
     conn.commit()
 
+    # ── Log AI usage for rate-limiting / billing ──────────────────────────────
+    from src.infrastructure.ai.usage import log_ai_call
+    input_tok = getattr(provider, '_last_input_tokens', 0) or 0
+    output_tok = getattr(provider, '_last_output_tokens', 0) or 0
+    cost = getattr(provider, '_last_cost_usd', 0.0) or 0.0
+    duration = getattr(provider, '_last_duration_ms', 0) or 0
+    log_ai_call(
+        user_id=uid,
+        provider=provider_name,
+        model=model_name,
+        action='chat',
+        input_tokens=input_tok,
+        output_tokens=output_tok,
+        cost_usd=cost,
+        success=True,
+        duration_ms=duration,
+        conn=conn,
+    )
+
     response_payload = {
         "response": clean_response,
         "provider": provider_name,

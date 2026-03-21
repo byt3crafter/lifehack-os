@@ -9775,7 +9775,14 @@
 
         try {
             var r = await api('/chat', 'POST', payload);
-            var reply = (r && r.response) ? r.response : 'Sorry, something went wrong.';
+            var reply;
+            if (r && r.response) {
+                reply = r.response;
+            } else if (r && r.error) {
+                reply = '**' + r.error + '**';
+            } else {
+                reply = 'Sorry, something went wrong.';
+            }
             _chatModeMessages.push({ role: 'assistant', content: reply, created_at: new Date().toISOString() });
             _chatMessages = _chatModeMessages.slice();
         } catch (e) {
