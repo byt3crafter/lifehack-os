@@ -6518,35 +6518,35 @@
 
     // ── BYOK check for AI settings tab ──────────────────────────
     async function checkByokStatus() {
-        try {
-            var usage = await api('/usage');
-            var profile = await api('/profile');
-            var blockedEl = document.getElementById('ai-byok-blocked');
-            var allowedEl = document.getElementById('ai-byok-allowed');
-            var usageEl = document.getElementById('ai-usage-display');
+        var blockedEl = document.getElementById('ai-byok-blocked');
+        var allowedEl = document.getElementById('ai-byok-allowed');
+        var usageEl = document.getElementById('ai-usage-display');
 
-            // Admins and BYOK-enabled users can configure their own providers
-            var isAdmin = false;
-            var byokEnabled = false;
-            try { isAdmin = profile.is_admin; } catch(e) {}
-            try { byokEnabled = !!profile.byok_enabled; } catch(e) {}
+        // Fetch profile first (this determines BYOK access)
+        var profile = {};
+        try { profile = await api('/profile') || {}; } catch(e) {}
 
-            if(isAdmin || byokEnabled) {
-                // Show full provider config
-                if(blockedEl) blockedEl.classList.add('hidden');
-                if(allowedEl) allowedEl.style.display = '';
-            } else {
-                // Non-BYOK user: show blocked message, hide provider config
-                if(blockedEl) blockedEl.classList.remove('hidden');
-                if(allowedEl) allowedEl.style.display = 'none';
-                // Show usage info
+        var isAdmin = !!profile.is_admin;
+        var byokEnabled = !!profile.byok_enabled;
+
+        if(isAdmin || byokEnabled) {
+            // Show full provider config
+            if(blockedEl) blockedEl.classList.add('hidden');
+            if(allowedEl) allowedEl.style.display = '';
+        } else {
+            // Non-BYOK user: show blocked message, hide provider config
+            if(blockedEl) blockedEl.classList.remove('hidden');
+            if(allowedEl) allowedEl.style.display = 'none';
+            // Show usage info (fetch separately, don't block on failure)
+            try {
+                var usage = await api('/usage') || {};
                 if(usageEl) {
                     usageEl.innerHTML = '<div class="text-xs" style="color:#9898a6;">AI Usage Today: <strong style="color:#f0f0f2;">' + (usage.used || 0) + '</strong> / ' + (usage.limit || 10) + ' calls'
                         + '<br>Plan: <strong style="color:#f0f0f2;">' + (usage.plan_name || 'Free') + '</strong>'
                         + '<br>Monthly: ' + (usage.monthly_calls || 0) + ' calls, ' + (usage.monthly_tokens || 0) + ' tokens</div>';
                 }
-            }
-        } catch(e) {}
+            } catch(e) {}
+        }
     }
 
     // ── AI Provider helpers (multi-provider) ────────────────────
