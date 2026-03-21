@@ -157,7 +157,7 @@ def save_settings():
 
 
 @settings_bp.route('/reset', methods=['POST'])
-@admin_required
+@login_required
 def reset_all_data():
     """Delete the current user's data. Does NOT remove users or global app_settings."""
     uid = current_user_id()
