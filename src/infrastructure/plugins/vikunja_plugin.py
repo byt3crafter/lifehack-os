@@ -37,17 +37,26 @@ class VikunjaPlugin(Plugin):
         """Test connection using the API token."""
         from src.infrastructure.providers.vikunja import VikunjaTaskProvider, VikunjaConfig
 
+        api_url = self._normalize_url(config.get("api_url", ""))
+
         try:
             provider = VikunjaTaskProvider(
                 VikunjaConfig(
-                    api_url=config.get("api_url", ""),
+                    api_url=api_url,
                     token=config.get("api_token", ""),
                 )
             )
             return provider.test_connection()
         except Exception:
-            logger.debug("Vikunja connection test failed", exc_info=True)
+            logger.warning("Vikunja connection test failed for %s", api_url, exc_info=True)
             return False
+
+    @staticmethod
+    def _normalize_url(url: str) -> str:
+        url = (url or "").rstrip("/")
+        if url and not url.endswith("/api/v1"):
+            url = url + "/api/v1"
+        return url
 
     def get_status(self, config: dict) -> dict:
         connected = self.test_connection(config)
@@ -62,7 +71,7 @@ class VikunjaPlugin(Plugin):
 
         return VikunjaTaskProvider(
             VikunjaConfig(
-                api_url=config.get("api_url", ""),
+                api_url=self._normalize_url(config.get("api_url", "")),
                 token=config.get("api_token", ""),
             )
         )
