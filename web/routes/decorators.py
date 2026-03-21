@@ -4,7 +4,6 @@ Every authenticated route should call ``current_user_id()`` to obtain the
 logged-in user's ID and pass it to all database queries so that user data
 is fully isolated.
 """
-import os
 from functools import wraps
 from flask import g, session, request, redirect, url_for, jsonify
 from werkzeug.security import check_password_hash
@@ -77,25 +76,6 @@ def current_user_id() -> int:
     return int(uid)
 
 
-def _get_api_key() -> str:
-    """Return the configured OpenClaw API key.
-
-    Resolution order:
-    1. ``openclaw_api_key`` row in the app_settings table (set via the UI).
-    2. ``LIFEHACK_API_KEY`` environment variable (legacy / Docker fallback).
-    """
-    try:
-        from src.infrastructure.database import get_connection
-        conn = get_connection()
-        row = conn.execute(
-            "SELECT value FROM app_settings WHERE key = 'openclaw_api_key'"
-        ).fetchone()
-        if row and row['value']:
-            return row['value']
-    except Exception:
-        pass
-    return os.environ.get('LIFEHACK_API_KEY', '')
-
 
 def login_required(f):
     """Require user to be logged in via session OR a valid user API key.
@@ -145,17 +125,3 @@ def admin_required(f):
     return decorated
 
 
-def api_key_required(f):
-    """Require valid API key for OpenClaw endpoints.
-
-    The expected key is resolved at request time so that changes made through
-    the Settings UI take effect without a server restart.
-    """
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        key = request.headers.get('X-API-Key') or request.args.get('api_key')
-        expected = _get_api_key()
-        if not expected or key != expected:
-            return jsonify({'error': 'Invalid API key'}), 401
-        return f(*args, **kwargs)
-    return decorated

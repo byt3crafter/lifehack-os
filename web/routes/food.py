@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from flask import Blueprint, jsonify, request
 
-from .decorators import login_required, api_key_required, current_user_id
+from .decorators import login_required, current_user_id
 from src.infrastructure.database import get_connection
 from src.infrastructure.database.user_scope import get_user_setting
 
@@ -384,7 +384,7 @@ def identify_food():
 
 
 @food_bp.route('/analyze', methods=['POST'])
-@api_key_required
+@login_required
 def analyze_food():
     data = request.json
 

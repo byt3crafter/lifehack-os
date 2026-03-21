@@ -36,12 +36,6 @@ These must be set before the application is useful. The defaults in `.env.exampl
 | `LIFEHACK_USERNAME` | `admin` | Login username |
 | `LIFEHACK_PASSWORD` | `change-me-to-a-strong-password` | Login password |
 
-### API Key
-
-| Variable | Default | Description |
-|---|---|---|
-| `LIFEHACK_API_KEY` | `change-me-to-a-random-string` | API key for OpenClaw endpoints and the food `/analyze` endpoint. Required if you use either feature. Leave blank to disable API key authentication (all API key checks will fail). Generate with: `python3 -c "import secrets; print(secrets.token_hex(32))"` |
-
 ### AI Provider
 
 | Variable | Default | Description |
@@ -97,9 +91,6 @@ LIFEHACK_SECRET_KEY=change-me-to-a-random-string
 # Login credentials
 LIFEHACK_USERNAME=admin
 LIFEHACK_PASSWORD=change-me-to-a-strong-password
-
-# API key for AI/OpenClaw integration (generate a random one or leave blank to disable)
-LIFEHACK_API_KEY=change-me-to-a-random-string
 
 # === OPTIONAL: AI Provider ===
 # Options: none, ollama, openai

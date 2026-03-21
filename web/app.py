@@ -84,7 +84,6 @@ def create_app():
     app.register_blueprint(projects_bp)
     app.register_blueprint(integrations_bp)
     app.register_blueprint(misc_bp)
-    # openclaw removed — per-user API keys replace it
     app.register_blueprint(challenges_bp)
     app.register_blueprint(modules_bp)
     app.register_blueprint(ai_bp)

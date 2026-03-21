@@ -2,7 +2,7 @@
 from flask import Blueprint, jsonify, request
 from datetime import datetime
 
-from .decorators import login_required, api_key_required
+from .decorators import login_required
 from src.infrastructure.database import get_connection
 
 patterns_bp = Blueprint('patterns', __name__, url_prefix='/api/patterns')
@@ -36,7 +36,7 @@ def get_patterns():
 
 
 @patterns_bp.route('/log', methods=['POST'])
-@api_key_required
+@login_required
 def log_pattern():
     """Log a check-in activity to learn patterns."""
     ensure_table()

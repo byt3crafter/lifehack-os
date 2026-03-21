@@ -134,12 +134,6 @@ LIFEHACK_USERNAME=yourname
 LIFEHACK_PASSWORD=a-strong-password
 ```
 
-The `LIFEHACK_API_KEY` is only required if you plan to use the OpenClaw API or an AI provider. Generate one the same way as the secret key:
-
-```bash
-python3 -c "import secrets; print(secrets.token_hex(32))"
-```
-
 For a full reference of every `.env` variable, see [configuration.md](configuration.md).
 
 ### Run the Server
@@ -185,7 +179,7 @@ After logging in, you land on the **Dashboard**. On a fresh install:
 - **Daily check-in** prompt is visible — click it to complete today's check-in
 - **Navigation** on the left shows the modules that are enabled by default: Habits, Check-in, and Analytics
 
-**Modules that are disabled by default** (enable them in Settings): Projects, Movement, Food, Fasting, Deep Work, Challenges, Redirect, Wishlist, and AI Agent (OpenClaw).
+**Modules that are disabled by default** (enable them in Settings): Projects, Movement, Food, Fasting, Deep Work, Challenges, Redirect, and Wishlist.
 
 To enable more modules, click **Settings** in the navigation and toggle the modules you want.
 
@@ -205,5 +199,4 @@ Complete it by clicking the checkbox. You will see XP added to your total.
 - Read [modules.md](modules.md) to understand what each module does and how to configure it
 - Read [configuration.md](configuration.md) to customize scoring rules and categories
 - Read [ai-providers.md](ai-providers.md) if you want AI-powered food analysis or insights
-- Read [openclaw-api.md](openclaw-api.md) if you want to connect an external AI agent
 - Read [integrations.md](integrations.md) for Vikunja, Google Calendar, and Firefly III

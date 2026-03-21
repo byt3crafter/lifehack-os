@@ -15,7 +15,6 @@ from .reports import reports_bp
 from .projects import projects_bp
 from .integrations import integrations_bp
 from .misc import misc_bp
-# openclaw removed — replaced by per-user API keys
 from .challenges import challenges_bp
 from .modules import modules_bp
 from .ai import ai_bp

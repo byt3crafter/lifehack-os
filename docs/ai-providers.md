@@ -30,8 +30,6 @@ In standalone mode:
 - Food logging works — you enter nutrition values manually
 - The "Analyze with AI" button in the Food module is hidden or returns a graceful "AI not configured" response
 - The "Generate Insight" feature is not available
-- The OpenClaw API still works for pushing pre-generated insights from an external agent
-
 ---
 
 ## How AI Integrates with LifeHack OS
@@ -265,4 +263,4 @@ Response in standalone mode:
 }
 ```
 
-Note: the `/api/ai/status` endpoint requires a valid browser session (login first). It is not accessible via the OpenClaw API key.
+Note: the `/api/ai/status` endpoint requires a valid browser session (login first).

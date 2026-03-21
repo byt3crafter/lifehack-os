@@ -84,5 +84,5 @@ def auth_client(app):
 
 @pytest.fixture()
 def api_headers():
-    """OpenClaw API key headers."""
+    """API key headers for testing."""
     return {"X-API-Key": "test-key", "Content-Type": "application/json"}

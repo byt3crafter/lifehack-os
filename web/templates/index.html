@@ -2995,8 +2995,7 @@
                             <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/><path d="M10 7v3l2 2"/></svg>
                             AI Provider
                         </button>
-                        <!-- OpenClaw removed — per-user API keys replace it -->
-                        <button onclick="settingsTab('integrations')" id="stab-integrations" class="settings-tab-btn" aria-selected="false" style="display:flex;align-items:center;gap:0.625rem;width:100%;text-align:left;padding:0.5rem 0.75rem;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-size:0.8125rem;font-weight:500;transition:background 0.12s,color 0.12s;background:transparent;color:#9898a6;">
+<button onclick="settingsTab('integrations')" id="stab-integrations" class="settings-tab-btn" aria-selected="false" style="display:flex;align-items:center;gap:0.625rem;width:100%;text-align:left;padding:0.5rem 0.75rem;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-size:0.8125rem;font-weight:500;transition:background 0.12s,color 0.12s;background:transparent;color:#9898a6;">
                             <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" viewBox="0 0 20 20"><circle cx="6" cy="10" r="2.5"/><circle cx="14" cy="6" r="2.5"/><circle cx="14" cy="14" r="2.5"/><path d="M8.4 9l4.2-2.2M8.4 11l4.2 2.2"/></svg>
                             Integrations
                         </button>
@@ -5270,7 +5269,7 @@
                     + '<button onclick="viewChallengeHistory(' + c.id + ', \'' + safeName + '\', \'' + safeStartDate + '\')" class="action-link">History</button>'
                     + '<button onclick="checkinChallengeModal(' + c.id + ', \'' + safeName + '\')" class="action-link-success">Check-in</button>'
                     + '<button onclick="failChallengeModal(' + c.id + ', \'' + safeName + '\')" class="action-link-danger">I broke it</button>'
-                    + '<button onclick="editChallengeModal(' + c.id + ', \'' + safeName + '\', \'' + safeCategory + '\', ' + (c.target_days || 'null') + ', \'' + safeFreq + '\')" class="action-link">Edit</button>'
+                    + '<button onclick="editChallengeModal(' + c.id + ', \'' + safeName + '\', \'' + safeCategory + '\', ' + (c.target_days || 'null') + ', \'' + safeFreq + '\', \'' + safeStartDate + '\')" class="action-link">Edit</button>'
                     + '<button onclick="deleteChallenge(' + c.id + ', \'' + safeName + '\')" class="action-link-danger">Delete</button>'
                     + completeBtn
                     + `
@@ -5519,7 +5518,8 @@
     }
     
     // Edit challenge modal
-    function editChallengeModal(id, name, category, targetDays, frequency) {
+    function editChallengeModal(id, name, category, targetDays, frequency, startDate) {
+        const todayStr = new Date().toISOString().split('T')[0];
         showModal(`Edit Challenge`, `
             <div class="space-y-3">
                 <div>
@@ -5535,6 +5535,10 @@
                         <option value="habit"    ${category==='habit'   ?'selected':''}>Habit</option>
                         <option value="general"  ${category==='general' ?'selected':''}>General</option>
                     </select>
+                </div>
+                <div>
+                    <label class="field-label">Start date</label>
+                    <input id="ec-start-date" type="date" class="w-full px-3 py-2.5 rounded-lg border text-sm" value="${startDate || todayStr}" max="${todayStr}">
                 </div>
                 <div>
                     <label class="field-label">Target days (empty = ongoing)</label>
@@ -5554,11 +5558,12 @@
             </div>
         `);
     }
-    
+
     async function doEditChallenge(id) {
         const data = {
             name: $('#ec-name').value.trim(),
             category: $('#ec-category').value,
+            start_date: $('#ec-start-date') ? $('#ec-start-date').value : null,
             target_days: +$('#ec-days').value || null,
             check_in_frequency: $('#ec-freq').value
         };
@@ -6072,53 +6077,8 @@
                 renderProviderCards(savedSettings);
                 populateAssignmentDropdowns(savedSettings);
                 // Do not pre-fill API key values for security — just show placeholder if set
-                const keyInput = $('#openclaw-api-key-input');
-                if(keyInput && savedSettings.openclaw_api_key_set) {
-                    keyInput.placeholder = 'Key is set — enter a new value to change it';
-                }
-                if(keyInput && savedSettings.openclaw_api_key) {
-                    keyInput.value = savedSettings.openclaw_api_key;
-                }
             }
         } catch(_) {}
-
-        // ── OpenClaw ─────────────────────────────────────────────
-        const logEl = $('#openclaw-log');
-        try {
-            const logResp = await fetch('/api/openclaw/log', {credentials:'same-origin'});
-            if(logResp.ok) {
-                const logData = await logResp.json();
-                const badge = $('#openclaw-status-badge');
-                if(badge) { badge.textContent = 'Active'; badge.style.cssText = 'background:rgba(34,197,94,0.12);color:#22c55e;font-size:0.75rem;padding:0.25rem 0.625rem;border-radius:100px;font-weight:500;'; }
-                if(logEl) {
-                    const entries = Array.isArray(logData) ? logData : (logData.entries || logData.log || []);
-                    if(entries.length) {
-                        logEl.innerHTML = '<div style="display:flex;flex-direction:column;gap:6px;">' +
-                            entries.slice(0,20).map(e => {
-                                const ts = e.timestamp || e.time || '';
-                                const msg = e.message || e.action || JSON.stringify(e);
-                                return `<div style="display:flex;gap:10px;align-items:baseline;">
-                                    <span style="font-family:'DM Mono',monospace;font-size:0.6875rem;color:#5c5c6b;flex-shrink:0;">${ts ? new Date(ts).toLocaleTimeString() : ''}</span>
-                                    <span style="font-size:0.8125rem;color:#9898a6;">${msg}</span>
-                                </div>`;
-                            }).join('') +
-                        '</div>';
-                    } else {
-                        logEl.innerHTML = '<p class="text-sm" style="color:#5c5c6b;">No recent activity.</p>';
-                    }
-                }
-            } else if(logResp.status === 403 || logResp.status === 401) {
-                const badge = $('#openclaw-status-badge');
-                if(badge) { badge.textContent = 'Auth required'; badge.style.cssText = 'background:rgba(245,158,11,0.12);color:#f59e0b;font-size:0.75rem;padding:0.25rem 0.625rem;border-radius:100px;font-weight:500;'; }
-                if(logEl) logEl.innerHTML = '<p class="text-sm" style="color:#5c5c6b;">Set <code style="color:#9898a6;font-family:\'DM Mono\',monospace;">OPENCLAW_API_KEY</code> in your .env to view log.</p>';
-            } else if(logResp.status === 404) {
-                const badge = $('#openclaw-status-badge');
-                if(badge) { badge.textContent = 'Disabled'; badge.style.cssText = 'background:rgba(100,100,120,0.2);color:#5c5c6b;font-size:0.75rem;padding:0.25rem 0.625rem;border-radius:100px;font-weight:500;'; }
-                if(logEl) logEl.innerHTML = '<p class="text-sm" style="color:#5c5c6b;">OpenClaw module is not enabled.</p>';
-            }
-        } catch(e) {
-            if(logEl) logEl.innerHTML = '<p class="text-sm" style="color:#5c5c6b;">Could not reach OpenClaw endpoint.</p>';
-        }
 
         // ── AI Usage Log ─────────────────────────────────────────
         try {
@@ -6668,28 +6628,6 @@
         }
     }
 
-    // ── OpenClaw helpers ─────────────────────────────────────────
-    function toggleOpenclawKeyVisibility() {
-        const input = $('#openclaw-api-key-input');
-        const btn   = $('#openclaw-key-toggle-btn');
-        if(!input) return;
-        if(input.type === 'password') {
-            input.type = 'text';
-            if(btn) btn.textContent = 'Hide';
-        } else {
-            input.type = 'password';
-            if(btn) btn.textContent = 'Show';
-        }
-    }
-
-    async function saveOpenclawKey() {
-        const key = $('#openclaw-api-key-input').value.trim();
-        if(!key) return showToast('Enter an API key', 'error');
-        const r = await api('/settings', 'POST', {openclaw_api_key: key});
-        if(r && r.error) showToast('Failed: ' + r.error, 'error');
-        else showToast('OpenClaw API key saved', 'success');
-        loadSettings();
-    }
 
     // ── Reset All Data ────────────────────────────────────────────
     let _resetConfirmTimer = null;

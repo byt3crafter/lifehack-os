@@ -18,7 +18,6 @@ LifeHack OS is built around a module system. Each feature is an independent modu
 10. [Challenges](#challenges)
 11. [Redirect](#redirect)
 12. [Wishlist](#wishlist)
-13. [AI Agent (OpenClaw)](#ai-agent-openclaw)
 
 ---
 
@@ -39,7 +38,6 @@ LifeHack OS is built around a module system. Each feature is an independent modu
 | Challenges | `challenges` | Disabled |
 | Redirect | `replace` | Disabled |
 | Wishlist | `wishlist` | Disabled |
-| AI Agent (OpenClaw) | `openclaw` | Disabled |
 
 ### Enabling and Disabling Modules
 
@@ -131,7 +129,7 @@ These values are configurable in `config/rules.toml` under `[checkin]`.
 
 ### Sobriety Streak
 
-The check-in module tracks a sobriety streak based on the "avoided alcohol" field. This streak is displayed in the dashboard header and reported in the OpenClaw status endpoint.
+The check-in module tracks a sobriety streak based on the "avoided alcohol" field. This streak is displayed in the dashboard header.
 
 ### Tips
 
@@ -425,7 +423,7 @@ If you break a challenge, mark it as failed. The streak count at the time of fai
 
 ### Milestone Days
 
-The system tracks milestone days automatically: 7, 14, 21, 30, 60, 90, 100, 180, and 365. When a challenge hits one of these, the OpenClaw API (if enabled) reports it as a milestone.
+The system tracks milestone days automatically: 7, 14, 21, 30, 60, 90, 100, 180, and 365.
 
 ### Tips
 
@@ -508,34 +506,3 @@ Go to **Settings** and enable the **Wishlist** module.
 
 - Use this as a "things worth staying healthy for" list. Places you want to travel to when you're in better shape. Experiences you're building towards.
 - It does not award XP — it is purely informational and motivational.
-
----
-
-## AI Agent (OpenClaw)
-
-**What it does:** Enables the OpenClaw API — a set of authenticated REST endpoints that an external AI agent can use to read your status, complete habits, push insights, log food, and check in to challenges on your behalf.
-
-### How to Enable
-
-Go to **Settings** and enable the **AI Agent (OpenClaw)** module. You also need `LIFEHACK_API_KEY` set in your `.env` file.
-
-### What OpenClaw Can Do
-
-- Read your current XP, level, habits, and check-in status
-- Mark habits as complete by name
-- Create new habits
-- Submit a daily check-in
-- Push insights to your dashboard
-- Log food entries with nutrition data
-- View and manage challenges
-
-### Security
-
-All OpenClaw endpoints require the `X-API-Key` header. If `LIFEHACK_API_KEY` is empty or not set, the API key check will reject all requests.
-
-For the complete API reference, see [openclaw-api.md](openclaw-api.md).
-
-### Tips
-
-- The OpenClaw module logs every API action (action type, detail, IP address, timestamp) in the database. View this log at `GET /api/openclaw/log`.
-- You do not need this module enabled if you only want AI-assisted food analysis or insights — those features use the internal AI provider and do not require the API key.

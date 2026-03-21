@@ -33,7 +33,6 @@ _USER_SETTING_KEYS = {
 
 # Truly global keys (admin-managed, stored in app_settings)
 _GLOBAL_SETTING_KEYS = {
-    'openclaw_api_key',
 }
 
 # All recognised setting keys
@@ -57,7 +56,6 @@ _RESET_TABLES = [
     'replacement_actions',
     'replacement_logs',
     'ai_insights',
-    'openclaw_log',
     'point_ledger',
     'chat_messages',
 ]

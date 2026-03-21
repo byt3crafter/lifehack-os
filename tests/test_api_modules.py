@@ -45,10 +45,6 @@ class TestListModules:
         mod = next(m for m in modules if m["id"] == "finance")
         assert mod["enabled"] is False
 
-    def test_openclaw_module_disabled_by_default(self, auth_client):
-        modules = auth_client.get("/api/modules").get_json()
-        openclaw_mod = next(m for m in modules if m["id"] == "openclaw")
-        assert openclaw_mod["enabled"] is False
 
 
 class TestUpdateModules:

@@ -2,7 +2,7 @@
 from flask import Blueprint, jsonify, request
 from datetime import datetime, date, timedelta
 
-from .decorators import login_required, api_key_required, current_user_id
+from .decorators import login_required, current_user_id
 from src.infrastructure.database import get_connection
 
 challenges_bp = Blueprint('challenges', __name__, url_prefix='/api/challenges')
@@ -156,17 +156,18 @@ def update_challenge(challenge_id):
     data = request.json
     conn = get_connection()
 
+    fields = ['name = ?', 'category = ?', 'target_days = ?', 'check_in_frequency = ?', 'notes = ?']
+    values = [data.get('name'), data.get('category'), data.get('target_days'),
+              data.get('check_in_frequency'), data.get('notes')]
+
+    if data.get('start_date'):
+        fields.append('start_date = ?')
+        values.append(data['start_date'])
+
+    values.extend([challenge_id, uid])
     conn.execute(
-        """UPDATE challenges
-           SET name = ?, category = ?, target_days = ?, check_in_frequency = ?, notes = ?
-           WHERE id = ? AND user_id = ?""",
-        (data.get('name'),
-         data.get('category'),
-         data.get('target_days'),
-         data.get('check_in_frequency'),
-         data.get('notes'),
-         challenge_id,
-         uid)
+        f"UPDATE challenges SET {', '.join(fields)} WHERE id = ? AND user_id = ?",
+        values
     )
     conn.commit()
 
@@ -345,115 +346,3 @@ def delete_challenge(challenge_id):
     conn.execute("DELETE FROM challenges WHERE id = ? AND user_id = ?", (challenge_id, uid))
     conn.commit()
     return jsonify({'success': True})
-
-
-# ============== OPENCLAW INTEGRATION ==============
-
-@challenges_bp.route('/openclaw/status', methods=['GET'])
-@api_key_required
-def openclaw_challenges_status():
-    """Get challenges status for OpenClaw AI."""
-    init_challenges_table()
-    conn = get_connection()
-
-    active = conn.execute(
-        "SELECT * FROM challenges WHERE status = 'active'"
-    ).fetchall()
-
-    result = {
-        'active_challenges': [],
-        'needs_checkin': [],
-        'milestones_today': []
-    }
-
-    milestone_days = [7, 14, 21, 30, 60, 90, 100, 180, 365]
-
-    for r in active:
-        challenge = dict(r)
-        stats = get_challenge_stats(challenge)
-        challenge.update(stats)
-        result['active_challenges'].append({
-            'id': challenge['id'],
-            'name': challenge['name'],
-            'category': challenge['category'],
-            'streak_days': stats['streak_days'],
-            'target_days': challenge['target_days'],
-            'progress': stats['progress']
-        })
-
-        if stats['needs_checkin']:
-            result['needs_checkin'].append(challenge['name'])
-
-        if stats['streak_days'] in milestone_days:
-            result['milestones_today'].append({
-                'name': challenge['name'],
-                'days': stats['streak_days']
-            })
-
-    return jsonify(result)
-
-
-@challenges_bp.route('/openclaw/checkin', methods=['POST'])
-@api_key_required
-def openclaw_checkin():
-    """AI can check in to a challenge by name."""
-    data = request.json
-    challenge_name = data.get('challenge_name', '').lower()
-
-    conn = get_connection()
-    challenge = conn.execute(
-        "SELECT id, name FROM challenges WHERE status = 'active' AND LOWER(name) LIKE ?",
-        (f'%{challenge_name}%',)
-    ).fetchone()
-
-    if challenge:
-        now = datetime.now().isoformat()
-        conn.execute(
-            "UPDATE challenges SET last_check_in = ? WHERE id = ?",
-            (now, challenge['id'])
-        )
-        conn.execute(
-            "INSERT INTO challenge_logs (challenge_id, action, note) VALUES (?, ?, ?)",
-            (challenge['id'], 'checkin', data.get('note', 'Checked in via OpenClaw'))
-        )
-        conn.commit()
-
-        return jsonify({'success': True, 'challenge': challenge['name']})
-
-    return jsonify({'error': 'Challenge not found'}), 404
-
-
-@challenges_bp.route('/openclaw/fail', methods=['POST'])
-@api_key_required
-def openclaw_fail():
-    """AI can mark a challenge as failed by name."""
-    data = request.json
-    challenge_name = data.get('challenge_name', '').lower()
-    reason = data.get('reason', '')
-
-    conn = get_connection()
-    challenge = conn.execute(
-        "SELECT * FROM challenges WHERE status = 'active' AND LOWER(name) LIKE ?",
-        (f'%{challenge_name}%',)
-    ).fetchone()
-
-    if challenge:
-        stats = get_challenge_stats(dict(challenge))
-
-        conn.execute(
-            "UPDATE challenges SET status = 'failed', end_date = ? WHERE id = ?",
-            (date.today().isoformat(), challenge['id'])
-        )
-        conn.execute(
-            "INSERT INTO challenge_logs (challenge_id, action, note) VALUES (?, ?, ?)",
-            (challenge['id'], 'failed', f"Ended after {stats['streak_days']} days. {reason}")
-        )
-        conn.commit()
-
-        return jsonify({
-            'success': True,
-            'challenge': challenge['name'],
-            'streak_days': stats['streak_days']
-        })
-
-    return jsonify({'error': 'Challenge not found'}), 404

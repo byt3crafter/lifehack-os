@@ -2,7 +2,7 @@
 
 MULTI-USER CONVENTION: Every table that stores user-specific data MUST include
 a ``user_id INTEGER REFERENCES users(id)`` column.  System/global tables
-(users, schema_version, app_settings, habit_templates, app_log, openclaw_log,
+(users, schema_version, app_settings, habit_templates, app_log,
 ai_usage_log) are exempt.
 """
 import sqlite3
@@ -381,14 +381,6 @@ def init_database() -> None:
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
 
-        -- OpenClaw Connection Log (GLOBAL)
-        CREATE TABLE IF NOT EXISTS openclaw_log (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            action TEXT NOT NULL,
-            detail TEXT DEFAULT '',
-            ip_address TEXT DEFAULT '',
-            logged_at TEXT DEFAULT CURRENT_TIMESTAMP
-        );
 
         -- AI Insights
         CREATE TABLE IF NOT EXISTS ai_insights (
