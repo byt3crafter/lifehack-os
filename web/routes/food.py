@@ -34,6 +34,16 @@ def _format_logged_at(raw: str) -> str:
         return raw
 
 
+def _ensure_utc_suffix(ts: str) -> str:
+    """Append 'Z' to a SQLite UTC timestamp so JavaScript interprets it as UTC."""
+    if not ts:
+        return ts
+    ts = ts.strip()
+    if not ts.endswith('Z') and '+' not in ts and ts[-1].isdigit():
+        return ts + 'Z'
+    return ts
+
+
 def _serialize_log(r) -> dict:
     """Serialize a food_logs row to a dict."""
     images = []
@@ -52,7 +62,7 @@ def _serialize_log(r) -> dict:
 
     return {
         'id': r['id'],
-        'logged_at': r['logged_at'],
+        'logged_at': _ensure_utc_suffix(r['logged_at']),
         'logged_at_display': _format_logged_at(r['logged_at']),
         'meal_type': r['meal_type'],
         'description': r['description'],
