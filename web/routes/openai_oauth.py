@@ -20,7 +20,7 @@ import secrets
 import requests
 from flask import Blueprint, jsonify, request, session
 
-from .decorators import login_required
+from .decorators import login_required, current_user_id
 from src.infrastructure.database import get_connection
 
 openai_oauth_bp = Blueprint('openai_oauth', __name__, url_prefix='/auth/openai')
@@ -235,8 +235,30 @@ def exchange():
 @openai_oauth_bp.route('/status')
 @login_required
 def status():
-    """Return whether the ChatGPT OAuth connection is active."""
-    token = _get_setting('openai_oauth_token')
+    """Return whether the ChatGPT OAuth connection is active.
+
+    BYOK users only see their own OAuth tokens, not the admin's global one.
+    """
+    uid = current_user_id()
+    conn = get_connection()
+
+    # Check if BYOK user (non-admin)
+    user = conn.execute(
+        "SELECT is_admin, COALESCE(byok_enabled, 0) as byok_enabled FROM users WHERE id = ?",
+        (uid,),
+    ).fetchone()
+    is_byok = user and user['byok_enabled'] and not user['is_admin']
+
+    if is_byok:
+        # BYOK users: check their own user_settings only
+        row = conn.execute(
+            "SELECT value FROM user_settings WHERE user_id = ? AND key = 'openai_oauth_token'",
+            (uid,),
+        ).fetchone()
+        token = row['value'] if row else ''
+    else:
+        token = _get_setting('openai_oauth_token')
+
     connected = bool(token)
     return jsonify({'connected': connected, 'has_token': bool(token)})
 

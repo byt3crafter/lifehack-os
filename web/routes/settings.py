@@ -78,18 +78,46 @@ def _upsert_global_setting(conn, key: str, value: str) -> None:
     )
 
 
+def _get_user_only_setting(conn, user_id: int, key: str) -> str:
+    """Get a per-user setting WITHOUT falling back to global app_settings."""
+    row = conn.execute(
+        "SELECT value FROM user_settings WHERE user_id = ? AND key = ?",
+        (user_id, key),
+    ).fetchone()
+    return row['value'] if row else ''
+
+
 @settings_bp.route('', methods=['GET'])
 @login_required
 def get_settings():
-    """Return current settings. Per-user settings come from user_settings; global from app_settings."""
+    """Return current settings.
+
+    For BYOK users (non-admin): return ONLY their own user_settings — never
+    fall back to global app_settings, so they don't see admin-configured
+    providers and must set up their own keys.
+
+    For admins: return user_settings with global fallback (full access).
+    """
     uid = current_user_id()
     conn = get_connection()
+
+    # Check if user is admin or BYOK
+    user = conn.execute(
+        "SELECT is_admin, COALESCE(byok_enabled, 0) as byok_enabled FROM users WHERE id = ?",
+        (uid,),
+    ).fetchone()
+    is_admin = user and user['is_admin']
+    is_byok = user and user['byok_enabled'] and not is_admin
 
     result = {}
     for key in _SETTING_KEYS:
         if key in _GLOBAL_SETTING_KEYS:
             value = _get_global_setting(conn, key)
+        elif is_byok:
+            # BYOK users: only their own settings, no global fallback
+            value = _get_user_only_setting(conn, uid, key)
         else:
+            # Admins / non-BYOK users: user settings with global fallback
             value = get_user_setting(conn, uid, key, '')
 
         if key in _SENSITIVE_KEYS and value:
