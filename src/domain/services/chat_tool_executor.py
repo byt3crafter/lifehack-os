@@ -776,16 +776,26 @@ def _start_deep_work(args: dict, conn, user_id: int) -> dict:
     project_name = (args.get("project_name") or "").strip()
     notes = (args.get("notes") or "").strip()
 
-    # Resolve project by name if no ID given
+    # Resolve project_id to an integer if possible
     if project_id is not None:
         try:
             project_id = int(project_id)
         except (TypeError, ValueError):
-            # Could be a Vikunja project name passed as ID — try name lookup
+            # Non-integer ID (e.g. Vikunja name) — treat as project name
             if not project_name:
                 project_name = str(project_id)
             project_id = None
 
+    # Verify the project_id actually exists in deep_work_projects
+    if project_id is not None:
+        exists = conn.execute(
+            "SELECT id FROM deep_work_projects WHERE id = ? AND user_id = ?",
+            (project_id, user_id),
+        ).fetchone()
+        if not exists:
+            project_id = None
+
+    # Look up by name if no valid ID
     if not project_id and project_name:
         row = conn.execute(
             "SELECT id FROM deep_work_projects WHERE LOWER(name) LIKE ? AND user_id = ? AND active = 1",
@@ -793,6 +803,13 @@ def _start_deep_work(args: dict, conn, user_id: int) -> dict:
         ).fetchone()
         if row:
             project_id = row["id"]
+        else:
+            # Auto-create a local deep work project
+            cursor = conn.execute(
+                "INSERT INTO deep_work_projects (name, user_id) VALUES (?, ?)",
+                (project_name, user_id),
+            )
+            project_id = cursor.lastrowid
 
     # End any active session for this user first
     conn.execute(
@@ -801,7 +818,7 @@ def _start_deep_work(args: dict, conn, user_id: int) -> dict:
     )
 
     cursor = conn.execute(
-        "INSERT INTO deep_work_sessions (project_id, notes, user_id) VALUES (?, ?, ?)",
+        "INSERT INTO deep_work_sessions (local_project_id, notes, user_id) VALUES (?, ?, ?)",
         (project_id, notes, user_id),
     )
     conn.commit()
