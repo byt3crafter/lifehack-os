@@ -59,6 +59,13 @@ def execute_tool(tool_name: str, args: dict, conn, user_id: int) -> dict:
         "list_vikunja_tasks": _list_vikunja_tasks,
         "create_vikunja_task": _create_vikunja_task,
         "complete_vikunja_task": _complete_vikunja_task,
+        "update_vikunja_task": _update_vikunja_task,
+        "delete_vikunja_task": _delete_vikunja_task,
+        "comment_vikunja_task": _comment_vikunja_task,
+        "move_vikunja_task": _move_vikunja_task,
+        "label_vikunja_task": _label_vikunja_task,
+        "set_vikunja_progress": _set_vikunja_progress,
+        "create_vikunja_project": _create_vikunja_project,
     }
 
     handler = handlers.get(tool_name)
@@ -1386,6 +1393,105 @@ def _complete_vikunja_task(args: dict, conn, user_id: int) -> dict:
     return {
         "success": True,
         "message": f'Marked task "{task.title}" as done',
+    }
+
+
+def _update_vikunja_task(args: dict, conn, user_id: int) -> dict:
+    provider, err = _get_vikunja(user_id)
+    if err:
+        return err
+    task_id = args.get("task_id")
+    if not task_id:
+        return {"error": "task_id is required"}
+    title = args.get("title")
+    description = args.get("description")
+    priority = int(args["priority"]) if args.get("priority") is not None else None
+    due_date = None
+    if args.get("due_date"):
+        from datetime import datetime
+        try:
+            due_date = datetime.fromisoformat(args["due_date"])
+        except ValueError:
+            pass
+    task = provider.update_task(str(task_id), title=title, description=description,
+                                due_date=due_date, priority=priority)
+    return {"success": True, "message": f'Updated task "{task.title}"'}
+
+
+def _delete_vikunja_task(args: dict, conn, user_id: int) -> dict:
+    provider, err = _get_vikunja(user_id)
+    if err:
+        return err
+    task_id = args.get("task_id")
+    if not task_id:
+        return {"error": "task_id is required"}
+    provider.delete_task(str(task_id))
+    return {"success": True, "message": "Task deleted"}
+
+
+def _comment_vikunja_task(args: dict, conn, user_id: int) -> dict:
+    provider, err = _get_vikunja(user_id)
+    if err:
+        return err
+    task_id = args.get("task_id")
+    comment = (args.get("comment") or "").strip()
+    if not task_id or not comment:
+        return {"error": "task_id and comment are required"}
+    provider.add_comment(str(task_id), comment)
+    return {"success": True, "message": "Comment added"}
+
+
+def _move_vikunja_task(args: dict, conn, user_id: int) -> dict:
+    provider, err = _get_vikunja(user_id)
+    if err:
+        return err
+    task_id = args.get("task_id")
+    target = args.get("target_project_id")
+    if not task_id or not target:
+        return {"error": "task_id and target_project_id are required"}
+    task = provider.move_task(str(task_id), str(target))
+    return {"success": True, "message": f'Moved task "{task.title}" to project {target}'}
+
+
+def _label_vikunja_task(args: dict, conn, user_id: int) -> dict:
+    provider, err = _get_vikunja(user_id)
+    if err:
+        return err
+    task_id = args.get("task_id")
+    label = (args.get("label") or "").strip()
+    if not task_id or not label:
+        return {"error": "task_id and label are required"}
+    result = provider.add_label(str(task_id), label)
+    if result.get("error"):
+        return result
+    return {"success": True, "message": f'Added label "{label}" to task'}
+
+
+def _set_vikunja_progress(args: dict, conn, user_id: int) -> dict:
+    provider, err = _get_vikunja(user_id)
+    if err:
+        return err
+    task_id = args.get("task_id")
+    percent = args.get("percent")
+    if not task_id or percent is None:
+        return {"error": "task_id and percent are required"}
+    provider.set_progress(str(task_id), float(percent))
+    return {"success": True, "message": f"Set progress to {percent}%"}
+
+
+def _create_vikunja_project(args: dict, conn, user_id: int) -> dict:
+    provider, err = _get_vikunja(user_id)
+    if err:
+        return err
+    title = (args.get("title") or "").strip()
+    if not title:
+        return {"error": "title is required"}
+    description = args.get("description", "")
+    project = provider.create_project(title, description)
+    return {
+        "success": True,
+        "project_id": project.id,
+        "message": f'Created Vikunja project "{title}"',
     }
 
 

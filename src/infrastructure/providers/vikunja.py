@@ -175,6 +175,39 @@ class VikunjaTaskProvider(TaskProvider):
         """Delete a task."""
         return self._delete(f"/tasks/{task_id}")
     
+    def add_comment(self, task_id: str, comment: str) -> dict:
+        """Add a comment to a task."""
+        return self._put(f"/tasks/{task_id}/comments", {"comment": comment})
+
+    def move_task(self, task_id: str, target_project_id: str) -> TaskItem:
+        """Move a task to a different project."""
+        data = self._post(f"/tasks/{task_id}", {"project_id": int(target_project_id)})
+        return self._task_from_api(data)
+
+    def add_label(self, task_id: str, label: str) -> dict:
+        """Add a label to a task. Creates the label if it doesn't exist."""
+        # First find or create the label
+        try:
+            labels = self._get("/labels")
+            label_id = None
+            for lb in labels:
+                if lb.get("title", "").lower() == label.lower():
+                    label_id = lb["id"]
+                    break
+            if not label_id:
+                new_label = self._put("/labels", {"title": label})
+                label_id = new_label["id"]
+            # Attach label to task
+            self._put(f"/tasks/{task_id}/labels", {"label_id": label_id})
+            return {"success": True, "label_id": label_id, "label": label}
+        except Exception:
+            return {"error": f"Could not add label '{label}'"}
+
+    def set_progress(self, task_id: str, percent: float) -> TaskItem:
+        """Set task progress (0-100)."""
+        data = self._post(f"/tasks/{task_id}", {"percent_done": percent / 100.0})
+        return self._task_from_api(data)
+
     def create_project(self, title: str, description: str = "") -> ProjectItem:
         """Create a new project in Vikunja."""
         data = self._put("/projects", {

@@ -184,6 +184,64 @@ TOOL_DEFINITIONS = [
             "task_id": "string (required) — Vikunja task ID",
         },
     },
+    {
+        "name": "update_vikunja_task",
+        "description": "Update a Vikunja task's title, description, priority, or due date",
+        "parameters": {
+            "task_id": "string (required)",
+            "title": "string (optional) — new title",
+            "description": "string (optional) — new description",
+            "priority": "integer 0-4 (optional)",
+            "due_date": "string (optional) — ISO date e.g. 2026-03-25",
+        },
+    },
+    {
+        "name": "delete_vikunja_task",
+        "description": "Delete a Vikunja task permanently",
+        "parameters": {
+            "task_id": "string (required)",
+        },
+    },
+    {
+        "name": "comment_vikunja_task",
+        "description": "Add a comment to a Vikunja task",
+        "parameters": {
+            "task_id": "string (required)",
+            "comment": "string (required) — the comment text",
+        },
+    },
+    {
+        "name": "move_vikunja_task",
+        "description": "Move a Vikunja task to a different project",
+        "parameters": {
+            "task_id": "string (required)",
+            "target_project_id": "string (required) — ID of the destination project",
+        },
+    },
+    {
+        "name": "label_vikunja_task",
+        "description": "Add a label/tag to a Vikunja task (creates the label if it doesn't exist)",
+        "parameters": {
+            "task_id": "string (required)",
+            "label": "string (required) — label name e.g. 'bug', 'feature', 'urgent'",
+        },
+    },
+    {
+        "name": "set_vikunja_progress",
+        "description": "Set progress percentage on a Vikunja task (0-100)",
+        "parameters": {
+            "task_id": "string (required)",
+            "percent": "number (required) — 0 to 100",
+        },
+    },
+    {
+        "name": "create_vikunja_project",
+        "description": "Create a new project in Vikunja",
+        "parameters": {
+            "title": "string (required)",
+            "description": "string (optional)",
+        },
+    },
     # ── Mood / Check-in ─────────────────────────────────────────────────────
     {
         "name": "log_mood",
