@@ -18,13 +18,33 @@ def _safe_query(conn, sql, params=()) -> list:
         return []
 
 
+def _user_now(conn, user_id: int):
+    """Return timezone-aware 'now' for the user, or naive local datetime as fallback."""
+    try:
+        row = conn.execute(
+            "SELECT timezone FROM user_profiles WHERE user_id = ?", (user_id,)
+        ).fetchone()
+        tz_name = row['timezone'] if row else ''
+        if tz_name:
+            from zoneinfo import ZoneInfo
+            from datetime import datetime as _dt
+            user_tz = ZoneInfo(tz_name)
+            return _dt.now(user_tz)
+    except Exception:
+        pass
+    from datetime import datetime as _dt
+    return _dt.now()
+
+
 def assemble_context(conn, user_id: int) -> dict:
     """Dump relevant data from ALL modules so the AI can reason about anything."""
 
-    today = date.today().isoformat()
-    week_ago = (date.today() - timedelta(days=7)).isoformat()
+    user_now = _user_now(conn, user_id)
+    today = user_now.date().isoformat()
+    week_ago = (user_now.date() - timedelta(days=7)).isoformat()
 
     context = {}
+    context['current_time'] = user_now.strftime('%Y-%m-%d %I:%M %p')
 
     # User profile (for AI personalization)
     context['user_profile'] = _safe_query(
