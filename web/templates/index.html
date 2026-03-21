@@ -6525,12 +6525,18 @@
             var allowedEl = document.getElementById('ai-byok-allowed');
             var usageEl = document.getElementById('ai-usage-display');
 
-            // Check if user is admin (admins always see full settings)
+            // Admins and BYOK-enabled users can configure their own providers
             var isAdmin = false;
+            var byokEnabled = false;
             try { isAdmin = profile.is_admin; } catch(e) {}
+            try { byokEnabled = !!profile.byok_enabled; } catch(e) {}
 
-            if(!isAdmin) {
-                // Non-admin: show blocked message, hide provider config
+            if(isAdmin || byokEnabled) {
+                // Show full provider config
+                if(blockedEl) blockedEl.classList.add('hidden');
+                if(allowedEl) allowedEl.style.display = '';
+            } else {
+                // Non-BYOK user: show blocked message, hide provider config
                 if(blockedEl) blockedEl.classList.remove('hidden');
                 if(allowedEl) allowedEl.style.display = 'none';
                 // Show usage info
@@ -6539,10 +6545,6 @@
                         + '<br>Plan: <strong style="color:#f0f0f2;">' + (usage.plan_name || 'Free') + '</strong>'
                         + '<br>Monthly: ' + (usage.monthly_calls || 0) + ' calls, ' + (usage.monthly_tokens || 0) + ' tokens</div>';
                 }
-            } else {
-                // Admin: show full provider config
-                if(blockedEl) blockedEl.classList.add('hidden');
-                if(allowedEl) allowedEl.style.display = '';
             }
         } catch(e) {}
     }

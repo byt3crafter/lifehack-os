@@ -624,6 +624,7 @@ def get_profile():
     row = conn.execute(
         """SELECT
                u.id, u.username, u.display_name, u.is_admin, u.created_at, u.last_login,
+               COALESCE(u.byok_enabled, 0) as byok_enabled,
                p.bio, p.age, p.timezone, p.health_goals, p.fitness_level,
                p.dietary_preferences, p.work_type, p.work_hours, p.photo_path,
                p.height_cm, p.weight_kg, p.gender, p.target_weight_kg, p.preferred_name,
@@ -745,6 +746,7 @@ def update_profile():
     row = conn.execute(
         """SELECT
                u.id, u.username, u.display_name, u.is_admin, u.created_at, u.last_login,
+               COALESCE(u.byok_enabled, 0) as byok_enabled,
                p.bio, p.age, p.timezone, p.health_goals, p.fitness_level,
                p.dietary_preferences, p.work_type, p.work_hours, p.photo_path,
                p.height_cm, p.weight_kg, p.gender, p.target_weight_kg, p.preferred_name,
