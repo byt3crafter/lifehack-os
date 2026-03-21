@@ -377,6 +377,53 @@ TOOL_DEFINITIONS = [
             "transaction_id": "string (required) — the Firefly transaction ID",
         },
     },
+    # ── Discover (AI-Powered) ──────────────────────────────────────────────────
+    {
+        "name": "discover_list",
+        "description": "List the user's discoveries/bucket list items, optionally filtered by status or category",
+        "parameters": {
+            "status": "string (optional) — want/planning/done (default: all)",
+            "category": "string (optional) — places/skills/experiences/food/creative",
+        },
+    },
+    {
+        "name": "discover_add",
+        "description": "Add a new item to the user's discovery/bucket list. Use this when the user wants to save a place, experience, skill, or food to try.",
+        "parameters": {
+            "title": "string (required)",
+            "category": "string — places/skills/experiences/food/creative (default: places)",
+            "location": "string (optional) — city, country, or address",
+            "description": "string (optional) — why the user wants to do this",
+            "best_time": "string (optional) — best season/month/time to visit or do this",
+            "estimated_cost": "number (optional) — estimated cost in user's currency",
+        },
+    },
+    {
+        "name": "discover_research",
+        "description": "Research a discovery item — look up details, tips, reviews, best time to visit, costs, and nearby alternatives. Updates the item with AI notes.",
+        "parameters": {
+            "item_id": "integer (optional) — ID of existing discover item to research",
+            "query": "string (optional) — freeform search query if not using an existing item",
+        },
+    },
+    {
+        "name": "discover_plan",
+        "description": "Move a discovery to 'planning' status with a target date and preparation notes",
+        "parameters": {
+            "item_id": "integer (required)",
+            "planned_date": "YYYY-MM-DD (optional) — when to go/do it",
+            "notes": "string (optional) — preparation notes, what to bring, etc.",
+        },
+    },
+    {
+        "name": "discover_rate",
+        "description": "Rate a completed discovery — mark it as done with a rating and review",
+        "parameters": {
+            "item_id": "integer (required)",
+            "rating": "integer 1-5 (required)",
+            "review": "string (optional) — personal thoughts about the experience",
+        },
+    },
     # ── Contacts CRM ─────────────────────────────────────────────────────────
     {
         "name": "add_contact",

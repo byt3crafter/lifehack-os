@@ -66,6 +66,11 @@ def execute_tool(tool_name: str, args: dict, conn, user_id: int) -> dict:
         "label_vikunja_task": _label_vikunja_task,
         "set_vikunja_progress": _set_vikunja_progress,
         "create_vikunja_project": _create_vikunja_project,
+        "discover_list": _discover_list,
+        "discover_add": _discover_add,
+        "discover_research": _discover_research,
+        "discover_plan": _discover_plan,
+        "discover_rate": _discover_rate,
         "firefly_create_transaction": _firefly_create_transaction,
         "firefly_list_transactions": _firefly_list_transactions,
         "firefly_list_accounts": _firefly_list_accounts,
@@ -751,6 +756,202 @@ def _add_discovery(args: dict, conn, user_id: int) -> dict:
         "success": True,
         "item_id": cursor.lastrowid,
         "message": f'Added to bucket list: "{title}"',
+    }
+
+
+def _discover_list(args: dict, conn, user_id: int) -> dict:
+    status = (args.get("status") or "").strip().lower()
+    category = (args.get("category") or "").strip()
+
+    query = """SELECT id, title, category, status, location, description,
+                      rating, best_time, estimated_cost, planned_date, ai_notes,
+                      notes, completed_at
+               FROM wishlist WHERE user_id = ? AND completed = CASE WHEN ? = 'done' THEN 1 ELSE completed END"""
+    params = [user_id, status]
+
+    if status and status != 'done':
+        query += " AND status = ?"
+        params.append(status)
+    if category:
+        query += " AND LOWER(category) = LOWER(?)"
+        params.append(category)
+
+    query += " ORDER BY created_at DESC LIMIT 20"
+    rows = conn.execute(query, params).fetchall()
+
+    items = [dict(r) for r in rows]
+    return {
+        "success": True,
+        "count": len(items),
+        "items": items,
+        "message": f"Found {len(items)} discover items" + (f" ({status})" if status else ""),
+    }
+
+
+def _discover_add(args: dict, conn, user_id: int) -> dict:
+    title = (args.get("title") or "").strip()
+    if not title:
+        return {"error": "title is required"}
+
+    category = (args.get("category") or "places").strip()
+    location = (args.get("location") or "").strip()
+    description = (args.get("description") or "").strip()
+    best_time = (args.get("best_time") or "").strip()
+    estimated_cost = args.get("estimated_cost")
+
+    cursor = conn.execute(
+        """INSERT INTO wishlist (title, description, category, location, status,
+                                best_time, estimated_cost, user_id)
+           VALUES (?, ?, ?, ?, 'want', ?, ?, ?)""",
+        (title, description, category, location, best_time,
+         estimated_cost, user_id),
+    )
+    conn.commit()
+
+    msg = f'Added "{title}" to your Discover list'
+    if location:
+        msg += f" ({location})"
+    if best_time:
+        msg += f" — best time: {best_time}"
+
+    return {
+        "success": True,
+        "item_id": cursor.lastrowid,
+        "message": msg,
+    }
+
+
+def _discover_research(args: dict, conn, user_id: int) -> dict:
+    item_id = args.get("item_id")
+    query = (args.get("query") or "").strip()
+
+    if item_id:
+        row = conn.execute(
+            "SELECT id, title, category, location, description FROM wishlist WHERE id = ? AND user_id = ?",
+            (item_id, user_id),
+        ).fetchone()
+        if not row:
+            return {"error": f"Discover item #{item_id} not found"}
+        title = row['title']
+        location = row['location'] or ''
+        category = row['category'] or ''
+    elif query:
+        title = query
+        location = ''
+        category = ''
+    else:
+        return {"error": "Provide either item_id or query to research"}
+
+    # Build AI research notes — the AI will use its own knowledge to fill this
+    research_prompt = f"Research: {title}"
+    if location:
+        research_prompt += f" in {location}"
+    if category:
+        research_prompt += f" (category: {category})"
+
+    # If we have an item_id, save a placeholder — the AI's response summary
+    # will serve as the research output shown to the user
+    if item_id:
+        conn.execute(
+            "UPDATE wishlist SET ai_notes = ? WHERE id = ? AND user_id = ?",
+            (f"Researched on {date.today().isoformat()}", item_id, user_id),
+        )
+        conn.commit()
+
+    return {
+        "success": True,
+        "research_query": research_prompt,
+        "message": (
+            f"Researching \"{title}\""
+            + (f" in {location}" if location else "")
+            + ". Here's what I found:"
+        ),
+        "instructions": (
+            "Use your knowledge to provide: 1) Brief description, "
+            "2) Best time to visit/do, 3) Estimated cost, "
+            "4) Tips and what to expect, 5) Nearby alternatives. "
+            "Present this using rich visual formatting (metrics cards, tables)."
+        ),
+    }
+
+
+def _discover_plan(args: dict, conn, user_id: int) -> dict:
+    item_id = args.get("item_id")
+    if not item_id:
+        return {"error": "item_id is required"}
+
+    row = conn.execute(
+        "SELECT id, title FROM wishlist WHERE id = ? AND user_id = ?",
+        (item_id, user_id),
+    ).fetchone()
+    if not row:
+        return {"error": f"Discover item #{item_id} not found"}
+
+    planned_date = (args.get("planned_date") or "").strip()
+    notes = (args.get("notes") or "").strip()
+
+    updates = ["status = 'planning'"]
+    params = []
+    if planned_date:
+        updates.append("planned_date = ?")
+        params.append(planned_date)
+    if notes:
+        updates.append("notes = ?")
+        params.append(notes)
+
+    params.extend([item_id, user_id])
+    conn.execute(
+        f"UPDATE wishlist SET {', '.join(updates)} WHERE id = ? AND user_id = ?",
+        params,
+    )
+    conn.commit()
+
+    msg = f'"{row["title"]}" moved to Planning'
+    if planned_date:
+        msg += f" — scheduled for {planned_date}"
+
+    return {"success": True, "message": msg}
+
+
+def _discover_rate(args: dict, conn, user_id: int) -> dict:
+    item_id = args.get("item_id")
+    rating = args.get("rating")
+
+    if not item_id:
+        return {"error": "item_id is required"}
+    if rating is None:
+        return {"error": "rating (1-5) is required"}
+
+    try:
+        rating = int(rating)
+        if not 1 <= rating <= 5:
+            raise ValueError
+    except (TypeError, ValueError):
+        return {"error": "rating must be 1-5"}
+
+    row = conn.execute(
+        "SELECT id, title FROM wishlist WHERE id = ? AND user_id = ?",
+        (item_id, user_id),
+    ).fetchone()
+    if not row:
+        return {"error": f"Discover item #{item_id} not found"}
+
+    review = (args.get("review") or "").strip()
+
+    conn.execute(
+        """UPDATE wishlist SET status = 'done', completed = 1, rating = ?,
+                  notes = CASE WHEN ? != '' THEN ? ELSE notes END,
+                  completed_at = CURRENT_TIMESTAMP
+           WHERE id = ? AND user_id = ?""",
+        (rating, review, review, item_id, user_id),
+    )
+    conn.commit()
+
+    stars = "★" * rating + "☆" * (5 - rating)
+    return {
+        "success": True,
+        "message": f'Rated "{row["title"]}" {stars} and marked as done!'
+            + (f" — {review}" if review else ""),
     }
 
 

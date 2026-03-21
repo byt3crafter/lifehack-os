@@ -26,7 +26,7 @@ def _serialize(r) -> dict:
     except (TypeError, ValueError):
         photos = []
 
-    return {
+    result = {
         'id': r['id'],
         'title': r['title'],
         'location': r['location'],
@@ -40,6 +40,13 @@ def _serialize(r) -> dict:
         'notes': r['notes'],
         'created_at': r['created_at'],
     }
+    # New columns (may not exist in older DBs)
+    for col in ('best_time', 'estimated_cost', 'planned_date', 'ai_notes'):
+        try:
+            result[col] = r[col]
+        except (IndexError, KeyError):
+            result[col] = None
+    return result
 
 
 # ---------------------------------------------------------------------------

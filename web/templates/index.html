@@ -1946,6 +1946,26 @@
                     <div id="dash-calendar" class="space-y-1.5"></div>
                 </div>
 
+                <!-- Next Discovery -->
+                <div id="d-next-discovery" class="hidden mb-5">
+                    <div class="section-label mb-2">Next Discovery</div>
+                    <div class="rounded-xl p-4 cursor-pointer" style="background:linear-gradient(135deg,#1a2540,#1e3a5f);border:1px solid rgba(79,128,255,0.15);" onclick="nav('discover')">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(79,128,255,0.15);">
+                                <span style="font-size:1.1rem;">&#128205;</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-semibold" style="color:#f0f0f2;" id="d-disc-title">—</div>
+                                <div class="text-xs" style="color:#9898a6;" id="d-disc-meta">—</div>
+                            </div>
+                            <div class="text-right flex-shrink-0">
+                                <div class="text-sm font-mono font-semibold" style="color:#4f80ff;" id="d-disc-date">—</div>
+                                <div class="text-xs" style="color:#5c5c6b;" id="d-disc-countdown">—</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 7-day History -->
                 <div class="mt-2 mb-4">
                     <div class="flex justify-between items-center mb-3">
@@ -7126,6 +7146,36 @@
                     barEl.style.width = pct + '%';
                     barEl.style.background = pct >= 100 ? '#22c55e' : '#14b8a6';
                 }
+            }
+        } catch(e) {}
+
+        // Next Discovery widget
+        try {
+            var disc = await api('/discover?status=planning');
+            var discEl = document.getElementById('d-next-discovery');
+            if(discEl && disc && disc.length) {
+                // Find the one with the earliest planned_date
+                var planned = disc.filter(function(d) { return d.planned_date; })
+                    .sort(function(a,b) { return (a.planned_date||'').localeCompare(b.planned_date||''); });
+                var next = planned.length ? planned[0] : disc[0];
+                discEl.classList.remove('hidden');
+                var titleEl = document.getElementById('d-disc-title');
+                var metaEl = document.getElementById('d-disc-meta');
+                var dateEl = document.getElementById('d-disc-date');
+                var countEl = document.getElementById('d-disc-countdown');
+                if(titleEl) titleEl.textContent = next.title;
+                if(metaEl) metaEl.textContent = (next.category || '') + (next.location ? ' · ' + next.location : '');
+                if(next.planned_date && dateEl) {
+                    var pd = new Date(next.planned_date + 'T00:00:00');
+                    dateEl.textContent = pd.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+                    var daysLeft = Math.ceil((pd - new Date()) / 86400000);
+                    if(countEl) countEl.textContent = daysLeft > 0 ? daysLeft + 'd away' : daysLeft === 0 ? 'Today!' : Math.abs(daysLeft) + 'd ago';
+                } else {
+                    if(dateEl) dateEl.textContent = '';
+                    if(countEl) countEl.textContent = 'No date set';
+                }
+            } else if(discEl) {
+                discEl.classList.add('hidden');
             }
         } catch(e) {}
     }

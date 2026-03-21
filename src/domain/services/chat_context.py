@@ -219,7 +219,26 @@ def assemble_context(conn, user_id: int) -> dict:
     # Discover items
     context['discover_items'] = _safe_query(
         conn,
-        "SELECT title, category, status, location, rating, completed_at FROM wishlist WHERE user_id = ? ORDER BY created_at DESC LIMIT 10",
+        """SELECT id, title, category, status, location, rating, best_time,
+                  estimated_cost, planned_date, notes, completed_at
+           FROM wishlist WHERE user_id = ? AND completed = 0
+           ORDER BY CASE status WHEN 'planning' THEN 0 WHEN 'want' THEN 1 ELSE 2 END,
+                    created_at DESC LIMIT 15""",
+        (user_id,),
+    )
+    context['discover_completed'] = _safe_query(
+        conn,
+        """SELECT id, title, category, location, rating, notes, completed_at
+           FROM wishlist WHERE user_id = ? AND completed = 1
+           ORDER BY completed_at DESC LIMIT 5""",
+        (user_id,),
+    )
+    # Next planned discovery (for dashboard)
+    context['next_discovery'] = _safe_query(
+        conn,
+        """SELECT title, category, location, planned_date, estimated_cost
+           FROM wishlist WHERE user_id = ? AND status = 'planning' AND planned_date != ''
+           ORDER BY planned_date ASC LIMIT 1""",
         (user_id,),
     )
 

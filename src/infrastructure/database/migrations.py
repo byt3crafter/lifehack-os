@@ -919,3 +919,23 @@ def run_migrations(conn) -> None:
         )
         conn.commit()
         print("  Migration 18: Journal, Books, Notes modules")
+
+    # Migration 26: Discover module enhancements — planning, AI research, rating
+    current = get_current_version(conn)
+    if current < 26:
+        wish_cols = [r[1] for r in conn.execute("PRAGMA table_info(wishlist)").fetchall()]
+        for col, defn in [
+            ('best_time', "TEXT DEFAULT ''"),
+            ('estimated_cost', "REAL"),
+            ('planned_date', "TEXT DEFAULT ''"),
+            ('ai_notes', "TEXT DEFAULT ''"),
+        ]:
+            if col not in wish_cols:
+                conn.execute(f"ALTER TABLE wishlist ADD COLUMN {col} {defn}")
+
+        conn.execute(
+            "INSERT OR IGNORE INTO schema_version (version, description) "
+            "VALUES (26, 'Discover enhancements: planning, cost, AI notes')"
+        )
+        conn.commit()
+        print("  Migration 26: Discover enhancements: planning, cost, AI notes")
