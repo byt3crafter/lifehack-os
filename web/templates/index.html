@@ -11819,9 +11819,11 @@
         $$('[data-v="dashboard"]').forEach(b => b.classList.add('active'));
         load('dashboard');
         loadStats();
-        // Load profile silently to populate sidebar avatars
+        // Load profile silently to populate sidebar avatars + chat user photo
         api('/profile').then(function(data) {
             if(data && !data.error) {
+                window._userPhotoUrl = data.photo_url || '';
+                window._userDisplayName = data.display_name || data.username || '';
                 _updateSidebarAvatar(data.photo_url, data.display_name || data.username);
             }
         }).catch(function() {});
