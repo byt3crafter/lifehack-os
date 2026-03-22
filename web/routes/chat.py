@@ -77,11 +77,21 @@ def send_message():
     data = request.get_json(silent=True) or {}
     user_message = (data.get("message") or "").strip()
     image_base64 = (data.get("image_base64") or "").strip()
+    conversation_id = data.get("conversation_id")  # optional
 
     if not user_message:
         return jsonify({"error": "message is required"}), 400
 
     conn = get_connection()
+
+    # Validate conversation ownership if provided
+    if conversation_id:
+        conv = conn.execute(
+            "SELECT id FROM chat_conversations WHERE id = ? AND user_id = ?",
+            (conversation_id, uid),
+        ).fetchone()
+        if not conv:
+            return jsonify({"error": "Conversation not found"}), 404
 
     # Check daily AI usage limits before touching the provider
     from src.infrastructure.ai.usage import check_ai_usage
@@ -124,14 +134,23 @@ def send_message():
             "If it's not a receipt, describe what you see and respond normally."
         )
 
-    # Load last 10 messages for this user for conversation continuity
-    history_rows = conn.execute(
-        """SELECT role, content FROM chat_messages
-           WHERE user_id = ?
-           ORDER BY created_at DESC, id DESC
-           LIMIT 10""",
-        (uid,)
-    ).fetchall()
+    # Load last 10 messages for conversation continuity
+    if conversation_id:
+        history_rows = conn.execute(
+            """SELECT role, content FROM chat_messages
+               WHERE user_id = ? AND conversation_id = ?
+               ORDER BY created_at DESC, id DESC
+               LIMIT 10""",
+            (uid, conversation_id),
+        ).fetchall()
+    else:
+        history_rows = conn.execute(
+            """SELECT role, content FROM chat_messages
+               WHERE user_id = ? AND conversation_id IS NULL
+               ORDER BY created_at DESC, id DESC
+               LIMIT 10""",
+            (uid,),
+        ).fetchall()
     # Rows come back newest-first; reverse to chronological order
     prior_messages = [{"role": r["role"], "content": r["content"]} for r in reversed(history_rows)]
 
@@ -155,9 +174,9 @@ def send_message():
 
     # Persist the user message first (so it's stored even if AI fails)
     conn.execute(
-        """INSERT INTO chat_messages (user_id, role, content, provider, model)
-           VALUES (?, ?, ?, ?, ?)""",
-        (uid, "user", user_message, "", ""),
+        """INSERT INTO chat_messages (user_id, role, content, provider, model, conversation_id)
+           VALUES (?, ?, ?, ?, ?, ?)""",
+        (uid, "user", user_message, "", "", conversation_id),
     )
     conn.commit()
 
@@ -218,11 +237,19 @@ def send_message():
 
     # Persist the assistant response (cleaned — no [TOOL: ...] lines)
     conn.execute(
-        """INSERT INTO chat_messages (user_id, role, content, provider, model)
-           VALUES (?, ?, ?, ?, ?)""",
-        (uid, "assistant", clean_response, provider_name, model_name),
+        """INSERT INTO chat_messages (user_id, role, content, provider, model, conversation_id)
+           VALUES (?, ?, ?, ?, ?, ?)""",
+        (uid, "assistant", clean_response, provider_name, model_name, conversation_id),
     )
     conn.commit()
+
+    # Update conversation's last_message_at
+    if conversation_id:
+        conn.execute(
+            "UPDATE chat_conversations SET last_message_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (conversation_id,),
+        )
+        conn.commit()
 
     # ── Log AI usage for rate-limiting / billing ──────────────────────────────
     from src.infrastructure.ai.usage import log_ai_call

@@ -939,3 +939,34 @@ def run_migrations(conn) -> None:
         )
         conn.commit()
         print("  Migration 26: Discover enhancements: planning, cost, AI notes")
+
+    # Migration 27: Chat conversations — threaded, categorized, pinnable
+    current = get_current_version(conn)
+    if current < 27:
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS chat_conversations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                title TEXT NOT NULL DEFAULT 'New Chat',
+                category TEXT NOT NULL DEFAULT 'general',
+                pinned INTEGER DEFAULT 0,
+                bookmarked INTEGER DEFAULT 0,
+                archived INTEGER DEFAULT 0,
+                last_message_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_chat_conv_user ON chat_conversations(user_id);
+        """)
+        # Add conversation_id to chat_messages (nullable for backward compat)
+        msg_cols = [r[1] for r in conn.execute("PRAGMA table_info(chat_messages)").fetchall()]
+        if 'conversation_id' not in msg_cols:
+            conn.execute("ALTER TABLE chat_messages ADD COLUMN conversation_id INTEGER REFERENCES chat_conversations(id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_chat_msg_conv ON chat_messages(conversation_id)")
+
+        conn.execute(
+            "INSERT OR IGNORE INTO schema_version (version, description) "
+            "VALUES (27, 'Chat conversations: threads, categories, pin/bookmark')"
+        )
+        conn.commit()
+        print("  Migration 27: Chat conversations: threads, categories, pin/bookmark")
