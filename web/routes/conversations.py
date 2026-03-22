@@ -196,10 +196,14 @@ def get_messages(conv_id):
         return jsonify({'error': 'Conversation not found'}), 404
 
     limit = min(int(request.args.get('limit', 100)), 500)
+
+    # Check if bookmarked column exists (migration may not have run)
+    msg_cols = [r[1] for r in conn.execute("PRAGMA table_info(chat_messages)").fetchall()]
+    bm_col = "COALESCE(bookmarked, 0) as bookmarked" if 'bookmarked' in msg_cols else "0 as bookmarked"
+
     rows = conn.execute(
-        """SELECT * FROM (
-               SELECT id, role, content, provider, model, created_at,
-                      COALESCE(bookmarked, 0) as bookmarked
+        f"""SELECT * FROM (
+               SELECT id, role, content, provider, model, created_at, {bm_col}
                FROM chat_messages
                WHERE conversation_id = ? AND user_id = ?
                ORDER BY created_at DESC, id DESC
@@ -233,8 +237,13 @@ def clear_messages(conv_id):
 def toggle_message_bookmark(msg_id):
     uid = current_user_id()
     conn = get_connection()
+    # Check if bookmarked column exists
+    msg_cols = [r[1] for r in conn.execute("PRAGMA table_info(chat_messages)").fetchall()]
+    if 'bookmarked' not in msg_cols:
+        return jsonify({'error': 'Bookmark feature not available — please restart the server to run migrations'}), 400
+
     row = conn.execute(
-        "SELECT id, bookmarked FROM chat_messages WHERE id = ? AND user_id = ?",
+        "SELECT id, COALESCE(bookmarked, 0) as bookmarked FROM chat_messages WHERE id = ? AND user_id = ?",
         (msg_id, uid),
     ).fetchone()
     if not row:

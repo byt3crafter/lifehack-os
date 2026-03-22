@@ -296,11 +296,15 @@ def get_history():
         limit = 50
 
     conn = get_connection()
+
+    # Check if bookmarked column exists (migration may not have run)
+    msg_cols = [r[1] for r in conn.execute("PRAGMA table_info(chat_messages)").fetchall()]
+    bm_col = "COALESCE(bookmarked, 0) as bookmarked" if 'bookmarked' in msg_cols else "0 as bookmarked"
+
     # Subquery gets the last N messages, outer query re-orders them chronologically
     rows = conn.execute(
-        """SELECT * FROM (
-               SELECT id, role, content, provider, model, created_at,
-                      COALESCE(bookmarked, 0) as bookmarked
+        f"""SELECT * FROM (
+               SELECT id, role, content, provider, model, created_at, {bm_col}
                FROM chat_messages
                WHERE user_id = ?
                ORDER BY created_at DESC, id DESC
