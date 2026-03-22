@@ -269,12 +269,15 @@ def get_history():
         limit = 50
 
     conn = get_connection()
+    # Subquery gets the last N messages, outer query re-orders them chronologically
     rows = conn.execute(
-        """SELECT id, role, content, provider, model, created_at
-           FROM chat_messages
-           WHERE user_id = ?
-           ORDER BY created_at ASC, id ASC
-           LIMIT ?""",
+        """SELECT * FROM (
+               SELECT id, role, content, provider, model, created_at
+               FROM chat_messages
+               WHERE user_id = ?
+               ORDER BY created_at DESC, id DESC
+               LIMIT ?
+           ) ORDER BY created_at ASC, id ASC""",
         (uid, limit),
     ).fetchall()
 

@@ -9802,19 +9802,20 @@
         var view = document.getElementById('v-chatmode');
         if (view) view.style.display = 'flex';
 
-        if (!_chatModeLoaded) {
-            try {
-                var r = await api('/chat/history');
-                if (r && r.messages && r.messages.length) {
-                    _chatModeMessages = r.messages;
-                } else {
-                    _chatModeMessages = [{ role: 'assistant', content: 'Hey! I\'m your LifeHack AI. I have access to all your data — habits, finances, food, fasting, journal, books, notes. Just talk to me naturally.\n\nTry: *"Log 30 push-ups"*, *"How am I doing this week?"*, or snap a photo of your meal.', created_at: new Date().toISOString() }];
-                }
-            } catch (e) {
+        // Always reload history from server to stay in sync
+        try {
+            var r = await api('/chat/history');
+            if (r && r.messages && r.messages.length) {
+                _chatModeMessages = r.messages;
+            } else if (!_chatModeLoaded) {
+                _chatModeMessages = [{ role: 'assistant', content: 'Hey! I\'m your LifeHack AI. I have access to all your data — habits, finances, food, fasting, journal, books, notes. Just talk to me naturally.\n\nTry: *"Log 30 push-ups"*, *"How am I doing this week?"*, or snap a photo of your meal.', created_at: new Date().toISOString() }];
+            }
+        } catch (e) {
+            if (!_chatModeLoaded) {
                 _chatModeMessages = [{ role: 'assistant', content: 'Chat mode ready. Ask me anything!', created_at: new Date().toISOString() }];
             }
-            _chatModeLoaded = true;
         }
+        _chatModeLoaded = true;
         renderChatModeMessages();
         setTimeout(function() { var inp = document.getElementById('chatmode-input'); if (inp) inp.focus(); }, 100);
     }
@@ -9951,6 +9952,7 @@
 
     async function clearChatModeHistory() {
         await api('/chat/history', 'DELETE');
+        _chatModeLoaded = false;
         _chatModeMessages = [{ role: 'assistant', content: 'Chat cleared. What would you like to do?', created_at: new Date().toISOString() }];
         _chatMessages = _chatModeMessages.slice();
         _chatModeLoaded = true;
