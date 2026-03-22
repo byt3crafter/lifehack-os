@@ -253,6 +253,14 @@ def get_habits():
     ).fetchall()
     misses_this_month_map = {row['habit_id']: row['cnt'] for row in miss_rows}
 
+    # Habits missed TODAY (to disable them for the rest of the day)
+    today_str = date.today().isoformat()
+    missed_today_rows = conn.execute(
+        "SELECT DISTINCT habit_id FROM habit_miss_log WHERE user_id = ? AND date = ?",
+        (uid, today_str),
+    ).fetchall()
+    missed_today_set = {row['habit_id'] for row in missed_today_rows}
+
     result = []
     for h in habits:
         streak = habit_repo.get_streak(h.id)
@@ -314,6 +322,7 @@ def get_habits():
             'phase_progress': f'Phase {phase_num} of {total_phases}' if total_phases > 0 else '',
             'micro_tasks': micro_tasks if micro_tasks else None,
             'misses_this_month': misses_this_month_map.get(h.id, 0),
+            'missed_today': h.id in missed_today_set,
             'completion_rate': completion_rate,
         })
     return jsonify(result)

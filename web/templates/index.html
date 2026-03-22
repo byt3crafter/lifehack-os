@@ -7506,8 +7506,11 @@
                 var dhBorder = dhx.completed ? 'rgba(34,197,94,0.2)' : '#2a2a2e';
                 var dhTasksTotal = (dhx.micro_tasks && dhx.micro_tasks.length) ? dhx.micro_tasks.length : 0;
                 var dhTasksDone = dhTasksTotal ? dhx.micro_tasks.filter(function(mt) { return mt.verified || mt.completed; }).length : 0;
-                var dhTasksGated = !dhx.completed && dhTasksTotal > 0 && dhTasksDone < dhTasksTotal;
-                var dhCheckClick = dhx.completed
+                var dhMissedToday = !!dhx.missed_today;
+                var dhTasksGated = !dhx.completed && !dhMissedToday && dhTasksTotal > 0 && dhTasksDone < dhTasksTotal;
+                var dhCheckClick = dhMissedToday
+                    ? 'showToast("You missed this habit today. Try again tomorrow.","warning")'
+                    : dhx.completed
                     ? 'toggleH(' + dhx.id + ', false)'
                     : (dhTasksGated ? 'showToast("Complete all tasks first","warning")' : 'toggleH(' + dhx.id + ', true)');
                 dashHHtml += '<div class="rounded-xl px-2.5 py-2 habit-row" data-id="' + dhx.id + '"'
@@ -7516,8 +7519,8 @@
                     // check button
                     + '<button onclick="' + dhCheckClick + '"'
                     + ' class="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 transition-all ' + (dhTasksGated ? 'cursor-not-allowed' : 'cursor-pointer') + '"'
-                    + ' style="border:2px solid ' + (dhx.completed ? '#22c55e' : '#444449') + ';background:' + (dhx.completed ? '#22c55e' : 'transparent') + ';' + (dhTasksGated ? 'opacity:0.4;' : '') + '"'
-                    + ' aria-label="' + (dhx.completed ? 'Undo' : 'Complete') + '" role="checkbox" aria-checked="' + dhx.completed + '">'
+                    + ' style="border:2px solid ' + (dhMissedToday ? '#ef4444' : dhx.completed ? '#22c55e' : '#444449') + ';background:' + (dhMissedToday ? 'rgba(239,68,68,0.15)' : dhx.completed ? '#22c55e' : 'transparent') + ';' + (dhTasksGated || dhMissedToday ? 'opacity:0.4;' : '') + '"'
+                    + ' aria-label="' + (dhMissedToday ? 'Missed' : dhx.completed ? 'Undo' : 'Complete') + '" role="checkbox" aria-checked="' + dhx.completed + '">'
                     + (dhx.completed ? '<svg class="w-2.5 h-2.5" fill="none" stroke="white" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' : '')
                     + '</button>'
                     // name
@@ -7684,16 +7687,23 @@
                 taskSummaryHtml = '<span class="' + pillClass + '">' + tasksVerified + ' of ' + tasksTotal + ' done</span>';
             }
 
-            // Complete button — gated when not all tasks verified
-            var completeBtnGated = !x.completed && !allTasksDone;
-            var completeBtnTitle = completeBtnGated ? ('Complete ' + tasksVerified + ' of ' + tasksTotal + ' tasks to unlock') : (x.completed ? 'Undo completion' : 'Mark complete');
+            // Missed today — disable the habit entirely
+            var missedToday = !!x.missed_today;
+
+            // Complete button — gated when not all tasks verified OR missed today
+            var completeBtnGated = missedToday || (!x.completed && !allTasksDone);
+            var completeBtnTitle = missedToday ? 'Missed today — try again tomorrow'
+                : completeBtnGated ? ('Complete ' + tasksVerified + ' of ' + tasksTotal + ' tasks to unlock')
+                : (x.completed ? 'Undo completion' : 'Mark complete');
             var completeBtnClass = 'flex-shrink-0 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-colors'
                 + (completeBtnGated ? ' complete-btn-gated' : '');
-            var completeBtnStyle = 'background:' + (x.completed ? 'rgba(34,197,94,0.1)' : (completeBtnGated ? 'rgba(255,255,255,0.04)' : 'rgba(79,128,255,0.1)'))
-                + ';color:' + (x.completed ? '#22c55e' : (completeBtnGated ? '#5c5c6b' : '#4f80ff'))
-                + ';border:1px solid ' + (x.completed ? 'rgba(34,197,94,0.25)' : (completeBtnGated ? '#2a2a2e' : 'rgba(79,128,255,0.25)'))
+            var completeBtnStyle = 'background:' + (missedToday ? 'rgba(239,68,68,0.08)' : x.completed ? 'rgba(34,197,94,0.1)' : (completeBtnGated ? 'rgba(255,255,255,0.04)' : 'rgba(79,128,255,0.1)'))
+                + ';color:' + (missedToday ? '#ef4444' : x.completed ? '#22c55e' : (completeBtnGated ? '#5c5c6b' : '#4f80ff'))
+                + ';border:1px solid ' + (missedToday ? 'rgba(239,68,68,0.2)' : x.completed ? 'rgba(34,197,94,0.25)' : (completeBtnGated ? '#2a2a2e' : 'rgba(79,128,255,0.25)'))
                 + ';white-space:nowrap;';
-            var completeBtnClick = completeBtnGated
+            var completeBtnClick = missedToday
+                ? 'event.stopPropagation(); showToast("You missed this today. Try again tomorrow.","warning");'
+                : completeBtnGated
                 ? 'event.stopPropagation(); showToast("Complete all tasks first","warning");'
                 : 'event.stopPropagation(); toggleH(' + x.id + ',' + (!x.completed) + ');';
 
@@ -7712,7 +7722,7 @@
                 actHtml += '<button onclick="event.stopPropagation(); reactivateHabit(' + x.id + ')" class="text-xs px-2 py-1 rounded" style="color:#22c55e;background:rgba(34,197,94,0.1);">Reactivate</button>';
                 actHtml += '<button onclick="event.stopPropagation(); permanentDeleteHabit(' + x.id + ')" class="text-xs px-2 py-1 rounded" style="color:#ef4444;background:rgba(239,68,68,0.1);">Delete</button>';
             } else {
-                if(!x.completed) {
+                if(!x.completed && !missedToday) {
                     actHtml += '<button onclick="event.stopPropagation(); missHabitModal(' + x.id + ', \'' + safeName + '\')" class="action-link-danger text-xs" title="Log a miss">Miss</button>';
                 }
                 actHtml += '<button onclick="event.stopPropagation(); editHabitModal(' + x.id + ', \'' + safeName + '\', \'' + x.category + '\', ' + x.difficulty + ', \'' + (x.scheduled_time || '').replace(/'/g, "\\'") + '\')" class="action-link" title="Edit">'
@@ -7763,7 +7773,7 @@
                     if(misses > 0) {
                         bits.push('<span style="color:#ef4444;font-size:0.6875rem;">Missed ' + misses + ' time' + (misses === 1 ? '' : 's') + ' this month</span>');
                     }
-                    var rate = (x.completion_rate !== undefined && x.completion_rate !== null) ? Math.round(x.completion_rate * 100) : null;
+                    var rate = (x.completion_rate !== undefined && x.completion_rate !== null) ? Math.round(x.completion_rate) : null;
                     if(rate !== null) {
                         var rateColor = rate >= 85 ? '#22c55e' : (rate >= 60 ? '#eab308' : '#ef4444');
                         bits.push('<span style="color:' + rateColor + ';font-size:0.6875rem;">' + rate + '% rate</span>');
