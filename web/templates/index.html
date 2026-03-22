@@ -2848,10 +2848,13 @@
                     .cm-conv-dropdown button { display:block; width:100%; text-align:left; background:none; border:none; padding:6px 10px; border-radius:5px; font-size:0.75rem; color:#d0d0d8; cursor:pointer; font-family:inherit; white-space:nowrap; }
                     .cm-conv-dropdown button:hover { background:#2a2a2e; color:#f0f0f2; }
                     .cm-conv-dropdown button.danger:hover { background:rgba(239,68,68,0.15); color:#f87171; }
+                    /* Inline conversation rename input */
+                    .cm-conv-title-input { background:#1c1c20; border:1px solid #4f80ff; color:#f0f0f2; border-radius:6px; padding:2px 8px; font-size:0.8125rem; font-weight:600; outline:none; flex:1; min-width:0; font-family:inherit; }
                     /* Message bookmark icon */
-                    .cm-msg-bm { background:none; border:none; cursor:pointer; font-size:0.7rem; padding:0 2px; transition:opacity 0.15s; flex-shrink:0; line-height:1; }
-                    .cm-msg:hover .cm-msg-bm { opacity:0.5 !important; }
-                    .cm-msg-bm[data-active="1"] { opacity:1 !important; }
+                    .cm-msg-bm { background:none; border:none; cursor:pointer; font-size:0.7rem; padding:0 2px; transition:opacity 0.15s; flex-shrink:0; line-height:1; opacity:0; }
+                    .cm-msg:hover .cm-msg-bm { opacity:0.5; }
+                    .cm-msg-bm.bm-active { opacity:1; }
+                    .cm-msg:hover .cm-msg-bm.bm-active { opacity:1; }
 
                     @media (max-width:768px) {
                         .cm-msg { padding:14px 16px; }
@@ -9962,21 +9965,57 @@
         }
     }
 
-    async function renameConversation(convId) {
-        var id = convId || _cmActiveConvId;
-        if (!id) return;
-        var conv = _cmConversations.find(function(c) { return c.id === id; });
-        if (!conv) return;
-        var newTitle = prompt('Rename conversation:', conv.title);
-        if (!newTitle || !newTitle.trim() || newTitle.trim() === conv.title) return;
-        try {
-            await api('/chat/conversations/' + id, 'PUT', { title: newTitle.trim() });
-            await loadConversations();
-            if (id === _cmActiveConvId) {
-                var titleEl = document.getElementById('cm-conv-title');
-                if (titleEl) titleEl.textContent = (conv.category_icon || '💬') + ' ' + newTitle.trim();
+    function startRenameConversation() {
+        var titleEl = document.getElementById('cm-conv-title');
+        if (!titleEl) return;
+        // Avoid double-triggering if already an input
+        if (document.getElementById('cm-conv-title-input')) return;
+        var currentTitle = titleEl.textContent.replace(/^[^\w]*/, '').trim();
+        var conv = _cmConversations.find(function(c) { return c.id === _cmActiveConvId; });
+        var icon = conv ? (conv.category_icon || '💬') : '💬';
+
+        var input = document.createElement('input');
+        input.type = 'text';
+        input.id = 'cm-conv-title-input';
+        input.value = currentTitle;
+        input.className = 'cm-conv-title-input';
+        input.focus();
+
+        titleEl.replaceWith(input);
+        input.focus();
+        input.select();
+
+        var saved = false;
+        function save() {
+            if (saved) return;
+            saved = true;
+            var newTitle = input.value.trim();
+            var span = document.createElement('span');
+            span.id = 'cm-conv-title';
+            span.style.cssText = 'font-size:0.8125rem;font-weight:600;color:#f0f0f2;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+            var finalTitle = (newTitle && newTitle !== currentTitle) ? newTitle : currentTitle;
+            span.textContent = icon + ' ' + finalTitle;
+            input.replaceWith(span);
+            if (newTitle && newTitle !== currentTitle) {
+                api('/chat/conversations/' + _cmActiveConvId, 'PUT', { title: newTitle });
+                if (conv) conv.title = newTitle;
+                renderConversationList();
             }
-        } catch(e) {}
+        }
+
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); save(); }
+            if (e.key === 'Escape') { input.value = currentTitle; save(); }
+        });
+        input.addEventListener('blur', save);
+    }
+
+    async function renameConversation(convId) {
+        if (convId && convId !== _cmActiveConvId) {
+            // For renaming a non-active conversation, select it first then trigger rename
+            await selectConversation(convId);
+        }
+        startRenameConversation();
     }
 
     async function renameConversationById(convId) {
@@ -10099,8 +10138,7 @@
                 // Update button visual
                 if (btn) {
                     btn.dataset.bm = r.bookmarked ? '1' : '0';
-                    btn.dataset.active = r.bookmarked ? '1' : '';
-                    btn.style.opacity = r.bookmarked ? '1' : '0';
+                    btn.classList.toggle('bm-active', !!r.bookmarked);
                 }
                 showToast(r.bookmarked ? 'Answer saved' : 'Bookmark removed', 'info');
             }
@@ -10139,7 +10177,7 @@
             var bmBtn = '';
             if (!isUser && m.id) {
                 var isBm = m.bookmarked ? 1 : 0;
-                bmBtn = '<button onclick="toggleMsgBookmark(' + m.id + ',this)" class="cm-msg-bm" data-bm="' + isBm + '" data-active="' + (isBm ? '1' : '') + '" style="opacity:' + (isBm ? '1' : '0') + ';" title="Save this answer">🔖</button>';
+                bmBtn = '<button onclick="toggleMsgBookmark(' + m.id + ',this)" class="cm-msg-bm' + (isBm ? ' bm-active' : '') + '" data-bm="' + isBm + '" title="Save this answer">🔖</button>';
             }
 
             html += '<div class="' + msgClass + '">'
