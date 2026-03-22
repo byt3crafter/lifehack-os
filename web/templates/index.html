@@ -1076,6 +1076,23 @@
         .miss-btn:hover { border-color: #ef4444; background: rgba(239,68,68,0.08); color: #f87171; }
         .miss-btn.selected { border-color: rgba(239,68,68,0.5); background: rgba(239,68,68,0.1); color: #f87171; }
 
+        /* ── Accountability card ─────────────────────── */
+        .accountability-card {
+            background: linear-gradient(135deg, #1a1215, #201418);
+            border: 1px solid rgba(239,68,68,0.2);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .accountability-miss {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(239,68,68,0.08);
+        }
+        .accountability-miss:last-child { border-bottom: none; }
+
         /* ── Phase badge ─────────────────────────────── */
         .phase-badge {
             display: inline-flex;
@@ -1863,6 +1880,9 @@
 
                 <!-- Tips -->
                 <!-- Tips and insights handled by d-ai-insight card above -->
+
+                <!-- Accountability card — shows today's habit misses -->
+                <div id="d-accountability-card" class="hidden"></div>
 
                 <!-- Live fasting timer (shown only when actively fasting) -->
                 <div id="d-fasting-timer" class="hidden mb-4 p-4 rounded-xl flex items-center gap-3" style="background:linear-gradient(135deg,#1a1820 0%,#201828 100%);border:1px solid rgba(168,85,247,0.2);overflow:hidden;">
@@ -7086,6 +7106,58 @@
     var _fastStartTime = null;
     var _fastTargetHours = 16;
 
+    async function loadAccountability() {
+        var card = $('#d-accountability-card');
+        if(!card) return;
+        try {
+            var data = await api('/habits/accountability');
+            if(!data || !data.misses || !data.misses.length) {
+                card.classList.add('hidden');
+                card.innerHTML = '';
+                return;
+            }
+            var totalXP = data.misses.reduce(function(sum, m) { return sum + (m.xp_deducted || 0); }, 0);
+            var missHtml = '';
+            for(var i = 0; i < data.misses.length; i++) {
+                var m = data.misses[i];
+                var strengthBefore = Math.round(m.strength_before || 0);
+                var strengthAfter = Math.round(m.strength_after || 0);
+                var streakBadge = m.streak_broken
+                    ? '<span style="font-size:0.625rem;font-weight:600;padding:0.125rem 0.375rem;border-radius:4px;background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.25);">streak of ' + (m.streak_was || 0) + ' broken</span>'
+                    : '';
+                missHtml += '<div class="accountability-miss">'
+                    + '<div class="flex flex-col gap-0.5 min-w-0 flex-1 mr-3">'
+                    + '<span class="text-sm font-medium truncate" style="color:#f0f0f2;">' + (m.habit_name || 'Habit') + '</span>'
+                    + '<div class="flex items-center gap-1.5 flex-wrap">'
+                    + (m.reason ? '<span style="font-size:0.6875rem;color:#9898a6;">' + m.reason + '</span>' : '')
+                    + streakBadge
+                    + '</div>'
+                    + '</div>'
+                    + '<div class="flex-shrink-0 text-right">'
+                    + '<div style="font-size:0.6875rem;color:#ef4444;font-weight:600;">' + strengthBefore + '% &rarr; ' + strengthAfter + '%</div>'
+                    + '<div style="font-size:0.6875rem;color:#9898a6;">&minus;' + (m.xp_deducted || 0) + ' XP</div>'
+                    + '</div>'
+                    + '</div>';
+            }
+            card.innerHTML = '<div class="accountability-card">'
+                + '<div class="flex items-center gap-2 mb-3">'
+                + '<span style="font-size:1rem;">&#9888;&#65039;</span>'
+                + '<span class="text-xs font-semibold" style="color:#ef4444;letter-spacing:0.05em;text-transform:uppercase;">Missed Today</span>'
+                + '</div>'
+                + missHtml
+                + (totalXP > 0
+                    ? '<div class="flex items-center justify-between pt-2 mt-1" style="border-top:1px solid rgba(239,68,68,0.1);">'
+                    + '<span style="font-size:0.75rem;color:#9898a6;">Total impact</span>'
+                    + '<span style="font-size:0.75rem;font-weight:600;color:#ef4444;">&minus;' + totalXP + ' XP lost</span>'
+                    + '</div>'
+                    : '')
+                + '</div>';
+            card.classList.remove('hidden');
+        } catch(e) {
+            card.classList.add('hidden');
+        }
+    }
+
     async function loadStats() {
         const s = await api('/stats');
         if(!s) return;
@@ -7291,6 +7363,9 @@
     async function loadDash() {
         // Load AI daily insight (non-blocking)
         loadDailyInsight();
+
+        // Load accountability card (non-blocking)
+        loadAccountability();
 
         // Load mood prompt
         await loadMoodSection();
@@ -7682,6 +7757,20 @@
                     var label = isOverdue ? 'Overdue \u2014 due at ' + x.scheduled_time : 'Due at ' + x.scheduled_time;
                     return ' <span class="text-xs font-mono" style="color:' + color + ';">\u23F0 ' + label + '</span>';
                 })()
+                + (function() {
+                    var bits = [];
+                    var misses = x.misses_this_month || 0;
+                    if(misses > 0) {
+                        bits.push('<span style="color:#ef4444;font-size:0.6875rem;">Missed ' + misses + ' time' + (misses === 1 ? '' : 's') + ' this month</span>');
+                    }
+                    var rate = (x.completion_rate !== undefined && x.completion_rate !== null) ? Math.round(x.completion_rate * 100) : null;
+                    if(rate !== null) {
+                        var rateColor = rate >= 85 ? '#22c55e' : (rate >= 60 ? '#eab308' : '#ef4444');
+                        bits.push('<span style="color:' + rateColor + ';font-size:0.6875rem;">' + rate + '% rate</span>');
+                    }
+                    if(!bits.length) return '';
+                    return '<div class="flex items-center gap-2 flex-wrap mt-0.5">' + bits.join('') + '</div>';
+                })()
                 + phaseHtml
                 + barHtml
                 + microHtml
@@ -7979,14 +8068,29 @@
 
     async function submitMiss(id) {
         var note = $('#miss-note') ? $('#miss-note').value.trim() : '';
+        if(!_selectedMissReason && !note) {
+            showToast('Please select a reason', 'warning');
+            return;
+        }
         var payload = {};
         if(_selectedMissReason) payload.reason = _selectedMissReason;
         if(note) payload.blocker = note;
         var r = await api('/habits/' + id + '/miss', 'POST', payload);
         hideModal();
-        if(r) showToast('Miss logged', 'warning');
+        if(r) {
+            var msg = 'Miss logged';
+            if(r.xp_deducted) {
+                var before = Math.round(r.strength_before || 0);
+                var after = Math.round(r.strength_after || 0);
+                msg = 'Miss logged: \u2212' + r.xp_deducted + ' XP, strength ' + before + '% \u2192 ' + after + '%';
+                if(r.streak_broken && r.streak_was) {
+                    msg += ', streak of ' + r.streak_was + ' broken';
+                }
+            }
+            showToast(msg, 'warning');
+        }
         _selectedMissReason = '';
-        await Promise.all([loadHabits(), loadDash()]);
+        await Promise.all([loadHabits(), loadDash(), loadAccountability()]);
     }
 
     // ── Templates modal ───────────────────────────────────────────

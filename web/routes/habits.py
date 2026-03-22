@@ -8,6 +8,7 @@ from .decorators import login_required, current_user_id
 from src.domain.entities import Habit, HabitCompletion, CompletionStatus, Frequency
 from src.domain.services import (
     calculate_strength_change,
+    calculate_miss_penalty,
     get_strength_label,
     should_unlock_next_phase,
     verify_phase_tasks,
@@ -192,6 +193,35 @@ def _apply_daily_decay(conn, uid: int) -> None:
     conn.commit()
 
 
+def _count_consecutive_misses(conn, habit_id: int, user_id: int) -> int:
+    """Count consecutive missed days ending yesterday (inclusive).
+
+    Walks the miss log backward from yesterday.  Returns 0 if the most recent
+    miss is not yesterday, so the new miss being logged today starts a fresh
+    run of 1 (the caller adds 1 after calling this function).
+    """
+    yesterday = (date.today() - timedelta(days=1)).isoformat()
+    rows = conn.execute(
+        """SELECT date FROM habit_miss_log
+           WHERE habit_id = ? AND user_id = ?
+           ORDER BY date DESC""",
+        (habit_id, user_id),
+    ).fetchall()
+
+    if not rows or rows[0]['date'] != yesterday:
+        return 0
+
+    consecutive = 0
+    expected = date.today() - timedelta(days=1)
+    for row in rows:
+        if row['date'] == expected.isoformat():
+            consecutive += 1
+            expected -= timedelta(days=1)
+        else:
+            break
+    return consecutive
+
+
 # ---------------------------------------------------------------------------
 # Existing endpoints (backwards compatible)
 # ---------------------------------------------------------------------------
@@ -211,6 +241,17 @@ def get_habits():
     habits = habit_repo.get_all(active_only=not include_inactive)
     completions = habit_repo.get_completions_for_date(date.today())
     completed_ids = {c.habit_id for c in completions}
+
+    # Batch query: misses this month per habit (avoids N+1)
+    month_start = date.today().replace(day=1).isoformat()
+    miss_rows = conn.execute(
+        """SELECT habit_id, COUNT(*) as cnt
+           FROM habit_miss_log
+           WHERE user_id = ? AND date >= ?
+           GROUP BY habit_id""",
+        (uid, month_start),
+    ).fetchall()
+    misses_this_month_map = {row['habit_id']: row['cnt'] for row in miss_rows}
 
     result = []
     for h in habits:
@@ -245,6 +286,15 @@ def get_habits():
         done_phases = phase_counts['done'] or 0
         phase_num = current_phase['phase_number'] if current_phase else 0
 
+        # Completion rate derived from the already-fetched s_row (SELECT *)
+        if s_row:
+            tc = s_row['total_completions'] or 0
+            tm = s_row['total_misses'] or 0
+            total_events = tc + tm
+            completion_rate = round((tc / total_events * 100), 1) if total_events > 0 else 0.0
+        else:
+            completion_rate = 0.0
+
         result.append({
             'id': h.id,
             'name': h.name,
@@ -263,8 +313,95 @@ def get_habits():
             'current_phase': current_phase['name'] if current_phase else None,
             'phase_progress': f'Phase {phase_num} of {total_phases}' if total_phases > 0 else '',
             'micro_tasks': micro_tasks if micro_tasks else None,
+            'misses_this_month': misses_this_month_map.get(h.id, 0),
+            'completion_rate': completion_rate,
         })
     return jsonify(result)
+
+
+@habits_bp.route('/accountability')
+@login_required
+def get_accountability():
+    """Return today's miss log joined with habit names for an accountability dashboard.
+
+    Response shape:
+        {
+            "date": "YYYY-MM-DD",
+            "misses": [
+                {
+                    "miss_id": int,
+                    "habit_id": int,
+                    "habit_name": str,
+                    "reason": str,
+                    "blocker": str,
+                    "strength_before": float | null,
+                    "strength_after": float | null,
+                    "streak_was": int,
+                    "streak_broken": bool,
+                    "consecutive_misses": int,
+                    "xp_deducted": int,
+                    "logged_at": str
+                }
+            ],
+            "totals": {
+                "total_misses": int,
+                "total_xp_deducted": int,
+                "streaks_broken": int
+            }
+        }
+    """
+    uid = current_user_id()
+    today = date.today().isoformat()
+    conn = get_connection()
+
+    rows = conn.execute(
+        """SELECT
+               ml.id          AS miss_id,
+               ml.habit_id,
+               h.name         AS habit_name,
+               ml.reason,
+               ml.blocker,
+               ml.strength_before,
+               ml.strength_after,
+               ml.streak_was,
+               ml.streak_broken,
+               ml.consecutive_misses,
+               ml.xp_deducted,
+               ml.logged_at
+           FROM habit_miss_log ml
+           JOIN habits h ON h.id = ml.habit_id
+           WHERE ml.user_id = ? AND ml.date = ?
+           ORDER BY ml.logged_at DESC""",
+        (uid, today),
+    ).fetchall()
+
+    misses = [
+        {
+            'miss_id':          row['miss_id'],
+            'habit_id':         row['habit_id'],
+            'habit_name':       row['habit_name'],
+            'reason':           row['reason'] or '',
+            'blocker':          row['blocker'] or '',
+            'strength_before':  round(float(row['strength_before']), 2) if row['strength_before'] is not None else None,
+            'strength_after':   round(float(row['strength_after']), 2)  if row['strength_after']  is not None else None,
+            'streak_was':       row['streak_was']       or 0,
+            'streak_broken':    bool(row['streak_broken']),
+            'consecutive_misses': row['consecutive_misses'] or 1,
+            'xp_deducted':      row['xp_deducted']      or 0,
+            'logged_at':        row['logged_at'],
+        }
+        for row in rows
+    ]
+
+    return jsonify({
+        'date': today,
+        'misses': misses,
+        'totals': {
+            'total_misses':    len(misses),
+            'total_xp_deducted': sum(m['xp_deducted'] for m in misses),
+            'streaks_broken':  sum(1 for m in misses if m['streak_broken']),
+        },
+    })
 
 
 @habits_bp.route('', methods=['POST'])
@@ -676,15 +813,25 @@ def get_habit_detail(habit_id):
 @habits_bp.route('/<int:habit_id>/miss', methods=['POST'])
 @login_required
 def log_habit_miss(habit_id):
-    """Log a missed day with optional reason and blocker text."""
+    """Log a missed day with accountability consequences.
+
+    Requires a non-empty reason.  Records strength before/after, streak info,
+    consecutive miss count, and deducts XP.  Applies calculate_miss_penalty()
+    which adds an extra -5% on top of normal decay and zeros strength at 3+
+    consecutive misses.
+    """
     uid = current_user_id()
     habit_repo = HabitRepository(uid)
+    stats_repo = StatsRepository(uid)
     habit = habit_repo.get_by_id(habit_id)
     if not habit:
         return jsonify({'error': 'Not found'}), 404
 
     data = request.get_json(silent=True) or {}
-    reason = data.get('reason', '')
+    reason = (data.get('reason') or '').strip()
+    if not reason:
+        return jsonify({'error': 'reason is required'}), 400
+
     blocker = data.get('blocker') or data.get('note', '')
     miss_date = data.get('date', date.today().isoformat())
 
@@ -698,17 +845,156 @@ def log_habit_miss(habit_id):
     if existing:
         return jsonify({'error': 'Miss already logged for this date'}), 409
 
+    # 1. Read strength before
+    s_row = _get_or_create_strength(conn, habit_id, uid)
+    strength_before = round(float(s_row['strength']), 2)
+
+    # 2. Read current streak
+    streak_was = habit_repo.get_streak(habit_id)
+    streak_broken = 1 if streak_was > 0 else 0
+
+    # 3. Count consecutive misses (yesterday and before); today adds +1
+    prior_consecutive = _count_consecutive_misses(conn, habit_id, uid)
+    consecutive_misses = prior_consecutive + 1
+
+    # 4. Calculate penalised strength
+    new_strength = calculate_miss_penalty(strength_before, consecutive_misses)
+    strength_after = round(new_strength, 2)
+    peak = max(float(s_row['peak_strength']), new_strength)
+    now_iso = datetime.now().isoformat()
+
+    # 5. UPDATE habit_strength directly (bypass _update_strength to use penalty logic)
     conn.execute(
-        """INSERT INTO habit_miss_log (habit_id, user_id, date, reason, blocker)
-           VALUES (?, ?, ?, ?, ?)""",
-        (habit_id, uid, miss_date, reason, blocker),
+        """UPDATE habit_strength
+           SET strength = ?, last_missed = ?,
+               total_misses = total_misses + 1
+           WHERE habit_id = ? AND user_id = ?""",
+        (new_strength, now_iso, habit_id, uid),
+    )
+
+    # 6. INSERT enriched miss log row
+    conn.execute(
+        """INSERT INTO habit_miss_log
+               (habit_id, user_id, date, reason, blocker,
+                strength_before, strength_after,
+                streak_broken, streak_was,
+                xp_deducted, consecutive_misses)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (
+            habit_id, uid, miss_date, reason, blocker,
+            strength_before, strength_after,
+            streak_broken, streak_was,
+            5, consecutive_misses,
+        ),
     )
     conn.commit()
 
-    # Apply strength decay for the miss
-    strength_data = _update_strength(conn, habit_id, completed=False, uid=uid)
+    # 7. Deduct XP
+    stats_repo.add_points('habit', -5, f"Missed: {habit.name}", habit_id)
 
-    return jsonify({'success': True, **strength_data}), 201
+    return jsonify({
+        'success': True,
+        'strength': strength_after,
+        'strength_before': strength_before,
+        'strength_after': strength_after,
+        'strength_label': get_strength_label(new_strength),
+        'peak_strength': round(peak, 2),
+        'streak_was': streak_was,
+        'streak_broken': bool(streak_broken),
+        'consecutive_misses': consecutive_misses,
+        'xp_deducted': 5,
+        'consequence': (
+            'Habit reset — three consecutive misses.'
+            if consecutive_misses >= 3
+            else f'{consecutive_misses} consecutive miss(es). Keep going.'
+        ),
+    }), 201
+
+
+@habits_bp.route('/<int:habit_id>/stats')
+@login_required
+def get_habit_stats(habit_id):
+    """Return accountability statistics for a single habit.
+
+    Response shape:
+        {
+            "habit_id": int,
+            "habit_name": str,
+            "current_streak": int,
+            "misses_this_month": int,
+            "misses_all_time": int,
+            "completions_this_month": int,
+            "completions_all_time": int,
+            "miss_rate": float,          # percentage 0-100
+            "worst_day_of_week": str | null   # e.g. "Monday"
+        }
+    """
+    uid = current_user_id()
+    habit_repo = HabitRepository(uid)
+    habit = habit_repo.get_by_id(habit_id)
+    if not habit:
+        return jsonify({'error': 'Not found'}), 404
+
+    conn = get_connection()
+    today = date.today()
+    month_start = today.replace(day=1).isoformat()
+
+    # Miss counts
+    misses_this_month = conn.execute(
+        """SELECT COUNT(*) FROM habit_miss_log
+           WHERE habit_id = ? AND user_id = ? AND date >= ?""",
+        (habit_id, uid, month_start),
+    ).fetchone()[0]
+
+    misses_all_time = conn.execute(
+        "SELECT COUNT(*) FROM habit_miss_log WHERE habit_id = ? AND user_id = ?",
+        (habit_id, uid),
+    ).fetchone()[0]
+
+    # Completion counts
+    completions_this_month = conn.execute(
+        """SELECT COUNT(*) FROM habit_completions
+           WHERE habit_id = ? AND user_id = ?
+             AND status = 'complete' AND date(completed_at) >= ?""",
+        (habit_id, uid, month_start),
+    ).fetchone()[0]
+
+    completions_all_time = conn.execute(
+        """SELECT COUNT(*) FROM habit_completions
+           WHERE habit_id = ? AND user_id = ? AND status = 'complete'""",
+        (habit_id, uid),
+    ).fetchone()[0]
+
+    # Miss rate (all time)
+    total_events = completions_all_time + misses_all_time
+    miss_rate = round((misses_all_time / total_events * 100), 1) if total_events > 0 else 0.0
+
+    # Worst day of week (day name with most misses all time)
+    day_rows = conn.execute(
+        """SELECT strftime('%w', date) as dow, COUNT(*) as cnt
+           FROM habit_miss_log
+           WHERE habit_id = ? AND user_id = ?
+           GROUP BY dow
+           ORDER BY cnt DESC
+           LIMIT 1""",
+        (habit_id, uid),
+    ).fetchone()
+    day_names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+    worst_day = day_names[int(day_rows['dow'])] if day_rows else None
+
+    current_streak = habit_repo.get_streak(habit_id)
+
+    return jsonify({
+        'habit_id':              habit_id,
+        'habit_name':            habit.name,
+        'current_streak':        current_streak,
+        'misses_this_month':     misses_this_month,
+        'misses_all_time':       misses_all_time,
+        'completions_this_month': completions_this_month,
+        'completions_all_time':  completions_all_time,
+        'miss_rate':             miss_rate,
+        'worst_day_of_week':     worst_day,
+    })
 
 
 @habits_bp.route('/<int:habit_id>/phases', methods=['POST'])

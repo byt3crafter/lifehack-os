@@ -974,3 +974,28 @@ def run_migrations(conn) -> None:
         )
         conn.commit()
         print("  Migration 27: Chat conversations: threads, categories, pin/bookmark")
+
+    # Migration 28: Habit accountability — enrich miss log with strength/streak/XP data
+    current = get_current_version(conn)
+    if current < 28:
+        miss_cols = [r[1] for r in conn.execute("PRAGMA table_info(habit_miss_log)").fetchall()]
+        for col, defn in [
+            ('strength_before',    'REAL DEFAULT NULL'),
+            ('strength_after',     'REAL DEFAULT NULL'),
+            ('streak_broken',      'INTEGER DEFAULT 0'),
+            ('streak_was',         'INTEGER DEFAULT 0'),
+            ('xp_deducted',        'INTEGER DEFAULT 0'),
+            ('consecutive_misses', 'INTEGER DEFAULT 1'),
+        ]:
+            if col not in miss_cols:
+                conn.execute(f"ALTER TABLE habit_miss_log ADD COLUMN {col} {defn}")
+
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_habit_miss_log_date ON habit_miss_log(date)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_habit_miss_log_user_date ON habit_miss_log(user_id, date)")
+
+        conn.execute(
+            "INSERT OR IGNORE INTO schema_version (version, description) "
+            "VALUES (28, 'Habit accountability: miss log enrichment with strength/streak/XP')"
+        )
+        conn.commit()
+        print("  Migration 28: Habit accountability: miss log enrichment with strength/streak/XP")

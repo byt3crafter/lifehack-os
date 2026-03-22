@@ -24,6 +24,33 @@ def calculate_strength_change(current_strength: float, completed: bool) -> float
         return max(0.0, current_strength - loss)
 
 
+def calculate_miss_penalty(current_strength: float, consecutive_misses: int) -> float:
+    """Calculate new strength after a logged miss with accountability penalties.
+
+    Applies the normal miss decay from calculate_strength_change() plus:
+    - An additional flat -5% penalty for logging a miss
+    - If consecutive_misses >= 3, strength is forced to 0 (habit reset)
+
+    Args:
+        current_strength: Current strength value (0-100).
+        consecutive_misses: Number of consecutive missed days ending today.
+
+    Returns:
+        New strength value clamped to [0, 100].
+    """
+    if consecutive_misses >= 3:
+        return 0.0
+
+    # Normal decay
+    base_loss = min(8.0, 3.0 + (current_strength / 33.0))
+    new_strength = current_strength - base_loss
+
+    # Additional flat accountability penalty
+    new_strength -= 5.0
+
+    return max(0.0, min(100.0, new_strength))
+
+
 def get_strength_label(strength: float) -> str:
     """Return a human-readable label for a given strength value."""
     if strength >= 90:

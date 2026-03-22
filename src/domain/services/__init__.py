@@ -1,6 +1,7 @@
 """Domain services."""
 from .habit_strength import (
     calculate_strength_change,
+    calculate_miss_penalty,
     get_strength_label,
     should_unlock_next_phase,
 )
@@ -15,6 +16,7 @@ from .chat_tool_executor import execute_tool
 
 __all__ = [
     'calculate_strength_change',
+    'calculate_miss_penalty',
     'get_strength_label',
     'should_unlock_next_phase',
     'VerificationResult',
