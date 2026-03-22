@@ -299,7 +299,8 @@ def get_history():
     # Subquery gets the last N messages, outer query re-orders them chronologically
     rows = conn.execute(
         """SELECT * FROM (
-               SELECT id, role, content, provider, model, created_at
+               SELECT id, role, content, provider, model, created_at,
+                      COALESCE(bookmarked, 0) as bookmarked
                FROM chat_messages
                WHERE user_id = ?
                ORDER BY created_at DESC, id DESC
@@ -317,6 +318,7 @@ def get_history():
                 "provider": r["provider"],
                 "model": r["model"],
                 "created_at": r["created_at"],
+                "bookmarked": r["bookmarked"],
             }
             for r in rows
         ]

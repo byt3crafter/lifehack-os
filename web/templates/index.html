@@ -3742,6 +3742,7 @@
         if(d) o.body = JSON.stringify(d);
         const r = await fetch('/api'+e, o);
         if(r.status === 401) { location.href = '/login'; return null; }
+        if(r.status === 204 || r.headers.get('content-length') === '0') return {success: true};
         return r.json();
     }
 
@@ -9962,11 +9963,10 @@
     async function createConversation(category) {
         // Use the active filter category, or default to general
         category = category || (_cmCatFilter !== 'all' ? _cmCatFilter : 'general');
-        var catLabels = {health:'Health Chat',finance:'Finance Chat',productivity:'Productivity Chat',life:'Life Chat',general:'General Chat'};
-        var defaultTitle = catLabels[category] || 'New Chat';
-        var title = prompt('Name this conversation:', defaultTitle);
-        if (!title || !title.trim()) return; // User cancelled
-        title = title.trim();
+        var catLabels = {health:'Health',finance:'Finance',productivity:'Productivity',life:'Life',general:'General'};
+        var d = new Date();
+        var dateStr = d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+        var title = (catLabels[category] || 'Chat') + ' · ' + dateStr;
         try {
             var conv = await api('/chat/conversations', 'POST', { title: title, category: category });
             if (conv && conv.id) {
@@ -10040,6 +10040,24 @@
         if (sidebar) sidebar.classList.toggle('open');
     }
 
+    async function toggleMsgBookmark(msgId, btn) {
+        try {
+            var r = await api('/chat/conversations/messages/' + msgId + '/bookmark', 'POST');
+            if (r && r.success) {
+                // Update the in-memory message
+                var msg = _chatModeMessages.find(function(m) { return m.id === msgId; });
+                if (msg) msg.bookmarked = r.bookmarked ? 1 : 0;
+                // Update button visual
+                if (btn) {
+                    btn.style.opacity = r.bookmarked ? '1' : '0.4';
+                    btn.dataset.bm = r.bookmarked ? '1' : '0';
+                    btn.dataset.active = r.bookmarked ? '1' : '';
+                }
+                showToast(r.bookmarked ? 'Answer saved' : 'Bookmark removed', 'info');
+            }
+        } catch(e) {}
+    }
+
     function renderChatModeMessages() {
         var container = document.getElementById('chatmode-messages');
         if (!container) return;
@@ -10068,13 +10086,20 @@
                 try { ts = '<div class="cm-time">' + new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '</div>'; } catch(e) {}
             }
 
-            html += '<div class="' + msgClass + '">'
+            // Bookmark button for AI messages (only if message has an id)
+            var bmBtn = '';
+            if (!isUser && m.id) {
+                var isBm = m.bookmarked;
+                bmBtn = '<button onclick="toggleMsgBookmark(' + m.id + ',this)" class="cm-msg-bm" style="background:none;border:none;cursor:pointer;font-size:0.65rem;opacity:' + (isBm ? '1' : '0') + ';transition:opacity 0.15s;flex-shrink:0;padding:2px;" title="Save this answer">' + (isBm ? '🔖' : '🔖') + '</button>';
+            }
+
+            html += '<div class="' + msgClass + '" style="position:relative;" onmouseenter="var b=this.querySelector(\'.cm-msg-bm\');if(b)b.style.opacity=b.dataset.bm||\'0.4\'" onmouseleave="var b=this.querySelector(\'.cm-msg-bm\');if(b&&!b.dataset.active)b.style.opacity=b.dataset.bm||\'0\'">'
                 + '<div style="display:flex;gap:12px;align-items:flex-start;">'
                 + avatar
                 + '<div class="cm-content">'
                 + imgBadge
                 + chatFormatMsg(m.content)
-                + ts
+                + '<div style="display:flex;align-items:center;gap:6px;">' + ts + bmBtn + '</div>'
                 + '</div>'
                 + '</div></div>';
         }

@@ -964,6 +964,10 @@ def run_migrations(conn) -> None:
             conn.execute("ALTER TABLE chat_messages ADD COLUMN conversation_id INTEGER REFERENCES chat_conversations(id)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_chat_msg_conv ON chat_messages(conversation_id)")
 
+        # Add bookmarked column to chat_messages for saving individual answers
+        if 'bookmarked' not in msg_cols:
+            conn.execute("ALTER TABLE chat_messages ADD COLUMN bookmarked INTEGER DEFAULT 0")
+
         conn.execute(
             "INSERT OR IGNORE INTO schema_version (version, description) "
             "VALUES (27, 'Chat conversations: threads, categories, pin/bookmark')"

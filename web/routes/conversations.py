@@ -198,7 +198,8 @@ def get_messages(conv_id):
     limit = min(int(request.args.get('limit', 100)), 500)
     rows = conn.execute(
         """SELECT * FROM (
-               SELECT id, role, content, provider, model, created_at
+               SELECT id, role, content, provider, model, created_at,
+                      COALESCE(bookmarked, 0) as bookmarked
                FROM chat_messages
                WHERE conversation_id = ? AND user_id = ?
                ORDER BY created_at DESC, id DESC
@@ -223,3 +224,42 @@ def clear_messages(conv_id):
     )
     conn.commit()
     return jsonify({'success': True})
+
+
+# ── Toggle bookmark on a message ────────────────────────────────────────────
+
+@conversations_bp.route('/messages/<int:msg_id>/bookmark', methods=['POST'])
+@login_required
+def toggle_message_bookmark(msg_id):
+    uid = current_user_id()
+    conn = get_connection()
+    row = conn.execute(
+        "SELECT id, bookmarked FROM chat_messages WHERE id = ? AND user_id = ?",
+        (msg_id, uid),
+    ).fetchone()
+    if not row:
+        return jsonify({'error': 'Message not found'}), 404
+
+    new_val = 0 if row['bookmarked'] else 1
+    conn.execute("UPDATE chat_messages SET bookmarked = ? WHERE id = ?", (new_val, msg_id))
+    conn.commit()
+    return jsonify({'success': True, 'bookmarked': bool(new_val)})
+
+
+# ── List bookmarked messages ────────────────────────────────────────────────
+
+@conversations_bp.route('/bookmarks', methods=['GET'])
+@login_required
+def list_bookmarks():
+    uid = current_user_id()
+    conn = get_connection()
+    rows = conn.execute(
+        """SELECT m.id, m.role, m.content, m.created_at, m.conversation_id,
+                  c.title as conversation_title, c.category
+           FROM chat_messages m
+           LEFT JOIN chat_conversations c ON c.id = m.conversation_id
+           WHERE m.user_id = ? AND m.bookmarked = 1
+           ORDER BY m.created_at DESC LIMIT 50""",
+        (uid,),
+    ).fetchall()
+    return jsonify([dict(r) for r in rows])
