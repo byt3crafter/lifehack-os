@@ -2832,13 +2832,26 @@
                     .cm-chart-wrap canvas { max-height:280px; width:100% !important; }
 
                     /* Conversation sidebar items */
-                    .cm-conv-item { padding:10px 12px; border-radius:10px; cursor:pointer; transition:background 0.1s; margin-bottom:2px; }
+                    .cm-conv-item { padding:10px 12px; border-radius:10px; cursor:pointer; transition:background 0.1s; margin-bottom:2px; position:relative; }
                     .cm-conv-item:hover { background:#1c1c20; }
                     .cm-conv-item.active { background:rgba(79,128,255,0.1); border:1px solid rgba(79,128,255,0.15); }
                     .cm-conv-item .conv-title { font-size:0.8125rem; font-weight:500; color:#f0f0f2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
                     .cm-conv-item .conv-meta { font-size:0.625rem; color:#5c5c6b; margin-top:2px; display:flex; align-items:center; gap:4px; }
                     .cm-conv-item .conv-pin { color:#eab308; font-size:0.625rem; }
                     .cm-conv-item .conv-bm { color:#4f80ff; font-size:0.625rem; }
+                    /* Three-dot context menu */
+                    .cm-conv-menu { position:absolute; right:6px; top:50%; transform:translateY(-50%); opacity:0; transition:opacity 0.1s; z-index:10; }
+                    .cm-conv-item:hover .cm-conv-menu { opacity:1; }
+                    .cm-conv-menu-btn { background:#1c1c20; border:1px solid #2a2a2e; border-radius:6px; cursor:pointer; color:#9898a6; font-size:0.75rem; padding:2px 6px; line-height:1; font-family:inherit; }
+                    .cm-conv-menu-btn:hover { background:#2a2a2e; color:#f0f0f2; }
+                    .cm-conv-dropdown { position:absolute; right:0; top:calc(100% + 4px); background:#1c1c20; border:1px solid #2a2a2e; border-radius:8px; padding:4px; min-width:130px; box-shadow:0 4px 16px rgba(0,0,0,0.5); z-index:100; }
+                    .cm-conv-dropdown button { display:block; width:100%; text-align:left; background:none; border:none; padding:6px 10px; border-radius:5px; font-size:0.75rem; color:#d0d0d8; cursor:pointer; font-family:inherit; white-space:nowrap; }
+                    .cm-conv-dropdown button:hover { background:#2a2a2e; color:#f0f0f2; }
+                    .cm-conv-dropdown button.danger:hover { background:rgba(239,68,68,0.15); color:#f87171; }
+                    /* Message bookmark icon */
+                    .cm-msg-bm { background:none; border:none; cursor:pointer; font-size:0.7rem; padding:0 2px; transition:opacity 0.15s; flex-shrink:0; line-height:1; }
+                    .cm-msg:hover .cm-msg-bm { opacity:0.5 !important; }
+                    .cm-msg-bm[data-active="1"] { opacity:1 !important; }
 
                     @media (max-width:768px) {
                         .cm-msg { padding:14px 16px; }
@@ -2887,11 +2900,9 @@
                     <!-- Main chat area -->
                     <div style="flex:1;display:flex;flex-direction:column;min-width:0;">
                         <!-- Conversation header -->
-                        <div id="cm-conv-header" class="cm-conv-header" style="padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;gap:8px;flex-shrink:0;">
-                            <span id="cm-conv-title" onclick="renameConversation()" style="font-size:0.8125rem;font-weight:600;color:#f0f0f2;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;" title="Click to rename">General</span>
-                            <button id="cm-conv-pin-btn" onclick="toggleConvPin()" style="background:none;border:none;cursor:pointer;color:#5c5c6b;font-size:0.8rem;flex-shrink:0;" title="Pin">📌</button>
-                            <button id="cm-conv-bm-btn" onclick="toggleConvBookmark()" style="background:none;border:none;cursor:pointer;color:#5c5c6b;font-size:0.8rem;flex-shrink:0;" title="Bookmark">🔖</button>
-                            <button id="cm-conv-del-btn" onclick="deleteConversation()" style="background:none;border:none;cursor:pointer;color:#5c5c6b;font-size:0.7rem;flex-shrink:0;" title="Delete">🗑️</button>
+                        <div id="cm-conv-header" class="cm-conv-header" style="padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                            <span id="cm-conv-title" style="font-size:0.8125rem;font-weight:600;color:#f0f0f2;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">General</span>
+                            <button onclick="renameConversation()" style="background:none;border:none;cursor:pointer;color:#5c5c6b;font-size:0.75rem;flex-shrink:0;padding:2px 4px;border-radius:4px;transition:color 0.15s;" onmouseenter="this.style.color='#9898a6'" onmouseleave="this.style.color='#5c5c6b'" title="Rename conversation"><svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
                         </div>
 
                         <!-- Messages area -->
@@ -9905,12 +9916,22 @@
             try { var d = new Date(c.last_message_at); time = d.toLocaleDateString('en-US', {month:'short', day:'numeric'}); } catch(e) {}
             var count = c.message_count || 0;
             var catBadge = '<span style="font-size:0.5625rem;padding:1px 5px;border-radius:4px;background:' + (c.category_color || '#2a2a2e') + '20;color:' + (c.category_color || '#9898a6') + ';font-weight:600;text-transform:uppercase;">' + (c.category_label || c.category || 'general') + '</span>';
+            var menu = '<div class="cm-conv-menu" onclick="event.stopPropagation()">'
+                + '<button class="cm-conv-menu-btn" onclick="toggleConvDropdown(this)">⋮</button>'
+                + '<div class="cm-conv-dropdown" style="display:none;">'
+                + '<button onclick="renameConversationById(' + c.id + ')">✏️ Rename</button>'
+                + '<button onclick="toggleConvPin(' + c.id + ')">' + (c.pinned ? '📌 Unpin' : '📌 Pin') + '</button>'
+                + '<button onclick="toggleConvBookmark(' + c.id + ')">' + (c.bookmarked ? '🔖 Unbookmark' : '🔖 Bookmark') + '</button>'
+                + '<button class="danger" onclick="deleteConversationById(' + c.id + ')">🗑️ Delete</button>'
+                + '</div>'
+                + '</div>';
             return '<div class="cm-conv-item' + active + '" onclick="selectConversation(' + c.id + ')" data-id="' + c.id + '">'
-                + '<div style="display:flex;align-items:center;gap:6px;">'
+                + '<div style="display:flex;align-items:center;gap:6px;padding-right:28px;">'
                 + '<div class="conv-title" style="flex:1;">' + (c.category_icon || '💬') + ' ' + (c.title || 'Untitled') + '</div>'
                 + pin + bm
                 + '</div>'
                 + '<div class="conv-meta">' + catBadge + ' <span>' + time + '</span><span>· ' + count + ' msgs</span></div>'
+                + menu
                 + '</div>';
         }).join('');
     }
@@ -9920,11 +9941,6 @@
         var conv = _cmConversations.find(function(c) { return c.id === convId; });
         var titleEl = document.getElementById('cm-conv-title');
         if (titleEl && conv) titleEl.textContent = (conv.category_icon || '💬') + ' ' + conv.title;
-        // Update pin/bookmark button states
-        var pinBtn = document.getElementById('cm-conv-pin-btn');
-        var bmBtn = document.getElementById('cm-conv-bm-btn');
-        if (pinBtn) pinBtn.style.opacity = conv && conv.pinned ? '1' : '0.4';
-        if (bmBtn) bmBtn.style.opacity = conv && conv.bookmarked ? '1' : '0.4';
         renderConversationList();
         await loadConversationMessages(convId);
         renderChatModeMessages();
@@ -9946,18 +9962,25 @@
         }
     }
 
-    async function renameConversation() {
-        if (!_cmActiveConvId) return;
-        var conv = _cmConversations.find(function(c) { return c.id === _cmActiveConvId; });
+    async function renameConversation(convId) {
+        var id = convId || _cmActiveConvId;
+        if (!id) return;
+        var conv = _cmConversations.find(function(c) { return c.id === id; });
         if (!conv) return;
         var newTitle = prompt('Rename conversation:', conv.title);
         if (!newTitle || !newTitle.trim() || newTitle.trim() === conv.title) return;
         try {
-            await api('/chat/conversations/' + _cmActiveConvId, 'PUT', { title: newTitle.trim() });
+            await api('/chat/conversations/' + id, 'PUT', { title: newTitle.trim() });
             await loadConversations();
-            var titleEl = document.getElementById('cm-conv-title');
-            if (titleEl) titleEl.textContent = (conv.category_icon || '💬') + ' ' + newTitle.trim();
+            if (id === _cmActiveConvId) {
+                var titleEl = document.getElementById('cm-conv-title');
+                if (titleEl) titleEl.textContent = (conv.category_icon || '💬') + ' ' + newTitle.trim();
+            }
         } catch(e) {}
+    }
+
+    async function renameConversationById(convId) {
+        return renameConversation(convId);
     }
 
     async function createConversation(category) {
@@ -9976,14 +9999,15 @@
         } catch(e) {}
     }
 
-    async function deleteConversation() {
-        if (!_cmActiveConvId) return;
-        var conv = _cmConversations.find(function(c) { return c.id === _cmActiveConvId; });
+    async function deleteConversation(convId) {
+        var id = convId || _cmActiveConvId;
+        if (!id) return;
+        var conv = _cmConversations.find(function(c) { return c.id === id; });
         if (!conv) return;
         if (!confirm('Delete "' + conv.title + '"? This will remove all messages in this conversation.')) return;
         try {
-            await api('/chat/conversations/' + _cmActiveConvId, 'DELETE');
-            _cmActiveConvId = null;
+            await api('/chat/conversations/' + id, 'DELETE');
+            if (id === _cmActiveConvId) _cmActiveConvId = null;
             await loadConversations();
             if (_cmConversations.length) {
                 await selectConversation(_cmConversations[0].id);
@@ -9994,6 +10018,10 @@
                 renderChatModeMessages();
             }
         } catch(e) {}
+    }
+
+    async function deleteConversationById(convId) {
+        return deleteConversation(convId);
     }
 
     function filterConversations(cat) {
@@ -10015,29 +10043,50 @@
         renderConversationList();
     }
 
-    async function toggleConvPin() {
-        if (!_cmActiveConvId) return;
-        var conv = _cmConversations.find(function(c) { return c.id === _cmActiveConvId; });
+    async function toggleConvPin(convId) {
+        var id = convId || _cmActiveConvId;
+        if (!id) return;
+        var conv = _cmConversations.find(function(c) { return c.id === id; });
         if (!conv) return;
-        await api('/chat/conversations/' + _cmActiveConvId, 'PUT', { pinned: !conv.pinned });
+        await api('/chat/conversations/' + id, 'PUT', { pinned: !conv.pinned });
         await loadConversations();
-        var pinBtn = document.getElementById('cm-conv-pin-btn');
-        if (pinBtn) pinBtn.style.opacity = !conv.pinned ? '1' : '0.4';
+        renderConversationList();
     }
 
-    async function toggleConvBookmark() {
-        if (!_cmActiveConvId) return;
-        var conv = _cmConversations.find(function(c) { return c.id === _cmActiveConvId; });
+    async function toggleConvBookmark(convId) {
+        var id = convId || _cmActiveConvId;
+        if (!id) return;
+        var conv = _cmConversations.find(function(c) { return c.id === id; });
         if (!conv) return;
-        await api('/chat/conversations/' + _cmActiveConvId, 'PUT', { bookmarked: !conv.bookmarked });
+        await api('/chat/conversations/' + id, 'PUT', { bookmarked: !conv.bookmarked });
         await loadConversations();
-        var bmBtn = document.getElementById('cm-conv-bm-btn');
-        if (bmBtn) bmBtn.style.opacity = !conv.bookmarked ? '1' : '0.4';
+        renderConversationList();
     }
 
     function toggleCmSidebar() {
         var sidebar = document.getElementById('cm-sidebar');
         if (sidebar) sidebar.classList.toggle('open');
+    }
+
+    function toggleConvDropdown(btn) {
+        var dropdown = btn.nextElementSibling;
+        if (!dropdown) return;
+        var isOpen = dropdown.style.display !== 'none';
+        // Close all other open dropdowns first
+        document.querySelectorAll('.cm-conv-dropdown').forEach(function(d) { d.style.display = 'none'; });
+        if (!isOpen) {
+            dropdown.style.display = 'block';
+            // Close when clicking outside
+            setTimeout(function() {
+                function closeHandler(e) {
+                    if (!dropdown.contains(e.target) && e.target !== btn) {
+                        dropdown.style.display = 'none';
+                        document.removeEventListener('click', closeHandler);
+                    }
+                }
+                document.addEventListener('click', closeHandler);
+            }, 0);
+        }
     }
 
     async function toggleMsgBookmark(msgId, btn) {
@@ -10049,9 +10098,9 @@
                 if (msg) msg.bookmarked = r.bookmarked ? 1 : 0;
                 // Update button visual
                 if (btn) {
-                    btn.style.opacity = r.bookmarked ? '1' : '0.4';
                     btn.dataset.bm = r.bookmarked ? '1' : '0';
                     btn.dataset.active = r.bookmarked ? '1' : '';
+                    btn.style.opacity = r.bookmarked ? '1' : '0';
                 }
                 showToast(r.bookmarked ? 'Answer saved' : 'Bookmark removed', 'info');
             }
@@ -10089,11 +10138,11 @@
             // Bookmark button for AI messages (only if message has an id)
             var bmBtn = '';
             if (!isUser && m.id) {
-                var isBm = m.bookmarked;
-                bmBtn = '<button onclick="toggleMsgBookmark(' + m.id + ',this)" class="cm-msg-bm" style="background:none;border:none;cursor:pointer;font-size:0.65rem;opacity:' + (isBm ? '1' : '0') + ';transition:opacity 0.15s;flex-shrink:0;padding:2px;" title="Save this answer">' + (isBm ? '🔖' : '🔖') + '</button>';
+                var isBm = m.bookmarked ? 1 : 0;
+                bmBtn = '<button onclick="toggleMsgBookmark(' + m.id + ',this)" class="cm-msg-bm" data-bm="' + isBm + '" data-active="' + (isBm ? '1' : '') + '" style="opacity:' + (isBm ? '1' : '0') + ';" title="Save this answer">🔖</button>';
             }
 
-            html += '<div class="' + msgClass + '" style="position:relative;" onmouseenter="var b=this.querySelector(\'.cm-msg-bm\');if(b)b.style.opacity=b.dataset.bm||\'0.4\'" onmouseleave="var b=this.querySelector(\'.cm-msg-bm\');if(b&&!b.dataset.active)b.style.opacity=b.dataset.bm||\'0\'">'
+            html += '<div class="' + msgClass + '">'
                 + '<div style="display:flex;gap:12px;align-items:flex-start;">'
                 + avatar
                 + '<div class="cm-content">'
