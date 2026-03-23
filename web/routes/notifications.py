@@ -135,6 +135,31 @@ def generate_nudges():
     if not is_cron and not is_admin:
         return jsonify({'error': 'Unauthorized'}), 401
 
+    # ── Report generation branch ─────────────────────────────────────────────
+    report_type = request.args.get('report_type', '').strip()
+    if report_type in ('morning', 'evening', 'weekly'):
+        from src.domain.services.report_generator import generate_report
+
+        conn = get_connection()
+        users = conn.execute("SELECT id FROM users").fetchall()
+        results = []
+
+        for user_row in users:
+            user_id = user_row['id']
+            try:
+                result = generate_report(conn, user_id, report_type)
+                if result:
+                    results.append({'user_id': user_id, **result})
+            except Exception as exc:
+                try:
+                    from web.routes.app_log import log_event
+                    log_event('error', 'reports', f'{report_type} report failed for user {user_id}: {exc}')
+                except Exception:
+                    pass
+
+        return jsonify({'ok': True, 'report_type': report_type, 'generated': len(results), 'results': results})
+
+    # ── Nudge generation branch (default) ────────────────────────────────────
     conn = get_connection()
 
     # Clean up notifications older than 30 days

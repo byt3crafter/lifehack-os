@@ -1026,3 +1026,26 @@ def run_migrations(conn) -> None:
         )
         conn.commit()
         print("  Migration 29: Notifications: in-app nudges and alerts")
+
+    # Migration 30: AI-generated reports — persisted report storage
+    current = get_current_version(conn)
+    if current < 30:
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS ai_reports (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL REFERENCES users(id),
+                type TEXT NOT NULL,
+                content TEXT NOT NULL,
+                conversation_id INTEGER REFERENCES chat_conversations(id),
+                period_start TEXT NOT NULL,
+                period_end TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_ai_reports_user ON ai_reports(user_id, type);
+        """)
+        conn.execute(
+            "INSERT OR IGNORE INTO schema_version (version, description) "
+            "VALUES (30, 'AI-generated reports: ai_reports table')"
+        )
+        conn.commit()
+        print("  Migration 30: AI-generated reports: ai_reports table")

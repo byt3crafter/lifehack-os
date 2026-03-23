@@ -2976,6 +2976,7 @@
                             <button class="cm-cat-pill" data-cat="life" onclick="filterConversations('life')" style="padding:3px 8px;border-radius:6px;font-size:0.625rem;font-weight:600;border:1px solid transparent;background:none;color:#5c5c6b;cursor:pointer;font-family:inherit;">🌱 Life</button>
                             <button class="cm-cat-pill" data-cat="general" onclick="filterConversations('general')" style="padding:3px 8px;border-radius:6px;font-size:0.625rem;font-weight:600;border:1px solid transparent;background:none;color:#5c5c6b;cursor:pointer;font-family:inherit;">💬 General</button>
                             <button class="cm-cat-pill" data-cat="reflect" onclick="filterConversations('reflect')" style="padding:3px 8px;border-radius:6px;font-size:0.625rem;font-weight:600;border:1px solid transparent;background:none;color:#5c5c6b;cursor:pointer;font-family:inherit;">🧠 Reflect</button>
+                            <button class="cm-cat-pill" data-cat="reports" onclick="filterConversations('reports')" style="padding:3px 8px;border-radius:6px;font-size:0.625rem;font-weight:600;border:1px solid transparent;background:none;color:#5c5c6b;cursor:pointer;font-family:inherit;">📊 Reports</button>
                         </div>
                         <!-- Conversation list -->
                         <div id="cm-conv-list" style="flex:1;overflow-y:auto;padding:8px;"></div>
@@ -10291,7 +10292,7 @@
     async function createConversation(category) {
         // Use the active filter category, or default to general
         category = category || (_cmCatFilter !== 'all' ? _cmCatFilter : 'general');
-        var catLabels = {health:'Health',finance:'Finance',productivity:'Productivity',life:'Life',general:'General',reflect:'Reflect'};
+        var catLabels = {health:'Health',finance:'Finance',productivity:'Productivity',life:'Life',general:'General',reflect:'Reflect',reports:'Reports'};
         var d = new Date();
         var dateStr = d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
         var title = (catLabels[category] || 'Chat') + ' · ' + dateStr;

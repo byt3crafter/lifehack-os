@@ -10,7 +10,7 @@ from src.infrastructure.database import get_connection
 
 conversations_bp = Blueprint('conversations', __name__, url_prefix='/api/chat/conversations')
 
-VALID_CATEGORIES = {'health', 'finance', 'productivity', 'life', 'general', 'reflect'}
+VALID_CATEGORIES = {'health', 'finance', 'productivity', 'life', 'general', 'reflect', 'reports'}
 
 CATEGORY_META = {
     'health':       {'icon': '💚', 'label': 'Health',       'color': '#22c55e'},
@@ -19,6 +19,7 @@ CATEGORY_META = {
     'life':         {'icon': '🌱', 'label': 'Life',         'color': '#a855f7'},
     'general':      {'icon': '💬', 'label': 'General',      'color': '#9898a6'},
     'reflect':      {'icon': '🧠', 'label': 'Reflect',      'color': '#e879f9'},
+    'reports':      {'icon': '📊', 'label': 'Reports',      'color': '#f59e0b'},
 }
 
 
