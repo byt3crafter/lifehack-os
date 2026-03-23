@@ -12,10 +12,10 @@ class TestListModules:
         resp = client.get("/api/modules")
         assert resp.status_code == 401
 
-    def test_returns_8_modules(self, auth_client):
+    def test_returns_all_modules(self, auth_client):
         resp = auth_client.get("/api/modules")
         data = resp.get_json()
-        assert len(data) == 8
+        assert len(data) >= 8  # was 8 at launch, grew as modules were added
 
     def test_each_module_has_required_fields(self, auth_client):
         modules = auth_client.get("/api/modules").get_json()
