@@ -77,6 +77,10 @@ def execute_tool(tool_name: str, args: dict, conn, user_id: int) -> dict:
         "firefly_get_spending": _firefly_get_spending,
         "firefly_get_budgets": _firefly_get_budgets,
         "firefly_delete_transaction": _firefly_delete_transaction,
+        # Reflect
+        "journal_reflect": _journal_reflect,
+        "journal_prompt": _journal_prompt,
+        "mood_patterns": _mood_patterns,
     }
 
     handler = handlers.get(tool_name)
@@ -1901,6 +1905,277 @@ def _firefly_delete_transaction(args: dict, conn, user_id: int) -> dict:
     if success:
         return {"success": True, "message": f"Deleted transaction #{tx_id} from Firefly III."}
     return {"error": f"Failed to delete transaction #{tx_id}. It may not exist or you don't have permission."}
+
+
+# ---------------------------------------------------------------------------
+# Reflect — AI Therapist tools (READ-ONLY)
+# ---------------------------------------------------------------------------
+
+def _journal_reflect(args: dict, conn, user_id: int) -> dict:
+    """Analyse recent journal entries, mood check-ins, and habit completion rates."""
+    try:
+        days = max(1, int(args.get("days", 7)))
+    except (TypeError, ValueError):
+        days = 7
+
+    result: dict = {"period_days": days}
+
+    # Journal entries
+    try:
+        entries = conn.execute(
+            """SELECT date, mood, energy, gratitude_json, wins_json, lessons, content, tags_json
+               FROM journal_entries
+               WHERE user_id = ? AND date >= date('now', ?)
+               ORDER BY date DESC""",
+            (user_id, f'-{days} days'),
+        ).fetchall()
+        result["journal_entries"] = [dict(r) for r in entries]
+        result["journal_entry_count"] = len(entries)
+    except Exception as exc:
+        result["journal_entries"] = []
+        result["journal_note"] = f"Could not read journal entries: {exc}"
+
+    # Mood / energy check-ins
+    try:
+        checkins = conn.execute(
+            """SELECT date, mood, energy, improvement_note
+               FROM daily_checkins
+               WHERE user_id = ? AND date >= date('now', ?)
+               ORDER BY date DESC""",
+            (user_id, f'-{days} days'),
+        ).fetchall()
+        result["mood_checkins"] = [dict(r) for r in checkins]
+        if checkins:
+            moods = [r['mood'] for r in checkins if r['mood']]
+            energies = [r['energy'] for r in checkins if r['energy']]
+            result["avg_mood"] = round(sum(moods) / len(moods), 2) if moods else None
+            result["avg_energy"] = round(sum(energies) / len(energies), 2) if energies else None
+    except Exception as exc:
+        result["mood_checkins"] = []
+        result["mood_note"] = f"Could not read mood data: {exc}"
+
+    # Habit completion rates for the period
+    try:
+        habits = conn.execute(
+            """SELECT h.id, h.name, h.category,
+                      COUNT(hc.id) as completions
+               FROM habits h
+               LEFT JOIN habit_completions hc
+                  ON hc.habit_id = h.id
+                  AND hc.user_id = ?
+                  AND date(hc.completed_at) >= date('now', ?)
+               WHERE h.user_id = ? AND h.active = 1
+               GROUP BY h.id
+               ORDER BY completions DESC""",
+            (user_id, f'-{days} days', user_id),
+        ).fetchall()
+        result["habit_completions"] = [dict(r) for r in habits]
+        total_possible = len(habits) * days
+        total_done = sum(r['completions'] for r in habits)
+        result["habit_completion_rate_pct"] = (
+            round(total_done / total_possible * 100, 1) if total_possible > 0 else None
+        )
+    except Exception as exc:
+        result["habit_completions"] = []
+        result["habit_note"] = f"Could not read habit data: {exc}"
+
+    if not result.get("journal_entries") and not result.get("mood_checkins"):
+        result["summary"] = f"No journal entries or mood check-ins found in the last {days} days."
+    else:
+        result["summary"] = (
+            f"Found {result.get('journal_entry_count', 0)} journal entries and "
+            f"{len(result.get('mood_checkins', []))} mood check-ins over the last {days} days."
+        )
+
+    return result
+
+
+def _journal_prompt(args: dict, conn, user_id: int) -> dict:
+    """Generate a personalised journaling prompt based on current context."""
+    context_parts: list[str] = []
+
+    # Today's mood
+    try:
+        checkin = conn.execute(
+            "SELECT mood, energy FROM daily_checkins WHERE user_id = ? AND date = date('now')",
+            (user_id,),
+        ).fetchone()
+        if checkin:
+            context_parts.append(f"mood={checkin['mood']}/5 energy={checkin['energy']}/5")
+    except Exception:
+        pass
+
+    # Missed habits today
+    try:
+        active_habits = conn.execute(
+            "SELECT id, name FROM habits WHERE user_id = ? AND active = 1",
+            (user_id,),
+        ).fetchall()
+        completed_ids = {
+            r['habit_id'] for r in conn.execute(
+                """SELECT habit_id FROM habit_completions
+                   WHERE user_id = ? AND date(completed_at) = date('now')""",
+                (user_id,),
+            ).fetchall()
+        }
+        missed = [h['name'] for h in active_habits if h['id'] not in completed_ids]
+        if missed:
+            context_parts.append(f"missed habits today: {', '.join(missed[:3])}")
+    except Exception:
+        pass
+
+    # Active challenges / streaks
+    try:
+        challenges = conn.execute(
+            "SELECT name, target_days, start_date FROM challenges WHERE user_id = ? AND status = 'active' LIMIT 3",
+            (user_id,),
+        ).fetchall()
+        if challenges:
+            context_parts.append(f"active challenges: {', '.join(r['name'] for r in challenges)}")
+    except Exception:
+        pass
+
+    # Most recent journal entry date (to detect gap)
+    try:
+        last_entry = conn.execute(
+            "SELECT date FROM journal_entries WHERE user_id = ? ORDER BY date DESC LIMIT 1",
+            (user_id,),
+        ).fetchone()
+        if last_entry:
+            context_parts.append(f"last journal entry: {last_entry['date']}")
+    except Exception:
+        pass
+
+    # Build a contextualised prompt
+    context_str = "; ".join(context_parts) if context_parts else "no specific context available"
+
+    prompt = (
+        f"Here is personalised journaling context for today: {context_str}. "
+        "Based on this, here is a journaling prompt: "
+    )
+
+    # Select a prompt angle based on what we found
+    if "missed habits" in context_str:
+        prompt += (
+            "What got in the way of your habits today — and what does that tell you about where "
+            "your energy and attention actually went?"
+        )
+    elif "mood=1" in context_str or "mood=2" in context_str:
+        prompt += (
+            "You're having a tough day. What is weighing on you most right now, and what would "
+            "make even a small difference in how you feel?"
+        )
+    elif "active challenges" in context_str:
+        prompt += (
+            "Reflect on the challenge you're currently running. What is it teaching you about "
+            "your discipline, your values, or your relationship with consistency?"
+        )
+    else:
+        prompt += (
+            "What is one thing that happened recently that you haven't fully processed yet — "
+            "something that deserves more of your attention and honest reflection?"
+        )
+
+    return {
+        "success": True,
+        "context_used": context_str,
+        "prompt": prompt,
+    }
+
+
+def _mood_patterns(args: dict, conn, user_id: int) -> dict:
+    """Compute mood and energy patterns from daily check-ins over a period."""
+    try:
+        days = max(1, int(args.get("days", 30)))
+    except (TypeError, ValueError):
+        days = 30
+
+    try:
+        rows = conn.execute(
+            """SELECT date, mood, energy, improvement_note
+               FROM daily_checkins
+               WHERE user_id = ? AND date >= date('now', ?)
+               ORDER BY date ASC""",
+            (user_id, f'-{days} days'),
+        ).fetchall()
+    except Exception as exc:
+        return {"error": f"Could not query mood data: {exc}"}
+
+    if not rows:
+        return {
+            "success": True,
+            "period_days": days,
+            "checkin_count": 0,
+            "message": f"No mood check-ins found in the last {days} days.",
+        }
+
+    # Compute per-day-of-week averages (0=Monday ... 6=Sunday)
+    from datetime import date as _date
+    day_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    dow_mood: dict[int, list] = {i: [] for i in range(7)}
+    dow_energy: dict[int, list] = {i: [] for i in range(7)}
+
+    all_moods = []
+    all_energies = []
+    dated_moods = []  # for trend calculation
+
+    for r in rows:
+        try:
+            d = _date.fromisoformat(r['date'])
+            dow = d.weekday()
+        except Exception:
+            continue
+        if r['mood']:
+            dow_mood[dow].append(r['mood'])
+            all_moods.append(r['mood'])
+            dated_moods.append((r['date'], r['mood']))
+        if r['energy']:
+            dow_energy[dow].append(r['energy'])
+            all_energies.append(r['energy'])
+
+    by_day_of_week = {}
+    for i, name in enumerate(day_names):
+        moods = dow_mood[i]
+        energies = dow_energy[i]
+        by_day_of_week[name] = {
+            "avg_mood": round(sum(moods) / len(moods), 2) if moods else None,
+            "avg_energy": round(sum(energies) / len(energies), 2) if energies else None,
+            "checkins": len(moods),
+        }
+
+    # Best and worst days
+    ranked = [
+        (name, data["avg_mood"])
+        for name, data in by_day_of_week.items()
+        if data["avg_mood"] is not None
+    ]
+    ranked.sort(key=lambda x: x[1], reverse=True)
+    best_day = ranked[0][0] if ranked else None
+    worst_day = ranked[-1][0] if ranked else None
+
+    # Simple linear trend: compare first-half average to second-half average
+    trend = "stable"
+    if len(dated_moods) >= 4:
+        mid = len(dated_moods) // 2
+        first_half_avg = sum(m for _, m in dated_moods[:mid]) / mid
+        second_half_avg = sum(m for _, m in dated_moods[mid:]) / (len(dated_moods) - mid)
+        diff = second_half_avg - first_half_avg
+        if diff >= 0.5:
+            trend = "improving"
+        elif diff <= -0.5:
+            trend = "declining"
+
+    return {
+        "success": True,
+        "period_days": days,
+        "checkin_count": len(rows),
+        "overall_avg_mood": round(sum(all_moods) / len(all_moods), 2) if all_moods else None,
+        "overall_avg_energy": round(sum(all_energies) / len(all_energies), 2) if all_energies else None,
+        "mood_trend": trend,
+        "best_day_of_week": best_day,
+        "worst_day_of_week": worst_day,
+        "by_day_of_week": by_day_of_week,
+    }
 
 
 __all__ = ["execute_tool"]

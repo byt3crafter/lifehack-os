@@ -85,13 +85,15 @@ def send_message():
     conn = get_connection()
 
     # Validate conversation ownership if provided
+    conv_category = 'general'
     if conversation_id:
         conv = conn.execute(
-            "SELECT id FROM chat_conversations WHERE id = ? AND user_id = ?",
+            "SELECT id, category FROM chat_conversations WHERE id = ? AND user_id = ?",
             (conversation_id, uid),
         ).fetchone()
         if not conv:
             return jsonify({"error": "Conversation not found"}), 404
+        conv_category = conv['category'] or 'general'
 
     # Check daily AI usage limits before touching the provider
     from src.infrastructure.ai.usage import check_ai_usage
@@ -117,7 +119,7 @@ def send_message():
         logger.error("Context assembly failed: %s", exc, exc_info=True)
         context = {}
 
-    system_prompt = build_system_prompt(context, tools=TOOL_DEFINITIONS)
+    system_prompt = build_system_prompt(context, tools=TOOL_DEFINITIONS, category=conv_category)
 
     # Add receipt scanning instructions when image is present
     if image_base64:

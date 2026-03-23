@@ -446,6 +446,38 @@ TOOL_DEFINITIONS = [
             "notes": "string",
         },
     },
+    # ── Reflect (AI Therapist) ────────────────────────────────────────────────
+    {
+        "name": "journal_reflect",
+        "description": (
+            "Analyze the user's recent journal entries alongside mood check-ins and habit completion "
+            "rates to surface themes, patterns, and emotional trends. Use this when the user asks "
+            "to reflect on how they've been feeling, what's been on their mind, or their recent journaling."
+        ),
+        "parameters": {
+            "days": "integer — how many days back to analyse (default: 7)",
+        },
+    },
+    {
+        "name": "journal_prompt",
+        "description": (
+            "Generate a personalised journaling prompt tailored to the user's current mood, "
+            "missed habits, active challenges, and recent context. Use this when the user asks "
+            "for a journaling prompt, what to write about, or how to start a journal entry."
+        ),
+        "parameters": {},
+    },
+    {
+        "name": "mood_patterns",
+        "description": (
+            "Analyse the user's mood and energy check-ins over a period and compute patterns: "
+            "average mood by day of week, overall trend, best and worst days. Use this when the "
+            "user asks about their mood trends, emotional patterns, or how they've been feeling over time."
+        ),
+        "parameters": {
+            "days": "integer — how many days back to analyse (default: 30)",
+        },
+    },
 ]
 
 __all__ = ["TOOL_DEFINITIONS"]

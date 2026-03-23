@@ -1909,6 +1909,26 @@
                 <!-- Accountability card — shows today's habit misses -->
                 <div id="d-accountability-card" class="hidden"></div>
 
+                <!-- Daily Reflection card -->
+                <div id="d-reflection-card" class="hidden mb-4">
+                    <div class="rounded-xl p-4 cursor-pointer" onclick="startReflection()"
+                         style="background:linear-gradient(135deg,#1a1420 0%,#201828 100%);border:1px solid rgba(232,121,249,0.15);transition:border-color 0.15s;"
+                         onmouseenter="this.style.borderColor='rgba(232,121,249,0.3)'" onmouseleave="this.style.borderColor='rgba(232,121,249,0.15)'">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(232,121,249,0.12);">
+                                <span style="font-size:1.1rem;">🧠</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div style="font-size:0.625rem;font-weight:600;color:#e879f9;letter-spacing:0.06em;text-transform:uppercase;">Daily Reflection</div>
+                                <div class="text-sm mt-0.5" style="color:#d0d0d8;" id="d-reflection-prompt">How are you feeling right now?</div>
+                            </div>
+                            <svg width="16" height="16" fill="none" stroke="#e879f9" viewBox="0 0 24 24" stroke-width="2" style="flex-shrink:0;opacity:0.6;">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Live fasting timer (shown only when actively fasting) -->
                 <div id="d-fasting-timer" class="hidden mb-4 p-4 rounded-xl flex items-center gap-3" style="background:linear-gradient(135deg,#1a1820 0%,#201828 100%);border:1px solid rgba(168,85,247,0.2);overflow:hidden;">
                     <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(168,85,247,0.15);">
@@ -2934,6 +2954,7 @@
                             <button class="cm-cat-pill" data-cat="productivity" onclick="filterConversations('productivity')" style="padding:3px 8px;border-radius:6px;font-size:0.625rem;font-weight:600;border:1px solid transparent;background:none;color:#5c5c6b;cursor:pointer;font-family:inherit;">⚡ Productivity</button>
                             <button class="cm-cat-pill" data-cat="life" onclick="filterConversations('life')" style="padding:3px 8px;border-radius:6px;font-size:0.625rem;font-weight:600;border:1px solid transparent;background:none;color:#5c5c6b;cursor:pointer;font-family:inherit;">🌱 Life</button>
                             <button class="cm-cat-pill" data-cat="general" onclick="filterConversations('general')" style="padding:3px 8px;border-radius:6px;font-size:0.625rem;font-weight:600;border:1px solid transparent;background:none;color:#5c5c6b;cursor:pointer;font-family:inherit;">💬 General</button>
+                            <button class="cm-cat-pill" data-cat="reflect" onclick="filterConversations('reflect')" style="padding:3px 8px;border-radius:6px;font-size:0.625rem;font-weight:600;border:1px solid transparent;background:none;color:#5c5c6b;cursor:pointer;font-family:inherit;">🧠 Reflect</button>
                         </div>
                         <!-- Conversation list -->
                         <div id="cm-conv-list" style="flex:1;overflow-y:auto;padding:8px;"></div>
@@ -7183,6 +7204,73 @@
         }
     }
 
+    async function loadReflectionCard() {
+        var card = document.getElementById('d-reflection-card');
+        if (!card) return;
+        var promptEl = document.getElementById('d-reflection-prompt');
+
+        try {
+            // Use already-available data from the page
+            var prompt = 'How are you feeling right now?';
+
+            // Check if any habits were missed today
+            try {
+                var acc = await api('/habits/accountability');
+                if (acc && acc.misses && acc.misses.length) {
+                    var missName = acc.misses[0].habit_name || 'a habit';
+                    prompt = 'You missed ' + missName + ' today. What got in the way?';
+                }
+            } catch(e) {}
+
+            // Check for streaks (from habits data)
+            try {
+                var habits = await api('/habits');
+                if (habits && habits.length) {
+                    var bestStreak = habits.reduce(function(best, h) {
+                        return (h.streak || 0) > (best.streak || 0) ? h : best;
+                    }, {streak: 0});
+                    if (bestStreak.streak >= 3 && prompt.indexOf('missed') === -1) {
+                        prompt = bestStreak.streak + '-day streak on ' + bestStreak.name + '! What\'s driving your consistency?';
+                    }
+                }
+            } catch(e) {}
+
+            if (promptEl) promptEl.textContent = prompt;
+            card.classList.remove('hidden');
+        } catch(e) {
+            card.classList.remove('hidden');
+        }
+    }
+
+    async function startReflection() {
+        try {
+            var d = new Date();
+            var dateStr = d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+            var conv = await api('/chat/conversations', 'POST', {
+                title: 'Reflect · ' + dateStr,
+                category: 'reflect'
+            });
+            if (conv && conv.id) {
+                _switchView('chatmode');
+                // Wait for chat mode to load, then select the conversation
+                setTimeout(async function() {
+                    await loadConversations();
+                    await selectConversation(conv.id);
+                    // Auto-send the reflection prompt
+                    var promptEl = document.getElementById('d-reflection-prompt');
+                    var prompt = promptEl ? promptEl.textContent : 'How am I doing overall?';
+                    var input = document.getElementById('chatmode-input');
+                    if (input) {
+                        input.value = prompt;
+                        sendChatModeMessage();
+                    }
+                }, 300);
+            }
+        } catch(e) {
+            showToast('Could not start reflection', 'error');
+        }
+    }
+
     async function loadStats() {
         const s = await api('/stats');
         if(!s) return;
@@ -7391,6 +7479,9 @@
 
         // Load accountability card (non-blocking)
         loadAccountability();
+
+        // Load daily reflection card (non-blocking)
+        loadReflectionCard();
 
         // Load mood prompt
         await loadMoodSection();
@@ -10167,7 +10258,7 @@
     async function createConversation(category) {
         // Use the active filter category, or default to general
         category = category || (_cmCatFilter !== 'all' ? _cmCatFilter : 'general');
-        var catLabels = {health:'Health',finance:'Finance',productivity:'Productivity',life:'Life',general:'General'};
+        var catLabels = {health:'Health',finance:'Finance',productivity:'Productivity',life:'Life',general:'General',reflect:'Reflect'};
         var d = new Date();
         var dateStr = d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
         var title = (catLabels[category] || 'Chat') + ' · ' + dateStr;
