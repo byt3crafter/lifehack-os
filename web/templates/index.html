@@ -1530,6 +1530,11 @@
                 padding-top: 0;
             }
         }
+        .notif-item { padding:12px 16px; border-bottom:1px solid #1a1a1e; display:flex; gap:10px; align-items:flex-start; cursor:pointer; transition:background 0.1s; }
+        .notif-item:hover { background:rgba(255,255,255,0.02); }
+        .notif-item:last-child { border-bottom:none; }
+        .notif-item.unread { background:rgba(79,128,255,0.04); }
+        .notif-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; margin-top:4px; }
     </style>
 </head>
 <body class="min-h-screen" style="color:#f0f0f2;overflow-x:clip;">
@@ -1598,7 +1603,15 @@
             </svg>
         </button>
         <span class="font-semibold text-sm tracking-tight" style="color:#f0f0f2;">Life Hack OS</span>
-        <div id="mobile-xp" class="text-xs font-mono font-medium" style="color:#eab308;">0 XP</div>
+        <div class="flex items-center gap-2">
+            <button onclick="toggleNotifPanel()" class="relative p-1" style="color:#9898a6;" id="mobile-notif-bell" aria-label="Notifications">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                    <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>
+                </svg>
+                <span id="mobile-notif-badge" class="hidden" style="position:absolute;top:-2px;right:-2px;background:#ef4444;color:#fff;font-size:0.5rem;font-weight:700;min-width:14px;height:14px;border-radius:7px;display:flex;align-items:center;justify-content:center;line-height:1;">0</span>
+            </button>
+            <div id="mobile-xp" class="text-xs font-mono font-medium" style="color:#eab308;">0 XP</div>
+        </div>
     </header>
 
     <!-- Mobile Nav Overlay -->
@@ -1684,7 +1697,15 @@
                style="background:#141416; border-right:1px solid #2a2a2e; padding:1.25rem 0.875rem;">
             <!-- Brand -->
             <div class="mb-6 px-2">
-                <div class="font-semibold text-sm tracking-tight" style="color:#f0f0f2;">Life Hack OS</div>
+                <div class="flex items-center justify-between">
+                    <div class="font-semibold text-sm tracking-tight" style="color:#f0f0f2;">Life Hack OS</div>
+                    <button onclick="toggleNotifPanel()" class="relative p-1 rounded-lg hover:bg-white/5 transition-colors" style="color:#9898a6;" id="desk-notif-bell" aria-label="Notifications">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>
+                        </svg>
+                        <span id="desk-notif-badge" class="hidden" style="position:absolute;top:-2px;right:-2px;background:#ef4444;color:#fff;font-size:0.5rem;font-weight:700;min-width:14px;height:14px;border-radius:7px;display:flex;align-items:center;justify-content:center;line-height:1;">0</span>
+                    </button>
+                </div>
                 <div class="text-xs mt-0.5" style="color:#5c5c6b;">Personal Operating System</div>
             </div>
             <!-- Avatar + XP display -->
@@ -3789,6 +3810,18 @@
                 </div><!-- /settings layout -->
             </div>
         </main>
+
+        <!-- Notification Panel -->
+        <div id="notif-panel" class="hidden" style="position:fixed;top:50px;right:16px;z-index:55;width:340px;max-width:calc(100vw - 32px);max-height:420px;background:#1c1c20;border:1px solid #2a2a2e;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,0.5);overflow:hidden;display:flex;flex-direction:column;">
+            <div style="padding:12px 16px;border-bottom:1px solid #2a2a2e;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+                <span style="font-size:0.875rem;font-weight:600;color:#f0f0f2;">Notifications</span>
+                <button onclick="markAllNotifsRead()" style="font-size:0.6875rem;color:#4f80ff;background:none;border:none;cursor:pointer;font-family:inherit;">Mark all read</button>
+            </div>
+            <div id="notif-list" style="flex:1;overflow-y:auto;"></div>
+            <div id="notif-empty" class="hidden" style="padding:32px 16px;text-align:center;color:#5c5c6b;font-size:0.8125rem;">
+                All caught up! ✨
+            </div>
+        </div>
     </div>
 
     <!-- Modal -->
@@ -12218,6 +12251,135 @@
     });
 
     // Old floating chat input wiring removed — Chat Mode handles its own input
+
+    // ── Notifications ────────────────────────────────────────────────
+    var _notifPanelOpen = false;
+
+    var _notifIcons = {
+        overdue_habit: '⏰',
+        low_water: '💧',
+        no_food: '🍽️',
+        fasting_target: '🔥',
+        habit_miss_streak: '📉',
+        default: '🔔'
+    };
+
+    async function pollNotifCount() {
+        try {
+            var r = await api('/notifications/count');
+            var count = (r && r.unread) || 0;
+            ['mobile-notif-badge', 'desk-notif-badge'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (!el) return;
+                if (count > 0) {
+                    el.textContent = count > 99 ? '99+' : count;
+                    el.classList.remove('hidden');
+                } else {
+                    el.classList.add('hidden');
+                }
+            });
+        } catch(e) {}
+    }
+
+    function toggleNotifPanel() {
+        var panel = document.getElementById('notif-panel');
+        if (!panel) return;
+        _notifPanelOpen = !_notifPanelOpen;
+        if (_notifPanelOpen) {
+            panel.classList.remove('hidden');
+            panel.style.display = 'flex';
+            loadNotifications();
+        } else {
+            panel.classList.add('hidden');
+            panel.style.display = 'none';
+        }
+    }
+
+    async function loadNotifications() {
+        try {
+            var r = await api('/notifications');
+            var list = document.getElementById('notif-list');
+            var empty = document.getElementById('notif-empty');
+            if (!list) return;
+
+            var notifs = (r && r.notifications) || [];
+            if (!notifs.length) {
+                list.innerHTML = '';
+                if (empty) empty.classList.remove('hidden');
+                return;
+            }
+            if (empty) empty.classList.add('hidden');
+
+            list.innerHTML = notifs.map(function(n) {
+                var icon = _notifIcons[n.type] || _notifIcons.default;
+                var time = '';
+                try {
+                    var d = new Date(n.created_at);
+                    var now = new Date();
+                    var diff = Math.floor((now - d) / 60000);
+                    if (diff < 60) time = diff + 'm ago';
+                    else if (diff < 1440) time = Math.floor(diff/60) + 'h ago';
+                    else time = Math.floor(diff/1440) + 'd ago';
+                } catch(e) {}
+
+                var dotColor = n.read ? 'transparent' : '#4f80ff';
+
+                return '<div class="notif-item' + (n.read ? '' : ' unread') + '" onclick="notifClick(' + n.id + ',\'' + (n.link||'') + '\')">'
+                    + '<div class="notif-dot" style="background:' + dotColor + ';"></div>'
+                    + '<div style="flex:1;min-width:0;">'
+                    + '<div style="display:flex;align-items:center;gap:6px;">'
+                    + '<span>' + icon + '</span>'
+                    + '<span style="font-size:0.8125rem;font-weight:500;color:#f0f0f2;">' + n.title + '</span>'
+                    + '</div>'
+                    + (n.body ? '<div style="font-size:0.75rem;color:#9898a6;margin-top:2px;line-height:1.4;">' + n.body + '</div>' : '')
+                    + '<div style="font-size:0.625rem;color:#5c5c6b;margin-top:4px;">' + time + '</div>'
+                    + '</div>'
+                    + '<button onclick="event.stopPropagation();dismissNotif(' + n.id + ')" style="background:none;border:none;color:#5c5c6b;cursor:pointer;font-size:0.7rem;flex-shrink:0;padding:2px;" title="Dismiss">✕</button>'
+                    + '</div>';
+            }).join('');
+        } catch(e) {}
+    }
+
+    async function notifClick(id, link) {
+        await api('/notifications/' + id + '/read', 'POST');
+        pollNotifCount();
+        toggleNotifPanel();
+        if (link && link.startsWith('#')) {
+            var view = link.substring(1);
+            if (typeof nav === 'function') nav(view);
+            else if (typeof _switchView === 'function') _switchView(view);
+        }
+    }
+
+    async function markAllNotifsRead() {
+        await api('/notifications/read-all', 'POST');
+        pollNotifCount();
+        loadNotifications();
+    }
+
+    async function dismissNotif(id) {
+        await api('/notifications/' + id + '/dismiss', 'POST');
+        var el = document.querySelector('.notif-item[onclick*="' + id + '"]');
+        if (el) el.remove();
+        pollNotifCount();
+        var list = document.getElementById('notif-list');
+        var empty = document.getElementById('notif-empty');
+        if (list && !list.children.length && empty) empty.classList.remove('hidden');
+    }
+
+    document.addEventListener('click', function(e) {
+        if (!_notifPanelOpen) return;
+        var panel = document.getElementById('notif-panel');
+        var bells = [document.getElementById('mobile-notif-bell'), document.getElementById('desk-notif-bell')];
+        if (panel && !panel.contains(e.target) && !bells.some(function(b) { return b && b.contains(e.target); })) {
+            _notifPanelOpen = false;
+            panel.classList.add('hidden');
+            panel.style.display = 'none';
+        }
+    });
+
+    pollNotifCount();
+    setInterval(pollNotifCount, 60000);
     </script>
 </body>
 </html>

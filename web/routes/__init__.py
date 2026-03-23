@@ -36,6 +36,7 @@ from .contacts import contacts_bp
 from .export import export_bp
 from .admin import admin_bp
 from .conversations import conversations_bp
+from .notifications import notifications_bp
 
 __all__ = [
     'auth_bp',
@@ -70,4 +71,5 @@ __all__ = [
     'export_bp',
     'admin_bp',
     'conversations_bp',
+    'notifications_bp',
 ]

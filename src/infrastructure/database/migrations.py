@@ -999,3 +999,30 @@ def run_migrations(conn) -> None:
         )
         conn.commit()
         print("  Migration 28: Habit accountability: miss log enrichment with strength/streak/XP")
+
+    # Migration 29: Notifications — in-app nudges and alerts
+    current = get_current_version(conn)
+    if current < 29:
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS notifications (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL REFERENCES users(id),
+                type TEXT NOT NULL,
+                title TEXT NOT NULL,
+                body TEXT NOT NULL DEFAULT '',
+                icon TEXT NOT NULL DEFAULT 'bell',
+                link TEXT DEFAULT '',
+                read INTEGER NOT NULL DEFAULT 0,
+                dismissed INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                expires_at TEXT DEFAULT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
+            CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON notifications(user_id, read, dismissed);
+        """)
+        conn.execute(
+            "INSERT OR IGNORE INTO schema_version (version, description) "
+            "VALUES (29, 'Notifications: in-app nudges and alerts')"
+        )
+        conn.commit()
+        print("  Migration 29: Notifications: in-app nudges and alerts")
