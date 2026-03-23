@@ -1519,7 +1519,10 @@
          */
         @media (max-width: 767px) {
             #main-content {
-                padding-top: calc(3.5rem + env(safe-area-inset-top, 0px));
+                /* Fallback for browsers that don't support env() */
+                padding-top: 4.5rem;
+                /* Override with safe area when supported */
+                padding-top: calc(4.5rem + env(safe-area-inset-top, 0px));
             }
         }
         @media (min-width: 768px) {
@@ -1587,7 +1590,7 @@
 
     <!-- Mobile Header -->
     <header class="md:hidden fixed top-0 left-0 right-0 z-40 px-4 flex items-center justify-between border-b"
-            style="background:#141416; border-color:#2a2a2e; padding-top:calc(0.75rem + env(safe-area-inset-top)); padding-bottom:0.75rem;">
+            style="background:#141416; border-color:#2a2a2e; padding-top:calc(0.75rem + env(safe-area-inset-top, 0px)); padding-bottom:0.75rem; min-height:3.5rem;">
         <button onclick="toggleNav()" aria-label="Open navigation"
                 class="p-2 -ml-2 rounded-lg hover:bg-white/5 transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
