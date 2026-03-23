@@ -836,6 +836,7 @@
             font-weight: 600;
             padding: 0.2rem 0.5rem;
             border-radius: 100px;
+            -webkit-backdrop-filter: blur(4px);
             backdrop-filter: blur(4px);
             cursor: pointer;
             border: 1px solid rgba(255,255,255,0.12);
@@ -1505,9 +1506,30 @@
         #chat-send-btn:hover { background: #6b96ff; }
         #chat-send-btn:active { transform: scale(0.94); }
         #chat-send-btn:disabled { background: #2a2a2e; cursor: not-allowed; color: #5c5c6b; }
+
+        /* ── iOS Safari fixed element fixes ─────────────── */
+        /*
+         * On iOS Safari, overflow:hidden on <body> or any flex ancestor
+         * creates a new stacking context that clips position:fixed children.
+         * We use overflow:clip on body (no stacking context side-effect) and
+         * rely on this CSS-only media query for the mobile header offset.
+         *
+         * env(safe-area-inset-top) handles the notch/Dynamic Island on iPhones.
+         * viewport-fit=cover is already set in the <meta viewport> tag.
+         */
+        @media (max-width: 767px) {
+            #main-content {
+                padding-top: calc(3.5rem + env(safe-area-inset-top, 0px));
+            }
+        }
+        @media (min-width: 768px) {
+            #main-content {
+                padding-top: 0;
+            }
+        }
     </style>
 </head>
-<body class="min-h-screen overflow-x-hidden" style="color:#f0f0f2;">
+<body class="min-h-screen" style="color:#f0f0f2;overflow-x:clip;">
     <!-- SVG icon definitions (hidden, referenced by use) -->
     <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
         <symbol id="icon-dashboard" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -1564,8 +1586,8 @@
     </svg>
 
     <!-- Mobile Header -->
-    <header class="md:hidden fixed top-0 left-0 right-0 z-40 px-4 py-3 flex items-center justify-between border-b"
-            style="background:#141416; border-color:#2a2a2e;">
+    <header class="md:hidden fixed top-0 left-0 right-0 z-40 px-4 flex items-center justify-between border-b"
+            style="background:#141416; border-color:#2a2a2e; padding-top:calc(0.75rem + env(safe-area-inset-top)); padding-bottom:0.75rem;">
         <button onclick="toggleNav()" aria-label="Open navigation"
                 class="p-2 -ml-2 rounded-lg hover:bg-white/5 transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
@@ -1577,7 +1599,7 @@
     </header>
 
     <!-- Mobile Nav Overlay -->
-    <div id="nav-overlay" class="md:hidden fixed inset-0 z-40 hidden" style="background:rgba(0,0,0,0.7); backdrop-filter:blur(2px);" onclick="toggleNav()"></div>
+    <div id="nav-overlay" class="md:hidden fixed inset-0 z-40 hidden" style="background:rgba(0,0,0,0.7); -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px);" onclick="toggleNav()"></div>
 
     <!-- Mobile Nav Drawer -->
     <nav id="mobile-nav" aria-label="Main navigation"
@@ -1602,7 +1624,7 @@
                 </div>
             </div>
         </div>
-        <div class="space-y-0.5 flex-1 overflow-y-auto">
+        <div class="space-y-0.5 flex-1 overflow-y-auto" style="-webkit-overflow-scrolling:touch;">
             <button onclick="nav('dashboard')" data-v="dashboard" class="nav-btn w-full text-left px-3 py-2.5 rounded-lg" aria-label="Dashboard">
                 <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-dashboard"/></svg>Dashboard
             </button>
@@ -1685,7 +1707,7 @@
             </div>
 
             <!-- Nav items (grouped) -->
-            <nav aria-label="Main navigation" class="space-y-0.5 flex-1 overflow-y-auto" style="font-size:0.8125rem;">
+            <nav aria-label="Main navigation" class="space-y-0.5 flex-1 overflow-y-auto" style="font-size:0.8125rem;-webkit-overflow-scrolling:touch;">
                 <button onclick="desktopNav('dashboard')" data-v="dashboard" class="nav-btn w-full text-left px-3 py-2 rounded-lg" aria-label="Dashboard">
                     <svg class="nav-icon w-4 h-4 flex-shrink-0" style="color:#5c5c6b;"><use href="#icon-dashboard"/></svg>Dashboard
                 </button>
@@ -1723,7 +1745,7 @@
         </aside>
 
         <!-- Main -->
-        <main class="flex-1 md:ml-56 pt-14 md:pt-0 pb-8 px-4 md:px-8 overflow-x-hidden max-w-full">
+        <main id="main-content" class="flex-1 md:ml-56 md:pt-0 pb-8 px-4 md:px-8 max-w-full" style="min-width:0;">
             <!-- DASHBOARD -->
             <div id="v-dashboard" class="view overflow-x-hidden">
                 <!-- Today's Header -->
@@ -3746,7 +3768,7 @@
     </div>
 
     <!-- Modal -->
-    <div id="modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.75);backdrop-filter:blur(3px);" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div id="modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.75);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div id="modal-panel" class="w-full max-w-sm max-h-[85vh] overflow-y-auto rounded-2xl" style="background:#1c1c20;border:1px solid #333338;padding:1.25rem;">
             <div class="flex items-center justify-between mb-4">
                 <h3 id="modal-title" class="font-semibold text-base" style="color:#f0f0f2;"></h3>
@@ -11578,7 +11600,9 @@
         _discGalleryRender();
         var overlay = document.getElementById('disc-gallery-overlay');
         if(overlay) overlay.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
+        /* iOS Safari: avoid body overflow:hidden (breaks fixed elements).
+           Instead prevent touchmove on document to block background scroll. */
+        document.addEventListener('touchmove', _preventScroll, { passive: false });
     }
 
     function _discGalleryRender() {
@@ -11611,7 +11635,14 @@
     function closeDiscoverGallery() {
         var overlay = document.getElementById('disc-gallery-overlay');
         if(overlay) overlay.classList.add('hidden');
-        document.body.style.overflow = '';
+        document.removeEventListener('touchmove', _preventScroll);
+    }
+
+    function _preventScroll(e) {
+        /* Allow scrolling inside the gallery overlay itself */
+        var overlay = document.getElementById('disc-gallery-overlay');
+        if(overlay && overlay.contains(e.target)) return;
+        e.preventDefault();
     }
 
     // ── Add discovery modal ───────────────────────────────────────
