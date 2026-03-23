@@ -372,4 +372,33 @@ def _generate_for_user(conn, user_id: int) -> int:
         )
         count += 1
 
+    # ------------------------------------------------------------------
+    # Smart insights (pattern-based, no AI required)
+    # ------------------------------------------------------------------
+    try:
+        from src.domain.services.insight_engine import generate_insights
+        insights = generate_insights(conn, user_id)
+        for insight in insights:
+            conn.execute(
+                "INSERT INTO notifications "
+                "(user_id, type, title, body, icon, link, expires_at) "
+                "VALUES (?,?,?,?,?,?,?)",
+                (
+                    user_id,
+                    insight['type'],
+                    insight['title'],
+                    insight['body'],
+                    insight.get('icon', 'bell'),
+                    insight.get('link', ''),
+                    None,  # insights don't expire — dismissed by the user
+                ),
+            )
+            count += 1
+    except Exception as exc:
+        try:
+            from web.routes.app_log import log_event
+            log_event('error', 'notifications', f'insight generation failed for user {user_id}: {exc}')
+        except Exception:
+            pass
+
     return count
